@@ -51,7 +51,7 @@ data("adult")
 
 # 1. European Map Example
 res1 <- dp_score_plot_group(
-  X = eur_map,
+  X = eur_map_g,
   G = "color",
   eps_total = 3, delta_total = 1e-4,
   sampling  = TRUE
@@ -60,7 +60,7 @@ res1$plot$all
 
 # 2. Gaussian Mixture Example
 res2 <- dp_score_plot_group(
-  X = gaussian_groups,
+  X = gau_ssian_groups_g,
   G = "color",
   eps_total = 4, delta_total = 1e-5,
   sampling  = TRUE
