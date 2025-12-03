@@ -38,3 +38,41 @@ Since the package is under development, install from GitHub:
 # install.packages("devtools")
 devtools::install_github("yejinjo0220/dppca")
 library(dppca)
+
+
+## Example Usage
+
+```r
+library(dppca)
+
+data("eur_map")
+data("gaussian_groups")
+data("adult")
+
+# 1. European Map Example
+res1 <- dp_score_plot_group(
+  X = eur_map,
+  G = "color",
+  eps_total = 3, delta_total = 1e-4,
+  sampling  = TRUE
+)
+res1$plot$all
+
+# 2. Gaussian Mixture Example
+res2 <- dp_score_plot_group(
+  X = gaussian_groups,
+  G = "color",
+  eps_total = 4, delta_total = 1e-5,
+  sampling  = TRUE
+)
+res2$plot$all
+
+# 3. Adult Census Example
+res3 <- dp_score_plot(
+  X = adult,
+  scale. = TRUE,
+  eps_total = 4,
+  delta_total = 1e-5,
+  sampling = TRUE
+)
+res3$plot$all

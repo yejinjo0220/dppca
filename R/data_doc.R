@@ -1,9 +1,9 @@
 #' European map genotype dataset
 #'
-#' @format A data frame with:
+#' @format A data frame with 1387 rows and 21 variables:
 #' \describe{
-#'   \item{X}{A numeric matrix/data frame for PCA.}
-#'   \item{color}{Group labels extracted from POPRES dataset.}
+#'   \item{X.1, ..., X.20}{Numeric PCA scores for 20 principal components.}
+#'   \item{color}{Group labels.}
 #' }
 #'
 #' @usage data(eur_map)

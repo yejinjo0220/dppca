@@ -116,8 +116,6 @@ principal components. Depending on the selected mechanism, the function
 displays the empirical histogram, a Gaussian-additive DP histogram, and/or
 a sparse Laplace-thresholded DP histogram, together with optional synthetic
 samples drawn from each histogram.
-
-raw PCA scatter + DP hist panels for a single group.
 }
 \details{
 This function is a visualization wrapper around \code{dp_hist()}. Internally,

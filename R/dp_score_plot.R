@@ -1,4 +1,3 @@
-
 #' DP PCA Score Plot with 2D Histograms
 #'
 #' @description
@@ -8,9 +7,6 @@
 #' displays the empirical histogram, a Gaussian-additive DP histogram, and/or
 #' a sparse Laplace-thresholded DP histogram, together with optional synthetic
 #' samples drawn from each histogram.
-#'
-#' @description
-#' raw PCA scatter + DP hist panels for a single group.
 #'
 #' @param X A numeric matrix or an object coercible to a matrix with
 #'   \eqn{n} rows (observations) and \eqn{p} columns (variables).
