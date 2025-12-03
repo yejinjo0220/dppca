@@ -1,0 +1,28 @@
+Package: dppca
+Title: Differentially Private PCA Score Plots and Histograms
+Version: 0.0.0.9000
+Authors@R: 
+    person("Yejin", "Jo", email = "you@example.com", role = c("aut", "cre"))
+Description: Tools for performing (optionally differentially private) PCA 
+    and visualizing 2D score plots and histograms, including group-wise 
+    DP histograms and sampling from DP histograms.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: 
+    R (>= 4.3.0)
+Imports:
+    ggplot2,
+    patchwork,
+    dplyr,
+    VGAM,
+    rARPACK,
+    stats,
+    grDevices
+Suggests:
+    knitr,
+    rmarkdown
+LazyData: true
+
+
