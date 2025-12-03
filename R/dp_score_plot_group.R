@@ -216,7 +216,7 @@ dp_score_plot_group <- function(
   }
 
   # dp_hist_group
-  hist_res <- dp_hist_group(
+  hist_res <- .dp_hist_group_retry(
     X            = X_mat,
     G            = group_vec,
     center       = center,
@@ -229,11 +229,12 @@ dp_score_plot_group <- function(
     delta_ratio  = delta_ratio,
     inflate      = inflate,
     q_frame      = q_frame,
-    m_x          = m_x_for_hist,
-    m_y          = m_y_for_hist,
-    bin_method   = bin_method_for_hist,
+    m_x          = m_x,
+    m_y          = m_y,
+    bin_method   = bin_method,
     mechanism    = mechanism,
-    sampling     = sampling
+    sampling     = sampling,
+    verbose      = TRUE
   )
 
   # PCA result

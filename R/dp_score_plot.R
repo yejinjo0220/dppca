@@ -161,7 +161,7 @@ dp_score_plot <- function(
   }
 
   # dp_hist
-  hist_res <- dp_hist(
+  hist_res <- .dp_hist_retry(
     X            = X,
     center       = center,
     scale.       = scale.,
@@ -177,7 +177,8 @@ dp_score_plot <- function(
     m_y          = m_y_for_hist,
     bin_method   = bin_method_for_hist,
     mechanism    = mechanism,
-    sampling     = sampling
+    sampling     = sampling,
+    verbose      = TRUE # numbers of trying until not errors
   )
 
   # PCA result
