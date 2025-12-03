@@ -1,31 +1,23 @@
-#' European map genotype dataset
-#'
-#' @format A data frame with 1387 rows and 21 variables:
-#' \describe{
-#'   \item{X.1, ..., X.20}{Numeric PCA scores for 20 principal components.}
-#'   \item{color}{Group labels.}
-#' }
-#'
+#' European data (variables only)
+#' @format A data frame with 1387 rows and 20 numeric variables.
 #' @usage data(eur_map)
-#' @examples
-#' data(eur_map)
-#' str(eur_map)
 "eur_map"
 
+#' European data with group labels
+#' @format A data frame with 1387 rows, 20 numeric variables, and 1 factor column (color).
+#' @usage data(eur_map_g)
+"eur_map_g"
 
-#' Gaussian mixture synthetic dataset
-#'
-#' @format A data frame with:
-#' \describe{
-#'   \item{X}{A numeric matrix (5000 × 20).}
-#'   \item{color}{Group labels ("red", "orange", "green", "blue", "purple").}
-#' }
-#'
-#' @usage data(gaussian_groups)
-#' @examples
-#' data(gaussian_groups)
-#' table(gaussian_groups$color)
-"gaussian_groups"
+
+#' Gaussian mixture simulation (variables only)
+#' @format A data frame with 5000 rows and 20 numeric variables.
+#' @usage data(gau)
+"gau"
+
+#' Gaussian mixture simulation with group labels
+#' @format A data frame with 5000 rows, 20 numeric variables, and 1 factor column (color).
+#' @usage data(gau_g)
+"gau_g"
 
 
 #' Numeric subset of Adult dataset

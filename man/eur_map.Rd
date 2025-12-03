@@ -3,22 +3,14 @@
 \docType{data}
 \name{eur_map}
 \alias{eur_map}
-\title{European map genotype dataset}
+\title{European data (variables only)}
 \format{
-A data frame with 1387 rows and 21 variables:
-\describe{
-\item{X.1, ..., X.20}{Numeric PCA scores for 20 principal components.}
-\item{color}{Group labels.}
-}
+A data frame with 1387 rows and 20 numeric variables.
 }
 \usage{
 data(eur_map)
 }
 \description{
-European map genotype dataset
-}
-\examples{
-data(eur_map)
-str(eur_map)
+European data (variables only)
 }
 \keyword{datasets}
