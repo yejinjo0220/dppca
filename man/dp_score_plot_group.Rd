@@ -19,7 +19,7 @@ dp_score_plot_group(
   q_frame = NULL,
   m_x = NULL,
   m_y = NULL,
-  bin_method = c("J", "W"),
+  bin_method = c("J", "W", "none"),
   mechanism = c("all", "none", "add", "sparse"),
   sampling = FALSE
 )
