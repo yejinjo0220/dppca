@@ -76,17 +76,16 @@ ui <- fluidPage(
       tags$hr(),
 
       # total eps, delta ----
-      helpText("default is eps_total = 3, delta_total ≈ 1 / 10^{ceil(log10 n)}."),
       numericInput(
         inputId = "eps",
-        label   = "Total epsilon (eps_total):",
+        label   = "Total epsilon:",
         value   = 4,
         min     = 0.0001,
         step    = 0.1
       ),
       numericInput(
         inputId = "delta",
-        label   = "Total delta (delta_total):",
+        label   = "Total delta: (default: 1 / 10^{ceil(log10 n)}).",
         value   = 1e-4,
         min     = 0,
         step    = 1e-5
