@@ -133,7 +133,7 @@ dp_score_plot <- function(
     # bin count
     m_x = NULL,
     m_y = NULL,
-    bin_method = c("J", "W"),
+    bin_method = c("J", "W", "none"),
 
     mechanism = c("all", "none", "add", "sparse"),
 
@@ -145,6 +145,20 @@ dp_score_plot <- function(
 ) {
   bin_method <- match.arg(bin_method)
   mechanism  <- match.arg(mechanism)
+
+  # bin method
+  if (bin_method == "none") {
+    if (is.null(m_x) || is.null(m_y)) {
+      stop("When bin_method = 'none', you must supply both m_x and m_y.")
+    }
+    bin_method_for_hist <- "J"
+    m_x_for_hist <- m_x
+    m_y_for_hist <- m_y
+  } else {
+    bin_method_for_hist <- bin_method
+    m_x_for_hist <- m_x
+    m_y_for_hist <- m_y
+  }
 
   # dp_hist
   hist_res <- dp_hist(
@@ -159,9 +173,9 @@ dp_score_plot <- function(
     delta_ratio  = delta_ratio,
     inflate      = inflate,
     q_frame      = q_frame,
-    m_x          = m_x,
-    m_y          = m_y,
-    bin_method   = bin_method,
+    m_x          = m_x_for_hist,
+    m_y          = m_y_for_hist,
+    bin_method   = bin_method_for_hist,
     mechanism    = mechanism,
     sampling     = sampling
   )
@@ -252,5 +266,6 @@ dp_score_plot <- function(
 
   hist_res
 }
+
 
 
