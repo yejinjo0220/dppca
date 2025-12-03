@@ -31,6 +31,9 @@
 #'   \code{eps_total}, \code{delta_total}. If \code{FALSE}, use non-DP PCA.
 #' @param cpp.option Logical; if \code{TRUE}, allow C++ implementations inside
 #'   DP mechanisms (e.g., \code{mech_tau_sph()}) when available.
+#' @param axes Integer vector indicating which principal components to return
+#'   (e.g., \code{c(1, 2)} for the first two PCs). The maximum index in
+#'   \code{axes} must not exceed the number of variables \code{p}.
 #'
 #' @param eps_total Total privacy budget \eqn{\varepsilon_{\text{total}}} to be
 #'   split among DP-PCA (optional), DP frame (\code{dp_frame()}), and group-wise
@@ -148,6 +151,7 @@ dp_score_plot_group <- function(
     scale. = FALSE,
     dp_pca_flag = FALSE,
     cpp.option = FALSE,
+    axes = c(1, 2),
 
     # Privacy budget
     eps_total,
@@ -223,6 +227,7 @@ dp_score_plot_group <- function(
     scale.       = scale.,
     dp_pca_flag  = dp_pca_flag,
     cpp.option   = cpp.option,
+    axes         = axes,
     eps_total    = eps_total,
     delta_total  = delta_total,
     eps_ratio    = eps_ratio,

@@ -10,6 +10,7 @@ dp_score_plot(
   scale. = FALSE,
   dp_pca_flag = FALSE,
   cpp.option = FALSE,
+  axes = c(1, 2),
   eps_total,
   delta_total,
   eps_ratio = NULL,
@@ -41,6 +42,10 @@ using \code{dp_pca()} with part of the total privacy budget
 
 \item{cpp.option}{Logical; if \code{TRUE}, allow C++ implementations inside
 DP mechanisms (e.g., \code{mech_tau_sph()}) when available.}
+
+\item{axes}{Integer vector indicating which principal components to return
+(e.g., \code{c(1, 2)} for the first two PCs). The maximum index in
+\code{axes} must not exceed the number of variables \code{p}.}
 
 \item{eps_total}{Total privacy budget \eqn{\varepsilon_{\text{total}}} to be
 split among DP-PCA (optional), DP frame (\code{dp_frame()}), and DP
