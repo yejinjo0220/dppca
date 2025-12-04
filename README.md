@@ -46,33 +46,49 @@ library(dppca)
 library(dppca)
 
 data("eur_map")
-data("gaussian_groups")
+data("eur_map_g")
+data("gau")
+data("gau_g")
 data("adult")
 
 # 1. European Map Example
-res1 <- dp_score_plot_group(
-  X = eur_map_g,
-  G = "color",
-  eps_total = 3, delta_total = 1e-4,
+res_eur <- dp_score_plot(
+  X = eur_map,
+  eps_total = 4, delta_total = 1e-4,
   sampling  = TRUE
 )
-res1$plot$all
+res_eur$plot$all
+
+res_eur_g <- dp_score_plot_group(
+  X = eur_map_g,
+  G = "color",
+  eps_total = 4, delta_total = 1e-4,
+  sampling  = TRUE
+)
+res_eur_g$plot$all
 
 # 2. Gaussian Mixture Example
-res2 <- dp_score_plot_group(
-  X = gau_ssian_groups_g,
+res_gau <- dp_score_plot(
+  X = gau,
+  eps_total = 4, delta_total = 1e-5,
+  sampling  = TRUE
+)
+res_gau$plot$all
+
+res_gau_g <- dp_score_plot_group(
+  X = gau_g,
   G = "color",
   eps_total = 4, delta_total = 1e-5,
   sampling  = TRUE
 )
-res2$plot$all
+res_gau_g$plot$all
 
 # 3. Adult Census Example
-res3 <- dp_score_plot(
+res_adult <- dp_score_plot(
   X = adult,
   scale. = TRUE,
   eps_total = 4,
   delta_total = 1e-5,
   sampling = TRUE
 )
-res3$plot$all
+res_adult$plot$all
