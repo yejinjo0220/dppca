@@ -92,3 +92,12 @@ res_adult <- dp_score_plot(
   sampling = TRUE
 )
 res_adult$plot$all
+
+# 4. Run shiny with Built-in data
+run_dp_score()
+
+# 5. Run shiny with your data
+X <- matrix(rnorm(500*10), 500, 10)
+G <- sample(c("A","B","C"), 500, TRUE)
+
+dp_score_app(X, G)

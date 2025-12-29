@@ -4,7 +4,7 @@
 #' @param G Optional group vector (length n) or a column name in X.
 #' @param title App title.
 #' @export
-run_dp_app_data <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
+dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
 
   if (missing(X)) stop("X is required.", call. = FALSE)
 
