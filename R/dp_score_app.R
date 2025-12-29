@@ -117,7 +117,7 @@ run_dp_app_data <- function(X, G = NULL, title = "DP PCA Score Plot (User data)"
         center       = input$center,
         scale.       = input$scale,
         dp_pca_flag  = input$dp_pca_flag,
-        cpp.option   = TRUE,
+        cpp.option   = FALSE,
         eps_total    = input$eps,
         delta_total  = input$delta,
         eps_ratio    = eps_ratio,
