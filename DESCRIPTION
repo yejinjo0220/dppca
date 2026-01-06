@@ -19,10 +19,12 @@ Imports:
     VGAM,
     rARPACK,
     stats,
-    grDevices
+    grDevices,
+    Rcpp
 Suggests:
     knitr,
     rmarkdown
+LinkingTo: Rcpp, RcppArmadillo
 LazyData: true
 URL: https://github.com/yejinjo0220/dppca
 BugReports: https://github.com/yejinjo0220/dppca/issues

@@ -18,29 +18,31 @@ vec2mat <- function(v, p){
   return(tmp_mat)
 }
 
-tau_sph <- function(X, cpp.option = FALSE) {
+tau_sph <- function(X, cpp.option=T){
+  # Original source: https://sites.stat.washington.edu/people/fanghan/ECA.r
+  #
+  # X: n by p data matrix. (Each column is an observed p-dim data)
 
-  if (cpp.option) {
-    stop("cpp.option = TRUE is not yet supported in the dppca package. ",
-         "Please use cpp.option = FALSE.")
-  }
-
-  n <- nrow(X)
-  d <- ncol(X)
-  hK <- matrix(0, d, d)
-  for (i in 1:(n - 1)) {
-    for (j in (i + 1):n) {
-      a <- X[j, ] - X[i, ]
-      a <- normalize(a)
-      hK <- hK + a %*% t(a)
+  if(cpp.option){  # call the function using Rcpp
+    return(tau_sph_cpp(X))
+  } else{  # just naive R function
+    n <- nrow(X)
+    d <- ncol(X)
+    hK <- matrix(0, d, d)
+    for (i in 1:(n-1)) {
+      for (j in (i+1):n){
+        a <- X[j, ] - X[i, ]
+        a <- normalize(a)
+        hK <- hK + a%*%t(a)
+      }
     }
+    hK <- hK * (2 / (n * (n-1)))  # normalizing by constant
   }
-  hK * (2 / (n * (n - 1)))
+  return(hK)
 }
 
 
-
-mech_tau_sph <- function(X, sig, cpp.option=F){
+mech_tau_sph <- function(X, sig, cpp.option=TRUE){
   # simple additive mechanism; just add a Gaussian error to sample Kendall's multivariate tau matrix
   # For (eps, delta)-DP: sig <- 4 * sqrt(2 * log(1.25 / delta)) / (n * eps)
   # For rho-zCDP: sig <- (4 / n) / sqrt(2 * rho)
