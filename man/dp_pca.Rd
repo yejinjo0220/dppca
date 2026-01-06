@@ -12,7 +12,7 @@ dp_pca(
   dp = FALSE,
   eps = NULL,
   delta = NULL,
-  cpp.option = FALSE
+  cpp.option = TRUE
 )
 }
 \arguments{

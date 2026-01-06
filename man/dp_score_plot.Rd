@@ -9,7 +9,7 @@ dp_score_plot(
   center = TRUE,
   scale. = FALSE,
   dp_pca_flag = FALSE,
-  cpp.option = FALSE,
+  cpp.option = TRUE,
   axes = c(1, 2),
   eps_total,
   delta_total,

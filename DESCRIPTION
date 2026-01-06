@@ -20,6 +20,8 @@ Imports:
     rARPACK,
     stats,
     grDevices,
+    shinyjs,
+    shinycssloaders,
     Rcpp
 Suggests:
     knitr,
