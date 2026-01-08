@@ -137,7 +137,7 @@ dp_hist_group <- function(
     # bin count
     m_x = NULL,
     m_y = NULL,
-    bin_method = c("J", "W"),
+    bin_method = c("J", "W", "none"),
 
     mechanism = c("all", "none", "add", "sparse"),
 
@@ -145,6 +145,19 @@ dp_hist_group <- function(
     sampling  = FALSE
 ) {
   bin_method <- match.arg(bin_method)
+  # Manual bin: user supplies m_x, m_y
+  if (bin_method == "none") {
+    if (is.null(m_x) || is.null(m_y)) {
+      stop("When bin_method = 'none', you must supply both m_x and m_y.", call. = FALSE)
+    }
+    if (!is.numeric(m_x) || !is.numeric(m_y) || any(!is.finite(c(m_x, m_y)))) {
+      stop("'m_x' and 'm_y' must be finite numeric.", call. = FALSE)
+    }
+    m_x <- as.integer(m_x)
+    m_y <- as.integer(m_y)
+    if (m_x < 1 || m_y < 1) stop("Both 'm_x' and 'm_y' must be at least 1.", call. = FALSE)
+  }
+
   mechanism  <- match.arg(mechanism)
 
   X <- as.data.frame(X)
@@ -264,14 +277,30 @@ dp_hist_group <- function(
   }
 
   # bin count
-  if (is.null(m_x) && is.null(m_y)) {
-    m_default <- number_bins(X_pca, method = bin_method)
-    m_x <- m_default
-    m_y <- m_default
-  } else {
-    if (is.null(m_x)) m_x <- number_bins(X_pca, method = bin_method)
-    if (is.null(m_y)) m_y <- number_bins(X_pca, method = bin_method)
+  if (bin_method == "none") {
+    if (is.null(m_x) || is.null(m_y)) {
+      stop("When bin_method = 'none', you must supply both m_x and m_y.", call. = FALSE)
+    }
+    if (!is.numeric(m_x) || !is.numeric(m_y) || any(!is.finite(c(m_x, m_y)))) {
+      stop("'m_x' and 'm_y' must be finite numeric.", call. = FALSE)
+    }
+    m_x <- as.integer(m_x)
+    m_y <- as.integer(m_y)
+    if (m_x < 1 || m_y < 1) stop("Both 'm_x' and 'm_y' must be at least 1.", call. = FALSE)
   }
+
+  # bin count
+  if (bin_method != "none") {
+    if (is.null(m_x) && is.null(m_y)) {
+      m_default <- number_bins(X_pca, method = bin_method)
+      m_x <- m_default
+      m_y <- m_default
+    } else {
+      if (is.null(m_x)) m_x <- number_bins(X_pca, method = bin_method)
+      if (is.null(m_y)) m_y <- number_bins(X_pca, method = bin_method)
+    }
+  }
+
   if (m_x < 1 || m_y < 1) stop("Both 'm_x' and 'm_y' must be at least 1.")
 
   x_breaks <- seq(xlim[1], xlim[2], length.out = m_x + 1)

@@ -2,10 +2,10 @@ library(shiny)
 library(shinycssloaders)
 library(shinyjs)
 library(dppca)
+
 #----------------------------
 # helpers
 #----------------------------
-
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
 parse_ratio <- function(txt) {
@@ -44,7 +44,6 @@ ratio_ok_or_null <- function(x, need_len) {
 #----------------------------
 ui <- fluidPage(
   useShinyjs(),
-
   titlePanel("DP PCA Score Plot"),
 
   sidebarLayout(
@@ -65,14 +64,16 @@ ui <- fluidPage(
 
       checkboxInput("center", "Center variables (center = TRUE)", TRUE),
       checkboxInput("scale",  "Scale to unit variance (scale. = TRUE)", FALSE),
-
       checkboxInput("dp_pca_flag", "Use DP PCA", FALSE),
+
+      # ---- axis selection: choose two PC indices ----
+      uiOutput("axes_ui"),
+      uiOutput("axes_warning_ui"),
 
       tags$hr(),
 
-      helpText("default is eps_total = 4, delta_total ≈ 1 / 10^{ceil(log10 n)}."),
-      numericInput("eps",   "Total epsilon (eps_total):", value = 4,    min = 0.0001, step = 0.1),
-      numericInput("delta", "Total delta (delta_total):", value = 1e-4, min = 0,      step = 1e-5),
+      numericInput("eps",   "Total epsilon:", value = 4,    min = 0.0001, step = 0.1),
+      numericInput("delta", "Total delta:", value = 1e-4, min = 0,      step = 1e-5),
 
       tags$hr(),
 
@@ -100,16 +101,6 @@ ui <- fluidPage(
 
       tags$hr(),
 
-      selectInput(
-        inputId = "mechanism",
-        label   = "Mechanism:",
-        choices = c("all", "none", "add", "sparse"),
-        selected = "all"
-      ),
-      checkboxInput("sampling", "Draw synthetic samples (sampling)", TRUE),
-
-      tags$hr(),
-
       actionButton("run", "Run", class = "btn-primary", width = "100%"),
 
       tags$hr(),
@@ -127,27 +118,6 @@ ui <- fluidPage(
 # SERVER
 #----------------------------
 server <- function(input, output, session) {
-
-  # (1) dp_pca_flag에 따라 ratio 입력 라벨 자동 변경
-  output$eps_ratio_ui <- renderUI({
-    need_len <- ratio_needed_len(input$dp_pca_flag)
-    label <- if (need_len == 2L) {
-      "eps_ratio (Quantile, Hist) [2 values]: ex. 0.6, 0.4 or 3, 2"
-    } else {
-      "eps_ratio (PCA, Quantile, Hist) [3 values]: ex. 0.3, 0.2, 0.5 or 3, 2, 5"
-    }
-    textInput("eps_ratio", label = label, value = input$eps_ratio %||% "")
-  })
-
-  output$delta_ratio_ui <- renderUI({
-    need_len <- ratio_needed_len(input$dp_pca_flag)
-    label <- if (need_len == 2L) {
-      "delta_ratio (Quantile, Hist) [2 values]: ex. 0.6, 0.4"
-    } else {
-      "delta_ratio (PCA, Quantile, Hist) [3 values]: ex. 0.3, 0.2, 0.5"
-    }
-    textInput("delta_ratio", label = label, value = input$delta_ratio %||% "")
-  })
 
   # dataset에 따라 X, G 결정 ----
   dataset_reactive <- reactive({
@@ -176,6 +146,52 @@ server <- function(input, output, session) {
     )
   })
 
+  # axis chooser UI: two independent selects (default 1 and 2)
+  output$axes_ui <- renderUI({
+    dat <- dataset_reactive()
+    p <- ncol(dat$X)
+
+    # 가능한 PC 인덱스: 1..min(p, 20) (너무 길어지면 20까지만)
+    kmax <- if (is.null(p) || !is.finite(p)) 2L else max(2L, min(p, 20L))
+    choices <- as.character(seq_len(kmax))
+
+    tagList(
+      selectInput("pc_x_idx", "X-axis PC index:", choices = choices, selected = "1"),
+      selectInput("pc_y_idx", "Y-axis PC index:", choices = choices, selected = "2")
+    )
+  })
+
+  # warning when same axis chosen
+  output$axes_warning_ui <- renderUI({
+    req(input$pc_x_idx, input$pc_y_idx)
+    if (identical(input$pc_x_idx, input$pc_y_idx)) {
+      div(class = "alert alert-warning",
+          tags$b("Warning: "),
+          "X-axis and Y-axis PCs must be different.")
+    } else NULL
+  })
+
+  # dp_pca_flag에 따라 ratio 입력 라벨 자동 변경
+  output$eps_ratio_ui <- renderUI({
+    need_len <- ratio_needed_len(input$dp_pca_flag)
+    label <- if (need_len == 2L) {
+      "eps_ratio (Quantile, Hist) [2 values]: ex. 0.6, 0.4 or 3, 2"
+    } else {
+      "eps_ratio (PCA, Quantile, Hist) [3 values]: ex. 0.3, 0.2, 0.5 or 3, 2, 5"
+    }
+    textInput("eps_ratio", label = label, value = input$eps_ratio %||% "")
+  })
+
+  output$delta_ratio_ui <- renderUI({
+    need_len <- ratio_needed_len(input$dp_pca_flag)
+    label <- if (need_len == 2L) {
+      "delta_ratio (Quantile, Hist) [2 values]: ex. 0.6, 0.4"
+    } else {
+      "delta_ratio (PCA, Quantile, Hist) [3 values]: ex. 0.3, 0.2, 0.5"
+    }
+    textInput("delta_ratio", label = label, value = input$delta_ratio %||% "")
+  })
+
   # dataset 선택 시 eps_total, delta_total 추천값 설정
   observeEvent(dataset_reactive(), {
     dat <- dataset_reactive()
@@ -192,10 +208,10 @@ server <- function(input, output, session) {
     updateNumericInput(session, "delta", value = delta_default)
   }, ignoreInit = FALSE)
 
-  # (2) 결과 저장용 reactiveVal: ok/res/msg
+  # 결과 저장
   result_state <- reactiveVal(NULL)
 
-  # (3) Run 버튼: 누르는 동안 비활성화 + 계산 + 다시 활성화
+  # Run
   observeEvent(input$run, {
     shinyjs::disable("run")
     on.exit(shinyjs::enable("run"), add = TRUE)
@@ -209,12 +225,17 @@ server <- function(input, output, session) {
         X <- dat$X
         G <- dat$G
 
-        need_len <- ratio_needed_len(input$dp_pca_flag)
+        # axes
+        req(input$pc_x_idx, input$pc_y_idx)
+        if (identical(input$pc_x_idx, input$pc_y_idx)) {
+          stop("Choose two different PC indices for X and Y axes.", call. = FALSE)
+        }
+        axes <- c(as.integer(input$pc_x_idx), as.integer(input$pc_y_idx))
 
+        need_len <- ratio_needed_len(input$dp_pca_flag)
         eps_ratio_raw   <- parse_ratio(input$eps_ratio)
         delta_ratio_raw <- parse_ratio(input$delta_ratio)
 
-        # 길이 mismatch(예: "0"만 입력 중)이면 NULL로 보내서 디폴트 분배 사용
         eps_ratio   <- if (ratio_ok_or_null(eps_ratio_raw, need_len)) eps_ratio_raw else NULL
         delta_ratio <- if (ratio_ok_or_null(delta_ratio_raw, need_len)) delta_ratio_raw else NULL
 
@@ -226,17 +247,23 @@ server <- function(input, output, session) {
           scale.       = input$scale,
           dp_pca_flag  = input$dp_pca_flag,
           cpp.option   = TRUE,
+          axes         = axes,
+
           eps_total    = input$eps,
           delta_total  = input$delta,
           eps_ratio    = eps_ratio,
           delta_ratio  = delta_ratio,
+
           inflate      = 0.10,
           q_frame      = NULL,
+
           m_x          = m_x,
           m_y          = m_y,
           bin_method   = input$bin_method,
-          mechanism    = input$mechanism,
-          sampling     = input$sampling
+
+          # 숨김: 고정
+          mechanism    = "all",
+          sampling     = TRUE
         )
 
         res <- if (is.null(G)) {
@@ -255,38 +282,26 @@ server <- function(input, output, session) {
     result_state(out)
   }, ignoreInit = TRUE)
 
-  # (4) 에러 박스: 플롯 위에 빨간 경고 박스로 표시
+  # 에러 UI
   output$error_ui <- renderUI({
     x <- result_state()
     if (is.null(x) || isTRUE(x$ok)) return(NULL)
-
-    div(
-      class = "alert alert-danger",
-      tags$b("Error: "),
-      tags$span(x$msg)
-    )
+    div(class = "alert alert-danger", tags$b("Error: "), tags$span(x$msg))
   })
 
-  # (5) Plot 영역: Run 전 안내 / 성공 시 플롯 / 에러 시 (플롯은 비워두거나 안내)
+  # plot
   output$dpPlot <- renderPlot({
     x <- result_state()
-
     if (is.null(x)) {
-      plot.new()
-      text(0.5, 0.5, "Set options, then click 'Run'.")
-      return(invisible(NULL))
+      plot.new(); text(0.5, 0.5, "Set options, then click 'Run'."); return(invisible(NULL))
     }
-
     if (!isTRUE(x$ok)) {
-      plot.new()
-      text(0.5, 0.5, "Cannot draw plot due to error.\nSee the red message above.")
-      return(invisible(NULL))
+      plot.new(); text(0.5, 0.5, "Cannot draw plot due to error.\nSee the red message above."); return(invisible(NULL))
     }
-
     x$res$plot$all
   })
 
-  # (선택) bin_method label update: 성공 결과 있을 때만
+  # bin label update: 성공 결과 있을 때만
   observe({
     x <- result_state()
     if (is.null(x) || !isTRUE(x$ok)) return()

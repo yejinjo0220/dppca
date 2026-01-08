@@ -23,12 +23,13 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
   if (ncol(X_mat) < 2) stop("X must have at least 2 numeric columns.", call. = FALSE)
 
   n <- nrow(X_mat)
+  p <- ncol(X_mat)
+
   if (!is.null(group_vec) && length(group_vec) != n) {
     stop("If provided, length(G) must equal nrow(X).", call. = FALSE)
   }
 
   # ---- helpers (inside for clean shipping) ----
-
   `%||%` <- function(a, b) if (!is.null(a)) a else b
 
   # fraction(예: 1/8) 지원 + comma-separated
@@ -59,15 +60,13 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
   ratio_needed_len <- function(dp_pca_flag) if (isTRUE(dp_pca_flag)) 3L else 2L
 
   ratio_ok_or_null <- function(x, need_len) {
-    # NULL이면 사용자 미입력 -> OK (내부 디폴트 분배 사용)
-    if (is.null(x)) return(TRUE)
+    if (is.null(x)) return(TRUE) # 미입력 -> 내부 디폴트 분배
     is.numeric(x) && length(x) == need_len && all(is.finite(x))
   }
 
   # ---- UI ----
   ui <- shiny::fluidPage(
     shinyjs::useShinyjs(),
-
     shiny::titlePanel(title),
 
     shiny::sidebarLayout(
@@ -76,11 +75,15 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
         shiny::checkboxInput("scale",  "Scale to unit variance (scale. = TRUE)", value = FALSE),
         shiny::checkboxInput("dp_pca_flag", "Use DP PCA", value = FALSE),
 
+        # axes: choose two PC indices
+        shiny::tags$hr(),
+        shiny::uiOutput("axes_ui"),
+        shiny::uiOutput("axes_warning_ui"),
+
         shiny::tags$hr(),
 
-        shiny::helpText("default is eps_total = 4, delta_total ≈ 1 / 10^{ceil(log10 n)}."),
-        shiny::numericInput("eps",   "Total epsilon (eps_total):", value = 4,    min = 0.0001, step = 0.1),
-        shiny::numericInput("delta", "Total delta (delta_total):", value = 1e-4, min = 0,      step = 1e-5),
+        shiny::numericInput("eps",   "Total epsilon:", value = 4,    min = 0.0001, step = 0.1),
+        shiny::numericInput("delta", "Total delta:", value = 1e-4, min = 0,      step = 1e-5),
 
         shiny::tags$hr(),
 
@@ -91,7 +94,11 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
 
         shiny::selectInput(
           "bin_method", "Bin method:",
-          choices  = c("J (Jing rule)"="J", "W (Wasserman-Lei rule)"="W", "Manual (use m_x, m_y)"="none"),
+          choices  = c(
+            "J (Jing rule)" = "J",
+            "W (Wasserman-Lei rule)" = "W",
+            "Manual (use m_x, m_y)" = "none"
+          ),
           selected = "J"
         ),
 
@@ -103,20 +110,10 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
 
         shiny::tags$hr(),
 
-        shiny::selectInput(
-          "mechanism", "Mechanism:",
-          choices  = c("all", "none", "add", "sparse"),
-          selected = "all"
-        ),
-
-        shiny::checkboxInput("sampling", "Draw synthetic samples (sampling)", value = TRUE),
-
-        shiny::tags$hr(),
-
         shiny::actionButton("run", "Run", class = "btn-primary", width = "100%"),
 
         shiny::tags$hr(),
-        shiny::helpText("Tip: change settings, then click Run. Errors will be shown above the plot.")
+        shiny::helpText("Tip: change settings, then click Run. Errors will be shown above the plot."),
       ),
 
       shiny::mainPanel(
@@ -129,7 +126,28 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
   # ---- server ----
   server <- function(input, output, session) {
 
-    # (1) dp_pca_flag에 따라 ratio 입력 라벨 자동 변경
+    # axes UI: 1..min(p, 20) (너무 길어지면 20까지만)
+    output$axes_ui <- shiny::renderUI({
+      kmax <- max(2L, min(p, 20L))
+      choices <- as.character(seq_len(kmax))
+      shiny::tagList(
+        shiny::selectInput("pc_x_idx", "X-axis PC index:", choices = choices, selected = "1"),
+        shiny::selectInput("pc_y_idx", "Y-axis PC index:", choices = choices, selected = "2")
+      )
+    })
+
+    output$axes_warning_ui <- shiny::renderUI({
+      shiny::req(input$pc_x_idx, input$pc_y_idx)
+      if (identical(input$pc_x_idx, input$pc_y_idx)) {
+        shiny::div(
+          class = "alert alert-warning",
+          shiny::tags$b("Warning: "),
+          "X-axis and Y-axis PCs must be different."
+        )
+      } else NULL
+    })
+
+    # dp_pca_flag에 따라 ratio 입력 라벨 자동 변경
     output$eps_ratio_ui <- shiny::renderUI({
       need_len <- ratio_needed_len(input$dp_pca_flag)
       label <- if (need_len == 2L) {
@@ -150,7 +168,7 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
       shiny::textInput("delta_ratio", label = label, value = input$delta_ratio %||% "")
     })
 
-    # (2) 앱 시작 시 delta 추천값 자동 세팅
+    # 앱 시작 시 delta 추천값 자동 세팅 (n 기반)
     shiny::observeEvent(TRUE, {
       pow <- ceiling(log10(n))
       if (!is.finite(pow)) pow <- 2
@@ -158,10 +176,10 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
       shiny::updateNumericInput(session, "delta", value = delta_default)
     }, once = TRUE)
 
-    # (3) 결과 저장 state: ok/res/msg
+    # 결과 저장 state: ok/res/msg
     result_state <- shiny::reactiveVal(NULL)
 
-    # (4) Run 버튼: 누르는 동안 비활성화 + 실행 + 다시 활성화
+    # Run
     shiny::observeEvent(input$run, {
       shinyjs::disable("run")
       on.exit(shinyjs::enable("run"), add = TRUE)
@@ -171,8 +189,15 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
           shiny::req(!is.na(input$eps), input$eps > 0)
           shiny::req(!is.na(input$delta), input$delta >= 0)
 
-          need_len <- ratio_needed_len(input$dp_pca_flag)
+          # axes
+          shiny::req(input$pc_x_idx, input$pc_y_idx)
+          if (identical(input$pc_x_idx, input$pc_y_idx)) {
+            stop("Choose two different PC indices for X and Y axes.", call. = FALSE)
+          }
+          axes <- c(as.integer(input$pc_x_idx), as.integer(input$pc_y_idx))
 
+          # ratios
+          need_len <- ratio_needed_len(input$dp_pca_flag)
           eps_ratio_raw   <- parse_ratio(input$eps_ratio)
           delta_ratio_raw <- parse_ratio(input$delta_ratio)
 
@@ -180,25 +205,36 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
           eps_ratio   <- if (ratio_ok_or_null(eps_ratio_raw, need_len)) eps_ratio_raw else NULL
           delta_ratio <- if (ratio_ok_or_null(delta_ratio_raw, need_len)) delta_ratio_raw else NULL
 
+          # manual bins
           m_x <- if (input$bin_method == "none") input$m_x else NULL
           m_y <- if (input$bin_method == "none") input$m_y else NULL
+
+          # IMPORTANT: 그룹 함수 내부 match.arg 이슈 방지용
+          # (manual일 땐 bin_method는 "J"로 넘기고 m_x/m_y만 적용)
+          bin_method_to_pass <- if (input$bin_method == "none") "J" else input$bin_method
 
           common_args <- list(
             center       = input$center,
             scale.       = input$scale,
             dp_pca_flag  = input$dp_pca_flag,
             cpp.option   = TRUE,
+            axes         = axes,
+
             eps_total    = input$eps,
             delta_total  = input$delta,
             eps_ratio    = eps_ratio,
             delta_ratio  = delta_ratio,
+
             inflate      = 0.10,
             q_frame      = NULL,
+
             m_x          = m_x,
             m_y          = m_y,
-            bin_method   = input$bin_method,
-            mechanism    = input$mechanism,
-            sampling     = input$sampling
+            bin_method   = bin_method_to_pass,
+
+            # UI에서 숨김: 항상 고정
+            mechanism    = "all",
+            sampling     = TRUE
           )
 
           res <- if (is.null(group_vec)) {
@@ -223,11 +259,10 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
       result_state(out)
     }, ignoreInit = TRUE)
 
-    # (5) 에러 박스: 플롯 위에 빨간 경고 박스로 표시
+    # 에러 박스
     output$error_ui <- shiny::renderUI({
       x <- result_state()
       if (is.null(x) || isTRUE(x$ok)) return(NULL)
-
       shiny::div(
         class = "alert alert-danger",
         shiny::tags$b("Error: "),
@@ -235,7 +270,7 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
       )
     })
 
-    # (6) Plot: Run 전 안내 / 에러 안내 / 성공 플롯
+    # Plot
     output$dpPlot <- shiny::renderPlot({
       x <- result_state()
 
@@ -254,7 +289,7 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
       x$res$plot$all
     })
 
-    # (7) bin_method 라벨 업데이트: 성공 결과 있을 때만
+    # bin_method 라벨 업데이트: 성공 결과 있을 때만
     shiny::observe({
       x <- result_state()
       if (is.null(x) || !isTRUE(x$ok)) return()
@@ -272,6 +307,7 @@ dp_score_app <- function(X, G = NULL, title = "DP PCA Score Plot (User data)") {
         label_J <- "J (Jing rule)"
         label_W <- sprintf("W (Wasserman–Lei rule / %d × %d bins)", mx, my)
       } else {
+        # Manual 선택을 유지한 채로, 표시만 bins 정보로 업데이트
         label_J <- "J (Jing rule)"
         label_W <- "W (Wasserman–Lei rule)"
       }
