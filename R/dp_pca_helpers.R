@@ -18,27 +18,24 @@ vec2mat <- function(v, p){
   return(tmp_mat)
 }
 
-tau_sph <- function(X, cpp.option=T){
-  # Original source: https://sites.stat.washington.edu/people/fanghan/ECA.r
-  #
-  # X: n by p data matrix. (Each column is an observed p-dim data)
+tau_sph <- function(X, cpp.option = FALSE) {
 
-  if(cpp.option){  # call the function using Rcpp
-    return(tau_sph_cpp(X))
-  } else{  # just naive R function
-    n <- nrow(X)
-    d <- ncol(X)
-    hK <- matrix(0, d, d)
-    for (i in 1:(n-1)) {
-      for (j in (i+1):n){
-        a <- X[j, ] - X[i, ]
-        a <- normalize(a)
-        hK <- hK + a%*%t(a)
-      }
-    }
-    hK <- hK * (2 / (n * (n-1)))  # normalizing by constant
+  if (cpp.option) {
+    stop("cpp.option = TRUE is not yet supported in the dppca package. ",
+         "Please use cpp.option = FALSE.")
   }
-  return(hK)
+
+  n <- nrow(X)
+  d <- ncol(X)
+  hK <- matrix(0, d, d)
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      a <- X[j, ] - X[i, ]
+      a <- normalize(a)
+      hK <- hK + a %*% t(a)
+    }
+  }
+  hK * (2 / (n * (n - 1)))
 }
 
 

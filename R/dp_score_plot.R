@@ -121,7 +121,7 @@ dp_score_plot <- function(
     center = TRUE,
     scale. = FALSE,
     dp_pca_flag = FALSE,
-    cpp.option = TRUE,
+    cpp.option = FALSE,
     axes = c(1, 2),
 
     # Privacy budget

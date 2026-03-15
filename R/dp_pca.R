@@ -57,7 +57,7 @@
 #' @export
 dp_pca <- function(X, center = TRUE, scale. = FALSE, axes = c(1, 2),
                    dp = FALSE, eps = NULL, delta = NULL,
-                   cpp.option = TRUE) {
+                   cpp.option = FALSE) {
 
   X <- as.matrix(X)
   n <- nrow(X)

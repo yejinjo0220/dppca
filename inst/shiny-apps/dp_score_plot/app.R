@@ -246,7 +246,7 @@ server <- function(input, output, session) {
           center       = input$center,
           scale.       = input$scale,
           dp_pca_flag  = input$dp_pca_flag,
-          cpp.option   = TRUE,
+          cpp.option   = FALSE,
           axes         = axes,
 
           eps_total    = input$eps,

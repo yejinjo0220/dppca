@@ -10,7 +10,7 @@ dp_hist_group(
   center = TRUE,
   scale. = FALSE,
   dp_pca_flag = FALSE,
-  cpp.option = TRUE,
+  cpp.option = FALSE,
   axes = c(1, 2),
   eps_total,
   delta_total,
@@ -20,7 +20,7 @@ dp_hist_group(
   q_frame = NULL,
   m_x = NULL,
   m_y = NULL,
-  bin_method = c("J", "W"),
+  bin_method = c("J", "W", "none"),
   mechanism = c("all", "none", "add", "sparse"),
   sampling = FALSE
 )
