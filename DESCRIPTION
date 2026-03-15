@@ -19,6 +19,7 @@ Imports:
     VGAM,
     rARPACK,
     stats,
+    graphics,
     grDevices,
     shinyjs,
     shinycssloaders,
