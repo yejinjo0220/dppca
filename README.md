@@ -1,103 +1,190 @@
-# dppca: Differentially Private PCA and Histogram-Based Visualization
+# dppca
 
-`dppca` is an R package that enables differentially private visualization of high-dimensional datasets through PCA projection and DP histograms.  
-The package provides DP-PCA, DP quantile/frame estimation, DP histograms, sampling from histograms, and visualization tools for both single and multi-group datasets.
+`dppca` is an R package for differentially private PCA visualization.
 
----
+The package focuses on two main tasks:
 
-## Key Features
+- **DP scree estimation** for privatizing leading scree values and explained variance ratios
+- **DP score visualization** for constructing private 2D score histograms instead of releasing individual PCA score points
 
-### Differential Privacy
-- Differentially Private PCA using the spherical Gaussian mechanism.
-- DP min/max estimation using smooth sensitivity (Nissim–Raskhodnikova–Smith).
-- DP histograms using additive Gaussian noise or sparse Laplace mechanisms.
+## Main features
 
-### Visualization Tools
-- `dp_score_plot()` — DP scatter + DP histogram visualization.
-- `dp_score_plot_group()` — Same as above, but with group labels.
-- Both functions support DP-PCA or non-DP PCA.
+### 1. DP scree estimation
 
-### Histogram Utilities
-- `dp_hist()` — Core DP histogram estimator.
-- `dp_hist_group()` — Histogram per group.
-- `sample_from_hist()` — Sample synthetic data from DP histograms.
+The package provides several approaches for differentially private scree estimation:
 
-### Helper Functions
-- `dp_quantile_ss()` — Smooth-sensitivity based DP quantile estimation.
-- `dp_frame()` — Generates DP plotting frame.
-- `number_bins()` — Automatically chooses 2D bin counts.
-- Internal helper functions for plotting (not exported).
+- **Clipped mean**
+- **Huber-type private mean**
+- **PMW-style private winsorized mean**
 
----
+User-facing functions:
+
+- `dp_scree()`
+- `dp_scree_plot()`
+
+### 2. DP score histograms
+
+Instead of plotting raw PCA score points, the package constructs a private 2D histogram on the score space.
+
+It includes:
+
+- empirical histogram
+- Gaussian additive DP histogram
+- sparse DP histogram
+- group-wise DP score histograms
+
+User-facing functions:
+
+- `dp_score()`
+- `dp_score_plot()`
+- `dp_score_group()`
+- `dp_score_plot_group()`
 
 ## Installation
 
-Since the package is under development, install from GitHub:
+You can install the package from GitHub with:
 
 ```r
-# install.packages("devtools")
-devtools::install_github("yejinjo0220/dppca")
-library(dppca)
+# install.packages("remotes")
+remotes::install_github("yejinjo0220/dppca")
+```
 
+## Package structure
 
-## Example Usage
+Main R files:
+
+- `R/helper_pca.R`
+- `R/helper_scree.R`
+- `R/dp_scree.R`
+- `R/helper_score.R`
+- `R/dp_score.R`
+
+## Example: DP scree estimation
 
 ```r
 library(dppca)
 
-data("eur_map")
-data("eur_map_g")
-data("gau")
-data("gau_g")
-data("adult")
+set.seed(1)
+n <- 200
+d <- 8
+X <- matrix(rnorm(n * d), nrow = n, ncol = d)
 
-# 1. European Map Example
-res_eur <- dp_score_plot(
-  X = eur_map,
-  eps_total = 4, delta_total = 1e-4,
-  sampling  = TRUE
-)
-res_eur$plot$all
-
-res_eur_g <- dp_score_plot_group(
-  X = eur_map_g,
-  G = "color",
-  eps_total = 4, delta_total = 1e-4,
-  sampling  = TRUE
-)
-res_eur_g$plot$all
-
-# 2. Gaussian Mixture Example
-res_gau <- dp_score_plot(
-  X = gau,
-  eps_total = 4, delta_total = 1e-5,
-  sampling  = TRUE
-)
-res_gau$plot$all
-
-res_gau_g <- dp_score_plot_group(
-  X = gau_g,
-  G = "color",
-  eps_total = 4, delta_total = 1e-5,
-  sampling  = TRUE
-)
-res_gau_g$plot$all
-
-# 3. Adult Census Example
-res_adult <- dp_score_plot(
-  X = adult,
-  scale. = TRUE,
-  eps_total = 4,
+res_huber <- dp_scree(
+  X = X,
+  k = 3,
+  method = "huber",
+  eps_total = 1,
   delta_total = 1e-5,
-  sampling = TRUE
+  mu0 = 0,
+  eta0 = 0.5,
+  T = 5,
+  M = 5,
+  k_min_m2 = -10,
+  k_max_m2 = 10,
+  m2_frac = 0.25
 )
-res_adult$plot$all
 
-# 4. Run shiny with Built-in data
-run_dp_score()
+res_huber
+```
 
-# 5. Run shiny with your data
-X <- matrix(rnorm(500*10), 500, 10)
-G <- sample(c("A","B","C"), 500, TRUE)
+## Example: DP scree plot
 
-dp_score_app(X, G)
+```r
+dp_scree_plot(
+  X = X,
+  k = 3,
+  dp_scree_method = "all",
+  eps_total = 1,
+  delta_total = 1e-5,
+  C_clip = 3,
+  beta = 1.05,
+  a = 0,
+  b = 10,
+  trim_const = 10,
+  eta = 0.01,
+  split_mode = TRUE,
+  mu0 = 0,
+  eta0 = 0.5,
+  T = 5,
+  M = 5,
+  k_min_m2 = -10,
+  k_max_m2 = 10,
+  m2_frac = 0.25
+)
+```
+
+## Example: DP score histogram
+
+```r
+library(dppca)
+
+set.seed(1)
+n <- 200
+d <- 6
+X <- matrix(rnorm(n * d), nrow = n, ncol = d)
+
+res_score <- dp_score(
+  X = X,
+  center = TRUE,
+  standardize = FALSE,
+  g_dppca = FALSE,
+  axes = c(1, 2),
+  eps_total = 1,
+  delta_total = 1e-5,
+  inflate = 0.2,
+  bin_method = "J"
+)
+
+str(res_score)
+```
+
+## Example: DP score plot
+
+```r
+res_plot <- dp_score_plot(
+  X = X,
+  center = TRUE,
+  standardize = FALSE,
+  g_dppca = FALSE,
+  axes = c(1, 2),
+  eps_total = 1,
+  delta_total = 1e-5,
+  inflate = 0.2,
+  bin_method = "J"
+)
+
+res_plot$plot$all
+```
+
+## Example: group-wise DP score histogram
+
+```r
+G <- sample(c("A", "B"), n, replace = TRUE)
+
+res_group <- dp_score_group(
+  X = X,
+  G = G,
+  center = TRUE,
+  standardize = FALSE,
+  g_dppca = FALSE,
+  axes = c(1, 2),
+  eps_total = 1,
+  delta_total = 1e-5,
+  inflate = 0.2,
+  bin_method = "J"
+)
+
+str(res_group)
+```
+
+## Notes
+
+- `g_dppca = TRUE` allows privatization of the PCA direction matrix.
+- `dp_scree_plot()` draws the scree figure directly and invisibly returns the underlying results.
+- `dp_score_plot()` and `dp_score_plot_group()` return both calculation outputs and plot objects.
+- For PMW-based scree estimation, you must provide support bounds such as `a` and `b`.
+- For the clipped scree estimator, you must provide `C_clip`.
+
+## License
+
+MIT

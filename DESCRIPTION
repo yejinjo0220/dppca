@@ -1,11 +1,14 @@
 Package: dppca
-Title: Differentially Private PCA Score Plots and Histograms
+Title: Differentially Private PCA Scree and Score Visualization
 Version: 0.0.0.9000
 Authors@R: 
-    person("Yejin", "Jo", email = "you@example.com", role = c("aut", "cre"))
-Description: Tools for performing (optionally differentially private) PCA 
-    and visualizing 2D score plots and histograms, including group-wise 
-    DP histograms and sampling from DP histograms.
+    person("Yejin", "Jo", email = "yeinjo0220l@gmail.com", role = c("aut", "cre"))
+Description: Tools for performing principal component analysis (PCA) and
+    constructing differentially private scree estimates and score-based
+    visualizations. The package provides non-private and private PCA directions,
+    DP scree estimators based on clipped means, Huber-type private means, and
+    private winsorized means, as well as 2D score histograms with additive and
+    sparse DP mechanisms, including group-wise visualizations.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -20,12 +23,9 @@ Imports:
     rARPACK,
     stats,
     graphics,
-    grDevices,
-    shinyjs,
-    shinycssloaders,
+    grDevices
 Suggests:
     knitr,
     rmarkdown
-LazyData: true
 URL: https://github.com/yejinjo0220/dppca
 BugReports: https://github.com/yejinjo0220/dppca/issues

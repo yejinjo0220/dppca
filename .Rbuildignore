@@ -1,2 +1,9 @@
-^dppca\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
+^\.Rhistory$
+^\.RData$
+^archive_old$
+^org$
+^.*\.pdf$
+^.*\.tex$
+^README\.Rmd$
