@@ -7,15 +7,15 @@
 dp_scree(
   X,
   k,
-  method = c("clipped", "pmwm", "huber"),
+  method = c("clipped", "pmw", "huber"),
   eps_total,
   delta_total,
   center = TRUE,
-  standardize = TRUE,
-  dp_v_flag = FALSE,
+  standardize = FALSE,
+  g_dppca = FALSE,
   cpp.option = FALSE,
   mono = TRUE,
-  B_mult = 2,
+  C_clip = 3,
   beta = 1.01,
   a = NULL,
   b = NULL,
@@ -26,66 +26,69 @@ dp_scree(
   eta0 = 1,
   T = NULL,
   M = NULL,
-  k_min_star = -40L,
-  k_max_star = 40L,
-  include_zero_bin = TRUE,
-  m2_frac = 1/4,
-  step_schedule = c("fixed", "1/sqrt(t)")
+  k_min_m2 = -40,
+  k_max_m2 = 40,
+  m2_frac = 1/4
 )
 }
 \arguments{
 \item{X}{Numeric data matrix with observations in rows.}
 
-\item{k}{Number of leading components.}
+\item{k}{Integer number of leading principal components.}
 
-\item{method}{One of \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.}
+\item{method}{One of \code{"clipped"}, \code{"pmw"}, or \code{"huber"}.}
 
-\item{eps_total}{Total privacy budget epsilon.}
+\item{eps_total}{Total privacy epsilon allocated to the full scree routine.}
 
-\item{delta_total}{Total privacy budget delta.}
+\item{delta_total}{Total privacy delta allocated to the full scree routine.}
 
 \item{center}{Logical; whether to center columns before PCA.}
 
 \item{standardize}{Logical; whether to standardize columns before PCA.}
 
-\item{dp_v_flag}{Logical; whether to privatize the PCA basis.}
+\item{g_dppca}{Logical; whether to privatize the PCA direction matrix.}
 
-\item{cpp.option}{Logical passed to \code{mech_tau_sph()}.}
+\item{cpp.option}{Logical passed to \code{mech_tau_sph()} when private directions are computed.}
 
-\item{mono}{Logical; whether to apply monotone postprocessing.}
+\item{mono}{Logical; whether to apply monotone post-processing to the final DP scree vector.}
 
-\item{B_mult}{Clipping multiplier for the clipped estimator.}
+\item{C_clip}{Positive clipping threshold used by the clipped estimator.}
 
-\item{beta}{Log-binning base for PMWM.}
+\item{beta}{Log-binning base used by the PMW quantile estimator.}
 
-\item{a, b}{Support bounds for PMWM.}
+\item{a, b}{Finite support bounds supplied to the PMW quantile routine.}
 
-\item{trim_const, eta}{PMWM trimming parameters.}
+\item{trim_const, eta}{PMW practical clipping parameters.}
 
-\item{split_mode}{Logical; whether PMWM splits the sample.}
+\item{split_mode}{Logical; whether the PMW estimator splits the sample.}
 
-\item{mu0, eta0, T, M}{Huber estimator parameters.}
+\item{mu0}{Initial value used by the Huber noisy gradient descent.}
 
-\item{k_min_star, k_max_star, include_zero_bin}{Huber scale-estimation parameters.}
+\item{eta0}{Fixed step size used by the Huber noisy gradient descent.}
 
-\item{m2_frac}{Huber privacy split parameter.}
+\item{T}{Optional integer number of Huber gradient descent iterations.}
 
-\item{step_schedule}{Huber GD step schedule.}
+\item{M}{Optional integer number of blocks used in \code{dp_m2()}.}
+
+\item{k_min_m2}{Integer lower bound for dyadic histogram bins used in the Huber scale-proxy step.}
+
+\item{k_max_m2}{Integer upper bound for dyadic histogram bins used in the Huber scale-proxy step.}
+
+\item{m2_frac}{Fraction of the Huber scree privacy budget allocated to the private scale-proxy step.}
 }
 \value{
-A list containing:
-\describe{
-\item{method}{Selected DP method.}
-\item{lambda_np}{Non-private PCA eigenvalues.}
-\item{evr_np}{Non-private explained variance ratios.}
-\item{lambda_dp}{DP eigenvalue estimates.}
-\item{evr}{DP explained variance ratios.}
-\item{result}{Full method-specific output from the selected estimator.}
-\item{settings}{Common input settings.}
-}
+A list containing \code{method}, \code{scree_np}, \code{evr_np},
+\code{scree}, and \code{evr}.
 }
 \description{
-User-facing computation function for DP PCA eigenvalue estimation.
-This function returns both the selected DP scree estimate and the
-corresponding non-private PCA reference values.
+User-facing function for differentially private scree estimation.
+It computes the leading non-private scree values together with one selected
+DP scree estimator.
+
+Supported methods are:
+\itemize{
+\item \code{"clipped"}: clipped mean-based scree estimator,
+\item \code{"pmw"}: PMW-style scree estimator based on private quantiles and winsorized means,
+\item \code{"huber"}: Huber-type robust private mean-based scree estimator.
+}
 }
