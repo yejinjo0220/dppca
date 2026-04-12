@@ -90,91 +90,64 @@ res_huber
 ## Example: DP scree plot
 
 ```r
+make_spiked_data <- function(n, d, spikes = c(9, 6, 4, 2), seed = 1) {
+  set.seed(seed)
+  lambda_pop <- c(spikes, rep(1, d - length(spikes)))
+  A <- matrix(rnorm(d * d), d, d)
+  Q <- qr.Q(qr(A))
+  Sigma_pop <- Q %*% diag(lambda_pop) %*% t(Q)
+  Z <- matrix(rnorm(n * d), n, d)
+  X <- Z %*% chol(Sigma_pop)
+  X
+}
+
+n <- 5000
+d <- 20
+k <- 8
+
+X <- make_spiked_data(n, d, seed = 1)
+
+
 dp_scree_plot(
   X = X,
-  k = 3,
+  k =4,
   dp_scree_method = "all",
-  eps_total = 1,
+  eps_total = 5,
   delta_total = 1e-5,
-  C_clip = 3,
-  beta = 1.05,
   a = 0,
-  b = 10,
-  trim_const = 10,
-  eta = 0.01,
-  split_mode = TRUE,
-  mu0 = 0,
-  eta0 = 0.5,
-  T = 5,
-  M = 5,
-  k_min_m2 = -10,
-  k_max_m2 = 10,
-  m2_frac = 0.25
+  b = 100
 )
-```
-
-## Example: DP score histogram
-
-```r
-library(dppca)
-
-set.seed(1)
-n <- 200
-d <- 6
-X <- matrix(rnorm(n * d), nrow = n, ncol = d)
-
-res_score <- dp_score(
-  X = X,
-  center = TRUE,
-  standardize = FALSE,
-  g_dppca = FALSE,
-  axes = c(1, 2),
-  eps_total = 1,
-  delta_total = 1e-5,
-  inflate = 0.2,
-  bin_method = "J"
-)
-
-str(res_score)
 ```
 
 ## Example: DP score plot
 
 ```r
-res_plot <- dp_score_plot(
-  X = X,
-  center = TRUE,
-  standardize = FALSE,
-  g_dppca = FALSE,
-  axes = c(1, 2),
-  eps_total = 1,
-  delta_total = 1e-5,
-  inflate = 0.2,
-  bin_method = "J"
+library(dppca)
+
+data("eur_map")
+
+res <- dp_score_plot(
+  X = eur_map,
+  eps_total = 4, delta_total = 1e-4,
 )
 
-res_plot$plot$all
+res
+res$score$s
+res$plot$sparse
 ```
 
 ## Example: group-wise DP score histogram
 
 ```r
-G <- sample(c("A", "B"), n, replace = TRUE)
+data("eur_map_g")
 
-res_group <- dp_score_group(
-  X = X,
-  G = G,
-  center = TRUE,
-  standardize = FALSE,
-  g_dppca = FALSE,
-  axes = c(1, 2),
-  eps_total = 1,
-  delta_total = 1e-5,
-  inflate = 0.2,
-  bin_method = "J"
+res_eur_g <- dp_score_plot_group(
+  X = eur_map_g,
+  G = "color",
+  eps_total = 4, delta_total = 1e-4,
 )
 
-str(res_group)
+res_eur_g$plot$all
 ```
 
 ## Notes
