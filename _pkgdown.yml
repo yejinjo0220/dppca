@@ -1,0 +1,76 @@
+url: https://yejinjo0220.github.io/dppca/
+
+template:
+  bootstrap: 5
+  bootswatch: minty
+
+home:
+  title: "dppca"
+  description: >
+    Tools for differentially private PCA visualization,
+    including private score plots, scree plots, and histogram-based
+    exploratory analysis.
+
+navbar:
+  title: "dppca"
+  structure:
+    left: [theory, functions, algorithms]
+    right: [search, github]
+
+  components:
+    theory:
+      text: Theory
+      menu:
+      - text: PCA Background
+        href: articles/pca_background.html
+      - text: DP Direction
+        href: articles/pc_direction.html
+      - text: DP Scree
+        href: articles/dp_scree.html
+      - text: DP Score
+        href: articles/dp_score.html
+
+    functions:
+      text: Functions
+      href: reference/index.html
+
+    algorithms:
+      text: Algorithms
+      href: articles/algorithms.html
+
+articles:
+- title: Theory
+  navbar: Theory
+  contents:
+  - pca_background
+  - pc_direction
+  - dp_scree
+  - dp_score
+
+- title: Algorithms
+  navbar: Algorithms
+  contents:
+  - algorithms
+
+reference:
+- title: "DP PCA Visualization"
+  desc: >
+    Functions for constructing differentially private PCA visualizations.
+  contents:
+  - dp_score_plot
+  - dp_scree_plot
+
+- title: "DP PCA"
+  desc: >
+    Core functions for computing differentially private PCA score and scree
+    quantities.
+  contents:
+  - dp_score
+  - dp_scree
+
+- title: "Group PCA Visualization"
+  desc: >
+    Functions for group-wise differentially private PCA score visualization.
+  contents:
+  - dp_score_group
+  - dp_score_plot_group

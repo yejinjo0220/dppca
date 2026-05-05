@@ -27,5 +27,5 @@ Imports:
 Suggests:
     knitr,
     rmarkdown
-URL: https://github.com/yejinjo0220/dppca
+URL: https://github.com/yejinjo0220/dppca, https://yejinjo0220.github.io/dppca/
 BugReports: https://github.com/yejinjo0220/dppca/issues

@@ -2,3 +2,5 @@
 .RData
 .Rproj.user
 *.tar.gz
+docs
+inst/doc

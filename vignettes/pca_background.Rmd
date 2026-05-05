@@ -1,0 +1,401 @@
+---
+title: "Principal Component Analysis Background"
+description: >
+  Background notation for population PCA, sample PCA, principal component
+  directions, scores, scree values, and explained variance ratios.
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Principal Component Analysis Background}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## 0. Problem setup
+
+Suppose we observe $n$ data points
+\[
+X_1, X_2, \ldots, X_n \in \mathbb{R}^p.
+\]
+
+We write the data matrix as
+\[
+X =
+\begin{bmatrix}
+X_1^\top \\
+X_2^\top \\
+\vdots \\
+X_n^\top
+\end{bmatrix}
+\in \mathbb{R}^{n \times p},
+\]
+where each row corresponds to one observation and each column corresponds to one
+variable.
+
+Principal Component Analysis (PCA) is a dimension reduction method that represents
+high-dimensional data through a small number of orthogonal directions that preserve
+as much variation as possible.
+
+To do this, 
+PCA finds a direction $v \in \mathbb{R}^p$ such that the projected values
+
+\[
+X_i^\top v, \qquad i = 1,\ldots,n,
+\]
+
+are as spread out as possible. A direction with larger projected variance captures more variation in the data.
+
+## 1. Population PCA
+
+Let $Y \in \mathbb{R}^p$ be a random vector with covariance matrix $\Sigma = \operatorname{Cov}(Y)$.
+
+### First principal component direction
+
+The first population principal component direction is defined as
+
+\[
+v_1
+=
+\arg\max_{\|v\|_2 = 1}
+\operatorname{Var}(v^\top Y)
+=
+\arg\max_{\|v\|_2 = 1}
+v^\top \Sigma v.
+\]
+
+Thus, $v_1$ is the unit direction that maximizes the variance of the projection of $Y$ onto $v$.
+
+### Subsequent principal component directions
+
+Similarly, each subsequent principal component directions are obtained by maximizing the variance of the projection of \(Y\) onto that direction, while being orthogonal to the previously chosen directions. 
+
+For $k \geq 2$,
+
+\[
+v_k
+=
+\arg\max_{\|v\|_2 = 1}
+v^\top \Sigma v
+\quad
+\text{subject to}
+\quad
+v^\top v_j = 0,
+\qquad j = 1,\ldots,k-1.
+\]
+
+Therefore, PCA gives a sequence of mutually orthogonal directions $v_1, v_2, \ldots, v_p$ ordered by decreasing projected variance.
+
+
+## 2. Eigenvalue decomposition
+
+The solutions to the above variance maximization problems are obtained from the eigenvalue decomposition of the covariance matrix $\Sigma$.
+
+We can write
+
+\[
+\Sigma = V \Lambda V^\top
+\]
+where
+\[
+V = [v_1,\ldots,v_p], 
+\quad
+\Lambda = \operatorname{diag}(\lambda_1,\ldots,\lambda_p), 
+\quad
+\text{and} \quad \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_p \geq 0.
+\]
+
+The eigenvectors $v_1,\ldots,v_p$ are the population principal component
+directions, and each eigenvalue $\lambda_j$ gives the variance of the projection
+of $Y$ onto $v_j$.
+
+### Lagrangian formulation
+
+To see why the PCA directions are eigenvectors, consider the first principal
+component problem
+
+\[
+\max_{\|v\|_2 = 1} v^\top \Sigma v.
+\]
+
+Using the constraint $v^\top v = 1$, define the Lagrangian
+
+\[
+\mathcal{L}(v,\lambda)
+=
+v^\top \Sigma v
+-
+\lambda (v^\top v - 1).
+\]
+
+Taking the derivative with respect to $v$ and setting it equal to zero gives
+
+\[
+\frac{\partial \mathcal{L}}{\partial v}
+=
+2\Sigma v - 2\lambda v
+=
+0.
+\]
+
+Therefore,
+
+\[
+\Sigma v = \lambda v.
+\]
+
+Hence, the optimizer $v$ must be an eigenvector of $\Sigma$, and the
+corresponding Lagrange multiplier $\lambda$ is the associated eigenvalue.
+
+For a unit eigenvector $v$, we have
+
+\[
+v^\top \Sigma v
+=
+v^\top (\lambda v)
+=
+\lambda v^\top v
+=
+\lambda.
+\]
+
+Thus,
+
+\[
+\max_{\|v\|_2 = 1} \operatorname{Var}(v^\top Y)
+=
+\max_{\|v\|_2 = 1} v^\top \Sigma v
+=
+\lambda_{\max}.
+\]
+
+The first principal component direction is the eigenvector corresponding to the
+largest eigenvalue $\lambda_1$, and the maximum projected variance is
+$\lambda_1$.
+
+Repeating this procedure under orthogonality constraints gives the remaining
+eigenvectors. Therefore,
+
+\[
+\Sigma v_j = \lambda_j v_j,
+\qquad
+j = 1,\ldots,p,
+\]
+with
+
+\[
+\lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_p \geq 0.
+\]
+
+The $\ell$-th eigenvalue can be interpreted as the variance of the projected
+random variable along the $\ell$-th principal component direction
+
+\[
+\lambda_\ell
+=
+v_\ell^\top \Sigma v_\ell
+=
+\operatorname{Var}(v_\ell^\top Y).
+\]
+
+## 3. Sample PCA
+In practice, the population covariance matrix $\Sigma$ is unknown, so we use the
+sample covariance matrix $\hat\Sigma$ instead.
+
+Let
+\[
+\bar X
+=
+\frac{1}{n}
+\sum_{i=1}^n X_i
+\]
+
+be the sample mean. The sample covariance matrix is
+
+\[
+\hat\Sigma
+=
+\frac{1}{n-1}
+\sum_{i=1}^n
+(X_i-\bar X)(X_i-\bar X)^\top.
+\]
+
+Equivalently, if $X_c$ denotes the centered data matrix, then
+
+\[
+\hat\Sigma
+=
+\frac{1}{n-1} X_c^\top X_c.
+\]
+
+
+### Sample principal component directions
+
+The first sample principal component direction is
+
+\[
+\hat v_1
+=
+\arg\max_{\|v\|_2 = 1}
+v^\top \hat\Sigma v.
+\]
+
+For $\ell \geq 2$,
+
+\[
+\hat v_\ell
+=
+\arg\max_{\|v\|_2 = 1}
+v^\top \hat\Sigma v
+\quad
+\text{subject to}
+\quad
+v^\top \hat v_j = 0,
+\qquad j = 1,\ldots,\ell-1.
+\]
+
+The $\ell$-th sample principal component direction $\hat v_\ell$ is obtained as the $\ell$-th eigenvector of $\hat\Sigma$, 
+and the corresponding sample eigenvalue is
+
+\[
+\hat\lambda_\ell
+=
+\hat v_\ell^\top \hat\Sigma \hat v_\ell.
+\]
+
+This value is the sample variance of the data projected onto the direction $\hat v_\ell$. 
+
+From an estimation point of view, $\hat v_\ell$ and $\hat\lambda_\ell$ estimate the population quantities $v_\ell$ and $\lambda_\ell$, respectively.
+
+## 4. Principal component score and scree
+
+### PC scores
+
+Assume that the data matrix $X \in \mathbb{R}^{n \times p}$ has been centered.
+Let $\hat v_\ell$ be the $\ell$-th sample principal component direction.
+The $\ell$-th PC score vector is defined as
+
+\[
+z_\ell = X \hat v_\ell \in \mathbb{R}^n.
+\]
+
+Equivalently, the $i$-th entry of $z_\ell$ is
+
+\[
+z_{i\ell} = x_i^\top \hat v_\ell,
+\]
+
+which is the coordinate of the $i$-th observation after projection onto the
+$\ell$-th principal component direction.
+
+If the first $k$ principal component directions are used, the score matrix is
+
+\[
+Z_k = X \hat V_k,
+\qquad
+\hat V_k = [\hat v_1,\ldots,\hat v_k].
+\]
+
+A score plot usually displays two score vectors, such as $(z_1,z_2)$, as a
+two-dimensional scatter plot. It is used to explore low-dimensional patterns in
+the data, such as clusters, outliers, or separation between groups.
+
+
+### PC Scree values
+
+Let
+\[
+\hat\lambda_1 \ge \hat\lambda_2 \ge \cdots \ge \hat\lambda_p \ge 0
+\]
+
+be the eigenvalues of the sample covariance matrix \(\hat\Sigma\). 
+We call \(\hat\lambda_\ell\) the \(\ell\)-th sample scree value.
+It represents the sample variance explained by the \(\ell\)-th principal component direction.
+
+In terms of the score vector \(z_\ell = X\hat v_\ell\),
+
+\[
+\hat\lambda_\ell
+=
+\operatorname{Var}(X\hat v_\ell)
+=
+\hat v_\ell^\top \hat\Sigma \hat v_\ell
+=
+\frac{1}{n-1}\|z_\ell\|_2^2.
+\]
+
+A scree plot displays the sequence of eigenvalues
+
+\[
+\hat\lambda_1,\hat\lambda_2,\ldots,\hat\lambda_p,
+\]
+
+or the proportion of variance explained by each principal component,
+
+\[
+\widehat{\mathrm{PVE}}_\ell
+=
+\frac{\hat\lambda_\ell}{\sum_{j=1}^p \hat\lambda_j}.
+\]
+
+It summarizes how much variation is explained by each principal component.
+Since the eigenvalues are ordered decreasingly, the scree plot is often used to
+decide how many principal components should be retained.
+
+
+
+### Relationship between score plots and scree plots
+
+The scree plot and the score plot show PCA results in different ways.
+
+The score plot shows the observations after projection onto selected principal
+component directions.
+For the \(\ell\)-th principal component direction \(\hat v_\ell\), the scree value is
+
+\[
+\hat\lambda_\ell
+=
+\hat v_\ell^\top \hat\Sigma \hat v_\ell
+=
+\frac{1}{n-1}\|X\hat v_\ell\|_2^2.
+\]
+
+This is the sample variance of the projected scores \(X\hat v_\ell\).
+
+The score plot shows the observations in the principal component coordinate
+system. If
+
+\[
+\hat V_k = [\hat v_1,\ldots,\hat v_k],
+\]
+
+then the score matrix is
+\[
+Z_k = X\hat V_k.
+\]
+
+The rows of \(Z_k\) are the low-dimensional coordinates of the observations.
+
+Therefore, the scree plot helps decide which components are important, while
+the score plot visualizes the data using those components. For instance, when
+the first two scree values are large, the two-dimensional score plot
+
+\[
+(X\hat v_1,\; X\hat v_2)
+\]
+
+can give an informative view of the main structure in the data.
+
+
+
+## References
+
+Jolliffe, I. T. and Cadima, J. (2016). Principal component analysis: a review
+and recent developments. *Philosophical Transactions of the Royal Society A:
+Mathematical, Physical and Engineering Sciences*, 374(2065), 20150202.
