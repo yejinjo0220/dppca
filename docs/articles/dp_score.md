@@ -1,0 +1,400 @@
+# DP Score plot in dppca
+
+A PCA score plot is a standard visualization tool for understanding the
+low-dimensional structure of high-dimensional data. The `dppca` package
+represents the private PCA score plot through a two-dimensional
+differentially private histogram.
+
+## PC score plot
+
+Let
+``` math
+
+X \in \mathbb{R}^{n \times p}
+```
+
+be the preprocessed data matrix. Typically, this means that the data
+have been centered, and possibly standardized.
+
+Let
+``` math
+
+V_k = [v_1,\ldots,v_k] \in \mathbb{R}^{p \times k}
+```
+
+be the pc direction matrix where each column $`v_\ell`$ is a pc
+direction.
+
+The $`k`$-dimensional PCA score for the $`i`$-th observation is
+
+``` math
+
+z_i
+=
+V_k^\top x_{i}
+\in
+\mathbb{R}^k
+\quad \text{where} \quad
+x_{i} \text{ denotes the } i \text{-th row of } X.
+```
+
+In visualization, we usually select two components rather than plotting
+all $`k`$ score dimensions.
+
+Let $`(a,b)`$ be the two selected component indices. A common choice is
+$`(a,b) = (1,2)`$.
+
+For each observation, define the two-dimensional score point
+
+``` math
+
+s_i
+=
+(z_{i,a}, z_{i,b})
+\in
+\mathbb{R}^2,
+\qquad
+i=1,\ldots,n.
+```
+
+The collection $`S = \{s_i\}_{i=1}^n`$ is the set of two-dimensional
+score points.
+
+A non-private score plot would draw all points $`s_1,\ldots,s_n`$
+directly. In the private setting, we instead approximate the empirical
+distribution of $`S`$ through a private histogram.
+
+### DP PC Score plot
+
+In `dppca`, the private score visualization is based on the following
+idea.
+
+1.  Construct a private plotting frame $`F \subset \mathbb{R}^2`$.
+2.  Divide $`F`$ into rectangular bins.
+3.  Count how many score points fall into each bin.
+4.  Add privacy noise to the bin counts.
+5.  Normalize and visualize the noisy bin frequencies.
+
+## 1. DP plotting frame
+
+Before building a two-dimensional histogram, we need to determine the
+plotting region. This region is called the plotting frame.
+
+If the frame is too narrow, many points may be excluded. If it is too
+wide, the histogram may become too sparse. Therefore, the frame should
+cover the relevant range of score coordinates while remaining stable
+under privacy constraints.
+
+The `dppca` package constructs a square plotting frame using private
+quantile estimation.
+
+### Vectorizing two-dimensional scores
+
+Let $`S \in \mathbb{R}^{n \times 2}`$ be the matrix of two-dimensional
+scores, where the $`i`$-th row is $`s_i^\top = (z_{i,a}, z_{i,b})`$.
+
+To construct one common range for both axes, we stack the two score
+coordinates into a single vector.
+
+``` math
+
+s^{*}
+=
+(s_1^{*},\ldots,s_m^{*})^\top
+\in
+\mathbb{R}^m,
+\qquad
+m = 2n.
+```
+
+Here, $`s^{*}`$ contains all values from both selected score coordinate
+$`\{s_{i,a}^{*}\}_{i=1}^n \cup \{s_{i,b}^{*}\}_{i=1}^n`$. This converts
+the problem of choosing a two-dimensional plotting range into a
+one-dimensional private quantile estimation problem.
+
+### Private lower and upper quantiles
+
+To determine the lower and upper boundaries of the plotting frame,
+define
+
+``` math
+
+q_{\min} = \frac{1}{m},
+\qquad
+q_{\max} = \frac{m-1}{m}.
+```
+
+These levels correspond approximately to the minimum and maximum of the
+stacked score coordinates.
+
+Let $`\widetilde q_{\min}`$ and $`\widetilde q_{\max}`$ be private
+estimates of the $`q_{\min}`$ and $`q_{\max}`$-quantiles of the vector
+$`s^{*}`$.
+
+In `dppca`, these private quantiles may be computed using a smooth
+sensitivity based DP quantile estimator in [Nissim, Raskhodnikova, and
+Smith (2007)](#ref-Nissim2007).
+
+### Square plotting frame
+
+Given the private lower and upper quantile estimates, define the center
+
+``` math
+
+c
+=
+\frac{\widetilde q_{\min}+\widetilde q_{\max}}{2}
+```
+
+and the half-length
+
+``` math
+
+L
+=
+\frac{\widetilde q_{\max}-\widetilde q_{\min}}{2}.
+```
+
+To add a visual margin and reduce boundary effects, introduce an inflate
+parameter $`\alpha > 0`$.
+
+The inflated half-length is $`L' = (1+\alpha)L`$. The final square
+plotting frame is
+
+``` math
+
+F
+=
+[c-L',c+L']
+\times
+[c-L',c+L'].
+```
+
+## 2. Choosing the number of bins
+
+After the plotting frame $`F`$ has been determined, we divide it into
+histogram bins.
+
+Let $`m_{\mathrm{axis}}`$ be the number of bins per axis. Then the
+two-dimensional score histogram has $`m = m_{\mathrm{axis}}^2`$ bins in
+total.
+
+The number of bins can be chosen by the user or selected using a
+heuristic rule. In `dppca`, the user may specify $`m_{\mathrm{axis}}`$
+directly.
+
+When a default choice is needed, we use common asymptotic rules as
+practical guidelines. Following common rules of thumb, we consider
+
+``` math
+
+m_{\mathrm{axis}} \asymp n^{1/(2+d)}
+```
+
+as in [Wasserman and Zhou (2010)](#ref-Wasserman2010), and
+
+``` math
+
+m_{\mathrm{axis}}
+\asymp
+\left(
+\frac{n}{\log n}
+\right)^{1/(1+d)}
+```
+
+as in [Lei (2011)](#ref-Lei2011). Since the score histogram is
+two-dimensional, we take $`d=2`$.
+
+These rules are used as starting points rather than fixed prescriptions.
+In practice, the best bin choice depends on the sample size, the privacy
+budget, and the amount of structure in the score plot.
+
+## 3. Make two-dimensional histogram
+
+Let the private plotting frame be divided into bins $`B_1,\ldots,B_m`$.
+For the score point set $`S = \{s_i\}_{i=1}^n`$, the non-private count
+in bin $`B_k`$ is
+
+``` math
+
+c_k
+=
+\sum_{i=1}^n
+\mathbf{1}\{s_i \in B_k\},
+\qquad
+k=1,\ldots,m.
+```
+
+The count vector is $`c = (c_1,\ldots,c_m) \in \mathbb{N}^m`$. If the
+histogram is normalized to a frequency vector, then
+
+``` math
+
+q_k
+=
+\frac{c_k}{\sum_{j=1}^m c_j}
+=
+\frac{c_k}{n},
+\qquad
+k=1,\ldots,m
+```
+
+The final private score visualization displays a noisy version of the
+frequency vector $`q = (q_1,\ldots,q_m)`$.
+
+### Sensitivity of histogram counts
+
+Under row-level adjacency, two neighboring datasets differ in one
+observation. Changing one observation can move one score point from one
+bin to another.
+
+Therefore, the count vector can change by at most $`+1`$ in one bin and
+$`-1`$ in another bin. Hence,
+``` math
+
+\Delta_1(c) \leq 2 \quad \text{and} \quad \Delta_2(c) \leq \sqrt{2}
+```
+
+These sensitivity bounds are used to privacy noise for the histogram
+mechanism.
+
+### Privacy accounting
+
+The DP score histogram procedure has two main privacy-consuming steps.
+
+1.  private quantile estimation for constructing the plotting frame,
+2.  private histogram release.
+
+Let the frame construction budget be
+$`(\epsilon_{\mathrm{frame}},\delta_{\mathrm{frame}})`$ and the
+histogram budget be
+$`(\epsilon_{\mathrm{hist}},\delta_{\mathrm{hist}})`$.
+
+By basic composition, the combined procedure satisfies
+$`(\epsilon_{\mathrm{frame}}+\epsilon_{\mathrm{hist}},
+\delta_{\mathrm{frame}}+\delta_{\mathrm{hist}}) \text{-DP}`$.
+
+## Method1: Additive DP histogram
+
+A simple DP histogram can be constructed by adding independent noise to
+each bin count. The noisy counts are then post-processed to make them
+nonnegative and normalized. This additive-noise approach is commonly
+used in DP histogram methods [Wasserman and Zhou
+(2010)](#ref-Wasserman2010), and the procedure is summarized in
+[Additive DP
+histogram](https://yejinjo0220.github.io/dppca/articles/algorithms.html#alg-add-hist).
+
+## Method2: Sparse DP histogram
+
+When many bins are empty, adding noise to every bin can dominate the
+visualization. A sparse histogram aims to report only bins whose counts
+are large enough to be distinguishable from noise.
+
+To address this, we use a sparse histogram procedure based on [Karwa and
+Vadhan (2017)](#ref-Karwa2017), summarized in [Sparse DP
+histogram](https://yejinjo0220.github.io/dppca/articles/algorithms.html#alg-sparse-hist).
+
+## Group-wise DP score histograms
+
+When group labels are available, DP score histograms can also be
+constructed separately for each group. Let
+``` math
+
+\{(s_i,g_i)\}_{i=1}^n
+```
+denote the score data with group labels, where $`s_i \in \mathbb{R}^2`$
+is the two-dimensional PCA score and $`g_i \in \mathcal{G}`$ is the
+group label.
+
+For each group $`g \in \mathcal{G}`$, we construct a private histogram
+using the same plotting frame and the same grid. For each group
+$`g\in\mathcal{G}`$, define the group-specific bin count
+
+``` math
+
+c_k^{(g)}
+=
+\sum_{i=1}^n
+\mathbf{1}\{s_i \in B_k,\; g_i = g\}.
+```
+
+This gives a collection of group-wise private histograms
+$`\{\widehat q^{(g)}\}_{g\in\mathcal{G}}`$.
+
+These histograms can be used to compare the low-dimensional PCA score
+structure across groups.
+
+In `dppca`, the group-wise version can be constructed using either the
+[group-wise additive DP
+histogram](https://yejinjo0220.github.io/dppca/articles/algorithms.html#alg-group-add-hist)
+or the [group-wise sparse DP
+histogram](https://yejinjo0220.github.io/dppca/articles/algorithms.html#alg-group-sparse-hist).
+
+## Example usage
+
+The exact function arguments may depend on the installed version of
+`dppca`.
+
+A typical workflow is as follows.
+
+``` r
+library(dppca)
+
+# x: numeric data matrix or data frame
+# epsilon, delta: privacy parameters
+
+out <- dp_score_plot(
+  x,
+  k = 2,
+  epsilon = 1,
+  delta = 1e-6,
+  hist_method = "additive"
+)
+
+out
+```
+
+A sparse histogram version is
+
+``` r
+out_sparse <- dp_score_plot(
+  x,
+  k = 2,
+  epsilon = 1,
+  delta = 1e-6,
+  hist_method = "sparse"
+)
+```
+
+For group-wise score histogram:
+
+``` r
+out_group <- group_dp_score_plot(
+  x,
+  group = group_label,
+  k = 2,
+  epsilon = 1,
+  delta = 1e-6,
+  hist_method = "sparse"
+)
+```
+
+## References
+
+Kobbi Nissim, Sofya Raskhodnikova, and Adam Smith. (2007). “Smooth
+sensitivity and sampling in private data analysis”. In Proceedings of
+the thirty-ninth annual ACM symposium on Theory of computing (STOC ’07).
+Association for Computing Machinery, New York, NY, USA, 75–84.
+<https://doi.org/10.1145/1250790.1250803>
+
+Lei, Jing (2011). “Differentially private M-estimators”. Advances in
+Neural Information Processing Systems, 24. Curran Associates, Inc.
+<https://proceedings.neurips.cc/paper_files/paper/2011/file/f718499c1c8cef6730f9fd03c8125cab-Paper.pdf>
+
+Wasserman, L., & Zhou, S. (2010). “A Statistical Framework for
+Differential Privacy”. Journal of the American Statistical Association,
+105(489), 375–389. <https://doi.org/10.1198/jasa.2009.tm08651>
+
+Vishesh Karwa and Salil Vadhan. (2017). “Finite sample differentially
+private confidence intervals”. Proceedings of ITCS 2018, LIPIcs, 94,
+44:1–44:9. <http://drops.dagstuhl.de/opus/volltexte/2018/8344/>
