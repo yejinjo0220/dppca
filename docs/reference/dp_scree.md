@@ -8,10 +8,20 @@ Supported methods are:
 
 - `"clipped"`: clipped mean-based scree estimator,
 
-- `"pmw"`: PMW-style scree estimator based on private quantiles and
+- `"pmwm"`: PMWM-style scree estimator based on private quantiles and
   winsorized means,
 
 - `"huber"`: Huber-type robust private mean-based scree estimator.
+
+Method-specific tuning parameters are supplied through `control`:
+
+- `control = clipped_control(C_clip = ...)` for `method = "clipped"`,
+
+- `control = pmwm_control(beta = ..., a = ..., b = ..., trim_const = ..., eta = ..., split_mode = ...)`
+  for `method = "pmwm"`,
+
+- `control = huber_control(mu0 = ..., eta0 = ..., T = ..., M = ..., k_min_m2 = ..., k_max_m2 = ..., m2_frac = ...)`
+  for `method = "huber"`.
 
 ## Usage
 
@@ -19,7 +29,7 @@ Supported methods are:
 dp_scree(
   X,
   k,
-  method = c("clipped", "pmw", "huber"),
+  method = c("clipped", "pmwm", "huber"),
   eps_total,
   delta_total,
   center = TRUE,
@@ -27,20 +37,7 @@ dp_scree(
   g_dppca = FALSE,
   cpp.option = FALSE,
   mono = TRUE,
-  C_clip = 3,
-  beta = 1.01,
-  a = NULL,
-  b = NULL,
-  trim_const = 10,
-  eta = 0.01,
-  split_mode = TRUE,
-  mu0 = 0,
-  eta0 = 1,
-  T = NULL,
-  M = NULL,
-  k_min_m2 = -40,
-  k_max_m2 = 40,
-  m2_frac = 1/4
+  control = NULL
 )
 ```
 
@@ -56,7 +53,7 @@ dp_scree(
 
 - method:
 
-  One of `"clipped"`, `"pmw"`, or `"huber"`.
+  One of `"clipped"`, `"pmwm"`, or `"huber"`.
 
 - eps_total:
 
@@ -89,58 +86,29 @@ dp_scree(
   Logical; whether to apply monotone post-processing to the final DP
   scree vector.
 
-- C_clip:
+- control:
 
-  Positive clipping threshold used by the clipped estimator.
-
-- beta:
-
-  Log-binning base used by the PMW quantile estimator.
-
-- a, b:
-
-  Finite support bounds supplied to the PMW quantile routine.
-
-- trim_const, eta:
-
-  PMW practical clipping parameters.
-
-- split_mode:
-
-  Logical; whether the PMW estimator splits the sample.
-
-- mu0:
-
-  Initial value used by the Huber noisy gradient descent.
-
-- eta0:
-
-  Fixed step size used by the Huber noisy gradient descent.
-
-- T:
-
-  Optional integer number of Huber gradient descent iterations.
-
-- M:
-
-  Optional integer number of blocks used in
-  [`dp_m2()`](https://yejinjo0220.github.io/dppca/reference/dp_m2.md).
-
-- k_min_m2:
-
-  Integer lower bound for dyadic histogram bins used in the Huber
-  scale-proxy step.
-
-- k_max_m2:
-
-  Integer upper bound for dyadic histogram bins used in the Huber
-  scale-proxy step.
-
-- m2_frac:
-
-  Fraction of the Huber scree privacy budget allocated to the private
-  scale-proxy step.
+  Method-specific control list created by
+  [`clipped_control()`](https://yejinjo0220.github.io/dppca/reference/clipped_control.md),
+  [`pmwm_control()`](https://yejinjo0220.github.io/dppca/reference/pmwm_control.md),
+  or
+  [`huber_control()`](https://yejinjo0220.github.io/dppca/reference/huber_control.md).
 
 ## Value
 
 A list containing `method`, `scree_np`, `evr_np`, `scree`, and `evr`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+dp_scree(X, k = 3, method = "clipped", eps_total = 1, delta_total = 1e-6,
+         control = clipped_control(C_clip = 3))
+
+dp_scree(X, k = 3, method = "pmwm", eps_total = 1, delta_total = 1e-6,
+         control = pmwm_control(a = 0, b = 10))
+
+dp_scree(X, k = 3, method = "huber", eps_total = 1, delta_total = 1e-6,
+         control = huber_control(T = 50, M = 20))
+} # }
+```

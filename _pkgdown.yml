@@ -65,8 +65,17 @@ reference:
     Core functions for computing differentially private PCA score and scree
     quantities.
   contents:
+  - dp_pc_dir
   - dp_score
   - dp_scree
+
+- title: "Method controls"
+  desc: >
+    Helper functions for specifying method-specific tuning parameters.
+  contents:
+  - clipped_control
+  - pmwm_control
+  - huber_control
 
 - title: "Group PCA Visualization"
   desc: >
@@ -74,3 +83,14 @@ reference:
   contents:
   - dp_score_group
   - dp_score_plot_group
+
+- title: "Example datasets"
+  desc: >
+    Datasets included for examples and demonstrations.
+  contents:
+  - adult
+  - eur_map
+  - eur_map_g
+  - gau
+  - gau_g
+  - gaussian_groups

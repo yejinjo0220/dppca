@@ -22,12 +22,6 @@ stage.}
 \item{mu0}{Initial value for the iterative procedure.}
 
 \item{eta0}{Base step size.}
-
-\item{step_schedule}{Character string specifying the step-size schedule.
-Allowed values are \code{"fixed"} and \code{"1/sqrt(t)"}.}
-
-\item{scale_factor}{Positive multiplicative factor applied to the released
-estimate and to the noise calibration.}
 }
 \value{
 Numeric scalar representing the final private estimate.

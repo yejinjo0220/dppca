@@ -1,176 +1,287 @@
 # dppca
 
-`dppca` is an R package for differentially private PCA visualization.
+`dppca` provides tools for **differentially private principal component
+analysis (PCA) visualization**. The package focuses on
+privacy-preserving versions of common PCA exploratory tools, including
+PC direction estimation, scree/PVE plots, score plots, and
+histogram-based summaries of PCA scores.
 
-The package focuses on two main tasks:
-
-- **DP scree estimation** for privatizing leading scree values and
-  explained variance ratios
-- **DP score visualization** for constructing private 2D score
-  histograms instead of releasing individual PCA score points
-
-## Main features
-
-### 1. DP scree estimation
-
-The package provides several approaches for differentially private scree
-estimation:
-
-- **Clipped mean**
-- **Huber-type private mean**
-- **PMW-style private winsorized mean**
-
-User-facing functions:
-
-- [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
-- [`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
-
-### 2. DP score histograms
-
-Instead of plotting raw PCA score points, the package constructs a
-private 2D histogram on the score space.
-
-It includes:
-
-- empirical histogram
-- Gaussian additive DP histogram
-- sparse DP histogram
-- group-wise DP score histograms
-
-User-facing functions:
-
-- [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md)
-- [`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md)
-- [`dp_score_group()`](https://yejinjo0220.github.io/dppca/reference/dp_score_group.md)
-- [`dp_score_plot_group()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot_group.md)
+The main goal of `dppca` is to make it easy to compare non-private PCA
+summaries with differentially private alternatives while keeping the
+interface close to the standard PCA workflow in R.
 
 ## Installation
 
-You can install the package from GitHub with:
+You can install the development version from GitHub with:
 
 ``` r
-# install.packages("remotes")
-remotes::install_github("yejinjo0220/dppca")
+# install.packages("pak")
+pak::pak("yejinjo0220/dppca")
 ```
 
-## Package structure
-
-Main R files:
-
-- `R/helper_pca.R`
-- `R/helper_scree.R`
-- `R/dp_scree.R`
-- `R/helper_score.R`
-- `R/dp_score.R`
-
-## Example: DP scree estimation
+After the package is available on CRAN, you will be able to install it
+with:
 
 ``` r
-library(dppca)
+install.packages("dppca")
+```
 
-set.seed(1)
-n <- 200
-d <- 8
-X <- matrix(rnorm(n * d), nrow = n, ncol = d)
+## Overview
 
-res_huber <- dp_scree(
-  X = X,
-  k = 3,
-  method = "huber",
+The package contains four main groups of functions.
+
+### 1. Differentially private PC directions
+
+[`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
+estimates leading principal component directions under differential
+privacy.
+
+``` r
+V_dp <- dp_pc_dir(
+  X,
+  k = 2,
   eps_total = 1,
-  delta_total = 1e-5,
-  mu0 = 0,
-  eta0 = 0.5,
-  T = 5,
-  M = 5,
-  k_min_m2 = -10,
-  k_max_m2 = 10,
-  m2_frac = 0.25
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE
 )
-
-res_huber
 ```
 
-## Example: DP scree plot
+The input `X` is the original data matrix with observations in rows.
+Centering and standardization are handled internally through `center`
+and `standardize`.
+
+### 2. Differentially private scree and PVE plots
+
+[`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
+computes private scree values or proportions of variance explained using
+one of several private estimators.
 
 ``` r
-make_spiked_data <- function(n, d, spikes = c(9, 6, 4, 2), seed = 1) {
-  set.seed(seed)
-  lambda_pop <- c(spikes, rep(1, d - length(spikes)))
-  A <- matrix(rnorm(d * d), d, d)
-  Q <- qr.Q(qr(A))
-  Sigma_pop <- Q %*% diag(lambda_pop) %*% t(Q)
-  Z <- matrix(rnorm(n * d), n, d)
-  X <- Z %*% chol(Sigma_pop)
-  X
-}
-
-n <- 5000
-d <- 20
-k <- 8
-
-X <- make_spiked_data(n, d, seed = 1)
-
-
-dp_scree_plot(
-  X = X,
-  k =4,
-  dp_scree_method = "all",
-  eps_total = 5,
-  delta_total = 1e-5,
-  a = 0,
-  b = 100
+res <- dp_scree(
+  X,
+  k = 5,
+  method = "pmwm",
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  control = pmwm_control(a = 0, b = 10)
 )
 ```
 
-## Example: DP score plot
+Available methods are:
+
+- `"clipped"`: clipped mean based estimator
+- `"pmwm"`: private modified winsorized mean based estimator
+- `"huber"`: Huber-type robust estimator
+
+Method-specific tuning parameters are supplied through control helper
+functions:
+
+``` r
+clipped_control(C_clip = 3)
+
+pmwm_control(
+  beta = 1.01,
+  a = 0,
+  b = 10,
+  trim_const = 10,
+  eta = 0.01,
+  split_mode = TRUE
+)
+
+huber_control(
+  mu0 = 0,
+  eta0 = 1,
+  T = 50,
+  M = 20,
+  k_min_m2 = -40,
+  k_max_m2 = 40,
+  m2_frac = 1 / 4
+)
+```
+
+To draw a private scree/PVE plot, use
+[`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md):
+
+``` r
+dp_scree_plot(
+  X,
+  k = 5,
+  dp_scree_method = "all",
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  type = "pve",
+  control = list(
+    clipped = clipped_control(C_clip = 3),
+    pmwm = pmwm_control(a = 0, b = 10),
+    huber = huber_control(T = 50, M = 20)
+  )
+)
+```
+
+Use `type = "pve"` to plot proportions of variance explained, or
+`type = "scree"` to plot raw scree values. Plot styling is handled
+internally so that the user-facing interface stays simple.
+
+### 3. Differentially private score plots
+
+[`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md)
+computes differentially private PCA scores, and
+[`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md)
+visualizes the first two private score coordinates.
+
+``` r
+score_res <- dp_score(
+  X,
+  k = 2,
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  bin_method = "WZ"
+)
+
+p <- dp_score_plot(
+  X,
+  k = 2,
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  bin_method = "WZ"
+)
+
+p
+```
+
+For bin recommendation in score-based visualizations, the available
+options are:
+
+- `"WZ"`
+- `"Lei"`
+- `"none"`
+
+Grouped score plots are also supported:
+
+``` r
+dp_score_plot_group(
+  X,
+  group = group_labels,
+  k = 2,
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  bin_method = "Lei"
+)
+```
+
+### 4. Differentially private histogram summaries
+
+The package also provides helper functions for histogram-based
+visualization of private PCA scores. These functions are useful when the
+goal is to summarize the distribution of projected observations rather
+than release individual private score points.
+
+The histogram routines support both single-sample and grouped
+visualizations and are designed to work together with the score plot
+workflow.
+
+## Example datasets
+
+`dppca` includes several example datasets for demonstrations and
+vignettes:
+
+- `adult`
+- `eur_map`
+- `eur_map_g`
+- `gau`
+- `gau_g`
+- `gaussian_groups`
+
+For example:
+
+``` r
+data(gau)
+data(gau_g)
+
+head(gau)
+head(gau_g)
+```
+
+## Typical workflow
+
+A typical analysis consists of the following steps.
 
 ``` r
 library(dppca)
 
-data("eur_map")
+# 1. Load or prepare a numeric data matrix
+X <- as.matrix(gau)
 
-res <- dp_score_plot(
-  X = eur_map,
-  eps_total = 4, delta_total = 1e-4,
+# 2. Estimate private PC directions
+V_dp <- dp_pc_dir(
+  X,
+  k = 2,
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE
 )
 
-res
-res$score$s
-res$plot$sparse
+# 3. Plot private PVE curves
+pve_res <- dp_scree_plot(
+  X,
+  k = 5,
+  dp_scree_method = "all",
+  eps_total = 1,
+  delta_total = 1e-6,
+  type = "pve",
+  control = list(
+    clipped = clipped_control(C_clip = 3),
+    pmwm = pmwm_control(a = 0, b = 10),
+    huber = huber_control(T = 50, M = 20)
+  )
+)
+
+# 4. Draw a private score plot
+score_plot <- dp_score_plot(
+  X,
+  k = 2,
+  eps_total = 1,
+  delta_total = 1e-6,
+  bin_method = "WZ"
+)
+
+score_plot
 ```
 
-## Example: group-wise DP score histogram
+## Notes on preprocessing
+
+Most user-facing PCA functions accept:
 
 ``` r
-data("eur_map_g")
-
-res_eur_g <- dp_score_plot_group(
-  X = eur_map_g,
-  G = "color",
-  eps_total = 4, delta_total = 1e-4,
-)
-
-res_eur_g$plot$all
+center = TRUE
+standardize = FALSE
 ```
 
-## Notes
+By default, columns are centered but not standardized. This corresponds
+to a covariance-based PCA convention. Set `standardize = TRUE` when
+correlation-based PCA is desired.
 
-- `g_dppca = TRUE` allows privatization of the PCA direction matrix.
-- [`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
-  draws the scree figure directly and invisibly returns the underlying
-  results.
-- [`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md)
-  and
-  [`dp_score_plot_group()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot_group.md)
-  return both calculation outputs and plot objects.
-- For PMW-based scree estimation, you must provide support bounds such
-  as `a` and `b`.
-- For the clipped scree estimator, you must provide `C_clip`.
+## Citation
+
+If you use `dppca` in your work, please cite the package and the
+associated methodological references described in the vignettes.
 
 ## License
 
-MIT
+This package is released under the license specified in the
+`DESCRIPTION` file.
 
 # Package index
 
@@ -188,10 +299,23 @@ Functions for constructing differentially private PCA visualizations.
 Core functions for computing differentially private PCA score and scree
 quantities.
 
+- [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
+  : Compute principal component directions
 - [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md)
   : Differentially private score histograms
 - [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
   : Compute differentially private scree estimates
+
+## Method controls
+
+Helper functions for specifying method-specific tuning parameters.
+
+- [`clipped_control()`](https://yejinjo0220.github.io/dppca/reference/clipped_control.md)
+  : Control parameters for the clipped DP scree estimator
+- [`pmwm_control()`](https://yejinjo0220.github.io/dppca/reference/pmwm_control.md)
+  : Control parameters for the PMWM DP scree estimator
+- [`huber_control()`](https://yejinjo0220.github.io/dppca/reference/huber_control.md)
+  : Control parameters for the Huber DP scree estimator
 
 ## Group PCA Visualization
 
@@ -201,6 +325,23 @@ Functions for group-wise differentially private PCA score visualization.
   : Group-wise DP score histograms
 - [`dp_score_plot_group()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot_group.md)
   : Plot group-wise DP score histograms
+
+## Example datasets
+
+Datasets included for examples and demonstrations.
+
+- [`adult`](https://yejinjo0220.github.io/dppca/reference/adult.md) :
+  Adult data example
+- [`eur_map`](https://yejinjo0220.github.io/dppca/reference/eur_map.md)
+  : Europe map PCA data
+- [`eur_map_g`](https://yejinjo0220.github.io/dppca/reference/eur_map_g.md)
+  : Group labels for Europe map data
+- [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md) :
+  Gaussian example data
+- [`gau_g`](https://yejinjo0220.github.io/dppca/reference/gau_g.md) :
+  Group labels for Gaussian example data
+- [`gaussian_groups`](https://yejinjo0220.github.io/dppca/reference/gaussian_groups.md)
+  : Gaussian grouped example data
 
 # Articles
 

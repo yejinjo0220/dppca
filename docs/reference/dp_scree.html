@@ -4,16 +4,28 @@ It computes the leading non-private scree values together with one selected
 DP scree estimator.
 Supported methods are:
 "clipped": clipped mean-based scree estimator,
-"pmw": PMW-style scree estimator based on private quantiles and winsorized means,
+"pmwm": PMWM-style scree estimator based on private quantiles and winsorized means,
 "huber": Huber-type robust private mean-based scree estimator.
+
+
+Method-specific tuning parameters are supplied through control:
+control = clipped_control(C_clip = ...) for method = "clipped",
+control = pmwm_control(beta = ..., a = ..., b = ..., trim_const = ..., eta = ..., split_mode = ...) for method = "pmwm",
+control = huber_control(mu0 = ..., eta0 = ..., T = ..., M = ..., k_min_m2 = ..., k_max_m2 = ..., m2_frac = ...) for method = "huber".
 
 '><meta property="og:description" content='User-facing function for differentially private scree estimation.
 It computes the leading non-private scree values together with one selected
 DP scree estimator.
 Supported methods are:
 "clipped": clipped mean-based scree estimator,
-"pmw": PMW-style scree estimator based on private quantiles and winsorized means,
+"pmwm": PMWM-style scree estimator based on private quantiles and winsorized means,
 "huber": Huber-type robust private mean-based scree estimator.
+
+
+Method-specific tuning parameters are supplied through control:
+control = clipped_control(C_clip = ...) for method = "clipped",
+control = pmwm_control(beta = ..., a = ..., b = ..., trim_const = ..., eta = ..., split_mode = ...) for method = "pmwm",
+control = huber_control(mu0 = ..., eta0 = ..., T = ..., M = ..., k_min_m2 = ..., k_max_m2 = ..., m2_frac = ...) for method = "huber".
 
 '></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -23,7 +35,7 @@ Supported methods are:
 
     <a class="navbar-brand me-2" href="../index.html">dppca</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,8 +73,11 @@ Supported methods are:
 It computes the leading non-private scree values together with one selected
 DP scree estimator.</p>
 <p>Supported methods are:</p><ul><li><p><code>"clipped"</code>: clipped mean-based scree estimator,</p></li>
-<li><p><code>"pmw"</code>: PMW-style scree estimator based on private quantiles and winsorized means,</p></li>
+<li><p><code>"pmwm"</code>: PMWM-style scree estimator based on private quantiles and winsorized means,</p></li>
 <li><p><code>"huber"</code>: Huber-type robust private mean-based scree estimator.</p></li>
+</ul><p>Method-specific tuning parameters are supplied through <code>control</code>:</p><ul><li><p><code>control = clipped_control(C_clip = ...)</code> for <code>method = "clipped"</code>,</p></li>
+<li><p><code>control = pmwm_control(beta = ..., a = ..., b = ..., trim_const = ..., eta = ..., split_mode = ...)</code> for <code>method = "pmwm"</code>,</p></li>
+<li><p><code>control = huber_control(mu0 = ..., eta0 = ..., T = ..., M = ..., k_min_m2 = ..., k_max_m2 = ..., m2_frac = ...)</code> for <code>method = "huber"</code>.</p></li>
 </ul></div>
 
     <div class="section level2">
@@ -70,7 +85,7 @@ DP scree estimator.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">dp_scree</span><span class="op">(</span></span>
 <span>  <span class="va">X</span>,</span>
 <span>  <span class="va">k</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"clipped"</span>, <span class="st">"pmw"</span>, <span class="st">"huber"</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"clipped"</span>, <span class="st">"pmwm"</span>, <span class="st">"huber"</span><span class="op">)</span>,</span>
 <span>  <span class="va">eps_total</span>,</span>
 <span>  <span class="va">delta_total</span>,</span>
 <span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -78,20 +93,7 @@ DP scree estimator.</p>
 <span>  g_dppca <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cpp.option <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  mono <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  C_clip <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  beta <span class="op">=</span> <span class="fl">1.01</span>,</span>
-<span>  a <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  b <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  trim_const <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  eta <span class="op">=</span> <span class="fl">0.01</span>,</span>
-<span>  split_mode <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  mu0 <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  eta0 <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  T <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  M <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  k_min_m2 <span class="op">=</span> <span class="op">-</span><span class="fl">40</span>,</span>
-<span>  k_max_m2 <span class="op">=</span> <span class="fl">40</span>,</span>
-<span>  m2_frac <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">4</span></span>
+<span>  control <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -108,7 +110,7 @@ DP scree estimator.</p>
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>One of <code>"clipped"</code>, <code>"pmw"</code>, or <code>"huber"</code>.</p></dd>
+<dd><p>One of <code>"clipped"</code>, <code>"pmwm"</code>, or <code>"huber"</code>.</p></dd>
 
 
 <dt id="arg-eps-total">eps_total<a class="anchor" aria-label="anchor" href="#arg-eps-total"></a></dt>
@@ -139,52 +141,9 @@ DP scree estimator.</p>
 <dd><p>Logical; whether to apply monotone post-processing to the final DP scree vector.</p></dd>
 
 
-<dt id="arg-c-clip">C_clip<a class="anchor" aria-label="anchor" href="#arg-c-clip"></a></dt>
-<dd><p>Positive clipping threshold used by the clipped estimator.</p></dd>
-
-
-<dt id="arg-beta">beta<a class="anchor" aria-label="anchor" href="#arg-beta"></a></dt>
-<dd><p>Log-binning base used by the PMW quantile estimator.</p></dd>
-
-
-<dt id="arg-a-b">a, b<a class="anchor" aria-label="anchor" href="#arg-a-b"></a></dt>
-<dd><p>Finite support bounds supplied to the PMW quantile routine.</p></dd>
-
-
-<dt id="arg-trim-const-eta">trim_const, eta<a class="anchor" aria-label="anchor" href="#arg-trim-const-eta"></a></dt>
-<dd><p>PMW practical clipping parameters.</p></dd>
-
-
-<dt id="arg-split-mode">split_mode<a class="anchor" aria-label="anchor" href="#arg-split-mode"></a></dt>
-<dd><p>Logical; whether the PMW estimator splits the sample.</p></dd>
-
-
-<dt id="arg-mu-">mu0<a class="anchor" aria-label="anchor" href="#arg-mu-"></a></dt>
-<dd><p>Initial value used by the Huber noisy gradient descent.</p></dd>
-
-
-<dt id="arg-eta-">eta0<a class="anchor" aria-label="anchor" href="#arg-eta-"></a></dt>
-<dd><p>Fixed step size used by the Huber noisy gradient descent.</p></dd>
-
-
-<dt id="arg-t">T<a class="anchor" aria-label="anchor" href="#arg-t"></a></dt>
-<dd><p>Optional integer number of Huber gradient descent iterations.</p></dd>
-
-
-<dt id="arg-m">M<a class="anchor" aria-label="anchor" href="#arg-m"></a></dt>
-<dd><p>Optional integer number of blocks used in <code><a href="dp_m2.html">dp_m2()</a></code>.</p></dd>
-
-
-<dt id="arg-k-min-m-">k_min_m2<a class="anchor" aria-label="anchor" href="#arg-k-min-m-"></a></dt>
-<dd><p>Integer lower bound for dyadic histogram bins used in the Huber scale-proxy step.</p></dd>
-
-
-<dt id="arg-k-max-m-">k_max_m2<a class="anchor" aria-label="anchor" href="#arg-k-max-m-"></a></dt>
-<dd><p>Integer upper bound for dyadic histogram bins used in the Huber scale-proxy step.</p></dd>
-
-
-<dt id="arg-m-frac">m2_frac<a class="anchor" aria-label="anchor" href="#arg-m-frac"></a></dt>
-<dd><p>Fraction of the Huber scree privacy budget allocated to the private scale-proxy step.</p></dd>
+<dt id="arg-control">control<a class="anchor" aria-label="anchor" href="#arg-control"></a></dt>
+<dd><p>Method-specific control list created by <code><a href="clipped_control.html">clipped_control()</a></code>,
+<code><a href="pmwm_control.html">pmwm_control()</a></code>, or <code><a href="huber_control.html">huber_control()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -193,6 +152,21 @@ DP scree estimator.</p>
 <code>scree</code>, and <code>evr</code>.</p>
     </div>
 
+    <div class="section level2">
+    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="fu">dp_scree</span><span class="op">(</span><span class="va">X</span>, k <span class="op">=</span> <span class="fl">3</span>, method <span class="op">=</span> <span class="st">"clipped"</span>, eps_total <span class="op">=</span> <span class="fl">1</span>, delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span></span>
+<span class="r-in"><span>         control <span class="op">=</span> <span class="fu"><a href="clipped_control.html">clipped_control</a></span><span class="op">(</span>C_clip <span class="op">=</span> <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">dp_scree</span><span class="op">(</span><span class="va">X</span>, k <span class="op">=</span> <span class="fl">3</span>, method <span class="op">=</span> <span class="st">"pmwm"</span>, eps_total <span class="op">=</span> <span class="fl">1</span>, delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span></span>
+<span class="r-in"><span>         control <span class="op">=</span> <span class="fu"><a href="pmwm_control.html">pmwm_control</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>, b <span class="op">=</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">dp_scree</span><span class="op">(</span><span class="va">X</span>, k <span class="op">=</span> <span class="fl">3</span>, method <span class="op">=</span> <span class="st">"huber"</span>, eps_total <span class="op">=</span> <span class="fl">1</span>, delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span></span>
+<span class="r-in"><span>         control <span class="op">=</span> <span class="fu"><a href="huber_control.html">huber_control</a></span><span class="op">(</span>T <span class="op">=</span> <span class="fl">50</span>, M <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
+</code></pre></div>
+    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

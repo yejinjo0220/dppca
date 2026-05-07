@@ -1,6 +1,6 @@
 Package: dppca
 Title: Differentially Private PCA Scree and Score Visualization
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     person("Yejin", "Jo", email = "yeinjo0220l@gmail.com", role = c("aut", "cre"))
 Description: Tools for performing principal component analysis (PCA) and
@@ -17,6 +17,7 @@ Depends:
     R (>= 4.3.0)
 Imports:
     ggplot2,
+    rlang,
     patchwork,
     dplyr,
     VGAM,
@@ -27,5 +28,6 @@ Imports:
 Suggests:
     knitr,
     rmarkdown
+VignetteBuilder: knitr
 URL: https://github.com/yejinjo0220/dppca, https://yejinjo0220.github.io/dppca/
 BugReports: https://github.com/yejinjo0220/dppca/issues

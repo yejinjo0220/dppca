@@ -1,12 +1,12 @@
 # ============================================================
-# helper_pca.R
-# Internal helper functions for PCA-related routines
+# dp_pc_dir.R
+# Differentially private principal component direction estimation
 # ============================================================
 
 #' Preprocess matrix for PCA
 #'
 #' @description
-#' Internal helper that preprocesses a numeric matrix before PCA by applying 
+#' Internal helper that preprocesses a numeric matrix before PCA by applying
 #' optional centering and standardization.
 #'
 #' @param X Numeric matrix-like object.
@@ -72,98 +72,6 @@ orthonormalize_dir <- function(V, k) {
 
   Q <- qr.Q(qr(V))
   Q[, 1:k, drop = FALSE]
-}
-
-#' Compute principal component directions
-#'
-#' @description
-#' Internal helper that returns the principal component directions actually used
-#' in downstream routines. By default, it returns the usual non-private
-#' principal component directions. When \code{g_dppca = TRUE}, it returns
-#' differentially private principal component directions based on the spherical
-#' Kendall mechanism.
-#'
-#' @param X_proc Preprocessed numeric matrix.
-#' @param k Number of leading components.
-#' @param g_dppca Logical; whether to privatize the principal component
-#'   directions.
-#' @param eps_dir Privacy epsilon for releasing principal component directions.
-#' @param delta_dir Privacy delta for releasing principal component directions.
-#' @param cpp.option Logical passed to \code{mech_tau_sph()}.
-#'
-#' @return A direction matrix whose columns are the principal component directions used.
-#'
-#' @keywords internal
-compute_pc_dir <- function(X_proc, k,
-                           g_dppca = FALSE,
-                           eps_dir = NULL,
-                           delta_dir = NULL,
-                           cpp.option = FALSE) {
-  X_proc <- as.matrix(X_proc)
-  k <- as.integer(k)
-
-  if (!is.numeric(X_proc)) {
-    stop("X_proc must be numeric.")
-  }
-  if (nrow(X_proc) < 2) {
-    stop("Need nrow(X_proc) >= 2.")
-  }
-  if (ncol(X_proc) < 1) {
-    stop("Need ncol(X_proc) >= 1.")
-  }
-  if (k < 1 || k > ncol(X_proc)) {
-    stop("k must satisfy 1 <= k <= ncol(X_proc).")
-  }
-  if (!requireNamespace("rARPACK", quietly = TRUE)) {
-    stop("Package 'rARPACK' is required.")
-  }
-
-  n <- nrow(X_proc)
-  d <- ncol(X_proc)
-
-  # ------------------------------------------------------------
-  # Non-private principal component directions
-  # ------------------------------------------------------------
-  S_np <- stats::cov(X_proc)
-  V_np <- rARPACK::eigs_sym(S_np, k = k)$vectors
-  V_np <- as.matrix(V_np)
-
-  if (nrow(V_np) != d || ncol(V_np) != k) {
-    stop("V_np returned by eigs_sym has wrong dimension.")
-  }
-
-  V_used <- orthonormalize_dir(V_np, k = k)
-
-  # ------------------------------------------------------------
-  # DP principal component directions
-  # ------------------------------------------------------------
-  if (isTRUE(g_dppca)) {
-    if (is.null(eps_dir) || is.null(delta_dir)) {
-      stop("eps_dir and delta_dir must be supplied when g_dppca = TRUE.")
-    }
-    if (!is.numeric(eps_dir) || length(eps_dir) != 1 ||
-        !is.finite(eps_dir) || eps_dir <= 0) {
-      stop("eps_dir must be a single positive number.")
-    }
-    if (!is.numeric(delta_dir) || length(delta_dir) != 1 ||
-        !is.finite(delta_dir) || delta_dir <= 0 || delta_dir >= 1) {
-      stop("delta_dir must be a single number in (0, 1).")
-    }
-
-    sigma_sph <- 2 * sqrt(2 * log(1.25 / delta_dir)) / (n * eps_dir)
-    tilde_K <- mech_tau_sph(X_proc, sig = sigma_sph, cpp.option = cpp.option)
-
-    V_dp <- rARPACK::eigs_sym(tilde_K, k = k)$vectors
-    V_dp <- as.matrix(V_dp)
-
-    if (nrow(V_dp) != d || ncol(V_dp) != k) {
-      stop("V_dp returned by eigs_sym has wrong dimension.")
-    }
-
-    V_used <- orthonormalize_dir(V_dp, k = k)
-  }
-
-  V_used
 }
 
 #' Euclidean norm
@@ -311,4 +219,100 @@ mech_tau_sph <- function(X, sig, cpp.option = FALSE) {
   zeta_mat <- vec2mat(zeta, d)
 
   hK + zeta_mat
+}
+
+
+#' Compute principal component directions
+#'
+#' @description
+#' Returns the principal component directions actually used in downstream
+#' routines. By default, it returns the usual non-private principal component
+#' directions. When \code{g_dppca = TRUE}, it returns differentially private
+#' principal component directions based on the spherical Kendall mechanism.
+#'
+#' The input data \code{X} are preprocessed internally by
+#' \code{prep_matrix_for_pca()} using the \code{center} and
+#' \code{standardize} options.
+#'
+#' @param X Numeric matrix-like object.
+#' @param k Number of leading components.
+#' @param center Logical; whether to center columns before PCA.
+#' @param standardize Logical; whether to scale columns by their standard
+#'   deviations after optional centering.
+#' @param g_dppca Logical; whether to privatize the principal component
+#'   directions.
+#' @param eps_dir Privacy epsilon for releasing principal component directions.
+#' @param delta_dir Privacy delta for releasing principal component directions.
+#' @param cpp.option Logical passed to \code{mech_tau_sph()}.
+#'
+#' @return A direction matrix whose columns are the principal component directions used.
+#'
+#' @export
+dp_pc_dir <- function(X, k,
+                      center = TRUE,
+                      standardize = FALSE,
+                      g_dppca = FALSE,
+                      eps_dir = NULL,
+                      delta_dir = NULL,
+                      cpp.option = FALSE) {
+  X_proc <- prep_matrix_for_pca(
+    X,
+    center = center,
+    standardize = standardize
+  )
+  k <- as.integer(k)
+
+  if (k < 1 || k > ncol(X_proc)) {
+    stop("k must satisfy 1 <= k <= ncol(X) after preprocessing.")
+  }
+  if (!requireNamespace("rARPACK", quietly = TRUE)) {
+    stop("Package 'rARPACK' is required.")
+  }
+
+  n <- nrow(X_proc)
+  d <- ncol(X_proc)
+
+  # ------------------------------------------------------------
+  # Non-private principal component directions
+  # ------------------------------------------------------------
+  S_np <- stats::cov(X_proc)
+  V_np <- rARPACK::eigs_sym(S_np, k = k)$vectors
+  V_np <- as.matrix(V_np)
+
+  if (nrow(V_np) != d || ncol(V_np) != k) {
+    stop("V_np returned by eigs_sym has wrong dimension.")
+  }
+
+  V_used <- orthonormalize_dir(V_np, k = k)
+
+  # ------------------------------------------------------------
+  # DP principal component directions
+  # ------------------------------------------------------------
+  if (isTRUE(g_dppca)) {
+    if (is.null(eps_dir) || is.null(delta_dir)) {
+      stop("eps_dir and delta_dir must be supplied when g_dppca = TRUE.")
+    }
+    if (!is.numeric(eps_dir) || length(eps_dir) != 1 ||
+        !is.finite(eps_dir) || eps_dir <= 0) {
+      stop("eps_dir must be a single positive number.")
+    }
+    if (!is.numeric(delta_dir) || length(delta_dir) != 1 ||
+        !is.finite(delta_dir) || delta_dir <= 0 || delta_dir >= 1) {
+      stop("delta_dir must be a single number in (0, 1).")
+    }
+
+    sigma_sph <- 2 * sqrt(2 * log(1.25 / delta_dir)) / (n * eps_dir)
+    tilde_K <- mech_tau_sph(X_proc, sig = sigma_sph, cpp.option = cpp.option)
+
+    V_dp <- rARPACK::eigs_sym(tilde_K, k = k)$vectors
+    V_dp <- as.matrix(V_dp)
+
+    if (nrow(V_dp) != d || ncol(V_dp) != k) {
+      stop("V_dp returned by eigs_sym has wrong dimension.")
+    }
+
+    V_used <- orthonormalize_dir(V_dp, k = k)
+  }
+
+  V_used
 }

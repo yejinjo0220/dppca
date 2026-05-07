@@ -4,13 +4,13 @@
 \alias{recommend_bins}
 \title{Recommend the number of histogram bins}
 \usage{
-recommend_bins(X, method = c("W", "J"))
+recommend_bins(X, method = c("WZ", "Lei"))
 }
 \arguments{
 \item{X}{Matrix or data frame. Only the number of rows is used.}
 
 \item{method}{Character string specifying the binning rule. Supported options
-are \code{"W"} and \code{"J"}.}
+are \code{"WZ"} and \code{"Lei"}.}
 }
 \value{
 A positive integer giving the recommended number of bins per axis.

@@ -28,7 +28,7 @@ dp_score(
   frame = NULL,
   m_x = NULL,
   m_y = NULL,
-  bin_method = c("J", "W", "none")
+  bin_method = c("WZ", "Lei", "none")
 )
 ```
 

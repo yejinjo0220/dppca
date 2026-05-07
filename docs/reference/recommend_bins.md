@@ -6,7 +6,7 @@ two-dimensional histogram based on the sample size.
 ## Usage
 
 ``` r
-recommend_bins(X, method = c("W", "J"))
+recommend_bins(X, method = c("WZ", "Lei"))
 ```
 
 ## Arguments
@@ -18,7 +18,7 @@ recommend_bins(X, method = c("W", "J"))
 - method:
 
   Character string specifying the binning rule. Supported options are
-  `"W"` and `"J"`.
+  `"WZ"` and `"Lei"`.
 
 ## Value
 

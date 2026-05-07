@@ -4,7 +4,7 @@ Internal helper that computes a private upper-tail quantile estimate
 using a logarithmic grid together with noisy thresholding and noisy
 cumulative counts.
 
-This function is used in the PMW scree routine to estimate an upper
+This function is used in the PMWM scree routine to estimate an upper
 clipping bound privately. The search is carried out over a geometric
 grid determined by the lower anchor `l` and the log-binning base `beta`.
 

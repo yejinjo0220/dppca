@@ -164,12 +164,12 @@ dp_frame <- function(X, eps_q = NULL, delta_q = NULL,
 #'
 #' @param X Matrix or data frame. Only the number of rows is used.
 #' @param method Character string specifying the binning rule. Supported options
-#'   are \code{"W"} and \code{"J"}.
+#'   are \code{"WZ"} and \code{"Lei"}.
 #'
 #' @return A positive integer giving the recommended number of bins per axis.
 #'
 #' @keywords internal
-recommend_bins <- function(X, method = c("W", "J")) {
+recommend_bins <- function(X, method = c("WZ", "Lei")) {
   X <- as.data.frame(X)
   n <- nrow(X)
 
@@ -179,8 +179,8 @@ recommend_bins <- function(X, method = c("W", "J")) {
 
   m_axis <- switch(
     method,
-    "W" = n^(1/4),
-    "J" = (n / log(n))^(1/3)
+    "WZ" = n^(1/4),
+    "Lei" = (n / log(n))^(1/3)
   )
 
   max(1L, as.integer(round(m_axis)))
@@ -249,9 +249,9 @@ make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL) {
   p <- ggplot2::ggplot(hist_df) +
     ggplot2::geom_rect(
       ggplot2::aes(
-        xmin = xmin, xmax = xmax,
-        ymin = ymin, ymax = ymax,
-        alpha = prob
+        xmin = .data$xmin, xmax = .data$xmax,
+        ymin = .data$ymin, ymax = .data$ymax,
+        alpha = .data$prob
       ),
       fill = color, linewidth = 0
     ) +
@@ -285,9 +285,11 @@ make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL) {
   p <- ggplot2::ggplot(df) +
     ggplot2::geom_rect(
       ggplot2::aes(
-        xmin = xmin, xmax = xmax,
-        ymin = ymin, ymax = ymax,
-        fill = group, alpha = prob
+        xmin = .data$xmin,
+        xmax = .data$xmax,
+        ymin = .data$ymin,
+        ymax = .data$ymax,
+        fill = .data$prob
       ),
       linewidth = 0
     ) +
@@ -322,9 +324,9 @@ make_hist_single_dp <- function(df, xlim, ylim, col, title = NULL) {
   p <- ggplot2::ggplot(df) +
     ggplot2::geom_rect(
       ggplot2::aes(
-        xmin = xmin, xmax = xmax,
-        ymin = ymin, ymax = ymax,
-        alpha = prob
+        xmin = .data$xmin, xmax = .data$xmax,
+        ymin = .data$ymin, ymax = .data$ymax,
+        alpha = .data$prob
       ),
       fill = col, linewidth = 0
     ) +
@@ -356,3 +358,6 @@ make_hist_single_dp <- function(df, xlim, ylim, col, title = NULL) {
     !inherits(out, "try-error")
   }, logical(1)))
 }
+
+#' @importFrom rlang .data
+NULL

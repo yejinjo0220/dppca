@@ -69,7 +69,7 @@ dp_score <- function(
     frame   = NULL,
     m_x = NULL,
     m_y = NULL,
-    bin_method = c("J", "W", "none")
+    bin_method = c("WZ", "Lei", "none")
 ) {
   X <- as.matrix(X)
 
@@ -132,9 +132,11 @@ dp_score <- function(
     standardize = standardize
   )
 
-  V_all <- compute_pc_dir(
-    X_proc = X_proc,
+  V_all <- dp_pc_dir(
+    X = X,
     k = k_max,
+    center = center,
+    standardize = standardize,
     g_dppca = g_dppca,
     eps_dir = eps_dir,
     delta_dir = delta_dir,
@@ -295,7 +297,7 @@ dp_score_plot <- function(
     frame   = NULL,
     m_x = NULL,
     m_y = NULL,
-    bin_method = c("J", "W", "none"),
+    bin_method = c("WZ", "Lei", "none"),
     color = "#6A5ACD"
 ) {
   bin_method <- match.arg(bin_method)
@@ -326,7 +328,7 @@ dp_score_plot <- function(
   ylim <- score_res$frame$ylim
   pc_names <- colnames(score_res$score)
 
-  p_scatter <- ggplot2::ggplot(X_score, ggplot2::aes(x = pc_x, y = pc_y)) +
+  p_scatter <- ggplot2::ggplot(X_score, ggplot2::aes(x = .data$pc_x, y = .data$pc_y)) +
     ggplot2::geom_point(alpha = 0.6, size = 1.8, color = color) +
     ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
     ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
@@ -405,7 +407,7 @@ dp_score_group <- function(
     frame   = NULL,
     m_x = NULL,
     m_y = NULL,
-    bin_method = c("J", "W", "none")
+    bin_method = c("WZ", "Lei", "none")
 ) {
   bin_method <- match.arg(bin_method)
   X <- as.data.frame(X)
@@ -480,9 +482,11 @@ dp_score_group <- function(
     standardize = standardize
   )
 
-  V_all <- compute_pc_dir(
-    X_proc = X_proc,
+  V_all <- dp_pc_dir(
+    X = X_mat,
     k = k_max,
+    center = center,
+    standardize = standardize,
     g_dppca = g_dppca,
     eps_dir = eps_dir,
     delta_dir = delta_dir,
@@ -654,7 +658,7 @@ dp_score_plot_group <- function(
     frame   = NULL,
     m_x = NULL,
     m_y = NULL,
-    bin_method = c("J", "W", "none")
+    bin_method = c("WZ", "Lei", "none")
 ) {
   bin_method <- match.arg(bin_method)
 
@@ -707,7 +711,7 @@ dp_score_plot_group <- function(
 
   p_scatter <- ggplot2::ggplot(
     X_score,
-    ggplot2::aes(x = pc_x, y = pc_y, colour = group)
+    ggplot2::aes(x = .data$pc_x, y = .data$pc_y, colour = .data$group)
   ) +
     ggplot2::geom_point(alpha = 0.6, size = 1.8) +
     ggplot2::scale_colour_manual(values = col_map) +

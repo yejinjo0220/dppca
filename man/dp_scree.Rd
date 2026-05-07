@@ -7,7 +7,7 @@
 dp_scree(
   X,
   k,
-  method = c("clipped", "pmw", "huber"),
+  method = c("clipped", "pmwm", "huber"),
   eps_total,
   delta_total,
   center = TRUE,
@@ -15,20 +15,7 @@ dp_scree(
   g_dppca = FALSE,
   cpp.option = FALSE,
   mono = TRUE,
-  C_clip = 3,
-  beta = 1.01,
-  a = NULL,
-  b = NULL,
-  trim_const = 10,
-  eta = 0.01,
-  split_mode = TRUE,
-  mu0 = 0,
-  eta0 = 1,
-  T = NULL,
-  M = NULL,
-  k_min_m2 = -40,
-  k_max_m2 = 40,
-  m2_frac = 1/4
+  control = NULL
 )
 }
 \arguments{
@@ -36,7 +23,7 @@ dp_scree(
 
 \item{k}{Integer number of leading principal components.}
 
-\item{method}{One of \code{"clipped"}, \code{"pmw"}, or \code{"huber"}.}
+\item{method}{One of \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.}
 
 \item{eps_total}{Total privacy epsilon allocated to the full scree routine.}
 
@@ -52,29 +39,8 @@ dp_scree(
 
 \item{mono}{Logical; whether to apply monotone post-processing to the final DP scree vector.}
 
-\item{C_clip}{Positive clipping threshold used by the clipped estimator.}
-
-\item{beta}{Log-binning base used by the PMW quantile estimator.}
-
-\item{a, b}{Finite support bounds supplied to the PMW quantile routine.}
-
-\item{trim_const, eta}{PMW practical clipping parameters.}
-
-\item{split_mode}{Logical; whether the PMW estimator splits the sample.}
-
-\item{mu0}{Initial value used by the Huber noisy gradient descent.}
-
-\item{eta0}{Fixed step size used by the Huber noisy gradient descent.}
-
-\item{T}{Optional integer number of Huber gradient descent iterations.}
-
-\item{M}{Optional integer number of blocks used in \code{dp_m2()}.}
-
-\item{k_min_m2}{Integer lower bound for dyadic histogram bins used in the Huber scale-proxy step.}
-
-\item{k_max_m2}{Integer upper bound for dyadic histogram bins used in the Huber scale-proxy step.}
-
-\item{m2_frac}{Fraction of the Huber scree privacy budget allocated to the private scale-proxy step.}
+\item{control}{Method-specific control list created by \code{clipped_control()},
+\code{pmwm_control()}, or \code{huber_control()}.}
 }
 \value{
 A list containing \code{method}, \code{scree_np}, \code{evr_np},
@@ -88,7 +54,27 @@ DP scree estimator.
 Supported methods are:
 \itemize{
 \item \code{"clipped"}: clipped mean-based scree estimator,
-\item \code{"pmw"}: PMW-style scree estimator based on private quantiles and winsorized means,
+\item \code{"pmwm"}: PMWM-style scree estimator based on private quantiles and winsorized means,
 \item \code{"huber"}: Huber-type robust private mean-based scree estimator.
 }
+
+Method-specific tuning parameters are supplied through \code{control}:
+\itemize{
+\item \code{control = clipped_control(C_clip = ...)} for \code{method = "clipped"},
+\item \code{control = pmwm_control(beta = ..., a = ..., b = ..., trim_const = ..., eta = ..., split_mode = ...)} for \code{method = "pmwm"},
+\item \code{control = huber_control(mu0 = ..., eta0 = ..., T = ..., M = ..., k_min_m2 = ..., k_max_m2 = ..., m2_frac = ...)} for \code{method = "huber"}.
+}
+}
+\examples{
+\dontrun{
+dp_scree(X, k = 3, method = "clipped", eps_total = 1, delta_total = 1e-6,
+         control = clipped_control(C_clip = 3))
+
+dp_scree(X, k = 3, method = "pmwm", eps_total = 1, delta_total = 1e-6,
+         control = pmwm_control(a = 0, b = 10))
+
+dp_scree(X, k = 3, method = "huber", eps_total = 1, delta_total = 1e-6,
+         control = huber_control(T = 50, M = 20))
+}
+
 }

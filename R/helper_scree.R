@@ -156,16 +156,16 @@ dp_scree_clipped <- function(X, k, eps_total, delta_total,
     eps_total = eps_total,
     delta_total = delta_total
   )
-  
+
   X <- as.matrix(X)
   n <- nrow(X)
   k <- as.integer(k)
-  
+
   if (!is.numeric(C_clip) || length(C_clip) != 1 ||
       !is.finite(C_clip) || C_clip <= 0) {
     stop("C_clip must be a single positive number.")
   }
-  
+
   if (isTRUE(g_dppca)) {
     eps_dir <- eps_total / 2
     delta_dir <- delta_total / 2
@@ -177,53 +177,55 @@ dp_scree_clipped <- function(X, k, eps_total, delta_total,
     eps_scree <- eps_total
     delta_scree <- delta_total
   }
-  
+
   X_proc <- prep_matrix_for_pca(
     X = X,
     center = center,
     standardize = standardize
   )
-  
-  V_used <- compute_pc_dir(
-    X_proc = X_proc,
+
+  V_used <- dp_pc_dir(
+    X = X,
     k = k,
     g_dppca = g_dppca,
     eps_dir = eps_dir,
     delta_dir = delta_dir,
+    center = center,
+    standardize = standardize,
     cpp.option = cpp.option
   )
-  
+
   Y <- X_proc %*% V_used
-  
+
   eps_ell <- eps_scree / k
   delta_ell <- delta_scree / k
-  
+
   scree_np <- numeric(k)
   scree <- numeric(k)
-  
+
   for (ell in seq_len(k)) {
     y <- Y[, ell]
     ybar <- mean(y)
     w <- (y - ybar)^2
-    
+
     w_clip <- pmin(w, C_clip)
     mu_hat <- mean(w_clip)
-    
+
     scree_np[ell] <- (n / (n - 1)) * mu_hat
-    
+
     Delta_ell <- C_clip / (n - 1)
     sd_noise <- Delta_ell * sqrt(2 * log(1.25 / delta_ell)) / eps_ell
-    
+
     scree[ell] <- max(
       scree_np[ell] + stats::rnorm(1, mean = 0, sd = sd_noise),
       0
     )
   }
-  
+
   if (isTRUE(mono)) {
     scree <- scree_post_processing(scree)
   }
-  
+
   list(
     scree = scree,
     scree_np = scree_np,
@@ -250,34 +252,34 @@ dp_scree_clipped <- function(X, k, eps_total, delta_total,
 #' @keywords internal
 dp_hist_m2 <- function(u, eps_m2, k_min_m2 = -20, k_max_m2 = 40) {
   u <- as.numeric(u)
-  
+
   if (length(u) < 1) stop("u must have length >= 1.")
   if (!is.finite(eps_m2) || eps_m2 <= 0) stop("eps_m2 must be > 0.")
-  
+
   k_min_m2 <- as.integer(k_min_m2)
   k_max_m2 <- as.integer(k_max_m2)
-  
+
   if (k_min_m2 > k_max_m2) stop("Need k_min_m2 <= k_max_m2.")
-  
+
   bins <- k_min_m2:k_max_m2
   counts <- integer(length(bins))
   names(counts) <- as.character(bins)
-  
+
   for (val in u) {
     if (!is.finite(val) || val < 0) next
-    
+
     kk <- if (val == 0) {
       k_min_m2
     } else {
       as.integer(winsorization(floor(log(val, base = 2)), k_min_m2, k_max_m2))
     }
-    
+
     counts[[as.character(kk)]] <- counts[[as.character(kk)]] + 1L
   }
-  
+
   noisy <- as.numeric(counts) + VGAM::rlaplace(length(counts), scale = 1 / eps_m2)
   noisy <- pmax(noisy, 0)
-  
+
   2^as.integer(names(counts)[which.max(noisy)])
 }
 
@@ -302,35 +304,35 @@ dp_hist_m2 <- function(u, eps_m2, k_min_m2 = -20, k_max_m2 = 40) {
 dp_m2 <- function(w, eps_m2, M = NULL, k_min_m2 = -20, k_max_m2 = 40) {
   w <- as.numeric(w)
   n <- length(w)
-  
+
   if (n < 4) stop("Need length(w) >= 4.")
   if (!is.finite(eps_m2) || eps_m2 <= 0) stop("eps_m2 must be > 0.")
-  
+
   m_pairs <- floor(n / 2)
   w1 <- w[seq(1, 2 * m_pairs, by = 2)]
   w2 <- w[seq(2, 2 * m_pairs, by = 2)]
-  
+
   s <- (w1 - w2)^2 / 2
-  
+
   if (is.null(M)) M <- floor(sqrt(n / 2))
   M <- as.integer(M)
-  
+
   if (M < 1) stop("M must be >= 1.")
   if (M > length(s)) M <- length(s)
-  
+
   block_size <- floor(length(s) / M)
   if (block_size < 1) {
     M <- length(s)
     block_size <- 1
   }
-  
+
   u <- numeric(M)
   for (b in seq_len(M)) {
     start <- (b - 1) * block_size + 1
     end <- if (b == M) length(s) else b * block_size
     u[b] <- stats::median(s[start:end])
   }
-  
+
   dp_hist_m2(u = u, eps_m2 = eps_m2, k_min_m2 = k_min_m2, k_max_m2 = k_max_m2
   )
 }
@@ -350,17 +352,17 @@ dp_m2 <- function(w, eps_m2, M = NULL, k_min_m2 = -20, k_max_m2 = 40) {
 #' @keywords internal
 tau_from_m2 <- function(m2_hat, eps_tau, n_tau) {
   m2_hat <- max(as.numeric(m2_hat), 0)
-  
+
   if (!is.finite(eps_tau) || eps_tau <= 0) stop("eps_tau must be > 0.")
   if (!is.numeric(n_tau) || length(n_tau) != 1 || n_tau < 2) {
     stop("n_tau must be >= 2.")
   }
-  
+
   ln <- log(n_tau)
   denom <- sqrt((1 + ln) * ln)
-  
+
   if (!is.finite(denom) || denom <= 0) denom <- 1
-  
+
   sqrt(m2_hat) * sqrt((eps_tau * n_tau) / denom)
 }
 
@@ -381,17 +383,13 @@ tau_from_m2 <- function(m2_hat, eps_tau, n_tau) {
 #' @param T Positive integer number of gradient-descent iterations.
 #' @param mu0 Initial value for the iterative procedure.
 #' @param eta0 Base step size.
-#' @param step_schedule Character string specifying the step-size schedule.
-#'   Allowed values are \code{"fixed"} and \code{"1/sqrt(t)"}.
-#' @param scale_factor Positive multiplicative factor applied to the released
-#'   estimate and to the noise calibration.
 #'
 #' @return Numeric scalar representing the final private estimate.
 #' @keywords internal
 dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
   w <- as.numeric(w)
   n <- length(w)
-  
+
   if (n < 2) stop("Need length(w) >= 2.")
   if (!is.finite(eps_gd) || eps_gd <= 0) stop("eps_gd must be > 0.")
   if (!is.finite(delta_gd) || delta_gd <= 0 || delta_gd >= 1) {
@@ -400,24 +398,24 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
   if (!is.finite(tau) || tau <= 0) stop("tau must be > 0.")
   if (!is.finite(eta0) || eta0 <= 0) stop("eta0 must be > 0.")
   if (!is.numeric(T) || T < 1) stop("T must be >= 1.")
-  
+
   T <- as.integer(T)
   mu <- as.numeric(mu0)
-  
+
   eps_step <- eps_gd / T
   del_step <- delta_gd / T
-  
+
   for (t in 0:(T - 1L)) {
     r <- w - mu
     psi <- winsorization(r, -tau, tau)
     g <- mean(psi)
-    
+
     Delta_step <- (2 * eta0 * tau) / n
     sd_noise <- Delta_step * sqrt(2 * log(1.25 / del_step)) / eps_step
-    
+
     mu <- mu + eta0 * g + stats::rnorm(1, mean = 0, sd = sd_noise)
   }
-  
+
   mu
 }
 
@@ -489,24 +487,24 @@ dp_scree_huber <- function(X, k, eps_total, delta_total,
                            m2_frac = 1/4,
                            mono = TRUE) {
   validate_scree_inputs(X = X, k = k, eps_total = eps_total, delta_total = delta_total)
-  
+
   X <- as.matrix(X)
   n <- nrow(X)
   k <- as.integer(k)
-  
+
   if (!is.finite(eta0) || eta0 <= 0) {
     stop("eta0 must be > 0.")
   }
   if (!is.finite(m2_frac) || m2_frac <= 0 || m2_frac >= 1) {
     stop("m2_frac must be in (0, 1).")
   }
-  
+
   if (is.null(T)) T <- ceiling(log(n))
   T <- max(1L, as.integer(T))
-  
+
   if (is.null(M)) M <- floor(sqrt(n / 2))
   M <- max(1L, as.integer(M))
-  
+
   if (isTRUE(g_dppca)) {
     eps_dir <- eps_total / 2
     delta_dir <- delta_total / 2
@@ -518,40 +516,42 @@ dp_scree_huber <- function(X, k, eps_total, delta_total,
     eps_scree <- eps_total
     delta_scree <- delta_total
   }
-  
+
   eps_m2 <- eps_scree * m2_frac
   delta_m2 <- delta_scree * m2_frac
-  
+
   eps_gd <- eps_scree * (1 - m2_frac)
   delta_gd <- delta_scree * (1 - m2_frac)
-  
+
   eps_m2_ell <- eps_m2 / k
   delta_m2_ell <- delta_m2 / k
-  
+
   eps_gd_ell <- eps_gd / k
   delta_gd_ell <- delta_gd / k
-  
+
   X_proc <- prep_matrix_for_pca(X = X, center = center, standardize = standardize)
-  
-  V_used <- compute_pc_dir(
-    X_proc = X_proc,
+
+  V_used <- dp_pc_dir(
+    X = X,
     k = k,
     g_dppca = g_dppca,
     eps_dir = eps_dir,
     delta_dir = delta_dir,
+    center = center,
+    standardize = standardize,
     cpp.option = cpp.option
   )
-  
+
   Y <- X_proc %*% V_used
-  
+
   scree_np <- numeric(k)
   scree <- numeric(k)
-  
+
   for (ell in seq_len(k)) {
     y <- Y[, ell]
     ybar <- mean(y)
     w <- (y - ybar)^2
-    
+
     m2_hat <- dp_m2(
       w = w,
       eps_m2 = eps_m2_ell,
@@ -559,17 +559,17 @@ dp_scree_huber <- function(X, k, eps_total, delta_total,
       k_min_m2 = k_min_m2,
       k_max_m2 = k_max_m2
     )
-    
+
     tau_ell <- tau_from_m2(
       m2_hat = m2_hat,
       eps_tau = eps_gd_ell,
       n_tau = n
     )
-    
+
     if (!is.finite(tau_ell) || tau_ell <= 0) {
       tau_ell <- 1
     }
-    
+
     muT <- dp_huber_noisy_gd(
       w = w,
       eps_gd = eps_gd_ell,
@@ -579,15 +579,15 @@ dp_scree_huber <- function(X, k, eps_total, delta_total,
       mu0 = mu0,
       eta0 = eta0
     )
-    
+
     scree_np[ell] <- (n / (n - 1)) * mean(w)
     scree[ell] <- (n / (n - 1)) * max(muT, 0)
   }
-  
+
   if (isTRUE(mono)) {
     scree <- scree_post_processing(scree)
   }
-  
+
   list(
     scree = scree,
     scree_np = scree_np,
@@ -602,7 +602,7 @@ dp_scree_huber <- function(X, k, eps_total, delta_total,
 #' Internal helper that computes a private upper-tail quantile estimate using a
 #' logarithmic grid together with noisy thresholding and noisy cumulative counts.
 #'
-#' This function is used in the PMW scree routine to estimate an upper clipping
+#' This function is used in the PMWM scree routine to estimate an upper clipping
 #' bound privately. The search is carried out over a geometric grid determined by
 #' the lower anchor \code{l} and the log-binning base \code{beta}.
 #'
@@ -626,7 +626,7 @@ unbounded_quantile_upper <- function(data, l, beta, q,
                                      max_extra_bins = 1000) {
   data <- as.numeric(data)
   n <- length(data)
-  
+
   if (n < 1) stop("data must have length >= 1.")
   if (!is.finite(l)) stop("l must be finite.")
   if (!is.finite(beta) || beta <= 1) stop("beta must be > 1.")
@@ -639,39 +639,39 @@ unbounded_quantile_upper <- function(data, l, beta, q,
   if (!is.finite(delta_2) || delta_2 <= 0 || delta_2 >= 1) {
     stop("delta_2 must be in (0, 1).")
   }
-  
+
   max_extra_bins <- as.integer(max_extra_bins)
   if (!is.finite(max_extra_bins) || max_extra_bins < 0) {
     stop("max_extra_bins must be a nonnegative integer.")
   }
-  
+
   sd1 <- sqrt(2 * log(1.25 / delta_1)) / eps_1
   sd2 <- sqrt(2 * log(1.25 / delta_2)) / eps_2
-  
+
   z <- pmax(data - l + 1, beta)
   idx <- as.integer(floor(log(z, base = beta)))
   counts <- table(idx)
-  
+
   get_count <- function(i) {
     key <- as.character(i)
     if (key %in% names(counts)) as.integer(counts[[key]]) else 0L
   }
-  
+
   t_noisy <- q * n + stats::rnorm(1, mean = 0, sd = sd1)
-  
+
   cur <- 0L
   i <- 0L
   max_bin <- if (length(idx) > 0) max(idx) else 0L
   i_max <- max_bin + max_extra_bins
-  
+
   repeat {
     cur <- cur + get_count(i)
     i <- i + 1L
-    
+
     if (cur + stats::rnorm(1, mean = 0, sd = sd2) > t_noisy) break
     if (i > i_max) break
   }
-  
+
   val <- tryCatch(beta^i + l - 1, error = function(e) .Machine$double.xmax)
   if (!is.finite(val)) .Machine$double.xmax else val
 }
@@ -705,11 +705,11 @@ unbounded_quantile <- function(data, l, u, beta, q,
                                eps_2, delta_2,
                                max_extra_bins = 1000) {
   data <- as.numeric(data)
-  
+
   if (!is.finite(l) || !is.finite(u) || l > u) stop("Need finite l <= u.")
   if (!is.finite(beta) || beta <= 1) stop("beta must be > 1.")
   if (!is.finite(q) || q <= 0 || q >= 1) stop("q must be in (0, 1).")
-  
+
   if (q < 0.5) {
     est <- -unbounded_quantile_upper(
       data = -data,
@@ -724,7 +724,7 @@ unbounded_quantile <- function(data, l, u, beta, q,
     )
     return(max(est, l))
   }
-  
+
   est <- unbounded_quantile_upper(
     data = data,
     l = l,
@@ -736,14 +736,14 @@ unbounded_quantile <- function(data, l, u, beta, q,
     delta_2 = delta_2,
     max_extra_bins = max_extra_bins
   )
-  
+
   min(est, u)
 }
 
-#' Differentially private scree estimation via PMW
+#' Differentially private scree estimation via PMWM
 #'
 #' @description
-#' Internal helper that estimates the leading scree values using a PMW-style
+#' Internal helper that estimates the leading scree values using a PMWM-style
 #' procedure based on:
 #' \enumerate{
 #'   \item PCA preprocessing and direction estimation,
@@ -791,24 +791,24 @@ unbounded_quantile <- function(data, l, u, beta, q,
 #'   scree estimates.}
 #' }
 #' @keywords internal
-dp_scree_pmw <- function(X, k, eps_total, delta_total,
-                         g_dppca = FALSE, cpp.option = FALSE,
-                         split_mode = TRUE,
-                         center = TRUE, standardize = TRUE,
-                         beta = 1.01, a, b,
-                         trim_const = 10, eta = 0.01,
-                         mono = TRUE, max_extra_bins = 1000) {
+dp_scree_pmwm <- function(X, k, eps_total, delta_total,
+                          g_dppca = FALSE, cpp.option = FALSE,
+                          split_mode = TRUE,
+                          center = TRUE, standardize = TRUE,
+                          beta = 1.01, a, b,
+                          trim_const = 10, eta = 0.01,
+                          mono = TRUE, max_extra_bins = 1000) {
   validate_scree_inputs(
     X = X,
     k = k,
     eps_total = eps_total,
     delta_total = delta_total
   )
-  
+
   X <- as.matrix(X)
   n <- nrow(X)
   k <- as.integer(k)
-  
+
   if (!is.finite(beta) || beta <= 1) stop("beta must be > 1.")
   if (!is.finite(a) || !is.finite(b) || a > b) stop("Need finite a <= b.")
   if (!is.numeric(trim_const) || length(trim_const) != 1 || trim_const <= 0) {
@@ -817,7 +817,7 @@ dp_scree_pmw <- function(X, k, eps_total, delta_total,
   if (!is.numeric(eta) || length(eta) != 1 || eta <= 0 || eta >= 0.5) {
     stop("eta must be in (0, 0.5).")
   }
-  
+
   if (isTRUE(g_dppca)) {
     eps_dir <- eps_total / 2
     delta_dir <- delta_total / 2
@@ -829,37 +829,39 @@ dp_scree_pmw <- function(X, k, eps_total, delta_total,
     eps_scree <- eps_total
     delta_scree <- delta_total
   }
-  
+
   eps_ell <- eps_scree / k
   delta_ell <- delta_scree / k
-  
+
   eps_Q <- eps_ell / 4
   delta_Q <- delta_ell / 4
   eps_M <- eps_ell / 2
   delta_M <- delta_ell / 2
-  
+
   eps_q1 <- eps_Q / 2
   delta_q1 <- delta_Q / 2
   eps_q2 <- eps_Q / 2
   delta_q2 <- delta_Q / 2
-  
+
   X_proc <- prep_matrix_for_pca(
     X = X,
     center = center,
     standardize = standardize
   )
-  
-  V_used <- compute_pc_dir(
-    X_proc = X_proc,
+
+  V_used <- dp_pc_dir(
+    X = X,
     k = k,
     g_dppca = g_dppca,
     eps_dir = eps_dir,
     delta_dir = delta_dir,
+    center = center,
+    standardize = standardize,
     cpp.option = cpp.option
   )
-  
+
   Y <- X_proc %*% V_used
-  
+
   if (isTRUE(split_mode)) {
     m <- floor(n / 2)
     if (m < 1 || (n - m) < 1) {
@@ -871,20 +873,20 @@ dp_scree_pmw <- function(X, k, eps_total, delta_total,
     idx_q <- seq_len(n)
     idx_m <- seq_len(n)
   }
-  
+
   n_q <- length(idx_q)
   n_m <- length(idx_m)
-  
+
   trim_param <- min(max(trim_const / n_q, eta), 0.49)
-  
+
   scree_np <- numeric(k)
   scree <- numeric(k)
-  
+
   for (ell in seq_len(k)) {
     y <- Y[, ell]
     ybar <- mean(y)
     w <- (y - ybar)^2
-    
+
     L <- unbounded_quantile(
       data = w[idx_q],
       l = a,
@@ -897,7 +899,7 @@ dp_scree_pmw <- function(X, k, eps_total, delta_total,
       delta_2 = delta_q2,
       max_extra_bins = max_extra_bins
     )
-    
+
     U <- unbounded_quantile(
       data = w[idx_q],
       l = a,
@@ -910,30 +912,30 @@ dp_scree_pmw <- function(X, k, eps_total, delta_total,
       delta_2 = delta_q2,
       max_extra_bins = max_extra_bins
     )
-    
+
     if (!is.finite(L) || !is.finite(U) || U < L) {
       L <- a
       U <- b
     }
-    
+
     w_win <- pmin(pmax(w[idx_m], L), U)
     mu_hat <- mean(w_win)
-    
+
     scree_np[ell] <- (n / (n - 1)) * mu_hat
-    
+
     Delta_ell <- (n / (n - 1)) * (U - L) / n_m
     sd_noise <- Delta_ell * sqrt(2 * log(1.25 / delta_M)) / eps_M
-    
+
     scree[ell] <- max(
       scree_np[ell] + stats::rnorm(1, mean = 0, sd = sd_noise),
       0
     )
   }
-  
+
   if (isTRUE(mono)) {
     scree <- scree_post_processing(scree)
   }
-  
+
   list(
     scree = scree,
     scree_np = scree_np,

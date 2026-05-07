@@ -42,16 +42,6 @@ dp_huber_noisy_gd(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1)
 
   Base step size.
 
-- step_schedule:
-
-  Character string specifying the step-size schedule. Allowed values are
-  `"fixed"` and `"1/sqrt(t)"`.
-
-- scale_factor:
-
-  Positive multiplicative factor applied to the released estimate and to
-  the noise calibration.
-
 ## Value
 
 Numeric scalar representing the final private estimate.

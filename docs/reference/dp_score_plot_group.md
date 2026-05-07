@@ -24,7 +24,7 @@ dp_score_plot_group(
   frame = NULL,
   m_x = NULL,
   m_y = NULL,
-  bin_method = c("J", "W", "none")
+  bin_method = c("WZ", "Lei", "none")
 )
 ```
 

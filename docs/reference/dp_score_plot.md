@@ -23,7 +23,7 @@ dp_score_plot(
   frame = NULL,
   m_x = NULL,
   m_y = NULL,
-  bin_method = c("J", "W", "none"),
+  bin_method = c("WZ", "Lei", "none"),
   color = "#6A5ACD"
 )
 ```

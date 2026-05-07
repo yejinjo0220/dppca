@@ -7,40 +7,16 @@
 dp_scree_plot(
   X,
   k,
-  dp_scree_method = c("all", "clipped", "pmw", "huber"),
+  dp_scree_method = c("clipped", "pmwm", "huber", "all"),
   eps_total,
   delta_total,
   center = TRUE,
-  standardize = TRUE,
-  C_clip = 3,
-  beta = 1.01,
-  a = NULL,
-  b = NULL,
-  trim_const = 10,
-  eta = 0.01,
-  split_mode = TRUE,
-  mu0 = 0,
-  eta0 = 1,
-  T = NULL,
-  M = NULL,
-  k_min_m2 = -40,
-  k_max_m2 = 40,
-  m2_frac = 1/4,
+  standardize = FALSE,
+  control = NULL,
   g_dppca = FALSE,
   cpp.option = FALSE,
   mono = TRUE,
-  type = c("evr", "scree"),
-  show_nonprivate = TRUE,
-  show_points = TRUE,
-  col_map = NULL,
-  lty_map = NULL,
-  pch_map = NULL,
-  main = NULL,
-  xlab = "Component",
-  ylab = NULL,
-  ylim = NULL,
-  legend_pos = "topright",
-  ...
+  type = c("pve", "scree")
 )
 }
 \arguments{
@@ -49,7 +25,7 @@ dp_scree_plot(
 \item{k}{Integer number of leading principal components.}
 
 \item{dp_scree_method}{Which DP estimator(s) to plot. One of
-\code{"all"}, \code{"clipped"}, \code{"pmw"}, or \code{"huber"}.}
+\code{"all"}, \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.}
 
 \item{eps_total}{Total privacy epsilon allocated to the full scree routine.}
 
@@ -59,29 +35,8 @@ dp_scree_plot(
 
 \item{standardize}{Logical; whether to standardize columns before PCA.}
 
-\item{C_clip}{Positive clipping threshold used by the clipped estimator.}
-
-\item{beta}{Log-binning base used by the PMW quantile estimator.}
-
-\item{a, b}{Finite support bounds supplied to the PMW quantile routine.}
-
-\item{trim_const, eta}{PMW practical clipping parameters.}
-
-\item{split_mode}{Logical; whether the PMW estimator splits the sample into quantile and mean subsets.}
-
-\item{mu0}{Initial value used by the Huber noisy gradient descent.}
-
-\item{eta0}{Fixed step size used by the Huber noisy gradient descent.}
-
-\item{T}{Optional integer number of Huber gradient descent iterations.}
-
-\item{M}{Optional integer number of blocks used in \code{dp_m2()}.}
-
-\item{k_min_m2}{Integer lower bound for dyadic histogram bins used in the Huber scale-proxy step.}
-
-\item{k_max_m2}{Integer upper bound for dyadic histogram bins used in the Huber scale-proxy step.}
-
-\item{m2_frac}{Fraction of the Huber scree privacy budget allocated to the private scale-proxy step.}
+\item{control}{Method-specific control list, or a named list of control lists
+when \code{dp_scree_method = "all"}.}
 
 \item{g_dppca}{Logical; whether to privatize the PCA direction matrix.}
 
@@ -89,23 +44,7 @@ dp_scree_plot(
 
 \item{mono}{Logical; whether to apply monotone post-processing.}
 
-\item{type}{Either \code{"evr"} or \code{"scree"}.}
-
-\item{show_nonprivate}{Logical; whether to overlay the non-private curve.}
-
-\item{show_points}{Logical; whether to draw points on the plotted curves.}
-
-\item{col_map}{Optional named color vector.}
-
-\item{lty_map}{Optional named line-type vector.}
-
-\item{pch_map}{Optional named point-shape vector.}
-
-\item{main, xlab, ylab, ylim}{Plot controls.}
-
-\item{legend_pos}{Legend position.}
-
-\item{...}{Additional graphical arguments passed to \code{plot()}.}
+\item{type}{Either \code{"pve"} or \code{"scree"}.}
 }
 \value{
 Invisibly returns a list containing non-private results and the
@@ -115,6 +54,31 @@ method-specific \code{dp_scree()} outputs that were plotted.
 User-facing function that computes and plots non-private and/or
 differentially private scree curves using one or more DP scree estimators.
 
-By default, explained variance ratios (EVR) are plotted. When
+By default, proportions of variance explained (PVE) are plotted. When
 \code{type = "scree"}, raw scree values are plotted instead.
+
+Method-specific tuning parameters are supplied through \code{control}.
+For a single method, use a single control object, for example
+\code{control = pmwm_control(a = ..., b = ...)}. For
+\code{dp_scree_method = "all"}, use a named list, for example
+\code{control = list(clipped = clipped_control(...), pmwm = pmwm_control(...), huber = huber_control(...))}.
+}
+\details{
+Plot appearance is handled internally. The non-private curve is overlaid,
+points are shown on each curve, and colors, line types, point shapes,
+labels, limits, and legend position are set automatically.
+}
+\examples{
+\dontrun{
+dp_scree_plot(
+  X, k = 3, dp_scree_method = "all",
+  eps_total = 1, delta_total = 1e-6,
+  control = list(
+    clipped = clipped_control(C_clip = 3),
+    pmwm = pmwm_control(a = 0, b = 10),
+    huber = huber_control(T = 50, M = 20)
+  )
+)
+}
+
 }

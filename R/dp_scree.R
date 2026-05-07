@@ -1,7 +1,135 @@
 # ============================================================
-# dp_scree_final.R
-# User-facing functions for DP scree estimation
+# dp_scree.R
+# User-facing functions for differentially private scree estimation
 # ============================================================
+
+#' Control parameters for the clipped DP scree estimator
+#'
+#' @description
+#' Creates a control list for \code{method = "clipped"} in \code{dp_scree()}
+#' and \code{dp_scree_plot()}.
+#'
+#' @param C_clip Positive clipping threshold used by the clipped estimator.
+#'
+#' @return A list of clipped-estimator tuning parameters.
+#'
+#' @export
+clipped_control <- function(C_clip = 3) {
+  list(C_clip = C_clip)
+}
+
+#' Control parameters for the PMWM DP scree estimator
+#'
+#' @description
+#' Creates a control list for \code{method = "pmwm"} in \code{dp_scree()}
+#' and \code{dp_scree_plot()}.
+#'
+#' @param beta Log-binning base used by the PMWM private quantile estimator.
+#' @param a,b Finite support bounds supplied to the PMWM private quantile routine.
+#' @param trim_const,eta Practical clipping parameters used by the PMWM estimator.
+#' @param split_mode Logical; whether the PMWM estimator splits the sample into
+#'   quantile-estimation and mean-estimation subsets.
+#'
+#' @return A list of PMWM-estimator tuning parameters.
+#'
+#' @export
+pmwm_control <- function(
+    beta = 1.01, a = NULL, b = NULL,
+    trim_const = 10, eta = 0.01, split_mode = TRUE
+) {
+  list(
+    beta = beta,
+    a = a,
+    b = b,
+    trim_const = trim_const,
+    eta = eta,
+    split_mode = split_mode
+  )
+}
+
+#' Control parameters for the Huber DP scree estimator
+#'
+#' @description
+#' Creates a control list for \code{method = "huber"} in \code{dp_scree()}
+#' and \code{dp_scree_plot()}.
+#'
+#' @param mu0 Initial value used by the Huber noisy gradient descent.
+#' @param eta0 Fixed step size used by the Huber noisy gradient descent.
+#' @param T Optional integer number of Huber gradient descent iterations.
+#' @param M Optional integer number of blocks used in \code{dp_m2()}.
+#' @param k_min_m2 Integer lower bound for dyadic histogram bins used in the
+#'   Huber scale-proxy step.
+#' @param k_max_m2 Integer upper bound for dyadic histogram bins used in the
+#'   Huber scale-proxy step.
+#' @param m2_frac Fraction of the Huber scree privacy budget allocated to the
+#'   private scale-proxy step.
+#'
+#' @return A list of Huber-estimator tuning parameters.
+#'
+#' @export
+huber_control <- function(
+    mu0 = 0, eta0 = 1, T = NULL, M = NULL,
+    k_min_m2 = -40, k_max_m2 = 40,
+    m2_frac = 1/4
+) {
+  list(
+    mu0 = mu0,
+    eta0 = eta0,
+    T = T,
+    M = M,
+    k_min_m2 = k_min_m2,
+    k_max_m2 = k_max_m2,
+    m2_frac = m2_frac
+  )
+}
+
+.default_scree_control <- function(method) {
+  switch(
+    method,
+    clipped = clipped_control(),
+    pmwm = pmwm_control(),
+    huber = huber_control()
+  )
+}
+
+.merge_scree_control <- function(method, control) {
+  default <- .default_scree_control(method)
+
+  if (is.null(control)) {
+    control <- default
+  } else {
+    if (!is.list(control)) {
+      stop("'control' must be a control list created by clipped_control(), pmwm_control(), or huber_control().")
+    }
+    control <- utils::modifyList(default, control, keep.null = TRUE)
+  }
+
+  if (method == "clipped" && is.null(control$C_clip)) {
+    stop("For method = 'clipped', provide control = clipped_control(C_clip = ...).")
+  }
+
+  if (method == "pmwm" && (is.null(control$a) || is.null(control$b))) {
+    stop("For method = 'pmwm', provide finite bounds using control = pmwm_control(a = ..., b = ...).")
+  }
+
+  control
+}
+
+.extract_plot_control <- function(control, method) {
+  if (is.null(control)) {
+    return(NULL)
+  }
+
+  if (!is.list(control)) {
+    stop("'control' must be a control list, or a named list of control lists for dp_scree_plot().")
+  }
+
+  if (!is.null(control[[method]]) && is.list(control[[method]])) {
+    return(control[[method]])
+  }
+
+  control
+}
 
 #' Compute differentially private scree estimates
 #'
@@ -13,13 +141,20 @@
 #' Supported methods are:
 #' \itemize{
 #'   \item \code{"clipped"}: clipped mean-based scree estimator,
-#'   \item \code{"pmw"}: PMW-style scree estimator based on private quantiles and winsorized means,
+#'   \item \code{"pmwm"}: PMWM-style scree estimator based on private quantiles and winsorized means,
 #'   \item \code{"huber"}: Huber-type robust private mean-based scree estimator.
+#' }
+#'
+#' Method-specific tuning parameters are supplied through \code{control}:
+#' \itemize{
+#'   \item \code{control = clipped_control(C_clip = ...)} for \code{method = "clipped"},
+#'   \item \code{control = pmwm_control(beta = ..., a = ..., b = ..., trim_const = ..., eta = ..., split_mode = ...)} for \code{method = "pmwm"},
+#'   \item \code{control = huber_control(mu0 = ..., eta0 = ..., T = ..., M = ..., k_min_m2 = ..., k_max_m2 = ..., m2_frac = ...)} for \code{method = "huber"}.
 #' }
 #'
 #' @param X Numeric data matrix with observations in rows.
 #' @param k Integer number of leading principal components.
-#' @param method One of \code{"clipped"}, \code{"pmw"}, or \code{"huber"}.
+#' @param method One of \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.
 #' @param eps_total Total privacy epsilon allocated to the full scree routine.
 #' @param delta_total Total privacy delta allocated to the full scree routine.
 #' @param center Logical; whether to center columns before PCA.
@@ -27,36 +162,34 @@
 #' @param g_dppca Logical; whether to privatize the PCA direction matrix.
 #' @param cpp.option Logical passed to \code{mech_tau_sph()} when private directions are computed.
 #' @param mono Logical; whether to apply monotone post-processing to the final DP scree vector.
-#' @param C_clip Positive clipping threshold used by the clipped estimator.
-#' @param beta Log-binning base used by the PMW quantile estimator.
-#' @param a,b Finite support bounds supplied to the PMW quantile routine.
-#' @param trim_const,eta PMW practical clipping parameters.
-#' @param split_mode Logical; whether the PMW estimator splits the sample.
-#' @param mu0 Initial value used by the Huber noisy gradient descent.
-#' @param eta0 Fixed step size used by the Huber noisy gradient descent.
-#' @param T Optional integer number of Huber gradient descent iterations.
-#' @param M Optional integer number of blocks used in \code{dp_m2()}.
-#' @param k_min_m2 Integer lower bound for dyadic histogram bins used in the Huber scale-proxy step.
-#' @param k_max_m2 Integer upper bound for dyadic histogram bins used in the Huber scale-proxy step.
-#' @param m2_frac Fraction of the Huber scree privacy budget allocated to the private scale-proxy step.
+#' @param control Method-specific control list created by \code{clipped_control()},
+#'   \code{pmwm_control()}, or \code{huber_control()}.
 #'
 #' @return A list containing \code{method}, \code{scree_np}, \code{evr_np},
 #'   \code{scree}, and \code{evr}.
 #'
+#' @examples
+#' \dontrun{
+#' dp_scree(X, k = 3, method = "clipped", eps_total = 1, delta_total = 1e-6,
+#'          control = clipped_control(C_clip = 3))
+#'
+#' dp_scree(X, k = 3, method = "pmwm", eps_total = 1, delta_total = 1e-6,
+#'          control = pmwm_control(a = 0, b = 10))
+#'
+#' dp_scree(X, k = 3, method = "huber", eps_total = 1, delta_total = 1e-6,
+#'          control = huber_control(T = 50, M = 20))
+#' }
+#'
 #' @export
 dp_scree <- function(
-    X, k, method = c("clipped", "pmw", "huber"),
+    X, k, method = c("clipped", "pmwm", "huber"),
     eps_total, delta_total,
     center = TRUE, standardize = FALSE,
     g_dppca = FALSE, cpp.option = FALSE, mono = TRUE,
-    C_clip = 3,
-    beta = 1.01, a = NULL, b = NULL,
-    trim_const = 10, eta = 0.01, split_mode = TRUE,
-    mu0 = 0, eta0 = 1, T = NULL, M = NULL,
-    k_min_m2 = -40, k_max_m2 = 40,
-    m2_frac = 1/4
+    control = NULL
 ) {
   method <- match.arg(method)
+  control <- .merge_scree_control(method, control)
 
   X <- as.matrix(X)
   validate_scree_inputs(
@@ -68,14 +201,6 @@ dp_scree <- function(
 
   if (!requireNamespace("rARPACK", quietly = TRUE)) {
     stop("Package 'rARPACK' is required.")
-  }
-
-  if (method == "clipped" && is.null(C_clip)) {
-    stop("For method = 'clipped', you must provide 'C_clip'.")
-  }
-
-  if (method == "pmw" && (is.null(a) || is.null(b))) {
-    stop("For method = 'pmw', you must provide 'a' and 'b'.")
   }
 
   X_proc <- prep_matrix_for_pca(
@@ -96,18 +221,18 @@ dp_scree <- function(
       X = X, k = k,
       eps_total = eps_total, delta_total = delta_total,
       center = center, standardize = standardize,
-      C_clip = C_clip,
+      C_clip = control$C_clip,
       g_dppca = g_dppca, cpp.option = cpp.option,
       mono = mono
     ),
-    pmw = dp_scree_pmw(
+    pmwm = dp_scree_pmwm(
       X = X, k = k,
       eps_total = eps_total, delta_total = delta_total,
       g_dppca = g_dppca, cpp.option = cpp.option,
-      split_mode = split_mode,
+      split_mode = control$split_mode,
       center = center, standardize = standardize,
-      beta = beta, a = a, b = b,
-      trim_const = trim_const, eta = eta,
+      beta = control$beta, a = control$a, b = control$b,
+      trim_const = control$trim_const, eta = control$eta,
       mono = mono
     ),
     huber = dp_scree_huber(
@@ -115,9 +240,12 @@ dp_scree <- function(
       eps_total = eps_total, delta_total = delta_total,
       g_dppca = g_dppca, cpp.option = cpp.option,
       center = center, standardize = standardize,
-      mu0 = mu0, eta0 = eta0, T = T, M = M,
-      k_min_m2 = k_min_m2, k_max_m2 = k_max_m2,
-      m2_frac = m2_frac, mono = mono
+      mu0 = control$mu0, eta0 = control$eta0,
+      T = control$T, M = control$M,
+      k_min_m2 = control$k_min_m2,
+      k_max_m2 = control$k_max_m2,
+      m2_frac = control$m2_frac,
+      mono = mono
     )
   )
 
@@ -136,61 +264,59 @@ dp_scree <- function(
 #' User-facing function that computes and plots non-private and/or
 #' differentially private scree curves using one or more DP scree estimators.
 #'
-#' By default, explained variance ratios (EVR) are plotted. When
+#' By default, proportions of variance explained (PVE) are plotted. When
 #' \code{type = "scree"}, raw scree values are plotted instead.
+#'
+#' Method-specific tuning parameters are supplied through \code{control}.
+#' For a single method, use a single control object, for example
+#' \code{control = pmwm_control(a = ..., b = ...)}. For
+#' \code{dp_scree_method = "all"}, use a named list, for example
+#' \code{control = list(clipped = clipped_control(...), pmwm = pmwm_control(...), huber = huber_control(...))}.
 #'
 #' @param X Numeric data matrix with observations in rows.
 #' @param k Integer number of leading principal components.
 #' @param dp_scree_method Which DP estimator(s) to plot. One of
-#'   \code{"all"}, \code{"clipped"}, \code{"pmw"}, or \code{"huber"}.
+#'   \code{"all"}, \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.
 #' @param eps_total Total privacy epsilon allocated to the full scree routine.
 #' @param delta_total Total privacy delta allocated to the full scree routine.
 #' @param center Logical; whether to center columns before PCA.
 #' @param standardize Logical; whether to standardize columns before PCA.
-#' @param C_clip Positive clipping threshold used by the clipped estimator.
-#' @param beta Log-binning base used by the PMW quantile estimator.
-#' @param a,b Finite support bounds supplied to the PMW quantile routine.
-#' @param trim_const,eta PMW practical clipping parameters.
-#' @param split_mode Logical; whether the PMW estimator splits the sample into quantile and mean subsets.
-#' @param mu0 Initial value used by the Huber noisy gradient descent.
-#' @param eta0 Fixed step size used by the Huber noisy gradient descent.
-#' @param T Optional integer number of Huber gradient descent iterations.
-#' @param M Optional integer number of blocks used in \code{dp_m2()}.
-#' @param k_min_m2 Integer lower bound for dyadic histogram bins used in the Huber scale-proxy step.
-#' @param k_max_m2 Integer upper bound for dyadic histogram bins used in the Huber scale-proxy step.
-#' @param m2_frac Fraction of the Huber scree privacy budget allocated to the private scale-proxy step.
+#' @param control Method-specific control list, or a named list of control lists
+#'   when \code{dp_scree_method = "all"}.
 #' @param g_dppca Logical; whether to privatize the PCA direction matrix.
 #' @param cpp.option Logical passed to \code{mech_tau_sph()} when private directions are computed.
 #' @param mono Logical; whether to apply monotone post-processing.
-#' @param type Either \code{"evr"} or \code{"scree"}.
-#' @param show_nonprivate Logical; whether to overlay the non-private curve.
-#' @param show_points Logical; whether to draw points on the plotted curves.
-#' @param col_map Optional named color vector.
-#' @param lty_map Optional named line-type vector.
-#' @param pch_map Optional named point-shape vector.
-#' @param main,xlab,ylab,ylim Plot controls.
-#' @param legend_pos Legend position.
-#' @param ... Additional graphical arguments passed to \code{plot()}.
+#' @param type Either \code{"pve"} or \code{"scree"}.
+#'
+#' @details
+#' Plot appearance is handled internally. The non-private curve is overlaid,
+#' points are shown on each curve, and colors, line types, point shapes,
+#' labels, limits, and legend position are set automatically.
 #'
 #' @return Invisibly returns a list containing non-private results and the
 #'   method-specific \code{dp_scree()} outputs that were plotted.
 #'
+#' @examples
+#' \dontrun{
+#' dp_scree_plot(
+#'   X, k = 3, dp_scree_method = "all",
+#'   eps_total = 1, delta_total = 1e-6,
+#'   control = list(
+#'     clipped = clipped_control(C_clip = 3),
+#'     pmwm = pmwm_control(a = 0, b = 10),
+#'     huber = huber_control(T = 50, M = 20)
+#'   )
+#' )
+#' }
+#'
 #' @export
 dp_scree_plot <- function(
-    X, k, dp_scree_method = c("all", "clipped", "pmw", "huber"),
+    X, k, dp_scree_method = c("clipped", "pmwm", "huber", "all"),
     eps_total, delta_total,
-    center = TRUE, standardize = TRUE,
-    C_clip = 3,
-    beta = 1.01, a = NULL, b = NULL,
-    trim_const = 10, eta = 0.01, split_mode = TRUE,
-    mu0 = 0, eta0 = 1, T = NULL, M = NULL,
-    k_min_m2 = -40, k_max_m2 = 40,
-    m2_frac = 1/4,
+    center = TRUE, standardize = FALSE,
+    control = NULL,
     g_dppca = FALSE, cpp.option = FALSE, mono = TRUE,
-    type = c("evr", "scree"), show_nonprivate = TRUE, show_points = TRUE,
-    col_map = NULL, lty_map = NULL, pch_map = NULL,
-    main = NULL, xlab = "Component", ylab = NULL, ylim = NULL,
-    legend_pos = "topright", ...
+    type = c("pve", "scree")
 ) {
   dp_scree_method <- match.arg(dp_scree_method)
   type <- match.arg(type)
@@ -204,19 +330,28 @@ dp_scree_plot <- function(
   )
 
   need_clipped <- dp_scree_method %in% c("all", "clipped")
-  need_pmw <- dp_scree_method %in% c("all", "pmw")
+  need_pmwm <- dp_scree_method %in% c("all", "pmwm")
   need_huber <- dp_scree_method %in% c("all", "huber")
 
-  if (need_clipped && is.null(C_clip)) {
-    stop("For dp_scree_method = 'clipped' or 'all', you must provide 'C_clip'.")
-  }
-  if (need_pmw && (is.null(a) || is.null(b))) {
-    stop("For dp_scree_method = 'pmw' or 'all', you must provide 'a' and 'b'.")
-  }
-
-  if (is.null(col_map)) col_map <- c(nonprivate = "black", clipped = "red", pmw = "forestgreen", huber = "blue")
-  if (is.null(lty_map)) lty_map <- c(nonprivate = 1, clipped = 1, pmw = 1, huber = 1)
-  if (is.null(pch_map)) pch_map <- c(nonprivate = 16, clipped = 17, pmw = 15, huber = 18)
+  col_map <- c(
+    nonprivate = "black",
+    clipped = "red",
+    pmwm = "forestgreen",
+    huber = "blue"
+  )
+  lty_map <- c(
+    nonprivate = 1,
+    clipped = 1,
+    pmwm = 1,
+    huber = 1
+  )
+  pch_map <- c(
+    nonprivate = 16,
+    clipped = 17,
+    pmwm = 15,
+    huber = 18
+  )
+  legend_pos <- "topright"
 
   results <- list()
 
@@ -226,18 +361,17 @@ dp_scree_plot <- function(
       eps_total = eps_total, delta_total = delta_total,
       center = center, standardize = standardize,
       g_dppca = g_dppca, cpp.option = cpp.option, mono = mono,
-      C_clip = C_clip
+      control = .extract_plot_control(control, "clipped")
     )
   }
 
-  if (need_pmw) {
-    results$pmw <- dp_scree(
-      X = X, k = k, method = "pmw",
+  if (need_pmwm) {
+    results$pmwm <- dp_scree(
+      X = X, k = k, method = "pmwm",
       eps_total = eps_total, delta_total = delta_total,
       center = center, standardize = standardize,
       g_dppca = g_dppca, cpp.option = cpp.option, mono = mono,
-      beta = beta, a = a, b = b,
-      trim_const = trim_const, eta = eta, split_mode = split_mode
+      control = .extract_plot_control(control, "pmwm")
     )
   }
 
@@ -247,9 +381,7 @@ dp_scree_plot <- function(
       eps_total = eps_total, delta_total = delta_total,
       center = center, standardize = standardize,
       g_dppca = g_dppca, cpp.option = cpp.option, mono = mono,
-      mu0 = mu0, eta0 = eta0, T = T, M = M,
-      k_min_m2 = k_min_m2, k_max_m2 = k_max_m2,
-      m2_frac = m2_frac
+      control = .extract_plot_control(control, "huber")
     )
   }
 
@@ -257,21 +389,22 @@ dp_scree_plot <- function(
   if (is.null(ref_obj)) stop("Nothing to plot: no DP result was computed.")
 
   y_list <- list()
-  if (show_nonprivate) y_list$nonprivate <- if (type == "scree") ref_obj$scree_np else ref_obj$evr_np
-  for (nm in names(results)) y_list[[nm]] <- if (type == "scree") results[[nm]]$scree else results[[nm]]$evr
+  y_list$nonprivate <- if (type == "scree") ref_obj$scree_np else ref_obj$evr_np
+  for (nm in names(results)) {
+    y_list[[nm]] <- if (type == "scree") results[[nm]]$scree else results[[nm]]$evr
+  }
 
-  if (is.null(ylab)) ylab <- if (type == "scree") "Scree Value" else "Explained Variance Ratio"
-  if (is.null(main)) main <- if (type == "scree") "DP Scree Plot" else "DP Explained Variance Ratio Plot"
+  ylab <- if (type == "scree") "Scree Value" else "Proportion of Variance Explained"
+  main <- if (type == "scree") "DP Scree Plot" else "DP PVE Plot"
+  xlab <- "Component"
 
-  if (is.null(ylim)) {
-    y_all <- unlist(y_list, use.names = FALSE)
-    y_all <- y_all[is.finite(y_all)]
-    if (length(y_all) == 0) {
-      ylim <- c(0, 1)
-    } else {
-      ylim <- range(y_all)
-      if (diff(ylim) == 0) ylim <- ylim + c(-0.5, 0.5)
-    }
+  y_all <- unlist(y_list, use.names = FALSE)
+  y_all <- y_all[is.finite(y_all)]
+  if (length(y_all) == 0) {
+    ylim <- c(0, 1)
+  } else {
+    ylim <- range(y_all)
+    if (diff(ylim) == 0) ylim <- ylim + c(-0.5, 0.5)
   }
 
   idx <- seq_len(k)
@@ -281,18 +414,18 @@ dp_scree_plot <- function(
 
   graphics::plot(
     idx, y1,
-    type = if (show_points) "b" else "l",
+    type = "b",
     col = unname(col_map[nm1]),
     lty = unname(lty_map[nm1]),
     pch = unname(pch_map[nm1]),
-    xlab = xlab, ylab = ylab, main = main, ylim = ylim, ...
+    xlab = xlab, ylab = ylab, main = main, ylim = ylim
   )
 
   if (length(series_names) >= 2) {
     for (nm in series_names[-1]) {
       graphics::lines(
         idx, y_list[[nm]],
-        type = if (show_points) "b" else "l",
+        type = "b",
         col = unname(col_map[nm]),
         lty = unname(lty_map[nm]),
         pch = unname(pch_map[nm])
@@ -310,7 +443,8 @@ dp_scree_plot <- function(
   )
 
   invisible(list(
-    nonprivate = list(scree = ref_obj$scree_np, evr = ref_obj$evr_np),
+    nonprivate = list(scree = ref_obj$scree_np, pve = ref_obj$evr_np),
     results = results
   ))
 }
+
