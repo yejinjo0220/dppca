@@ -310,45 +310,29 @@ The exact function arguments may depend on the installed version of `dppca`.
 A typical workflow is as follows.
 
 ```{r, eval = FALSE}
-library(dppca)
-
-# x: numeric data matrix or data frame
-# epsilon, delta: privacy parameters
-
-out <- dp_score_plot(
-  x,
+dp_score_plot(
+  X,
   k = 2,
-  epsilon = 1,
-  delta = 1e-6,
-  hist_method = "additive"
-)
-
-out
-```
-
-A sparse histogram version is
-
-```{r, eval = FALSE}
-out_sparse <- dp_score_plot(
-  x,
-  k = 2,
-  epsilon = 1,
-  delta = 1e-6,
-  hist_method = "sparse"
+  eps_total = 1,
+  delta_total = 1e-6,
+  bin_method = "WZ"
 )
 ```
+
 
 For group-wise score histogram:
 
 ```{r, eval = FALSE}
-out_group <- group_dp_score_plot(
-  x,
-  group = group_label,
-  k = 2,
-  epsilon = 1,
-  delta = 1e-6,
-  hist_method = "sparse"
+dp_score_plot_group(
+  X = gau_g,
+  G = "color",
+  eps_total = 5,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  bin_method = "WZ"
 )
+
 ```
 
 

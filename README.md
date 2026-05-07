@@ -12,8 +12,7 @@ The main goal of `dppca` is to make it easy to compare non-private PCA summaries
 You can install the development version from GitHub with:
 
 ```r
-# install.packages("pak")
-pak::pak("yejinjo0220/dppca")
+devtools::install_github("yejinjo0220/dppca")
 ```
 
 After the package is available on CRAN, you will be able to install it with:
