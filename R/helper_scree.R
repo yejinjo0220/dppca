@@ -61,11 +61,11 @@ scree_post_processing <- function(x) {
   pmax(-fit$yf, 0)
 }
 
-#' Convert scree values to explained variance ratios safely
+#' Convert scree values to proportions of variance explained safely
 #'
 #' @description
-#' Internal helper that converts a vector of scree estimates to explained
-#' variance ratios (EVR). If the total scree is positive and finite, this returns
+#' Internal helper that converts a vector of scree estimates to proportions
+#' of variance explained (PVE). If the total scree is positive and finite, this returns
 #' the normalized vector \code{scree / sum(scree)}. If the total scree is
 #' nonpositive or nonfinite, this helper returns a zero vector instead of
 #' propagating problematic values.
@@ -73,9 +73,9 @@ scree_post_processing <- function(x) {
 #' @param scree Numeric vector of scree estimates.
 #'
 #' @return Numeric vector of the same length as \code{scree}, interpreted as
-#'   explained variance ratios.
+#'   proportions of variance explained.
 #' @keywords internal
-scree_to_evr <- function(scree) {
+scree_to_pve <- function(scree) {
   scree <- as.numeric(scree)
   s <- sum(scree)
   if (!is.finite(s) || s <= 0) return(rep(0, length(scree)))
@@ -141,7 +141,7 @@ winsorization <- function(x, lo, hi) {
 #' \describe{
 #'   \item{\code{scree}}{Private scree estimates.}
 #'   \item{\code{scree_np}}{Non-private clipped scree estimates.}
-#'   \item{\code{evr}}{Explained variance ratios computed from the private scree
+#'   \item{\code{pve}}{Proportions of variance explained computed from the private scree
 #'     estimates.}
 #' }
 #' @keywords internal
@@ -229,7 +229,7 @@ dp_scree_clipped <- function(X, k, eps_total, delta_total,
   list(
     scree = scree,
     scree_np = scree_np,
-    evr = scree_to_evr(scree)
+    pve = scree_to_pve(scree)
   )
 }
 
@@ -475,7 +475,7 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 #'   \item{\code{scree}}{Private scree estimates.}
 #'   \item{\code{scree_np}}{Non-private scree estimates computed as
 #'     \eqn{(n/(n-1)) \times mean(w_{i\ell})}.}
-#'   \item{\code{evr}}{Explained variance ratios computed from the private scree
+#'   \item{\code{pve}}{Proportions of variance explained computed from the private scree
 #'     estimates.}
 #' }
 #' @keywords internal
@@ -591,7 +591,7 @@ dp_scree_huber <- function(X, k, eps_total, delta_total,
   list(
     scree = scree,
     scree_np = scree_np,
-    evr = scree_to_evr(scree)
+    pve = scree_to_pve(scree)
   )
 }
 
@@ -787,7 +787,7 @@ unbounded_quantile <- function(data, l, u, beta, q,
 #' \describe{
 #'   \item{\code{scree}}{Private scree estimates.}
 #'   \item{\code{scree_np}}{Non-private winsorized scree estimates.}
-#'   \item{\code{evr}}{Explained variance ratios computed from the private
+#'   \item{\code{pve}}{Proportions of variance explained computed from the private
 #'   scree estimates.}
 #' }
 #' @keywords internal
@@ -939,6 +939,6 @@ dp_scree_pmwm <- function(X, k, eps_total, delta_total,
   list(
     scree = scree,
     scree_np = scree_np,
-    evr = scree_to_evr(scree)
+    pve = scree_to_pve(scree)
   )
 }

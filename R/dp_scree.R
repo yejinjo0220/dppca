@@ -165,8 +165,8 @@ huber_control <- function(
 #' @param control Method-specific control list created by \code{clipped_control()},
 #'   \code{pmwm_control()}, or \code{huber_control()}.
 #'
-#' @return A list containing \code{method}, \code{scree_np}, \code{evr_np},
-#'   \code{scree}, and \code{evr}.
+#' @return A list containing \code{method}, \code{scree_np}, \code{pve_np},
+#'   \code{scree}, and \code{pve}.
 #'
 #' @examples
 #' \dontrun{
@@ -213,7 +213,7 @@ dp_scree <- function(
   eig_np <- rARPACK::eigs_sym(S_np, k = k)
 
   scree_np <- as.numeric(eig_np$values)
-  evr_np <- scree_to_evr(scree_np)
+  pve_np <- scree_to_pve(scree_np)
 
   result <- switch(
     method,
@@ -252,9 +252,9 @@ dp_scree <- function(
   list(
     method   = method,
     scree_np = scree_np,
-    evr_np   = evr_np,
+    pve_np   = pve_np,
     scree    = result$scree,
-    evr      = result$evr
+    pve      = result$pve
   )
 }
 
@@ -389,9 +389,9 @@ dp_scree_plot <- function(
   if (is.null(ref_obj)) stop("Nothing to plot: no DP result was computed.")
 
   y_list <- list()
-  y_list$nonprivate <- if (type == "scree") ref_obj$scree_np else ref_obj$evr_np
+  y_list$nonprivate <- if (type == "scree") ref_obj$scree_np else ref_obj$pve_np
   for (nm in names(results)) {
-    y_list[[nm]] <- if (type == "scree") results[[nm]]$scree else results[[nm]]$evr
+    y_list[[nm]] <- if (type == "scree") results[[nm]]$scree else results[[nm]]$pve
   }
 
   ylab <- if (type == "scree") "Scree Value" else "Proportion of Variance Explained"
@@ -443,7 +443,7 @@ dp_scree_plot <- function(
   )
 
   invisible(list(
-    nonprivate = list(scree = ref_obj$scree_np, pve = ref_obj$evr_np),
+    nonprivate = list(scree = ref_obj$scree_np, pve = ref_obj$pve_np),
     results = results
   ))
 }
