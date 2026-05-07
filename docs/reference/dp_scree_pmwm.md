@@ -128,6 +128,7 @@ A list with components:
 
   Non-private winsorized scree estimates.
 
-- `evr`:
+- `pve`:
 
-  Explained variance ratios computed from the private scree estimates.
+  Proportions of variance explained computed from the private scree
+  estimates.

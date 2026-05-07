@@ -234,6 +234,17 @@ score_plot <- dp_score_plot(
 )
 
 score_plot
+
+dp_score_plot_group(
+  X = gau_g,
+  G = "color",
+  eps_total = 5,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  bin_method = "WZ"
+)
+
 ```
 
 ## Notes on preprocessing

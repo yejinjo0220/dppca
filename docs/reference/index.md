@@ -1,5 +1,13 @@
 # Package index
 
+## Shiny app
+
+Interactive Shiny app for exploring differentially private PCA scree and
+score plots.
+
+- [`dppca_app()`](https://yejinjo0220.github.io/dppca/reference/dppca_app.md)
+  : Launch the dppca Shiny app
+
 ## DP PCA Visualization
 
 Functions for constructing differentially private PCA visualizations.
@@ -55,5 +63,3 @@ Datasets included for examples and demonstrations.
   Gaussian example data
 - [`gau_g`](https://yejinjo0220.github.io/dppca/reference/gau_g.md) :
   Group labels for Gaussian example data
-- [`gaussian_groups`](https://yejinjo0220.github.io/dppca/reference/gaussian_groups.md)
-  : Gaussian grouped example data

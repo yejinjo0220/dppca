@@ -53,6 +53,13 @@ articles:
   - algorithms
 
 reference:
+- title: "Shiny app"
+  desc: >
+    Interactive Shiny app for exploring differentially private PCA scree
+    and score plots.
+  contents:
+  - dppca_app
+
 - title: "DP PCA Visualization"
   desc: >
     Functions for constructing differentially private PCA visualizations.
@@ -93,4 +100,3 @@ reference:
   - eur_map_g
   - gau
   - gau_g
-  - gaussian_groups

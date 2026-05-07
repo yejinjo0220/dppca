@@ -258,6 +258,16 @@ score_plot <- dp_score_plot(
 )
 
 score_plot
+
+dp_score_plot_group(
+  X = gau_g,
+  G = "color",
+  eps_total = 5,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  bin_method = "WZ"
+)
 ```
 
 ## Notes on preprocessing
@@ -284,6 +294,14 @@ This package is released under the license specified in the
 `DESCRIPTION` file.
 
 # Package index
+
+## Shiny app
+
+Interactive Shiny app for exploring differentially private PCA scree and
+score plots.
+
+- [`dppca_app()`](https://yejinjo0220.github.io/dppca/reference/dppca_app.md)
+  : Launch the dppca Shiny app
 
 ## DP PCA Visualization
 
@@ -340,8 +358,6 @@ Datasets included for examples and demonstrations.
   Gaussian example data
 - [`gau_g`](https://yejinjo0220.github.io/dppca/reference/gau_g.md) :
   Group labels for Gaussian example data
-- [`gaussian_groups`](https://yejinjo0220.github.io/dppca/reference/gaussian_groups.md)
-  : Gaussian grouped example data
 
 # Articles
 

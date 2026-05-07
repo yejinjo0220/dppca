@@ -45,7 +45,7 @@ A list with components:
 \describe{
 \item{\code{scree}}{Private scree estimates.}
 \item{\code{scree_np}}{Non-private clipped scree estimates.}
-\item{\code{evr}}{Explained variance ratios computed from the private scree
+\item{\code{pve}}{Proportions of variance explained computed from the private scree
 estimates.}
 }
 }

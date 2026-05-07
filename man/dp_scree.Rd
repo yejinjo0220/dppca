@@ -43,8 +43,8 @@ dp_scree(
 \code{pmwm_control()}, or \code{huber_control()}.}
 }
 \value{
-A list containing \code{method}, \code{scree_np}, \code{evr_np},
-\code{scree}, and \code{evr}.
+A list containing \code{method}, \code{scree_np}, \code{pve_np},
+\code{scree}, and \code{pve}.
 }
 \description{
 User-facing function for differentially private scree estimation.

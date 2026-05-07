@@ -267,19 +267,18 @@ is too large, the required privacy noise may increase.</li>
 </annotation></semantics></math></p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/yejinjo0220/dppca" class="external-link">dppca</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># x: numeric data matrix or data frame</span></span>
-<span><span class="co"># epsilon, delta: privacy parameters</span></span>
-<span></span>
-<span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  epsilon <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"clipped"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">out</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/dp_scree.html">dp_scree</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"clipped"</span>,</span>
+<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
+<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="../reference/clipped_control.html">clipped_control</a></span><span class="op">(</span></span>
+<span>    C_clip <span class="op">=</span> <span class="fl">3</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -533,19 +532,19 @@ is used for Huber noisy gradient descent.</p>
 mu0,\ eta0,\ T,\ M,\ k\_min\_m2,\ k\_max\_m2,\ m2\_frac)}.
 </annotation></semantics></math></p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/yejinjo0220/dppca" class="external-link">dppca</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  epsilon <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta <span class="op">=</span> <span class="fl">1e-6</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/dp_scree.html">dp_scree</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"huber"</span>,</span>
-<span>  control <span class="op">=</span> <span class="fu">scree_huber_control</span><span class="op">(</span></span>
+<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
+<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="../reference/huber_control.html">huber_control</a></span><span class="op">(</span></span>
 <span>    mu0 <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>    eta0 <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    T <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>    M <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>    T <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>    M <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>    k_min_m2 <span class="op">=</span> <span class="op">-</span><span class="fl">40</span>,</span>
 <span>    k_max_m2 <span class="op">=</span> <span class="fl">40</span>,</span>
 <span>    m2_frac <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">4</span></span>
@@ -868,26 +867,23 @@ beta = beta,a = a,b = b, trim_const = C, eta = eta split_mode = split)</mtext><a
 beta = beta,a = a,b = b, trim_const = C, eta = eta split_mode = split)}
 </annotation></semantics></math></p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/yejinjo0220/dppca" class="external-link">dppca</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  epsilon <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"pmw"</span>,</span>
-<span>  control <span class="op">=</span> <span class="fu">scree_pmw_control</span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/dp_scree.html">dp_scree</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"pmwm"</span>,</span>
+<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
+<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="../reference/pmwm_control.html">pmwm_control</a></span><span class="op">(</span></span>
 <span>    beta <span class="op">=</span> <span class="fl">1.01</span>,</span>
 <span>    a <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>    b <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>    b <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>    trim_const <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>    eta <span class="op">=</span> <span class="fl">0.01</span>,</span>
-<span>    split_mode <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    max_extra_bins <span class="op">=</span> <span class="fl">1000</span></span>
+<span>    split_mode <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">out</span></span></code></pre></div>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -926,6 +922,53 @@ post-processed scree values.</p>
 </annotation></semantics></math></p>
 <p>This step only modifies the already released DP estimates, so it does
 not use any additional privacy budget.</p>
+<div class="section level3">
+<h3 id="example-usage-3">Example usage<a class="anchor" aria-label="anchor" href="#example-usage-3"></a>
+</h3>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  dp_scree_method <span class="op">=</span> <span class="st">"clipped"</span>,</span>
+<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="../reference/clipped_control.html">clipped_control</a></span><span class="op">(</span></span>
+<span>    C_clip <span class="op">=</span> <span class="fl">3</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  dp_scree_method <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
+<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    clipped <span class="op">=</span> <span class="fu"><a href="../reference/clipped_control.html">clipped_control</a></span><span class="op">(</span></span>
+<span>      C_clip <span class="op">=</span> <span class="fl">3</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    pmwm <span class="op">=</span> <span class="fu"><a href="../reference/pmwm_control.html">pmwm_control</a></span><span class="op">(</span></span>
+<span>      beta <span class="op">=</span> <span class="fl">1.01</span>,</span>
+<span>      a <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>      b <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>      trim_const <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>      eta <span class="op">=</span> <span class="fl">0.01</span>,</span>
+<span>      split_mode <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    huber <span class="op">=</span> <span class="fu"><a href="../reference/huber_control.html">huber_control</a></span><span class="op">(</span></span>
+<span>      mu0 <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>      eta0 <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>      T <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>      M <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>      k_min_m2 <span class="op">=</span> <span class="op">-</span><span class="fl">40</span>,</span>
+<span>      k_max_m2 <span class="op">=</span> <span class="fl">40</span>,</span>
+<span>      m2_frac <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">4</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

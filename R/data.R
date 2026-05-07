@@ -53,13 +53,4 @@
 #' @keywords datasets
 "gau_g"
 
-#' Gaussian grouped example data
-#'
-#' A simulated Gaussian dataset with group structure.
-#'
-#' @docType data
-#' @usage data(gaussian_groups)
-#' @format A data frame or matrix.
-#' @source Simulated for examples in the dppca package.
-#' @keywords datasets
-"gaussian_groups"
+

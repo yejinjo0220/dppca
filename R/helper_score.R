@@ -282,19 +282,81 @@ make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL) {
 make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL) {
   if (is.null(df)) return(patchwork::plot_spacer())
 
-  p <- ggplot2::ggplot(df) +
-    ggplot2::geom_rect(
-      ggplot2::aes(
-        xmin = .data$xmin,
-        xmax = .data$xmax,
-        ymin = .data$ymin,
-        ymax = .data$ymax,
-        fill = .data$prob
-      ),
-      linewidth = 0
-    ) +
-    ggplot2::scale_fill_manual(values = col_map) +
-    ggplot2::scale_alpha(range = c(0, 1), guide = "none") +
+  df <- as.data.frame(df)
+
+  required_cols <- c("xmin", "xmax", "ymin", "ymax", "prob")
+  missing_cols <- setdiff(required_cols, names(df))
+  if (length(missing_cols) > 0) {
+    stop(
+      "Histogram data frame is missing required column(s): ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  df$prob <- as.numeric(df$prob)
+  df$prob[!is.finite(df$prob)] <- 0
+
+  # In the pooled group panel, probability is continuous and should be used for
+  # transparency.  The group label is discrete and should be used for fill color.
+  # This avoids the ggplot2 error:
+  # "Continuous value supplied to a discrete scale".
+  if ("group" %in% names(df)) {
+    df$group <- as.factor(df$group)
+
+    group_levels <- levels(df$group)
+    if (is.null(col_map) || length(col_map) == 0) {
+      col_map <- stats::setNames(grDevices::hcl.colors(length(group_levels), "Dark 3"), group_levels)
+    } else {
+      col_map <- as.character(col_map)
+      if (is.null(names(col_map))) {
+        col_map <- stats::setNames(rep_len(col_map, length(group_levels)), group_levels)
+      } else {
+        missing_groups <- setdiff(group_levels, names(col_map))
+        if (length(missing_groups) > 0) {
+          extra_cols <- grDevices::hcl.colors(length(missing_groups), "Dark 3")
+          col_map <- c(col_map, stats::setNames(extra_cols, missing_groups))
+        }
+        col_map <- col_map[group_levels]
+      }
+    }
+
+    p <- ggplot2::ggplot(df) +
+      ggplot2::geom_rect(
+        ggplot2::aes(
+          xmin = .data$xmin,
+          xmax = .data$xmax,
+          ymin = .data$ymin,
+          ymax = .data$ymax,
+          fill = .data$group,
+          alpha = .data$prob
+        ),
+        linewidth = 0
+      ) +
+      ggplot2::scale_fill_manual(values = col_map, drop = FALSE) +
+      ggplot2::scale_alpha_continuous(range = c(0, 0.85), guide = "none")
+  } else {
+    # Fallback for non-grouped histogram data: use a continuous fill scale for
+    # the continuous probability values.
+    p <- ggplot2::ggplot(df) +
+      ggplot2::geom_rect(
+        ggplot2::aes(
+          xmin = .data$xmin,
+          xmax = .data$xmax,
+          ymin = .data$ymin,
+          ymax = .data$ymax,
+          fill = .data$prob
+        ),
+        linewidth = 0
+      ) +
+      ggplot2::scale_fill_gradient(
+        low = "white",
+        high = "steelblue",
+        name = "Probability"
+      )
+  }
+
+  p <- p +
     ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
     ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, 5)) +
     ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, 5)) +

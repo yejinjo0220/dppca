@@ -143,6 +143,7 @@ A list with components:
   Non-private scree estimates computed as \\(n/(n-1)) \times
   mean(w\_{i\ell})\\.
 
-- `evr`:
+- `pve`:
 
-  Explained variance ratios computed from the private scree estimates.
+  Proportions of variance explained computed from the private scree
+  estimates.

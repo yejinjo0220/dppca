@@ -200,19 +200,18 @@ In the `dppca`, we set clipped-mean parameter by
 
 ```{r, eval = FALSE}
 library(dppca)
-
-# x: numeric data matrix or data frame
-# epsilon, delta: privacy parameters
-
-out <- dp_scree_plot(
-  x,
-  k = 5,
-  epsilon = 1,
-  delta = 1e-6,
-  method = "clipped"
+dp_scree(
+  X,
+  k = 3,
+  method = "clipped",
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  control = clipped_control(
+    C_clip = 3
+  )
 )
-
-out
 ```
 
 
@@ -445,19 +444,19 @@ mu0,\ eta0,\ T,\ M,\ k\_min\_m2,\ k\_max\_m2,\ m2\_frac)}.
 \]
 
 ```{r, eval = FALSE}
-library(dppca)
-
-out <- dp_scree_plot(
-  x,
-  k = 5,
-  epsilon = 1,
-  delta = 1e-6,
+dp_scree(
+  X,
+  k = 3,
   method = "huber",
-  control = scree_huber_control(
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  control = huber_control(
     mu0 = 0,
     eta0 = 1,
-    T = NULL,
-    M = NULL,
+    T = 50,
+    M = 20,
     k_min_m2 = -40,
     k_max_m2 = 40,
     m2_frac = 1/4
@@ -752,26 +751,23 @@ beta = beta,a = a,b = b, trim_const = C, eta = eta split_mode = split)}
 
 
 ```{r, eval = FALSE}
-library(dppca)
-
-out <- dp_scree_plot(
-  x,
-  k = 5,
-  epsilon = 1,
-  delta = 1e-6,
-  method = "pmw",
-  control = scree_pmw_control(
+dp_scree(
+  X,
+  k = 3,
+  method = "pmwm",
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  control = pmwm_control(
     beta = 1.01,
     a = 0,
-    b = 100,
+    b = 10,
     trim_const = 10,
     eta = 0.01,
-    split_mode = TRUE,
-    max_extra_bins = 1000
+    split_mode = TRUE
   )
 )
-
-out
 ```
 
 ## Post-processing
@@ -817,6 +813,56 @@ If monotone post-processing is used, the PVE can be computed from the post-proce
 
 
 This step only modifies the already released DP estimates, so it does not use any additional privacy budget.
+
+
+### Example usage
+
+```{r, eval = FALSE}
+dp_scree_plot(
+  X,
+  k = 3,
+  dp_scree_method = "clipped",
+  eps_total = 1,
+  delta_total = 1e-6,
+  control = clipped_control(
+    C_clip = 3
+  )
+)
+```
+
+```{r, eval = FALSE}
+dp_scree_plot(
+  X,
+  k = 3,
+  dp_scree_method = "all",
+  eps_total = 1,
+  delta_total = 1e-6,
+  center = TRUE,
+  standardize = FALSE,
+  control = list(
+    clipped = clipped_control(
+      C_clip = 3
+    ),
+    pmwm = pmwm_control(
+      beta = 1.01,
+      a = 0,
+      b = 10,
+      trim_const = 10,
+      eta = 0.01,
+      split_mode = TRUE
+    ),
+    huber = huber_control(
+      mu0 = 0,
+      eta0 = 1,
+      T = 50,
+      M = 20,
+      k_min_m2 = -40,
+      k_max_m2 = 40,
+      m2_frac = 1/4
+    )
+  )
+)
+```
 
 ## References
 

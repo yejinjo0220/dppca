@@ -69,7 +69,7 @@ A list with components:
 \item{\code{scree}}{Private scree estimates.}
 \item{\code{scree_np}}{Non-private scree estimates computed as
 \eqn{(n/(n-1)) \times mean(w_{i\ell})}.}
-\item{\code{evr}}{Explained variance ratios computed from the private scree
+\item{\code{pve}}{Proportions of variance explained computed from the private scree
 estimates.}
 }
 }

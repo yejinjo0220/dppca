@@ -96,7 +96,7 @@ dp_scree(
 
 ## Value
 
-A list containing `method`, `scree_np`, `evr_np`, `scree`, and `evr`.
+A list containing `method`, `scree_np`, `pve_np`, `scree`, and `pve`.
 
 ## Examples
 
