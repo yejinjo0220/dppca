@@ -7,7 +7,7 @@
 dp_scree_plot(
   X,
   k,
-  dp_scree_method = c("clipped", "pmwm", "huber", "all"),
+  method = "clipped",
   eps_total,
   delta_total,
   center = TRUE,
@@ -24,8 +24,8 @@ dp_scree_plot(
 
 \item{k}{Integer number of leading principal components.}
 
-\item{dp_scree_method}{Which DP estimator(s) to plot. One of
-\code{"all"}, \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.}
+\item{method}{Which DP estimator(s) to plot. One or more of
+\code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.}
 
 \item{eps_total}{Total privacy epsilon allocated to the full scree routine.}
 
@@ -36,7 +36,7 @@ dp_scree_plot(
 \item{standardize}{Logical; whether to standardize columns before PCA.}
 
 \item{control}{Method-specific control list, or a named list of control lists
-when \code{dp_scree_method = "all"}.}
+when multiple \code{method} values are supplied.}
 
 \item{g_dppca}{Logical; whether to privatize the PCA direction matrix.}
 
@@ -59,8 +59,9 @@ By default, proportions of variance explained (PVE) are plotted. When
 
 Method-specific tuning parameters are supplied through \code{control}.
 For a single method, use a single control object, for example
-\code{control = pmwm_control(a = ..., b = ...)}. For
-\code{dp_scree_method = "all"}, use a named list, for example
+\code{control = pmwm_control(a = ..., b = ...)}. To plot multiple
+methods at once, pass a character vector to \code{method} and use a named
+list of controls, for example
 \code{control = list(clipped = clipped_control(...), pmwm = pmwm_control(...), huber = huber_control(...))}.
 }
 \details{
@@ -71,7 +72,13 @@ labels, limits, and legend position are set automatically.
 \examples{
 \dontrun{
 dp_scree_plot(
-  X, k = 3, dp_scree_method = "all",
+  X, k = 3, method = "pmwm",
+  eps_total = 1, delta_total = 1e-6,
+  control = pmwm_control(a = 0, b = 10)
+)
+
+dp_scree_plot(
+  X, k = 3, method = c("clipped", "pmwm", "huber"),
   eps_total = 1, delta_total = 1e-6,
   control = list(
     clipped = clipped_control(C_clip = 3),

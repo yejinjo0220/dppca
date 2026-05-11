@@ -14,10 +14,7 @@ dp_score_group(
   axes = c(1, 2),
   eps_total,
   delta_total,
-  eps_ratio = NULL,
-  delta_ratio = NULL,
-  inflate = 0.2,
-  q_frame = NULL,
+  method = c("add", "sparse"),
   frame = NULL,
   m_x = NULL,
   m_y = NULL,
@@ -46,13 +43,8 @@ used for score construction.}
 
 \item{delta_total}{Total privacy parameter.}
 
-\item{eps_ratio}{Optional privacy-budget split.}
-
-\item{delta_ratio}{Optional delta split.}
-
-\item{inflate}{Non-negative numeric value controlling frame expansion.}
-
-\item{q_frame}{Optional quantile level passed to \code{dp_frame()}.}
+\item{method}{Character vector specifying which DP histogram method(s) to
+compute. Options are \code{"add"} and \code{"sparse"}.}
 
 \item{frame}{Optional user-specified frame.}
 
@@ -66,6 +58,6 @@ used for score construction.}
 A list with components \code{score}, \code{frame}, and \code{groups}.
 }
 \description{
-Computes pooled two-dimensional PCA scores and constructs group-wise empirical,
-Gaussian-additive DP, and sparse DP histograms on a common frame and grid.
+Computes pooled two-dimensional PCA scores and constructs group-wise empirical
+and selected DP histograms on a common frame and grid.
 }

@@ -269,20 +269,21 @@ dp_scree <- function(
 #'
 #' Method-specific tuning parameters are supplied through \code{control}.
 #' For a single method, use a single control object, for example
-#' \code{control = pmwm_control(a = ..., b = ...)}. For
-#' \code{dp_scree_method = "all"}, use a named list, for example
+#' \code{control = pmwm_control(a = ..., b = ...)}. To plot multiple
+#' methods at once, pass a character vector to \code{method} and use a named
+#' list of controls, for example
 #' \code{control = list(clipped = clipped_control(...), pmwm = pmwm_control(...), huber = huber_control(...))}.
 #'
 #' @param X Numeric data matrix with observations in rows.
 #' @param k Integer number of leading principal components.
-#' @param dp_scree_method Which DP estimator(s) to plot. One of
-#'   \code{"all"}, \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.
+#' @param method Which DP estimator(s) to plot. One or more of
+#'   \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.
 #' @param eps_total Total privacy epsilon allocated to the full scree routine.
 #' @param delta_total Total privacy delta allocated to the full scree routine.
 #' @param center Logical; whether to center columns before PCA.
 #' @param standardize Logical; whether to standardize columns before PCA.
 #' @param control Method-specific control list, or a named list of control lists
-#'   when \code{dp_scree_method = "all"}.
+#'   when multiple \code{method} values are supplied.
 #' @param g_dppca Logical; whether to privatize the PCA direction matrix.
 #' @param cpp.option Logical passed to \code{mech_tau_sph()} when private directions are computed.
 #' @param mono Logical; whether to apply monotone post-processing.
@@ -299,7 +300,13 @@ dp_scree <- function(
 #' @examples
 #' \dontrun{
 #' dp_scree_plot(
-#'   X, k = 3, dp_scree_method = "all",
+#'   X, k = 3, method = "pmwm",
+#'   eps_total = 1, delta_total = 1e-6,
+#'   control = pmwm_control(a = 0, b = 10)
+#' )
+#'
+#' dp_scree_plot(
+#'   X, k = 3, method = c("clipped", "pmwm", "huber"),
 #'   eps_total = 1, delta_total = 1e-6,
 #'   control = list(
 #'     clipped = clipped_control(C_clip = 3),
@@ -311,14 +318,19 @@ dp_scree <- function(
 #'
 #' @export
 dp_scree_plot <- function(
-    X, k, dp_scree_method = c("clipped", "pmwm", "huber", "all"),
+    X, k, method = "clipped",
     eps_total, delta_total,
     center = TRUE, standardize = FALSE,
     control = NULL,
     g_dppca = FALSE, cpp.option = FALSE, mono = TRUE,
     type = c("pve", "scree")
 ) {
-  dp_scree_method <- match.arg(dp_scree_method)
+  method <- match.arg(
+    method,
+    choices = c("clipped", "pmwm", "huber"),
+    several.ok = TRUE
+  )
+  method <- unique(method)
   type <- match.arg(type)
 
   X <- as.matrix(X)
@@ -329,9 +341,9 @@ dp_scree_plot <- function(
     delta_total = delta_total
   )
 
-  need_clipped <- dp_scree_method %in% c("all", "clipped")
-  need_pmwm <- dp_scree_method %in% c("all", "pmwm")
-  need_huber <- dp_scree_method %in% c("all", "huber")
+  need_clipped <- "clipped" %in% method
+  need_pmwm <- "pmwm" %in% method
+  need_huber <- "huber" %in% method
 
   col_map <- c(
     nonprivate = "black",

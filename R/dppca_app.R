@@ -2,11 +2,18 @@
 #'
 #' @description
 #' Opens an interactive Shiny app for exploring \code{dp_scree_plot()} and
-#' \code{dp_score_plot()}. If \code{X} is supplied, the app opens using that
+#' \code{dp_score_plot()} with the updated scree and score method options.
+#' If \code{X} is supplied, the app opens using that
 #' data. If \code{group} is supplied, the score plot uses the grouped version
 #' when the group labels are available. If \code{group = "color"}, the
 #' column named \code{color} is used as group labels and removed from the
-#' PCA feature matrix.
+#' PCA feature matrix. In the app, the scree menu uses checkboxes and can pass
+#' \code{method = "clipped"}, \code{method = "pmwm"}, \code{method = "huber"},
+#' or a vector such as \code{method = c("clipped", "pmwm", "huber")} to
+#' \code{dp_scree_plot()}. The score menu can pass \code{method = "add"},
+#' \code{method = "sparse"}, or \code{method = c("add", "sparse")} to the
+#' score plotting functions. The app uses a taller, centered scree plot panel
+#' so that the scree curves are not visually flattened on wide screens.
 #'
 #' @param X Optional numeric matrix or data frame. If supplied, the app opens
 #'   with this data selected as the default data source.

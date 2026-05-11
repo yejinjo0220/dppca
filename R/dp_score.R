@@ -3,16 +3,34 @@
 # User-facing functions for DP score histograms
 # ============================================================
 
+.split_score_privacy_budget <- function(eps_total, delta_total, g_dppca) {
+  if (isTRUE(g_dppca)) {
+    list(
+      eps_dir = eps_total / 3,
+      eps_q = eps_total / 3,
+      eps_hist = eps_total / 3,
+      delta_dir = delta_total / 3,
+      delta_q = delta_total / 3,
+      delta_hist = delta_total / 3
+    )
+  } else {
+    list(
+      eps_dir = NULL,
+      eps_q = eps_total / 2,
+      eps_hist = eps_total / 2,
+      delta_dir = NULL,
+      delta_q = delta_total / 2,
+      delta_hist = delta_total / 2
+    )
+  }
+}
+
 #' Differentially private score histograms
 #'
 #' @description
-#' Computes two-dimensional PCA scores from the input data and constructs three
-#' histogram versions on the resulting score space:
-#' \itemize{
-#'   \item the empirical histogram,
-#'   \item the Gaussian additive DP histogram,
-#'   \item the sparse Laplace-thresholded DP histogram.
-#' }
+#' Computes two-dimensional PCA scores from the input data and constructs an
+#' empirical histogram and selected differentially private histogram versions on
+#' the resulting score space.
 #'
 #' @param X Numeric matrix or an object coercible to a matrix with rows
 #'   corresponding to observations and columns corresponding to variables.
@@ -27,28 +45,25 @@
 #'   to use. Default is \code{c(1, 2)}.
 #' @param eps_total Total privacy budget.
 #' @param delta_total Total privacy parameter.
-#' @param eps_ratio Optional privacy-budget split. If \code{g_dppca = TRUE},
-#'   this must have length 3 and corresponds to \code{(PCA, q, hist)}.
-#'   If \code{g_dppca = FALSE}, this must have length 2 and corresponds to
-#'   \code{(q, hist)}.
-#' @param delta_ratio Optional delta split, with the same convention as
-#'   \code{eps_ratio}.
-#' @param inflate Non-negative numeric value controlling frame expansion.
-#' @param q_frame Optional quantile level passed to \code{dp_frame()}.
+#' @param method Character vector specifying which DP histogram method(s) to
+#'   compute. Options are \code{"add"} for the Gaussian additive DP histogram and
+#'   \code{"sparse"} for the sparse Laplace-thresholded DP histogram.
 #' @param frame Optional user-specified frame.
 #' @param m_x Optional number of bins along the x-axis.
 #' @param m_y Optional number of bins along the y-axis.
 #' @param bin_method Character string specifying the heuristic used by
 #'   \code{recommend_bins()} when \code{m_x} and/or \code{m_y} are not supplied.
-#'   One of \code{"J"}, \code{"W"}, or \code{"none"}.
+#'   One of \code{"WZ"}, \code{"Lei"}, or \code{"none"}.
 #'
 #' @return A list with components:
 #' \itemize{
 #'   \item \code{score}: \eqn{n \times 2} score matrix.
 #'   \item \code{frame}: a list with \code{xlim} and \code{ylim}.
 #'   \item \code{none}: data frame for the empirical histogram.
-#'   \item \code{add}: data frame for the Gaussian additive DP histogram.
-#'   \item \code{sparse}: data frame for the sparse DP histogram.
+#'   \item \code{add}: data frame for the Gaussian additive DP histogram, or
+#'         \code{NULL} if not requested.
+#'   \item \code{sparse}: data frame for the sparse DP histogram, or
+#'         \code{NULL} if not requested.
 #' }
 #'
 #' @importFrom VGAM rlaplace
@@ -62,11 +77,8 @@ dp_score <- function(
     axes = c(1, 2),
     eps_total,
     delta_total,
-    eps_ratio   = NULL,
-    delta_ratio = NULL,
-    inflate = 0.20,
-    q_frame = NULL,
-    frame   = NULL,
+    method = c("add", "sparse"),
+    frame = NULL,
     m_x = NULL,
     m_y = NULL,
     bin_method = c("WZ", "Lei", "none")
@@ -88,43 +100,15 @@ dp_score <- function(
 
   axes <- as.integer(axes)
   k_max <- max(axes)
+  method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
   bin_method <- match.arg(bin_method)
   n <- nrow(X)
 
-  if (g_dppca) {
-    if (is.null(eps_ratio)) eps_ratio <- c(1, 1, 1)
-    if (is.null(delta_ratio)) delta_ratio <- c(1, 1, 1)
-    if (length(eps_ratio) != 3) stop("When g_dppca = TRUE, 'eps_ratio' must have length 3.")
-    if (length(delta_ratio) != 3) stop("When g_dppca = TRUE, 'delta_ratio' must have length 3.")
-
-    eps_ratio   <- eps_ratio / sum(eps_ratio)
-    delta_ratio <- delta_ratio / sum(delta_ratio)
-
-    eps_dir  <- eps_total   * eps_ratio[1]
-    eps_q    <- eps_total   * eps_ratio[2]
-    eps_hist <- eps_total   * eps_ratio[3]
-
-    delta_dir  <- delta_total * delta_ratio[1]
-    delta_q    <- delta_total * delta_ratio[2]
-    delta_hist <- delta_total * delta_ratio[3]
-  } else {
-    if (is.null(eps_ratio)) eps_ratio <- c(1, 1)
-    if (is.null(delta_ratio)) delta_ratio <- c(1, 1)
-    if (length(eps_ratio) != 2) stop("When g_dppca = FALSE, 'eps_ratio' must have length 2.")
-    if (length(delta_ratio) != 2) stop("When g_dppca = FALSE, 'delta_ratio' must have length 2.")
-
-    eps_ratio   <- eps_ratio / sum(eps_ratio)
-    delta_ratio <- delta_ratio / sum(delta_ratio)
-
-    eps_dir   <- NULL
-    delta_dir <- NULL
-
-    eps_q    <- eps_total   * eps_ratio[1]
-    eps_hist <- eps_total   * eps_ratio[2]
-
-    delta_q    <- delta_total * delta_ratio[1]
-    delta_hist <- delta_total * delta_ratio[2]
-  }
+  budget <- .split_score_privacy_budget(
+    eps_total = eps_total,
+    delta_total = delta_total,
+    g_dppca = g_dppca
+  )
 
   X_proc <- prep_matrix_for_pca(
     X = X,
@@ -138,8 +122,8 @@ dp_score <- function(
     center = center,
     standardize = standardize,
     g_dppca = g_dppca,
-    eps_dir = eps_dir,
-    delta_dir = delta_dir,
+    eps_dir = budget$eps_dir,
+    delta_dir = budget$delta_dir,
     cpp.option = cpp.option
   )
 
@@ -149,10 +133,10 @@ dp_score <- function(
 
   frame_out <- dp_frame(
     X       = X_score,
-    eps_q   = eps_q,
-    delta_q = delta_q,
-    inflate = inflate,
-    q       = q_frame,
+    eps_q   = budget$eps_q,
+    delta_q = budget$delta_q,
+    inflate = 0.20,
+    q       = NULL,
     frame   = frame
   )
 
@@ -209,41 +193,52 @@ dp_score <- function(
   hist_none <- base_coord
   hist_none$prob <- p_hat
 
-  sigma <- sqrt(2) * sqrt(2 * log(1.25 / delta_hist)) / eps_hist
-  c_tilde <- pmax(counts + stats::rnorm(m, mean = 0, sd = sigma), 0)
+  hist_add <- NULL
+  hist_sparse <- NULL
 
-  if (sum(c_tilde) <= 0) {
-    stop("All privatized bin counts are zero after Gaussian noise and clipping. Try larger eps_total or fewer bins.")
-  }
+  eps_hist_method <- budget$eps_hist / length(method)
+  delta_hist_method <- budget$delta_hist / length(method)
 
-  hist_add <- base_coord
-  hist_add$prob <- c_tilde / sum(c_tilde)
+  if ("add" %in% method) {
+    sigma <- sqrt(2) * sqrt(2 * log(1.25 / delta_hist_method)) / eps_hist_method
+    c_tilde <- pmax(counts + stats::rnorm(m, mean = 0, sd = sigma), 0)
 
-  q_sparse <- numeric(m)
-  scale_lap <- 2 / (eps_hist * n)
-  thr <- (2 * log(2 / delta_hist)) / (eps_hist * n) + (1 / n)
-
-  for (kk in seq_len(m)) {
-    if (p_hat[kk] == 0) {
-      q_sparse[kk] <- 0
-    } else {
-      z_k <- VGAM::rlaplace(1, location = 0, scale = scale_lap)
-      q_k <- max(p_hat[kk] + z_k, 0)
-      q_sparse[kk] <- if (q_k < thr) 0 else q_k
+    if (sum(c_tilde) <= 0) {
+      stop("All privatized bin counts are zero after Gaussian noise and clipping. Try larger eps_total or fewer bins.")
     }
+
+    hist_add <- base_coord
+    hist_add$prob <- c_tilde / sum(c_tilde)
   }
 
-  if (sum(q_sparse) > 0) q_sparse <- q_sparse / sum(q_sparse)
+  if ("sparse" %in% method) {
+    q_sparse <- numeric(m)
+    scale_lap <- 2 / (eps_hist_method * n)
+    thr <- (2 * log(2 / delta_hist_method)) / (eps_hist_method * n) + (1 / n)
 
-  hist_sparse <- base_coord
-  hist_sparse$prob <- q_sparse
+    for (kk in seq_len(m)) {
+      if (p_hat[kk] == 0) {
+        q_sparse[kk] <- 0
+      } else {
+        z_k <- VGAM::rlaplace(1, location = 0, scale = scale_lap)
+        q_k <- max(p_hat[kk] + z_k, 0)
+        q_sparse[kk] <- if (q_k < thr) 0 else q_k
+      }
+    }
+
+    if (sum(q_sparse) > 0) q_sparse <- q_sparse / sum(q_sparse)
+
+    hist_sparse <- base_coord
+    hist_sparse$prob <- q_sparse
+  }
 
   list(
     score  = X_score,
     frame  = list(xlim = xlim, ylim = ylim),
     none   = hist_none,
     add    = hist_add,
-    sparse = hist_sparse
+    sparse = hist_sparse,
+    method = method
   )
 }
 
@@ -263,15 +258,12 @@ dp_score <- function(
 #'   used for score construction.
 #' @param eps_total Total privacy budget.
 #' @param delta_total Total privacy parameter.
-#' @param eps_ratio Optional privacy-budget split.
-#' @param delta_ratio Optional delta split.
-#' @param inflate Non-negative numeric value controlling frame expansion.
-#' @param q_frame Optional quantile level passed to \code{dp_frame()}.
+#' @param method Character vector specifying which DP histogram method(s) to
+#'   plot. Options are \code{"add"} and \code{"sparse"}.
 #' @param frame Optional user-specified frame.
 #' @param m_x Optional number of bins along the x-axis.
 #' @param m_y Optional number of bins along the y-axis.
 #' @param bin_method Character string specifying the bin recommendation rule.
-#' @param color Base plotting color.
 #'
 #' @return A list with components:
 #' \itemize{
@@ -290,17 +282,15 @@ dp_score_plot <- function(
     axes = c(1, 2),
     eps_total,
     delta_total,
-    eps_ratio   = NULL,
-    delta_ratio = NULL,
-    inflate = 0.20,
-    q_frame = NULL,
-    frame   = NULL,
+    method = c("add", "sparse"),
+    frame = NULL,
     m_x = NULL,
     m_y = NULL,
-    bin_method = c("WZ", "Lei", "none"),
-    color = "#6A5ACD"
+    bin_method = c("WZ", "Lei", "none")
 ) {
+  method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
   bin_method <- match.arg(bin_method)
+  color <- "#6A5ACD"
 
   score_res <- dp_score(
     X = X,
@@ -311,10 +301,7 @@ dp_score_plot <- function(
     axes = axes,
     eps_total = eps_total,
     delta_total = delta_total,
-    eps_ratio = eps_ratio,
-    delta_ratio = delta_ratio,
-    inflate = inflate,
-    q_frame = q_frame,
+    method = method,
     frame = frame,
     m_x = m_x,
     m_y = m_y,
@@ -338,14 +325,23 @@ dp_score_plot <- function(
 
   p_scatter <- add_title_dp(p_scatter, "Original Scatter")
 
-  p_none   <- make_hist_plot_dp(score_res$none,   xlim, ylim, color, "Original Hist")
-  p_add    <- make_hist_plot_dp(score_res$add,    xlim, ylim, color, "Add DP Hist")
-  p_sparse <- make_hist_plot_dp(score_res$sparse, xlim, ylim, color, "Sparse DP Hist")
+  p_none <- make_hist_plot_dp(score_res$none, xlim, ylim, color, "Original Hist")
+  p_add <- NULL
+  p_sparse <- NULL
 
-  p_all <- patchwork::wrap_plots(
-    p_scatter, p_none, p_add, p_sparse,
-    nrow = 1
-  )
+  plot_panels <- list(p_scatter, p_none)
+
+  if ("add" %in% method) {
+    p_add <- make_hist_plot_dp(score_res$add, xlim, ylim, color, "Add DP Hist")
+    plot_panels <- c(plot_panels, list(p_add))
+  }
+
+  if ("sparse" %in% method) {
+    p_sparse <- make_hist_plot_dp(score_res$sparse, xlim, ylim, color, "Sparse DP Hist")
+    plot_panels <- c(plot_panels, list(p_sparse))
+  }
+
+  p_all <- patchwork::wrap_plots(plot_panels, nrow = 1)
 
   list(
     score = score_res,
@@ -362,8 +358,8 @@ dp_score_plot <- function(
 #' Group-wise DP score histograms
 #'
 #' @description
-#' Computes pooled two-dimensional PCA scores and constructs group-wise empirical,
-#' Gaussian-additive DP, and sparse DP histograms on a common frame and grid.
+#' Computes pooled two-dimensional PCA scores and constructs group-wise empirical
+#' and selected DP histograms on a common frame and grid.
 #'
 #' @param X Numeric matrix or data frame.
 #' @param G Group labels, either a vector of length \code{nrow(X)} or a single
@@ -377,10 +373,8 @@ dp_score_plot <- function(
 #'   used for score construction.
 #' @param eps_total Total privacy budget.
 #' @param delta_total Total privacy parameter.
-#' @param eps_ratio Optional privacy-budget split.
-#' @param delta_ratio Optional delta split.
-#' @param inflate Non-negative numeric value controlling frame expansion.
-#' @param q_frame Optional quantile level passed to \code{dp_frame()}.
+#' @param method Character vector specifying which DP histogram method(s) to
+#'   compute. Options are \code{"add"} and \code{"sparse"}.
 #' @param frame Optional user-specified frame.
 #' @param m_x Optional number of bins along the x-axis.
 #' @param m_y Optional number of bins along the y-axis.
@@ -400,15 +394,13 @@ dp_score_group <- function(
     axes = c(1, 2),
     eps_total,
     delta_total,
-    eps_ratio   = NULL,
-    delta_ratio = NULL,
-    inflate = 0.20,
-    q_frame = NULL,
-    frame   = NULL,
+    method = c("add", "sparse"),
+    frame = NULL,
     m_x = NULL,
     m_y = NULL,
     bin_method = c("WZ", "Lei", "none")
 ) {
+  method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
   bin_method <- match.arg(bin_method)
   X <- as.data.frame(X)
 
@@ -441,40 +433,11 @@ dp_score_group <- function(
   k_max <- max(axes)
   g_levels <- as.character(unique(group_vec))
 
-  if (g_dppca) {
-    if (is.null(eps_ratio)) eps_ratio <- c(1, 1, 1)
-    if (is.null(delta_ratio)) delta_ratio <- c(1, 1, 1)
-    if (length(eps_ratio) != 3) stop("When g_dppca = TRUE, 'eps_ratio' must have length 3.")
-    if (length(delta_ratio) != 3) stop("When g_dppca = TRUE, 'delta_ratio' must have length 3.")
-
-    eps_ratio   <- eps_ratio / sum(eps_ratio)
-    delta_ratio <- delta_ratio / sum(delta_ratio)
-
-    eps_dir  <- eps_total   * eps_ratio[1]
-    eps_q    <- eps_total   * eps_ratio[2]
-    eps_hist <- eps_total   * eps_ratio[3]
-
-    delta_dir  <- delta_total * delta_ratio[1]
-    delta_q    <- delta_total * delta_ratio[2]
-    delta_hist <- delta_total * delta_ratio[3]
-  } else {
-    if (is.null(eps_ratio)) eps_ratio <- c(1, 1)
-    if (is.null(delta_ratio)) delta_ratio <- c(1, 1)
-    if (length(eps_ratio) != 2) stop("When g_dppca = FALSE, 'eps_ratio' must have length 2.")
-    if (length(delta_ratio) != 2) stop("When g_dppca = FALSE, 'delta_ratio' must have length 2.")
-
-    eps_ratio   <- eps_ratio / sum(eps_ratio)
-    delta_ratio <- delta_ratio / sum(delta_ratio)
-
-    eps_dir   <- NULL
-    delta_dir <- NULL
-
-    eps_q    <- eps_total   * eps_ratio[1]
-    eps_hist <- eps_total   * eps_ratio[2]
-
-    delta_q    <- delta_total * delta_ratio[1]
-    delta_hist <- delta_total * delta_ratio[2]
-  }
+  budget <- .split_score_privacy_budget(
+    eps_total = eps_total,
+    delta_total = delta_total,
+    g_dppca = g_dppca
+  )
 
   X_proc <- prep_matrix_for_pca(
     X = X_mat,
@@ -488,8 +451,8 @@ dp_score_group <- function(
     center = center,
     standardize = standardize,
     g_dppca = g_dppca,
-    eps_dir = eps_dir,
-    delta_dir = delta_dir,
+    eps_dir = budget$eps_dir,
+    delta_dir = budget$delta_dir,
     cpp.option = cpp.option
   )
 
@@ -499,10 +462,10 @@ dp_score_group <- function(
 
   frame_out <- dp_frame(
     X       = X_score,
-    eps_q   = eps_q,
-    delta_q = delta_q,
-    inflate = inflate,
-    q       = q_frame,
+    eps_q   = budget$eps_q,
+    delta_q = budget$delta_q,
+    inflate = 0.20,
+    q       = NULL,
     frame   = frame
   )
 
@@ -542,6 +505,9 @@ dp_score_group <- function(
 
   groups_out <- list()
 
+  eps_hist_method <- budget$eps_hist / length(method)
+  delta_hist_method <- budget$delta_hist / length(method)
+
   for (g in g_levels) {
     idx_g <- which(as.character(group_vec) == g)
     Xg    <- X_score[idx_g, , drop = FALSE]
@@ -566,34 +532,41 @@ dp_score_group <- function(
     hist_none <- base_coord
     hist_none$prob <- p_hat
 
-    sigma <- sqrt(2) * sqrt(2 * log(1.25 / delta_hist)) / eps_hist
-    c_tilde <- pmax(counts + stats::rnorm(m, mean = 0, sd = sigma), 0)
+    hist_add <- NULL
+    hist_sparse <- NULL
 
-    if (sum(c_tilde) <= 0) {
-      stop("Group '", g, "': all privatized counts are zero after Gaussian noise.")
-    }
+    if ("add" %in% method) {
+      sigma <- sqrt(2) * sqrt(2 * log(1.25 / delta_hist_method)) / eps_hist_method
+      c_tilde <- pmax(counts + stats::rnorm(m, mean = 0, sd = sigma), 0)
 
-    hist_add <- base_coord
-    hist_add$prob <- c_tilde / sum(c_tilde)
-
-    q_sparse <- numeric(m)
-    scale_lap <- 2 / (eps_hist * n_g)
-    thr <- (2 * log(2 / delta_hist)) / (eps_hist * n_g) + (1 / n_g)
-
-    for (kk in seq_len(m)) {
-      if (p_hat[kk] == 0) {
-        q_sparse[kk] <- 0
-      } else {
-        z_k <- VGAM::rlaplace(1, location = 0, scale = scale_lap)
-        q_k <- max(p_hat[kk] + z_k, 0)
-        q_sparse[kk] <- if (q_k < thr) 0 else q_k
+      if (sum(c_tilde) <= 0) {
+        stop("Group '", g, "': all privatized counts are zero after Gaussian noise.")
       }
+
+      hist_add <- base_coord
+      hist_add$prob <- c_tilde / sum(c_tilde)
     }
 
-    if (sum(q_sparse) > 0) q_sparse <- q_sparse / sum(q_sparse)
+    if ("sparse" %in% method) {
+      q_sparse <- numeric(m)
+      scale_lap <- 2 / (eps_hist_method * n_g)
+      thr <- (2 * log(2 / delta_hist_method)) / (eps_hist_method * n_g) + (1 / n_g)
 
-    hist_sparse <- base_coord
-    hist_sparse$prob <- q_sparse
+      for (kk in seq_len(m)) {
+        if (p_hat[kk] == 0) {
+          q_sparse[kk] <- 0
+        } else {
+          z_k <- VGAM::rlaplace(1, location = 0, scale = scale_lap)
+          q_k <- max(p_hat[kk] + z_k, 0)
+          q_sparse[kk] <- if (q_k < thr) 0 else q_k
+        }
+      }
+
+      if (sum(q_sparse) > 0) q_sparse <- q_sparse / sum(q_sparse)
+
+      hist_sparse <- base_coord
+      hist_sparse$prob <- q_sparse
+    }
 
     groups_out[[g]] <- list(
       n      = n_g,
@@ -606,7 +579,8 @@ dp_score_group <- function(
   list(
     score = X_score,
     frame = list(xlim = xlim, ylim = ylim),
-    groups = groups_out
+    groups = groups_out,
+    method = method
   )
 }
 
@@ -628,10 +602,8 @@ dp_score_group <- function(
 #'   used for score construction.
 #' @param eps_total Total privacy budget.
 #' @param delta_total Total privacy parameter.
-#' @param eps_ratio Optional privacy-budget split.
-#' @param delta_ratio Optional delta split.
-#' @param inflate Non-negative numeric value controlling frame expansion.
-#' @param q_frame Optional quantile level passed to \code{dp_frame()}.
+#' @param method Character vector specifying which DP histogram method(s) to
+#'   plot. Options are \code{"add"} and \code{"sparse"}.
 #' @param frame Optional user-specified frame.
 #' @param m_x Optional number of bins along the x-axis.
 #' @param m_y Optional number of bins along the y-axis.
@@ -651,15 +623,13 @@ dp_score_plot_group <- function(
     axes = c(1, 2),
     eps_total,
     delta_total,
-    eps_ratio   = NULL,
-    delta_ratio = NULL,
-    inflate = 0.20,
-    q_frame = NULL,
-    frame   = NULL,
+    method = c("add", "sparse"),
+    frame = NULL,
     m_x = NULL,
     m_y = NULL,
     bin_method = c("WZ", "Lei", "none")
 ) {
+  method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
   bin_method <- match.arg(bin_method)
 
   X_df <- as.data.frame(X)
@@ -691,10 +661,7 @@ dp_score_plot_group <- function(
     axes = axes,
     eps_total = eps_total,
     delta_total = delta_total,
-    eps_ratio = eps_ratio,
-    delta_ratio = delta_ratio,
-    inflate = inflate,
-    q_frame = q_frame,
+    method = method,
     frame = frame,
     m_x = m_x,
     m_y = m_y,
@@ -729,26 +696,33 @@ dp_score_plot_group <- function(
     df
   }))
 
-  coord_add_all <- dplyr::bind_rows(lapply(names(score_res$groups), function(g) {
-    df <- score_res$groups[[g]]$add
-    df$group <- g
-    df
-  }))
+  p_none_all <- make_hist_all_dp(coord_none_all, xlim, ylim, col_map, "Original Hist")
+  p_add_all <- NULL
+  p_sparse_all <- NULL
 
-  coord_sparse_all <- dplyr::bind_rows(lapply(names(score_res$groups), function(g) {
-    df <- score_res$groups[[g]]$sparse
-    df$group <- g
-    df
-  }))
+  plot_panels <- list(p_scatter, p_none_all)
 
-  p_none_all   <- make_hist_all_dp(coord_none_all, xlim, ylim, col_map, "Original Hist")
-  p_add_all    <- make_hist_all_dp(coord_add_all, xlim, ylim, col_map, "Add DP Hist")
-  p_sparse_all <- make_hist_all_dp(coord_sparse_all, xlim, ylim, col_map, "Sparse DP Hist")
+  if ("add" %in% method) {
+    coord_add_all <- dplyr::bind_rows(lapply(names(score_res$groups), function(g) {
+      df <- score_res$groups[[g]]$add
+      df$group <- g
+      df
+    }))
+    p_add_all <- make_hist_all_dp(coord_add_all, xlim, ylim, col_map, "Add DP Hist")
+    plot_panels <- c(plot_panels, list(p_add_all))
+  }
 
-  p_all <- patchwork::wrap_plots(
-    p_scatter, p_none_all, p_add_all, p_sparse_all,
-    nrow = 1
-  )
+  if ("sparse" %in% method) {
+    coord_sparse_all <- dplyr::bind_rows(lapply(names(score_res$groups), function(g) {
+      df <- score_res$groups[[g]]$sparse
+      df$group <- g
+      df
+    }))
+    p_sparse_all <- make_hist_all_dp(coord_sparse_all, xlim, ylim, col_map, "Sparse DP Hist")
+    plot_panels <- c(plot_panels, list(p_sparse_all))
+  }
+
+  p_all <- patchwork::wrap_plots(plot_panels, nrow = 1)
 
   make_group_layout <- function(which = c("none", "add", "sparse"), title_prefix) {
     which <- match.arg(which)
@@ -773,9 +747,9 @@ dp_score_plot_group <- function(
     )
   }
 
-  none_layout   <- make_group_layout("none",   "Original Hist: ")
-  add_layout    <- make_group_layout("add",    "Add DP Hist: ")
-  sparse_layout <- make_group_layout("sparse", "Sparse DP Hist: ")
+  none_layout <- make_group_layout("none", "Original Hist: ")
+  add_layout <- if ("add" %in% method) make_group_layout("add", "Add DP Hist: ") else NULL
+  sparse_layout <- if ("sparse" %in% method) make_group_layout("sparse", "Sparse DP Hist: ") else NULL
 
   list(
     score = score_res,

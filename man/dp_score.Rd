@@ -13,10 +13,7 @@ dp_score(
   axes = c(1, 2),
   eps_total,
   delta_total,
-  eps_ratio = NULL,
-  delta_ratio = NULL,
-  inflate = 0.2,
-  q_frame = NULL,
+  method = c("add", "sparse"),
   frame = NULL,
   m_x = NULL,
   m_y = NULL,
@@ -45,17 +42,9 @@ to use. Default is \code{c(1, 2)}.}
 
 \item{delta_total}{Total privacy parameter.}
 
-\item{eps_ratio}{Optional privacy-budget split. If \code{g_dppca = TRUE},
-this must have length 3 and corresponds to \code{(PCA, q, hist)}.
-If \code{g_dppca = FALSE}, this must have length 2 and corresponds to
-\code{(q, hist)}.}
-
-\item{delta_ratio}{Optional delta split, with the same convention as
-\code{eps_ratio}.}
-
-\item{inflate}{Non-negative numeric value controlling frame expansion.}
-
-\item{q_frame}{Optional quantile level passed to \code{dp_frame()}.}
+\item{method}{Character vector specifying which DP histogram method(s) to
+compute. Options are \code{"add"} for the Gaussian additive DP histogram and
+\code{"sparse"} for the sparse Laplace-thresholded DP histogram.}
 
 \item{frame}{Optional user-specified frame.}
 
@@ -65,7 +54,7 @@ If \code{g_dppca = FALSE}, this must have length 2 and corresponds to
 
 \item{bin_method}{Character string specifying the heuristic used by
 \code{recommend_bins()} when \code{m_x} and/or \code{m_y} are not supplied.
-One of \code{"J"}, \code{"W"}, or \code{"none"}.}
+One of \code{"WZ"}, \code{"Lei"}, or \code{"none"}.}
 }
 \value{
 A list with components:
@@ -73,16 +62,14 @@ A list with components:
 \item \code{score}: \eqn{n \times 2} score matrix.
 \item \code{frame}: a list with \code{xlim} and \code{ylim}.
 \item \code{none}: data frame for the empirical histogram.
-\item \code{add}: data frame for the Gaussian additive DP histogram.
-\item \code{sparse}: data frame for the sparse DP histogram.
+\item \code{add}: data frame for the Gaussian additive DP histogram, or
+\code{NULL} if not requested.
+\item \code{sparse}: data frame for the sparse DP histogram, or
+\code{NULL} if not requested.
 }
 }
 \description{
-Computes two-dimensional PCA scores from the input data and constructs three
-histogram versions on the resulting score space:
-\itemize{
-\item the empirical histogram,
-\item the Gaussian additive DP histogram,
-\item the sparse Laplace-thresholded DP histogram.
-}
+Computes two-dimensional PCA scores from the input data and constructs an
+empirical histogram and selected differentially private histogram versions on
+the resulting score space.
 }

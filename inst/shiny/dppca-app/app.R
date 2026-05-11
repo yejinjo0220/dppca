@@ -134,8 +134,16 @@ library(dppca)
   X
 }
 
-.make_scree_control <- function(input) {
+.selected_scree_methods <- function(input) {
   method <- input$scree_method
+  if (is.null(method) || !length(method)) {
+    return(character(0))
+  }
+  unique(method)
+}
+
+.make_scree_control <- function(input) {
+  method <- .selected_scree_methods(input)
 
   clipped <- clipped_control(
     C_clip = input$C_clip
@@ -160,13 +168,13 @@ library(dppca)
     m2_frac = input$huber_m2_frac
   )
 
-  switch(
-    method,
-    clipped = clipped,
-    pmwm = pmwm,
-    huber = huber,
-    all = list(clipped = clipped, pmwm = pmwm, huber = huber)
-  )
+  controls <- list(clipped = clipped, pmwm = pmwm, huber = huber)
+
+  if (length(method) == 1L) {
+    controls[[method]]
+  } else {
+    controls[method]
+  }
 }
 
 # ------------------------------------------------------------
@@ -184,6 +192,52 @@ library(dppca)
 ui <- fluidPage(
   tags$head(
     tags$style(HTML("
+      body {
+        background: #f7f8fb;
+      }
+      .app-title {
+        margin-bottom: 14px;
+      }
+      .well {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      }
+      .main-plot-area {
+        max-width: 1160px;
+        margin: 0 auto;
+      }
+      .plot-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        padding: 16px 18px 18px 18px;
+        margin-bottom: 24px;
+      }
+      .plot-card-scree {
+        max-width: 980px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .plot-card-score {
+        max-width: 1120px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .plot-card h4 {
+        margin-top: 0;
+        margin-bottom: 12px;
+        font-weight: 600;
+        color: #1f2937;
+      }
+      .plot-card-note {
+        margin-top: -4px;
+        margin-bottom: 10px;
+        color: #6b7280;
+        font-size: 12px;
+      }
       details.control-details {
         margin-top: 12px;
         margin-bottom: 10px;
@@ -215,7 +269,7 @@ ui <- fluidPage(
     "))
   ),
 
-  titlePanel("dppca: Differentially Private PCA Visualization"),
+  div(class = "app-title", h2("dppca: Differentially Private PCA Visualization")),
 
   sidebarLayout(
     sidebarPanel(
@@ -275,10 +329,11 @@ ui <- fluidPage(
 
         tabPanel(
           "Scree controls",
-          selectInput(
+          checkboxGroupInput(
             "scree_method", "DP scree method",
-            choices = c("clipped", "pmwm", "huber", "all"),
-            selected = "all"
+            choices = c("Clipped mean" = "clipped", "PMWM" = "pmwm", "Huber" = "huber"),
+            selected = c("clipped", "pmwm", "huber"),
+            inline = TRUE
           ),
           selectInput(
             "scree_type", "Plot type",
@@ -286,6 +341,7 @@ ui <- fluidPage(
             selected = "pve"
           ),
           checkboxInput("scree_mono", "Apply monotone post-processing", value = TRUE),
+          helpText("Select one or more DP scree methods to display together."),
 
           tags$details(
             class = "control-details",
@@ -332,6 +388,12 @@ ui <- fluidPage(
           "Score controls",
           numericInput("axis_x", "x-axis PC", value = 1, min = 1, step = 1),
           numericInput("axis_y", "y-axis PC", value = 2, min = 1, step = 1),
+          checkboxGroupInput(
+            "score_method", "DP score method",
+            choices = c("Additive histogram" = "add", "Sparse histogram" = "sparse"),
+            selected = c("add", "sparse"),
+            inline = TRUE
+          ),
           selectInput(
             "bin_method", "Bin recommendation method",
             choices = c("WZ", "Lei", "none"),
@@ -342,7 +404,6 @@ ui <- fluidPage(
             numericInput("m_x", "m_x", value = 20, min = 1, step = 1),
             numericInput("m_y", "m_y", value = 20, min = 1, step = 1)
           ),
-          numericInput("inflate", "Frame inflation", value = 0.20, min = 0, step = 0.05),
           checkboxInput("use_group", "Use group labels when available", value = TRUE),
           conditionalPanel(
             condition = "input.data_source == 'upload' && input.use_group",
@@ -354,7 +415,7 @@ ui <- fluidPage(
             ),
             helpText("For uploaded CSV files, enter the column name containing group labels. This column is excluded from PCA and used only for grouped score plots.")
           ),
-          textInput("score_color", "Point / histogram color", value = "#6A5ACD"),
+          helpText("Score plots use a fixed frame inflation of 0.20 and fixed color #6A5ACD for ungrouped plots."),
           actionButton("run_score", "Run DP score plot", class = "btn-primary")
         )
       )
@@ -362,11 +423,20 @@ ui <- fluidPage(
 
     mainPanel(
       width = 8,
-      h4("DP Scree Plot"),
-      plotOutput("scree_plot", height = "420px"),
-      hr(),
-      h4("DP Score Plot"),
-      plotOutput("score_plot", height = "520px")
+      div(
+        class = "main-plot-area",
+        div(
+          class = "plot-card plot-card-scree",
+          h4("DP Scree Plot"),
+          div(class = "plot-card-note", "PVE curves are shown in a taller, centered panel to avoid a flattened appearance."),
+          plotOutput("scree_plot", height = "520px")
+        ),
+        div(
+          class = "plot-card plot-card-score",
+          h4("DP Score Plot"),
+          plotOutput("score_plot", height = "520px")
+        )
+      )
     )
   )
 )
@@ -514,6 +584,7 @@ server <- function(input, output, session) {
     max_pc <- min(nrow(X) - 1L, ncol(X))
     validate(
       need(input$k >= 1 && input$k <= max_pc, paste0("k must be between 1 and ", max_pc, ".")),
+      need(length(.selected_scree_methods(input)) >= 1L, "Choose at least one DP scree method."),
       need(input$eps_total > 0, "epsilon must be positive."),
       need(input$delta_total > 0 && input$delta_total < 1, "delta must be in (0, 1)."),
       need(input$pmwm_a < input$pmwm_b, "For PMWM, a must be smaller than b."),
@@ -534,7 +605,7 @@ server <- function(input, output, session) {
         dp_scree_plot(
           X = obj$X,
           k = input$k,
-          dp_scree_method = input$scree_method,
+          method = .selected_scree_methods(input),
           eps_total = obj$budget$scree_eps,
           delta_total = obj$budget$scree_delta,
           center = input$center,
@@ -561,6 +632,7 @@ server <- function(input, output, session) {
     validate(
       need(length(unique(axes)) == 2L, "Choose two different PCs for the score plot axes."),
       need(all(axes >= 1 & axes <= max_pc), paste0("Axes must be between 1 and ", max_pc, ".")),
+      need(length(input$score_method) >= 1L, "Choose at least one DP score method."),
       need(input$eps_total > 0, "epsilon must be positive."),
       need(input$delta_total > 0 && input$delta_total < 1, "delta must be in (0, 1).")
     )
@@ -585,7 +657,7 @@ server <- function(input, output, session) {
             axes = axes,
             eps_total = budget$score_eps,
             delta_total = budget$score_delta,
-            inflate = input$inflate,
+            method = input$score_method,
             m_x = m_x,
             m_y = m_y,
             bin_method = input$bin_method
@@ -600,11 +672,10 @@ server <- function(input, output, session) {
             axes = axes,
             eps_total = budget$score_eps,
             delta_total = budget$score_delta,
-            inflate = input$inflate,
+            method = input$score_method,
             m_x = m_x,
             m_y = m_y,
-            bin_method = input$bin_method,
-            color = input$score_color
+            bin_method = input$bin_method
           )
         }
       },
