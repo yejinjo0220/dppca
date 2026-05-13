@@ -7,14 +7,15 @@ template:
 home:
   title: "dppca"
   description: >
-    Tools for differentially private PCA visualization,
-    including private score plots, scree plots, and histogram-based
-    exploratory analysis.
+    Tools for performing principal component analysis and constructing
+    differentially private scree estimates and score-based visualizations,
+    including private PCA directions, DP scree estimators, and 2D score
+    histograms with additive and sparse DP mechanisms.
 
 navbar:
   title: "dppca"
   structure:
-    left: [theory, functions, algorithms]
+    left: [theory, reference, articles]
     right: [search, github]
 
   components:
@@ -30,11 +31,11 @@ navbar:
       - text: DP Score
         href: articles/dp_score.html
 
-    functions:
-      text: Functions
+    reference:
+      text: Reference
       href: reference/index.html
 
-    algorithms:
+    articles:
       text: Algorithms
       href: articles/algorithms.html
 
@@ -53,43 +54,47 @@ articles:
   - algorithms
 
 reference:
+
+- title: "DP PCA"
+  desc: >
+    Core functions for computing principal component directions and
+    differentially private scree and score summaries.
+  contents:
+  - dp_pc_dir
+  - dp_scree
+  - dp_score
+
+- title: "DP PCA visualization"
+  desc: >
+    Plotting functions for differentially private PCA scree curves and
+    score histograms.
+  contents:
+  - dp_scree_plot
+  - dp_score_plot
+
+- title: "Group score visualization"
+  desc: >
+    Functions for group-wise differentially private PCA score summaries and
+    visualizations.
+  contents:
+  - dp_score_group
+  - dp_score_plot_group
+
+- title: "Method controls"
+  desc: >
+    Control objects for method-specific tuning parameters used in private
+    scree estimation.
+  contents:
+  - clipped_control
+  - pmwm_control
+  - huber_control
+
 - title: "Shiny app"
   desc: >
     Interactive Shiny app for exploring differentially private PCA scree
     and score plots.
   contents:
   - dppca_app
-
-- title: "DP PCA Visualization"
-  desc: >
-    Functions for constructing differentially private PCA visualizations.
-  contents:
-  - dp_score_plot
-  - dp_scree_plot
-
-- title: "DP PCA"
-  desc: >
-    Core functions for computing differentially private PCA score and scree
-    quantities.
-  contents:
-  - dp_pc_dir
-  - dp_score
-  - dp_scree
-
-- title: "Method controls"
-  desc: >
-    Helper functions for specifying method-specific tuning parameters.
-  contents:
-  - clipped_control
-  - pmwm_control
-  - huber_control
-
-- title: "Group PCA Visualization"
-  desc: >
-    Functions for group-wise differentially private PCA score visualization.
-  contents:
-  - dp_score_group
-  - dp_score_plot_group
 
 - title: "Example datasets"
   desc: >
@@ -100,3 +105,4 @@ reference:
   - eur_map_g
   - gau
   - gau_g
+

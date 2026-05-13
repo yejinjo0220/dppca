@@ -22,7 +22,7 @@
     <li><a class="dropdown-item" href="../articles/dp_scree.html">DP Scree</a></li>
     <li><a class="dropdown-item" href="../articles/dp_score.html">DP Score</a></li>
   </ul></li>
-<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../articles/algorithms.html">Algorithms</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -39,6 +39,112 @@
     </div>
 
     <div class="section level2">
+      <h2 id="dp-pca">DP PCA<a class="anchor" aria-label="anchor" href="#dp-pca"></a></h2>
+
+      <div class="section-desc"><p>Core functions for computing principal component directions and differentially private scree and score summaries.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="dp_pc_dir.html">dp_pc_dir()</a></code>
+
+        </dt>
+        <dd>Estimate principal component directions</dd>
+
+        <dt>
+
+          <code><a href="dp_scree.html">dp_scree()</a></code>
+
+        </dt>
+        <dd>Differentially private scree estimates</dd>
+
+        <dt>
+
+          <code><a href="dp_score.html">dp_score()</a></code>
+
+        </dt>
+        <dd>Differentially private score histograms</dd>
+      </dl></div><div class="section level2">
+      <h2 id="dp-pca-visualization">DP PCA visualization<a class="anchor" aria-label="anchor" href="#dp-pca-visualization"></a></h2>
+
+      <div class="section-desc"><p>Plotting functions for differentially private PCA scree curves and score histograms.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="dp_scree_plot.html">dp_scree_plot()</a></code>
+
+        </dt>
+        <dd>Plot differentially private scree estimates</dd>
+
+        <dt>
+
+          <code><a href="dp_score_plot.html">dp_score_plot()</a></code>
+
+        </dt>
+        <dd>Plot differentially private score histograms</dd>
+      </dl></div><div class="section level2">
+      <h2 id="group-score-visualization">Group score visualization<a class="anchor" aria-label="anchor" href="#group-score-visualization"></a></h2>
+
+      <div class="section-desc"><p>Functions for group-wise differentially private PCA score summaries and visualizations.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="dp_score_group.html">dp_score_group()</a></code>
+
+        </dt>
+        <dd>Group-wise differentially private score histograms</dd>
+
+        <dt>
+
+          <code><a href="dp_score_plot_group.html">dp_score_plot_group()</a></code>
+
+        </dt>
+        <dd>Plot group-wise differentially private score histograms</dd>
+      </dl></div><div class="section level2">
+      <h2 id="method-controls">Method controls<a class="anchor" aria-label="anchor" href="#method-controls"></a></h2>
+
+      <div class="section-desc"><p>Control objects for method-specific tuning parameters used in private scree estimation.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="clipped_control.html">clipped_control()</a></code>
+
+        </dt>
+        <dd>Control options for clipped scree estimation</dd>
+
+        <dt>
+
+          <code><a href="pmwm_control.html">pmwm_control()</a></code>
+
+        </dt>
+        <dd>Control options for private modified winsorized scree estimation</dd>
+
+        <dt>
+
+          <code><a href="huber_control.html">huber_control()</a></code>
+
+        </dt>
+        <dd>Control options for Huber scree estimation</dd>
+      </dl></div><div class="section level2">
       <h2 id="shiny-app">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app"></a></h2>
 
       <div class="section-desc"><p>Interactive Shiny app for exploring differentially private PCA scree and score plots.</p></div>
@@ -54,112 +160,6 @@
 
         </dt>
         <dd>Launch the dppca Shiny app</dd>
-      </dl></div><div class="section level2">
-      <h2 id="dp-pca-visualization">DP PCA Visualization<a class="anchor" aria-label="anchor" href="#dp-pca-visualization"></a></h2>
-
-      <div class="section-desc"><p>Functions for constructing differentially private PCA visualizations.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="dp_score_plot.html">dp_score_plot()</a></code>
-
-        </dt>
-        <dd>Plot differentially private score histograms</dd>
-
-        <dt>
-
-          <code><a href="dp_scree_plot.html">dp_scree_plot()</a></code>
-
-        </dt>
-        <dd>Plot differentially private scree curves</dd>
-      </dl></div><div class="section level2">
-      <h2 id="dp-pca">DP PCA<a class="anchor" aria-label="anchor" href="#dp-pca"></a></h2>
-
-      <div class="section-desc"><p>Core functions for computing differentially private PCA score and scree quantities.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="dp_pc_dir.html">dp_pc_dir()</a></code>
-
-        </dt>
-        <dd>Compute principal component directions</dd>
-
-        <dt>
-
-          <code><a href="dp_score.html">dp_score()</a></code>
-
-        </dt>
-        <dd>Differentially private score histograms</dd>
-
-        <dt>
-
-          <code><a href="dp_scree.html">dp_scree()</a></code>
-
-        </dt>
-        <dd>Compute differentially private scree estimates</dd>
-      </dl></div><div class="section level2">
-      <h2 id="method-controls">Method controls<a class="anchor" aria-label="anchor" href="#method-controls"></a></h2>
-
-      <div class="section-desc"><p>Helper functions for specifying method-specific tuning parameters.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="clipped_control.html">clipped_control()</a></code>
-
-        </dt>
-        <dd>Control parameters for the clipped DP scree estimator</dd>
-
-        <dt>
-
-          <code><a href="pmwm_control.html">pmwm_control()</a></code>
-
-        </dt>
-        <dd>Control parameters for the PMWM DP scree estimator</dd>
-
-        <dt>
-
-          <code><a href="huber_control.html">huber_control()</a></code>
-
-        </dt>
-        <dd>Control parameters for the Huber DP scree estimator</dd>
-      </dl></div><div class="section level2">
-      <h2 id="group-pca-visualization">Group PCA Visualization<a class="anchor" aria-label="anchor" href="#group-pca-visualization"></a></h2>
-
-      <div class="section-desc"><p>Functions for group-wise differentially private PCA score visualization.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="dp_score_group.html">dp_score_group()</a></code>
-
-        </dt>
-        <dd>Group-wise DP score histograms</dd>
-
-        <dt>
-
-          <code><a href="dp_score_plot_group.html">dp_score_plot_group()</a></code>
-
-        </dt>
-        <dd>Plot group-wise DP score histograms</dd>
       </dl></div><div class="section level2">
       <h2 id="example-datasets">Example datasets<a class="anchor" aria-label="anchor" href="#example-datasets"></a></h2>
 
@@ -210,7 +210,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Yejin Jo.</p>
+  <p>Developed by Yejin Jo, Minwoo Kim.</p>
 </div>
 
 <div class="pkgdown-footer-right">

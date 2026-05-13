@@ -22,17 +22,17 @@ library(dppca)
   10^(-ceiling(log10(n)))
 }
 
-.group_vector <- function(G) {
-  if (is.null(G)) return(NULL)
-  if (is.data.frame(G)) {
-    if (ncol(G) < 1L) return(NULL)
-    return(G[[1L]])
+.group_vector <- function(group) {
+  if (is.null(group)) return(NULL)
+  if (is.data.frame(group)) {
+    if (ncol(group) < 1L) return(NULL)
+    return(group[[1L]])
   }
-  if (is.matrix(G)) {
-    if (ncol(G) < 1L) return(NULL)
-    return(G[, 1L])
+  if (is.matrix(group)) {
+    if (ncol(group) < 1L) return(NULL)
+    return(group[, 1L])
   }
-  as.vector(G)
+  as.vector(group)
 }
 
 .infer_group_column <- function(dat) {
@@ -62,22 +62,22 @@ library(dppca)
 
   if (!is.null(group)) {
     if (is.character(group) && length(group) == 1L && group %in% names(dat)) {
-      G <- dat[[group]]
+      group_vec <- dat[[group]]
       X <- dat[, setdiff(names(dat), group), drop = FALSE]
-      return(list(X = X, G = G))
+      return(list(X = X, group = group_vec))
     }
-    G <- .group_vector(group)
-    return(list(X = dat, G = G))
+    group_vec <- .group_vector(group)
+    return(list(X = dat, group = group_vec))
   }
 
   group_col <- .infer_group_column(dat)
   if (!is.null(group_col)) {
-    G <- dat[[group_col]]
+    group_vec <- dat[[group_col]]
     X <- dat[, setdiff(names(dat), group_col), drop = FALSE]
-    return(list(X = X, G = G))
+    return(list(X = X, group = group_vec))
   }
 
-  list(X = dat, G = NULL)
+  list(X = dat, group = NULL)
 }
 
 .load_grouped_example <- function(grouped_name, fallback_name, label, group_col = "color") {
@@ -93,23 +93,23 @@ library(dppca)
     } else {
       split <- .split_grouped_data(grouped_df)
     }
-    return(list(X = split$X, G = split$G, label = label))
+    return(list(X = split$X, group = split$group, label = label))
   }
 
   # Fallback behavior: if the grouped object is only a label vector,
   # pair it with the corresponding feature matrix.
   fallback_X <- .load_dppca_data(fallback_name)
-  list(X = fallback_X, G = .group_vector(grouped), label = label)
+  list(X = fallback_X, group = .group_vector(grouped), label = label)
 }
 
 .load_example_dataset <- function(name) {
   switch(
     name,
-    gau = list(X = .load_dppca_data("gau"), G = NULL, label = "Gaussian"),
+    gau = list(X = .load_dppca_data("gau"), group = NULL, label = "Gaussian"),
     gau_grouped = .load_grouped_example("gau_g", "gau", "Gaussian with groups", group_col = "color"),
-    eur_map = list(X = .load_dppca_data("eur_map"), G = NULL, label = "Europe map"),
+    eur_map = list(X = .load_dppca_data("eur_map"), group = NULL, label = "Europe map"),
     eur_map_grouped = .load_grouped_example("eur_map_g", "eur_map", "Europe map with groups", group_col = "color"),
-    adult = list(X = .load_dppca_data("adult"), G = NULL, label = "Adult"),
+    adult = list(X = .load_dppca_data("adult"), group = NULL, label = "Adult"),
     stop("Unknown example dataset: ", name)
   )
 }
@@ -161,8 +161,8 @@ library(dppca)
   huber <- huber_control(
     mu0 = input$huber_mu0,
     eta0 = input$huber_eta0,
-    T = input$huber_T,
-    M = input$huber_M,
+    T = if (is.na(input$huber_T)) NULL else input$huber_T,
+    M = if (is.na(input$huber_M)) NULL else input$huber_M,
     k_min_m2 = input$huber_k_min_m2,
     k_max_m2 = input$huber_k_max_m2,
     m2_frac = input$huber_m2_frac
@@ -175,6 +175,169 @@ library(dppca)
   } else {
     controls[method]
   }
+}
+
+.call_dp_scree_plot <- function(args) {
+  fmls <- names(formals(dp_scree_plot))
+
+  if ("eps" %in% fmls) {
+    args$eps <- args$eps_total
+    args$delta <- args$delta_total
+    args$eps_total <- NULL
+    args$delta_total <- NULL
+  }
+
+  do.call(dp_scree_plot, args)
+}
+
+.call_dp_scree <- function(args) {
+  fmls <- names(formals(dp_scree))
+
+  if ("eps" %in% fmls) {
+    args$eps <- args$eps_total
+    args$delta <- args$delta_total
+    args$eps_total <- NULL
+    args$delta_total <- NULL
+  }
+
+  do.call(dp_scree, args)
+}
+
+.extract_scree_control <- function(control, method) {
+  if (is.null(control)) {
+    return(NULL)
+  }
+  if (!is.null(names(control)) && method %in% names(control)) {
+    return(control[[method]])
+  }
+  control
+}
+
+.plot_scree_methods <- function(
+    X,
+    k,
+    method,
+    eps_total,
+    delta_total,
+    center,
+    standardize,
+    control,
+    g_dppca,
+    cpp.option,
+    mono,
+    type
+) {
+  method <- unique(method)
+  type <- match.arg(type, choices = c("pve", "scree"))
+
+  if (!length(method)) {
+    stop("Choose at least one DP scree method.", call. = FALSE)
+  }
+
+  results <- list()
+  for (m in method) {
+    results[[m]] <- .call_dp_scree(list(
+      X = X,
+      k = k,
+      method = m,
+      eps_total = eps_total,
+      delta_total = delta_total,
+      center = center,
+      standardize = standardize,
+      control = .extract_scree_control(control, m),
+      g_dppca = g_dppca,
+      cpp.option = cpp.option,
+      mono = mono
+    ))
+  }
+
+  ref_obj <- results[[1L]]
+  y_list <- list(
+    nonprivate = if (type == "scree") ref_obj$scree_np else ref_obj$pve_np
+  )
+
+  for (m in names(results)) {
+    y_list[[m]] <- if (type == "scree") results[[m]]$scree else results[[m]]$pve
+  }
+
+  col_map <- c(
+    nonprivate = "black",
+    clipped = "red",
+    pmwm = "forestgreen",
+    huber = "blue"
+  )
+  pch_map <- c(
+    nonprivate = 16,
+    clipped = 17,
+    pmwm = 15,
+    huber = 18
+  )
+  lty_map <- c(
+    nonprivate = 1,
+    clipped = 1,
+    pmwm = 1,
+    huber = 1
+  )
+  label_map <- c(
+    nonprivate = "Non-private",
+    clipped = "Clipped",
+    pmwm = "PMWM",
+    huber = "Huber"
+  )
+
+  idx <- seq_len(k)
+  y_all <- unlist(y_list, use.names = FALSE)
+  y_all <- y_all[is.finite(y_all)]
+  ylim <- if (length(y_all)) range(y_all) else c(0, 1)
+  if (diff(ylim) == 0) {
+    ylim <- ylim + c(-0.5, 0.5)
+  }
+
+  ylab <- if (type == "scree") "Scree Value" else "Proportion of Variance Explained"
+  main <- if (type == "scree") "DP Scree Plot" else "DP PVE Plot"
+
+  series_names <- names(y_list)
+  first <- series_names[1L]
+
+  graphics::plot(
+    idx,
+    y_list[[first]],
+    type = "b",
+    col = unname(col_map[first]),
+    lty = unname(lty_map[first]),
+    pch = unname(pch_map[first]),
+    xlab = "Component",
+    ylab = ylab,
+    main = main,
+    ylim = ylim
+  )
+
+  if (length(series_names) > 1L) {
+    for (nm in series_names[-1L]) {
+      graphics::lines(
+        idx,
+        y_list[[nm]],
+        type = "b",
+        col = unname(col_map[nm]),
+        lty = unname(lty_map[nm]),
+        pch = unname(pch_map[nm])
+      )
+    }
+  }
+
+  graphics::legend(
+    "topright",
+    legend = unname(label_map[series_names]),
+    col = unname(col_map[series_names]),
+    lty = unname(lty_map[series_names]),
+    pch = unname(pch_map[series_names]),
+    bty = "n"
+  )
+
+  invisible(list(
+    nonprivate = list(scree = ref_obj$scree_np, pve = ref_obj$pve_np),
+    results = results
+  ))
 }
 
 # ------------------------------------------------------------
@@ -357,7 +520,7 @@ ui <- fluidPage(
             tags$summary("PMWM control"),
             tags$div(
               class = "control-body",
-              numericInput("pmwm_beta", "beta", value = 1.01, min = 1.000001, step = 0.01),
+              numericInput("pmwm_beta", "beta", value = 1.001, min = 1.000001, step = 0.001),
               numericInput("pmwm_a", "a", value = 0, step = 1),
               numericInput("pmwm_b", "b", value = 10, step = 1),
               numericInput("pmwm_trim_const", "trim_const", value = 10, min = 0, step = 1),
@@ -394,16 +557,8 @@ ui <- fluidPage(
             selected = c("add", "sparse"),
             inline = TRUE
           ),
-          selectInput(
-            "bin_method", "Bin recommendation method",
-            choices = c("WZ", "Lei", "none"),
-            selected = "WZ"
-          ),
-          conditionalPanel(
-            condition = "input.bin_method == 'none'",
-            numericInput("m_x", "m_x", value = 20, min = 1, step = 1),
-            numericInput("m_y", "m_y", value = 20, min = 1, step = 1)
-          ),
+          numericInput("bins_x", "Number of x-axis bins", value = 20, min = 1, step = 1),
+          numericInput("bins_y", "Number of y-axis bins", value = 20, min = 1, step = 1),
           checkboxInput("use_group", "Use group labels when available", value = TRUE),
           conditionalPanel(
             condition = "input.data_source == 'upload' && input.use_group",
@@ -452,22 +607,22 @@ server <- function(input, output, session) {
       req(.supplied_X)
 
       # For supplied data, keep the original data for dp_score_plot_group()
-      # when G is a column name such as "color".  Also prepare a numeric-only
+      # when `group` is a column name such as "color".  Also prepare a numeric-only
       # feature matrix for scree/non-group score calculations.
       split <- .split_grouped_data(.supplied_X, .supplied_group)
 
-      G_arg <- NULL
+      group_arg <- NULL
       if (!is.null(.supplied_group)) {
-        G_arg <- .supplied_group
+        group_arg <- .supplied_group
       } else {
         inferred <- .infer_group_column(.supplied_X)
-        if (!is.null(inferred)) G_arg <- inferred
+        if (!is.null(inferred)) group_arg <- inferred
       }
 
       list(
         X_feature = split$X,
         X_score = .supplied_X,
-        G_arg = G_arg,
+        group_arg = group_arg,
         label = "Provided data"
       )
 
@@ -475,15 +630,15 @@ server <- function(input, output, session) {
       ex <- .load_example_dataset(input$example_dataset)
 
       # For the grouped example datasets, gau_g and eur_map_g already contain
-      # the group column named "color".  Pass the full data frame and G = "color"
+      # the group column named "color".  Pass the full data frame and group = "color"
       # to dp_score_plot_group(), matching the console usage:
-      # dp_score_plot_group(X = gau_g, G = "color", ...).
+      # dp_score_plot_group(X = gau_g, group = "color", ...).
       if (input$example_dataset == "gau_grouped") {
         X_raw <- .load_dppca_data("gau_g")
         return(list(
           X_feature = .split_grouped_data(X_raw, "color")$X,
           X_score = X_raw,
-          G_arg = "color",
+          group_arg = "color",
           label = "Gaussian with groups"
         ))
       }
@@ -493,7 +648,7 @@ server <- function(input, output, session) {
         return(list(
           X_feature = .split_grouped_data(X_raw, "color")$X,
           X_score = X_raw,
-          G_arg = "color",
+          group_arg = "color",
           label = "Europe map with groups"
         ))
       }
@@ -501,7 +656,7 @@ server <- function(input, output, session) {
       list(
         X_feature = ex$X,
         X_score = ex$X,
-        G_arg = NULL,
+        group_arg = NULL,
         label = ex$label
       )
 
@@ -512,7 +667,7 @@ server <- function(input, output, session) {
       # For uploaded CSV files, do not force automatic grouping.
       # If the user checks "Use group labels when available" and types a
       # group column name, pass the full uploaded data to dp_score_plot_group()
-      # with G = <that column name>.  The feature matrix used for scree and
+      # with group = <that column name>.  The feature matrix used for scree and
       # non-group score plots excludes that group column.
       group_col <- input$upload_group_col
       if (is.null(group_col)) group_col <- ""
@@ -528,14 +683,14 @@ server <- function(input, output, session) {
         list(
           X_feature = split$X,
           X_score = dat,
-          G_arg = group_col,
+          group_arg = group_col,
           label = "Uploaded CSV"
         )
       } else {
         list(
           X_feature = dat,
           X_score = dat,
-          G_arg = NULL,
+          group_arg = NULL,
           label = "Uploaded CSV"
         )
       }
@@ -602,7 +757,7 @@ server <- function(input, output, session) {
     obj <- scree_event()
     tryCatch(
       {
-        dp_scree_plot(
+        .plot_scree_methods(
           X = obj$X,
           k = input$k,
           method = .selected_scree_methods(input),
@@ -637,30 +792,30 @@ server <- function(input, output, session) {
       need(input$delta_total > 0 && input$delta_total < 1, "delta must be in (0, 1).")
     )
 
-    m_x <- if (input$bin_method == "none") input$m_x else NULL
-    m_y <- if (input$bin_method == "none") input$m_y else NULL
+    bins <- c(as.integer(input$bins_x), as.integer(input$bins_y))
+    validate(
+      need(all(is.finite(bins)) && all(bins >= 1) && all(bins == as.integer(bins)), "Both bin counts must be positive integers.")
+    )
 
     dat <- selected_data()
-    G_arg <- dat$G_arg
+    group_arg <- dat$group_arg
     budget <- plot_budget()
 
     tryCatch(
       {
-        if (isTRUE(input$use_group) && !is.null(G_arg)) {
+        if (isTRUE(input$use_group) && !is.null(group_arg)) {
           dp_score_plot_group(
             X = dat$X_score,
-            G = G_arg,
+            group = group_arg,
             center = input$center,
             standardize = input$standardize,
             g_dppca = input$g_dppca,
             cpp.option = FALSE,
             axes = axes,
-            eps_total = budget$score_eps,
-            delta_total = budget$score_delta,
-            method = input$score_method,
-            m_x = m_x,
-            m_y = m_y,
-            bin_method = input$bin_method
+            eps = budget$score_eps,
+            delta = budget$score_delta,
+            bins = bins,
+            method = input$score_method
           )
         } else {
           dp_score_plot(
@@ -670,12 +825,10 @@ server <- function(input, output, session) {
             g_dppca = input$g_dppca,
             cpp.option = FALSE,
             axes = axes,
-            eps_total = budget$score_eps,
-            delta_total = budget$score_delta,
-            method = input$score_method,
-            m_x = m_x,
-            m_y = m_y,
-            bin_method = input$bin_method
+            eps = budget$score_eps,
+            delta = budget$score_delta,
+            bins = bins,
+            method = input$score_method
           )
         }
       },
@@ -703,4 +856,5 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
+
 

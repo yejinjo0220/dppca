@@ -1,8 +1,9 @@
 Package: dppca
-Title: Differentially Private PCA Scree and Score Visualization
+Title: Differentially Private Scree and Score Visualization
 Version: 0.1.0
-Authors@R: 
-    person("Yejin", "Jo", email = "yeinjo0220l@gmail.com", role = c("aut", "cre"))
+Authors@R: c(
+    person("Yejin", "Jo", email = "yejinjo0220@gmail.com", role = c("aut", "cre")),
+    person("Minwoo", "Kim", email = "ekfgusdl@snu.ac.kr", role = c("aut")))
 Description: Tools for performing principal component analysis (PCA) and
     constructing differentially private scree estimates and score-based
     visualizations. The package provides non-private and private PCA directions,
@@ -24,11 +25,13 @@ Imports:
     rARPACK,
     stats,
     graphics,
-    grDevices
+    grDevices,
+    Rdpack
 Suggests:
     knitr,
     rmarkdown,
     shiny
 VignetteBuilder: knitr
+RdMacros: Rdpack
 URL: https://github.com/yejinjo0220/dppca, https://yejinjo0220.github.io/dppca/
 BugReports: https://github.com/yejinjo0220/dppca/issues

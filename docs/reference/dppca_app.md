@@ -3,11 +3,19 @@
 Opens an interactive Shiny app for exploring
 [`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
 and
-[`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md).
-If `X` is supplied, the app opens using that data. If `group` is
-supplied, the score plot uses the grouped version when the group labels
-are available. If `group = "color"`, the column named `color` is used as
-group labels and removed from the PCA feature matrix.
+[`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md)
+with the updated scree and score method options. If `X` is supplied, the
+app opens using that data. If `group` is supplied, the score plot uses
+the grouped version when the group labels are available. If
+`group = "color"`, the column named `color` is used as group labels and
+removed from the PCA feature matrix. In the app, the scree menu uses
+checkboxes and can overlay `method = "clipped"`, `method = "pmwm"`,
+`method = "huber"`, or a vector such as
+`method = c("clipped", "pmwm", "huber")`. The score menu can pass
+`method = "add"`, `method = "sparse"`, or `method = c("add", "sparse")`
+and bin counts through `bins = c(m_x, m_y)` to the score plotting
+functions. The app uses a taller, centered scree plot panel so that the
+scree curves are not visually flattened on wide screens.
 
 ## Usage
 

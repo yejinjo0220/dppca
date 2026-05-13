@@ -23,12 +23,13 @@ If \code{X} is supplied, the app opens using that
 data. If \code{group} is supplied, the score plot uses the grouped version
 when the group labels are available. If \code{group = "color"}, the
 column named \code{color} is used as group labels and removed from the
-PCA feature matrix. In the app, the scree menu uses checkboxes and can pass
+PCA feature matrix. In the app, the scree menu uses checkboxes and can overlay
 \code{method = "clipped"}, \code{method = "pmwm"}, \code{method = "huber"},
-or a vector such as \code{method = c("clipped", "pmwm", "huber")} to
-\code{dp_scree_plot()}. The score menu can pass \code{method = "add"},
-\code{method = "sparse"}, or \code{method = c("add", "sparse")} to the
-score plotting functions. The app uses a taller, centered scree plot panel
+or a vector such as \code{method = c("clipped", "pmwm", "huber")}. The
+score menu can pass \code{method = "add"},
+\code{method = "sparse"}, or \code{method = c("add", "sparse")} and
+bin counts through \code{bins = c(m_x, m_y)} to the score plotting
+functions. The app uses a taller, centered scree plot panel
 so that the scree curves are not visually flattened on wide screens.
 }
 \examples{

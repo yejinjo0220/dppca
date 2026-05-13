@@ -1,27 +1,10 @@
-# Compute differentially private scree estimates
+# Differentially private scree estimates
 
-User-facing function for differentially private scree estimation. It
-computes the leading non-private scree values together with one selected
-DP scree estimator.
-
-Supported methods are:
-
-- `"clipped"`: clipped mean-based scree estimator,
-
-- `"pmwm"`: PMWM-style scree estimator based on private quantiles and
-  winsorized means,
-
-- `"huber"`: Huber-type robust private mean-based scree estimator.
-
-Method-specific tuning parameters are supplied through `control`:
-
-- `control = clipped_control(C_clip = ...)` for `method = "clipped"`,
-
-- `control = pmwm_control(beta = ..., a = ..., b = ..., trim_const = ..., eta = ..., split_mode = ...)`
-  for `method = "pmwm"`,
-
-- `control = huber_control(mu0 = ..., eta0 = ..., T = ..., M = ..., k_min_m2 = ..., k_max_m2 = ..., m2_frac = ...)`
-  for `method = "huber"`.
+This function computes scree estimates for principal component analysis,
+including both the usual non-private estimates and differentially
+private estimates. The private estimates are computed from principal
+component scores using one of the supported private mean estimators. See
+Details for the estimating equations and method-specific construction.
 
 ## Usage
 
@@ -30,14 +13,14 @@ dp_scree(
   X,
   k,
   method = c("clipped", "pmwm", "huber"),
-  eps_total,
-  delta_total,
+  control = NULL,
+  eps,
+  delta,
   center = TRUE,
   standardize = FALSE,
   g_dppca = FALSE,
   cpp.option = FALSE,
-  mono = TRUE,
-  control = NULL
+  mono = TRUE
 )
 ```
 
@@ -45,70 +28,237 @@ dp_scree(
 
 - X:
 
-  Numeric data matrix with observations in rows.
+  A numeric matrix or data frame. Rows correspond to observations and
+  columns correspond to variables.
 
 - k:
 
-  Integer number of leading principal components.
+  Positive integer defining the number of leading principal components
+  to estimate. Must be an integer between `1` and the number of columns
+  in `X`.
 
 - method:
 
-  One of `"clipped"`, `"pmwm"`, or `"huber"`.
-
-- eps_total:
-
-  Total privacy epsilon allocated to the full scree routine.
-
-- delta_total:
-
-  Total privacy delta allocated to the full scree routine.
-
-- center:
-
-  Logical; whether to center columns before PCA.
-
-- standardize:
-
-  Logical; whether to standardize columns before PCA.
-
-- g_dppca:
-
-  Logical; whether to privatize the PCA direction matrix.
-
-- cpp.option:
-
-  Logical passed to
-  [`mech_tau_sph()`](https://yejinjo0220.github.io/dppca/reference/mech_tau_sph.md)
-  when private directions are computed.
-
-- mono:
-
-  Logical; whether to apply monotone post-processing to the final DP
-  scree vector.
+  Scree estimation method. One of `"clipped"`, `"pmwm"`, or `"huber"`.
 
 - control:
 
-  Method-specific control list created by
+  Optional method-specific control list created by
   [`clipped_control()`](https://yejinjo0220.github.io/dppca/reference/clipped_control.md),
   [`pmwm_control()`](https://yejinjo0220.github.io/dppca/reference/pmwm_control.md),
   or
   [`huber_control()`](https://yejinjo0220.github.io/dppca/reference/huber_control.md).
 
+- eps:
+
+  Positive number defining the total `epsilon` privacy parameter. If
+  `g_dppca = TRUE`, it is split between private direction estimation and
+  private scree estimation.
+
+- delta:
+
+  Number in `(0, 1)` defining the total `delta` privacy parameter. If
+  `g_dppca = TRUE`, it is split between private direction estimation and
+  private scree estimation.
+
+- center:
+
+  A logical value indicating whether to center the columns of `X` before
+  computing principal component directions. The default is `TRUE`.
+
+- standardize:
+
+  A logical value indicating whether to scale the columns of `X` by
+  their sample standard deviations after optional centering. The default
+  is `FALSE`.
+
+- g_dppca:
+
+  A logical value indicating whether to use private principal component
+  directions for scree estimation. The default is `FALSE`. See
+  [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
+  for details.
+
+- cpp.option:
+
+  A logical value passed to
+  [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
+  when `g_dppca = TRUE`. The default is `FALSE`.
+
+- mono:
+
+  A logical value indicating whether to apply monotone post-processing
+  to the private scree vector. The default is `TRUE`.
+
 ## Value
 
-A list containing `method`, `scree_np`, `pve_np`, `scree`, and `pve`.
+A list with components:
+
+- `method`: scree estimation method.
+
+- `scree_np`: non-private scree estimates.
+
+- `pve_np`: non-private proportions of variance explained.
+
+- `scree`: differentially private scree estimates.
+
+- `pve`: differentially private proportions of variance explained.
+
+## Details
+
+Let `X` denote the preprocessed data matrix and let \\v_l\\ be the
+\\l\\th principal component direction. The \\l\\th score vector is \\z_l
+= X v_l\\. The corresponding sample scree value can be written as \$\$
+\hat{\lambda}\_l = \frac{1}{n - 1}\sum\_{i = 1}^n z\_{il}^2 =
+\frac{n}{n - 1}\left(\frac{1}{n}\sum\_{i = 1}^n w\_{il}\right), \qquad
+w\_{il} = z\_{il}^2. \$\$ Therefore, each scree value is estimated by
+privately estimating the mean of \\w\_{1l}, \ldots, w\_{nl}\\ and
+multiplying by \\n/(n - 1)\\.
+
+The supported methods differ in how this private mean is estimated:
+
+- `"clipped"` clips the squared scores \\w\_{i\ell}\\ at `C_clip` and
+  then applies the Gaussian mechanism (Dwork and Roth 2014) . This is
+  the simplest option but depends directly on the clipping threshold.
+
+- `"pmwm"` uses the private modified winsorized mean approach of Ramsay
+  and Spicker (2025) , adapted from the accompanying Python
+  implementation into R. It privately estimates tail cutoffs, winsorizes
+  the squared scores \\w\_{i\ell}\\, and releases a noisy winsorized
+  mean.
+
+- `"huber"` uses a Huber-type private robust mean estimator based on
+  noisy gradient descent, following Yu et al. (2024) .
+
+The argument `g_dppca` controls how the principal component directions
+are obtained. If `g_dppca = FALSE`, the directions are computed
+non-privately and the full privacy parameters `eps` and `delta` are used
+for private scree estimation. If `g_dppca = TRUE`, the directions are
+computed privately using
+[`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md).
+In that case, the privacy parameters are split equally: `eps / 2` and
+`delta / 2` are used for private direction estimation, and the remaining
+`eps / 2` and `delta / 2` are used for private scree estimation. If
+`mono = TRUE`, the final monotone adjustment is a post-processing step
+and does not change the privacy guarantee.
+
+## References
+
+Dwork C, Roth A (2014). “The Algorithmic Foundations of Differential
+Privacy.” *Found. Trends Theor. Comput. Sci.*, **9**(3–4), 211–407. ISSN
+1551-305X, [doi:10.1561/0400000042](https://doi.org/10.1561/0400000042)
+.
+
+Ramsay K, Spicker D (2025). “Improved subsample-and-aggregate via the
+private modified winsorized mean.” Code available at
+<https://github.com/12ramsake/PMWM>, 2501.14095,
+<https://arxiv.org/abs/2501.14095>.
+
+Yu M, Ren Z, Zhou W (2024). “Gaussian differentially private robust mean
+estimation and inference.” *Bernoulli*, **30**(4), 3059–3088.
+
+Kim M, Jung S (2025). “Robust and Differentially Private Principal
+Component Analysis.” *Statistical Analysis and Data Mining: An ASA Data
+Science Journal*, **18**(6), e70053.
+[doi:10.1002/sam.70053](https://doi.org/10.1002/sam.70053) ,
+https://onlinelibrary.wiley.com/doi/pdf/10.1002/sam.70053,
+<https://onlinelibrary.wiley.com/doi/abs/10.1002/sam.70053>.
+
+## See also
+
+[`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
+for principal component direction estimation.
+[`clipped_control()`](https://yejinjo0220.github.io/dppca/reference/clipped_control.md),
+[`pmwm_control()`](https://yejinjo0220.github.io/dppca/reference/pmwm_control.md),
+and
+[`huber_control()`](https://yejinjo0220.github.io/dppca/reference/huber_control.md)
+for method-specific tuning parameters.
 
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-dp_scree(X, k = 3, method = "clipped", eps_total = 1, delta_total = 1e-6,
-         control = clipped_control(C_clip = 3))
+set.seed(123)
+n <- 50
+z1 <- rnorm(n)
+z2 <- rnorm(n)
+X <- cbind(
+  x1 = z1 + 0.2 * rnorm(n),
+  x2 = 0.8 * z1 + 0.2 * rnorm(n),
+  x3 = z2 + 0.2 * rnorm(n),
+  x4 = 0.5 * z1 - 0.4 * z2 + 0.2 * rnorm(n)
+)
 
-dp_scree(X, k = 3, method = "pmwm", eps_total = 1, delta_total = 1e-6,
-         control = pmwm_control(a = 0, b = 10))
+dp_scree(
+  X,
+  k = 2,
+  method = "clipped",
+  control = clipped_control(C_clip = 3),
+  eps = 1,
+  delta = 1e-2
+)
+#> $method
+#> [1] "clipped"
+#> 
+#> $scree_np
+#> [1] 1.7558646 0.8446245
+#> 
+#> $pve_np
+#> [1] 0.6752055 0.3247945
+#> 
+#> $scree
+#> [1] 1.0164542 0.4594737
+#> 
+#> $pve
+#> [1] 0.6886883 0.3113117
+#> 
 
-dp_scree(X, k = 3, method = "huber", eps_total = 1, delta_total = 1e-6,
-         control = huber_control(T = 50, M = 20))
-} # }
+# \donttest{
+dp_scree(
+  X,
+  k = 2,
+  method = "pmwm",
+  control = pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01),
+  eps = 1,
+  delta = 1e-2
+)
+#> $method
+#> [1] "pmwm"
+#> 
+#> $scree_np
+#> [1] 1.7558646 0.8446245
+#> 
+#> $pve_np
+#> [1] 0.6752055 0.3247945
+#> 
+#> $scree
+#> [1] 25.25551  0.00000
+#> 
+#> $pve
+#> [1] 1 0
+#> 
+
+dp_scree(
+  X,
+  k = 2,
+  method = "huber",
+  control = huber_control(k_min_m2 =-10, k_max_m2 = 10, m2_frac = 1 / 4),
+  eps = 1,
+  delta = 1e-2
+)
+#> $method
+#> [1] "huber"
+#> 
+#> $scree_np
+#> [1] 1.7558646 0.8446245
+#> 
+#> $pve_np
+#> [1] 0.6752055 0.3247945
+#> 
+#> $scree
+#> [1] 0 0
+#> 
+#> $pve
+#> [1] 0 0
+#> 
+# }
 ```
