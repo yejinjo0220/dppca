@@ -176,7 +176,7 @@ dp_scree_plot(
   eps = 1,
   delta = 1e-2
 )
-#> Error in dp_scree_plot(X, k = 2, method = "clipped", control = clipped_control(C_clip = 3),     eps = 1, delta = 0.01): unused argument (method = "clipped")
+
 
 # \donttest{
 dp_scree_plot(
@@ -191,6 +191,6 @@ dp_scree_plot(
   eps = 1,
   delta = 1e-2
 )
-#> Error in dp_scree_plot(X, k = 2, method = c("clipped", "pmwm", "huber"),     control = list(clipped = clipped_control(C_clip = 3), pmwm = pmwm_control(a = 0,         b = 20, trim_const = 10, eta = 0.01), huber = huber_control(k_min_m2 = -10,         k_max_m2 = 10, m2_frac = 1/4)), eps = 1, delta = 0.01): unused argument (method = c("clipped", "pmwm", "huber"))
+
 # }
 ```

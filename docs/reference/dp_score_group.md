@@ -146,7 +146,6 @@ group_out <- dp_score_group(
   bins = c(3, 3),
   method = "add"
 )
-#> Error in dp_score_group(X, group = "color", eps = 1, delta = 0.01, bins = c(3,     3), method = "add"): argument 3 matches multiple formal arguments
 names(group_out$groups)
-#> Error: object 'group_out' not found
+#> [1] "red"
 ```

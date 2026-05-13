@@ -123,7 +123,6 @@ p <- dp_score_plot(
   bins = c(3, 3),
   method = "add"
 )
-#> Error in dp_score_plot(X, eps = 1, delta = 0.01, bins = c(3, 3), method = "add"): argument 2 matches multiple formal arguments
 p$plot$all
-#> Error: object 'p' not found
+
 ```
