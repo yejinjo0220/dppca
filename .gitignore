@@ -4,3 +4,6 @@
 *.tar.gz
 inst/doc
 .positai
+.Rd2pdf*
+*.Rcheck/
+*.pdf
