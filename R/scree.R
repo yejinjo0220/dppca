@@ -106,45 +106,28 @@
 #' \insertRef{kim2025robustdppca}{dppca}
 #'
 #' @examples
-#' set.seed(123)
-#' n <- 50
-#' z1 <- rnorm(n)
-#' z2 <- rnorm(n)
-#' X <- cbind(
-#'   x1 = z1 + 0.2 * rnorm(n),
-#'   x2 = 0.8 * z1 + 0.2 * rnorm(n),
-#'   x3 = z2 + 0.2 * rnorm(n),
-#'   x4 = 0.5 * z1 - 0.4 * z2 + 0.2 * rnorm(n)
-#' )
+#' data(gau, package = "dppca")
 #'
+#' # Use a small subset to keep the example fast.
+#' X <- gau[1:100, ]
+#'
+#' # Estimate the private scree values using the clipped mean method.
+#' set.seed(123)
 #' dp_scree(
 #'   X,
 #'   k = 2,
 #'   method = "clipped",
 #'   control = clipped_control(C_clip = 3),
-#'   eps = 1,
-#'   delta = 1e-2
+#'   eps = 2,
+#'   delta = 1e-3
 #' )
 #'
-#' \donttest{
-#' dp_scree(
-#'   X,
-#'   k = 2,
-#'   method = "pmwm",
-#'   control = pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01),
-#'   eps = 1,
-#'   delta = 1e-2
-#' )
-#'
-#' dp_scree(
-#'   X,
-#'   k = 2,
-#'   method = "huber",
-#'   control = huber_control(k_min_m2 =-10, k_max_m2 = 10, m2_frac = 1 / 4),
-#'   eps = 1,
-#'   delta = 1e-2
-#' )
-#' }
+#' # Other scree methods can be used by changing `method` and `control`, e.g.,
+#' # method = "pmwm",
+#' # control = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01)
+#' #
+#' # method = "huber",
+#' # control = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
 #'
 #' @export
 dp_scree <- function(
@@ -307,35 +290,39 @@ dp_scree <- function(
 #' @examples
 #' data(gau, package = "dppca")
 #'
-#' X <- head(gau, 50)
+#' # Use a small subset to keep the example fast.
+#' X <- gau[1:200, ]
 #'
+#' # Draw a private scree plot using the clipped mean method.
 #' dp_scree_plot(
 #'   X,
-#'   k = 2,
+#'   k = 3,
 #'   method = "clipped",
 #'   control = clipped_control(C_clip = 3),
-#'   eps = 1,
-#'   delta = 1e-2
+#'   eps = 3,
+#'   delta = 1e-3
 #' )
-#'
-#' \donttest{
-#' dp_scree_plot(
-#'   X,
-#'   k = 2,
-#'   method = c("clipped", "pmwm", "huber"),
-#'   control = list(
-#'     clipped = clipped_control(C_clip = 3),
-#'     pmwm = pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01),
-#'     huber = huber_control(k_min_m2 =-10, k_max_m2 = 10, m2_frac = 1 / 4)
-#'   ),
-#'   eps = 1,
-#'   delta = 1e-2
-#' )
-#' }
-#'
+
+#' # Multiple scree methods can be overlaid by passing a vector to `method`
+#' # and a named list to `control`, for example:
+#' #
+#' # dp_scree_plot(
+#' #   X,
+#' #   k = 2,
+#' #   method = c("clipped", "pmwm", "huber"),
+#' #   control = list(
+#' #     clipped = clipped_control(C_clip = 3),
+#' #     pmwm = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01),
+#' #     huber = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
+#' #   ),
+#' #   eps = 3,
+#' #   delta = 1e-3
+#' # )
 #' @export
 dp_scree_plot <- function(
-    X, k, method = c("clipped", "pmwm", "huber"),
+    X,
+    k,
+    method = c("clipped", "pmwm", "huber"),
     control = NULL,
     eps, delta,
     center = TRUE, standardize = FALSE,

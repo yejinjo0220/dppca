@@ -108,7 +108,7 @@ for plotting scree estimates.
 ``` r
 pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01)
 #> $beta
-#> [1] 1.001
+#> [1] 1.01
 #> 
 #> $a
 #> [1] 0

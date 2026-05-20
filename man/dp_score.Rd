@@ -127,33 +127,31 @@ refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
 data(gau, package = "dppca")
 
 # Use a small subset to keep the example fast.
-X <- head(gau, 50)
+X <- gau[1:300, ]
 
+# Compute private two-dimensional PCA scores using the additive histogram method.
 set.seed(123)
-score_out <- dp_score(
+score_plot <- dp_score(
   X,
-  eps = 1,
-  delta = 1e-2,
-  bins = c(3, 3),
-  method = "add"
-)
-head(score_out$none)
-head(score_out$add)
-
-# Simulated low-rank data.
-set.seed(123)
-n <- 50
-z1 <- rnorm(n)
-z2 <- rnorm(n)
-X_sim <- cbind(
-  x1 = z1 + 0.2 * rnorm(n),
-  x2 = 0.8 * z1 + 0.2 * rnorm(n),
-  x3 = z2 + 0.2 * rnorm(n),
-  x4 = 0.5 * z1 - 0.4 * z2 + 0.2 * rnorm(n)
+  k = 2,
+  method = "add",
+  eps = 2,
+  delta = 1e-3,
+  bins = c(10, 10)
 )
 
-set.seed(123)
-dp_score(X_sim, eps = 1, delta = 1e-2, bins = c(3, 3))
+score_plot
+
+dp_score(
+  X,
+  k = 2,
+  method = c("add", "sparse"),
+  eps = 2,
+  delta = 1e-3,
+  bins = c(10, 10)
+)
+
+score_plot
 
 }
 \references{

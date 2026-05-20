@@ -91,32 +91,33 @@ construction, see \code{\link[=dp_scree]{dp_scree()}}.
 \examples{
 data(gau, package = "dppca")
 
-X <- head(gau, 50)
+# Use a small subset to keep the example fast.
+X <- gau[1:200, ]
 
+# Draw a private scree plot using the clipped mean method.
 dp_scree_plot(
   X,
-  k = 2,
+  k = 3,
   method = "clipped",
   control = clipped_control(C_clip = 3),
-  eps = 1,
-  delta = 1e-2
+  eps = 3,
+  delta = 1e-3
 )
-
-\donttest{
-dp_scree_plot(
-  X,
-  k = 2,
-  method = c("clipped", "pmwm", "huber"),
-  control = list(
-    clipped = clipped_control(C_clip = 3),
-    pmwm = pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01),
-    huber = huber_control(k_min_m2 =-10, k_max_m2 = 10, m2_frac = 1 / 4)
-  ),
-  eps = 1,
-  delta = 1e-2
-)
-}
-
+# Multiple scree methods can be overlaid by passing a vector to `method`
+# and a named list to `control`, for example:
+#
+# dp_scree_plot(
+#   X,
+#   k = 2,
+#   method = c("clipped", "pmwm", "huber"),
+#   control = list(
+#     clipped = clipped_control(C_clip = 3),
+#     pmwm = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01),
+#     huber = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
+#   ),
+#   eps = 3,
+#   delta = 1e-3
+# )
 }
 \references{
 \insertRef{dwork2014algorithmic}{dppca}

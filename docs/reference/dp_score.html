@@ -240,147 +240,35 @@ histograms.
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gau</span>, package <span class="op">=</span> <span class="st">"dppca"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use a small subset to keep the example fast.</span></span></span>
-<span class="r-in"><span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">gau</span>, <span class="fl">50</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">gau</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">300</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Compute private two-dimensional PCA scores using the additive histogram method.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">score_out</span> <span class="op">&lt;-</span> <span class="fu">dp_score</span><span class="op">(</span></span></span>
+<span class="r-in"><span><span class="va">score_plot</span> <span class="op">&lt;-</span> <span class="fu">dp_score</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">X</span>,</span></span>
-<span class="r-in"><span>  eps <span class="op">=</span> <span class="fl">1</span>,</span></span>
-<span class="r-in"><span>  delta <span class="op">=</span> <span class="fl">1e-2</span>,</span></span>
-<span class="r-in"><span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  method <span class="op">=</span> <span class="st">"add"</span></span></span>
+<span class="r-in"><span>  k <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>  method <span class="op">=</span> <span class="st">"add"</span>,</span></span>
+<span class="r-in"><span>  eps <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>  delta <span class="op">=</span> <span class="fl">1e-3</span>,</span></span>
+<span class="r-in"><span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">score_out</span><span class="op">$</span><span class="va">none</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         xmin      xmax       ymin      ymax prob</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -13.289336 -2.395967 -13.289336 -2.395967 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  -2.395967  8.497402 -13.289336 -2.395967 0.06</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   8.497402 19.390771 -13.289336 -2.395967 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 -13.289336 -2.395967  -2.395967  8.497402 0.08</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  -2.395967  8.497402  -2.395967  8.497402 0.86</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   8.497402 19.390771  -2.395967  8.497402 0.00</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">score_out</span><span class="op">$</span><span class="va">add</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         xmin      xmax       ymin      ymax        prob</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -13.289336 -2.395967 -13.289336 -2.395967 0.000000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  -2.395967  8.497402 -13.289336 -2.395967 0.202924127</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   8.497402 19.390771 -13.289336 -2.395967 0.007619123</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 -13.289336 -2.395967  -2.395967  8.497402 0.059958028</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  -2.395967  8.497402  -2.395967  8.497402 0.679692208</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   8.497402 19.390771  -2.395967  8.497402 0.049806514</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in dp_score(X, k = 2, method = "add", eps = 2, delta = 0.001, bins = c(10,     10)):</span> argument 4 matches multiple formal arguments</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Simulated low-rank data.</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">50</span></span></span>
-<span class="r-in"><span><span class="va">z1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">z2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">X_sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  x1 <span class="op">=</span> <span class="va">z1</span> <span class="op">+</span> <span class="fl">0.2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  x2 <span class="op">=</span> <span class="fl">0.8</span> <span class="op">*</span> <span class="va">z1</span> <span class="op">+</span> <span class="fl">0.2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  x3 <span class="op">=</span> <span class="va">z2</span> <span class="op">+</span> <span class="fl">0.2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  x4 <span class="op">=</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="va">z1</span> <span class="op">-</span> <span class="fl">0.4</span> <span class="op">*</span> <span class="va">z2</span> <span class="op">+</span> <span class="fl">0.2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">score_plot</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'score_plot' not found</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">dp_score</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">X</span>,</span></span>
+<span class="r-in"><span>  k <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"add"</span>, <span class="st">"sparse"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  eps <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>  delta <span class="op">=</span> <span class="fl">1e-3</span>,</span></span>
+<span class="r-in"><span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in dp_score(X, k = 2, method = c("add", "sparse"), eps = 2, delta = 0.001,     bins = c(10, 10)):</span> argument 4 matches multiple formal arguments</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">dp_score</span><span class="op">(</span><span class="va">X_sim</span>, eps <span class="op">=</span> <span class="fl">1</span>, delta <span class="op">=</span> <span class="fl">1e-2</span>, bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $score</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               PC1          PC2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1,]  0.99162675 -0.288962607</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [2,]  0.26756662 -0.059616641</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [3,] -2.08102800 -0.431050283</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [4,]  0.67608389 -1.255480719</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [5,] -0.32440649  0.506916368</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [6,] -1.57356213 -1.951067190</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7,] -1.43161032  1.663396014</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8,]  2.07318063  0.333144915</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9,]  0.98049866 -0.032670737</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [10,]  0.70034409  0.004699994</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [11,] -1.44297007 -0.797121334</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [12,] -0.64664961  0.421804405</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13,] -0.29225529  0.239643959</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [14,] -1.11234956  1.072458305</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [15,] -0.07158962  1.664922280</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [16,] -2.35070173 -1.160022906</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [17,] -0.57249730 -0.474910038</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [18,]  2.82708564  0.998227532</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [19,] -0.50413370 -0.822948711</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [20,]  1.54523530 -1.397568542</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [21,]  1.04887684  1.186149747</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [22,] -0.72377795  2.461344053</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [23,]  1.84746380 -0.568229874</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [24,]  0.57899838  0.846442016</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [25,]  0.21079536  1.075908809</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [26,]  2.89686968 -0.117704009</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [27,] -1.34946217  0.182844498</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [28,] -0.87644481  1.369925298</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [29,]  1.64361192  0.318372256</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [30,] -1.74013894 -0.036355284</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [31,] -0.41510932 -0.509207761</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [32,]  0.27087800 -0.168180280</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [33,] -1.36426814  0.119990175</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [34,] -0.75924397 -0.667098498</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [35,] -0.94866365  0.260810842</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [36,] -1.00014259 -0.296616448</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [37,] -0.20491448 -1.084477894</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [38,]  0.02061806 -0.324861131</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [39,] -0.07561976  0.347182899</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [40,]  1.18208081 -0.572686094</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [41,]  1.07110005 -0.420927467</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [42,]  0.44196389 -0.152921070</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [43,]  1.92627855  0.291747916</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [44,] -2.87743776  0.177353526</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [45,] -0.82788099 -1.405900189</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [46,]  1.13550253  0.774676346</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [47,]  1.46119153 -1.677920018</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [48,]  1.36127691 -0.973896445</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [49,] -1.41984828  0.057224396</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [50,] -0.17242125  1.273215618</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $frame</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $frame$xlim</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -10.80660  14.12147</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $frame$ylim</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -10.80660  14.12147</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $none</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         xmin      xmax       ymin      ymax prob</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -10.806602 -2.497246 -10.806602 -2.497246 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  -2.497246  5.812110 -10.806602 -2.497246 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   5.812110 14.121466 -10.806602 -2.497246 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 -10.806602 -2.497246  -2.497246  5.812110 0.02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  -2.497246  5.812110  -2.497246  5.812110 0.98</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   5.812110 14.121466  -2.497246  5.812110 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7 -10.806602 -2.497246   5.812110 14.121466 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8  -2.497246  5.812110   5.812110 14.121466 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9   5.812110 14.121466   5.812110 14.121466 0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $add</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         xmin      xmax       ymin      ymax       prob</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -10.806602 -2.497246 -10.806602 -2.497246 0.00000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  -2.497246  5.812110 -10.806602 -2.497246 0.24197555</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   5.812110 14.121466 -10.806602 -2.497246 0.01094580</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 -10.806602 -2.497246  -2.497246  5.812110 0.02785489</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  -2.497246  5.812110  -2.497246  5.812110 0.64767063</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   5.812110 14.121466  -2.497246  5.812110 0.07155313</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7 -10.806602 -2.497246   5.812110 14.121466 0.00000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8  -2.497246  5.812110   5.812110 14.121466 0.00000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9   5.812110 14.121466   5.812110 14.121466 0.00000000</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $sparse</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         xmin      xmax       ymin      ymax prob</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -10.806602 -2.497246 -10.806602 -2.497246    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2  -2.497246  5.812110 -10.806602 -2.497246    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3   5.812110 14.121466 -10.806602 -2.497246    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4 -10.806602 -2.497246  -2.497246  5.812110    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5  -2.497246  5.812110  -2.497246  5.812110    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6   5.812110 14.121466  -2.497246  5.812110    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7 -10.806602 -2.497246   5.812110 14.121466    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8  -2.497246  5.812110   5.812110 14.121466    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9   5.812110 14.121466   5.812110 14.121466    0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $method</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "add"    "sparse"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-in"><span><span class="va">score_plot</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'score_plot' not found</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

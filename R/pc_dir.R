@@ -54,11 +54,12 @@
 #' data(gau, package = "dppca")
 #'
 #' # Use a small subset to keep the example fast.
-#' X <- head(gau, 50)
+#' X <- gau[1:200, ]
 #'
 #' # Non-private principal component directions
 #' V <- dp_pc_dir(X, k = 2)
 #' head(V)
+#'
 #'
 #' # Private principal component directions
 #' set.seed(123)
@@ -66,33 +67,8 @@
 #'   X,
 #'   k = 2,
 #'   g_dppca = TRUE,
-#'   eps_dir = 1,
-#'   delta_dir = 1e-2
-#' )
-#' head(V_private)
-#'
-#' # Generate a small low-rank dataset.
-#' n <- 50
-#' z1 <- rnorm(n)
-#' z2 <- rnorm(n)
-#' X <- cbind(
-#'   x1 = z1 + 0.2 * rnorm(n),
-#'   x2 = 0.8 * z1 + 0.2 * rnorm(n),
-#'   x3 = z2 + 0.2 * rnorm(n),
-#'   x4 = 0.5 * z1 - 0.4 * z2 + 0.2 * rnorm(n)
-#' )
-#'
-#' # Non-private principal component directions
-#' V <- dp_pc_dir(X, k = 2)
-#' head(V)
-#'
-#' # Private principal component directions
-#' V_private <- dp_pc_dir(
-#'   X,
-#'   k = 2,
-#'   g_dppca = TRUE,
-#'   eps_dir = 1,
-#'   delta_dir = 1e-2
+#'   eps_dir = 2,
+#'   delta_dir = 1e-3
 #' )
 #' head(V_private)
 #'

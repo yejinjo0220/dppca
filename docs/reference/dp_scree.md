@@ -181,88 +181,41 @@ for method-specific tuning parameters.
 ## Examples
 
 ``` r
-set.seed(123)
-n <- 50
-z1 <- rnorm(n)
-z2 <- rnorm(n)
-X <- cbind(
-  x1 = z1 + 0.2 * rnorm(n),
-  x2 = 0.8 * z1 + 0.2 * rnorm(n),
-  x3 = z2 + 0.2 * rnorm(n),
-  x4 = 0.5 * z1 - 0.4 * z2 + 0.2 * rnorm(n)
-)
+data(gau, package = "dppca")
 
+# Use a small subset to keep the example fast.
+X <- gau[1:100, ]
+
+# Estimate the private scree values using the clipped mean method.
+set.seed(123)
 dp_scree(
   X,
   k = 2,
   method = "clipped",
   control = clipped_control(C_clip = 3),
-  eps = 1,
-  delta = 1e-2
+  eps = 2,
+  delta = 1e-3
 )
 #> $method
 #> [1] "clipped"
 #> 
 #> $scree_np
-#> [1] 1.7558646 0.8446245
+#> [1] 2.061105 1.771498
 #> 
 #> $pve_np
-#> [1] 0.6752055 0.3247945
+#> [1] 0.5377819 0.4622181
 #> 
 #> $scree
-#> [1] 1.0164542 0.4594737
+#> [1] 1.196163 1.196163
 #> 
 #> $pve
-#> [1] 0.6886883 0.3113117
+#> [1] 0.5 0.5
 #> 
 
-# \donttest{
-dp_scree(
-  X,
-  k = 2,
-  method = "pmwm",
-  control = pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01),
-  eps = 1,
-  delta = 1e-2
-)
-#> $method
-#> [1] "pmwm"
-#> 
-#> $scree_np
-#> [1] 1.7558646 0.8446245
-#> 
-#> $pve_np
-#> [1] 0.6752055 0.3247945
-#> 
-#> $scree
-#> [1] 25.25551  0.00000
-#> 
-#> $pve
-#> [1] 1 0
-#> 
-
-dp_scree(
-  X,
-  k = 2,
-  method = "huber",
-  control = huber_control(k_min_m2 =-10, k_max_m2 = 10, m2_frac = 1 / 4),
-  eps = 1,
-  delta = 1e-2
-)
-#> $method
-#> [1] "huber"
-#> 
-#> $scree_np
-#> [1] 1.7558646 0.8446245
-#> 
-#> $pve_np
-#> [1] 0.6752055 0.3247945
-#> 
-#> $scree
-#> [1] 0 0
-#> 
-#> $pve
-#> [1] 0 0
-#> 
-# }
+# Other scree methods can be used by changing `method` and `control`, e.g.,
+# method = "pmwm",
+# control = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01)
+#
+# method = "huber",
+# control = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
 ```

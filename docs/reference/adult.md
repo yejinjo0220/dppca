@@ -53,5 +53,6 @@ scaling is recommended before applying PCA-based methods.
 
 ## References
 
-Becker, B. and Kohavi, R. (1996). Adult dataset. UCI Machine Learning
-Repository.
+Becker B, Kohavi R (1996). “Adult.” UCI Machine Learning Repository.
+DOI: https://doi.org/10.24432/C5XW20,
+<https://archive.ics.uci.edu/dataset/2/adult>.

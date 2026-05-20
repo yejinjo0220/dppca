@@ -135,6 +135,7 @@ p <- dp_score_plot_group(
   bins = c(8, 8),
   method = "add"
 )
+#> Error in dp_score_plot_group(X, group = "group", eps = 1, delta = 1e-05,     bins = c(8, 8), method = "add"): argument 3 matches multiple formal arguments
 p$plot$all
-
+#> Error: object 'p' not found
 ```

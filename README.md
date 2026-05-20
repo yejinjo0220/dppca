@@ -265,7 +265,6 @@ If you use `dppca` in your work, please cite the package and the associated meth
 
 This package is released under the license specified in the `DESCRIPTION` file.
 
-
 ## Data sources
 
 The package includes a numerical subset of the Adult dataset from the

@@ -38,7 +38,6 @@ Since the variables have substantially different units and scales, scaling
 is recommended before applying PCA-based methods.
 }
 \references{
-Becker, B. and Kohavi, R. (1996).
-Adult dataset. UCI Machine Learning Repository.
+\insertRef{adult}{dppca}
 }
 \keyword{datasets}
