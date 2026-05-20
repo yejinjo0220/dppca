@@ -40,8 +40,8 @@ dp_scree(
 
 - method:
 
-  Scree value estimation method. One of `"clipped"`, `"pmwm"`, or
-  `"huber"`.
+  Scree value estimation method or methods. One or more of `"clipped"`,
+  `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
 
 - control:
 
@@ -50,6 +50,8 @@ dp_scree(
   [`pmwm_control()`](https://yejinjo0220.github.io/dppca/reference/pmwm_control.md),
   or
   [`huber_control()`](https://yejinjo0220.github.io/dppca/reference/huber_control.md).
+  When multiple methods are requested, use a named list with method
+  names.
 
 - eps:
 
@@ -94,7 +96,7 @@ dp_scree(
 
 ## Value
 
-A list with components:
+If one method is requested, a list with components:
 
 - `method`: scree value estimation method.
 
@@ -105,6 +107,9 @@ A list with components:
 - `scree`: differentially private scree value estimates.
 
 - `pve`: differentially private proportions of variance explained.
+
+If multiple methods are requested, a named list of method-specific
+results is returned.
 
 ## Details
 

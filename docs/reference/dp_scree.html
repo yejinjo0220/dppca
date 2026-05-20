@@ -94,13 +94,14 @@ to estimate. Must be an integer between <code>1</code> and the number of columns
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>Scree value estimation method. One of <code>"clipped"</code>, <code>"pmwm"</code>, or
-<code>"huber"</code>.</p></dd>
+<dd><p>Scree value estimation method or methods. One or more of
+<code>"clipped"</code>, <code>"pmwm"</code>, or <code>"huber"</code>. If omitted, <code>"clipped"</code> is used.</p></dd>
 
 
 <dt id="arg-control">control<a class="anchor" aria-label="anchor" href="#arg-control"></a></dt>
 <dd><p>Optional method-specific control list created by
-<code><a href="clipped_control.html">clipped_control()</a></code>, <code><a href="pmwm_control.html">pmwm_control()</a></code>, or <code><a href="huber_control.html">huber_control()</a></code>.</p></dd>
+<code><a href="clipped_control.html">clipped_control()</a></code>, <code><a href="pmwm_control.html">pmwm_control()</a></code>, or <code><a href="huber_control.html">huber_control()</a></code>. When multiple
+methods are requested, use a named list with method names.</p></dd>
 
 
 <dt id="arg-eps">eps<a class="anchor" aria-label="anchor" href="#arg-eps"></a></dt>
@@ -144,12 +145,14 @@ post-processing to the vector of private scree values. The default is <code>TRUE
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with components:</p><ul><li><p><code>method</code>: scree value estimation method.</p></li>
+    <p>If one method is requested, a list with components:</p><ul><li><p><code>method</code>: scree value estimation method.</p></li>
 <li><p><code>scree_np</code>: non-private scree estimates.</p></li>
 <li><p><code>pve_np</code>: non-private proportions of variance explained.</p></li>
 <li><p><code>scree</code>: differentially private scree value estimates.</p></li>
 <li><p><code>pve</code>: differentially private proportions of variance explained.</p></li>
-</ul></div>
+</ul><p>If multiple methods are requested, a named list of method-specific results is
+returned.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Let \(X\) denote the preprocessed data matrix and let \(v_l\) be the \(l\)th

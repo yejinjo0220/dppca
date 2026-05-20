@@ -62,254 +62,245 @@
 </h1></div>
 <!-- badges: start -->
 <!-- badges: end -->
-<p><code>dppca</code> provides tools for <strong>differentially private principal component analysis (PCA) visualization</strong>. The package focuses on privacy-preserving versions of common PCA exploratory tools, including PC direction estimation, scree/PVE plots, score plots, and histogram-based summaries of PCA scores.</p>
-<p>The main goal of <code>dppca</code> is to make it easy to compare non-private PCA summaries with differentially private alternatives while keeping the interface close to the standard PCA workflow in R.</p>
+<p><code>dppca</code> provides tools for <strong>differentially private principal component analysis (PCA) visualization</strong> in R. It supports private PC direction estimation, private scree/PVE plots, private score plots, grouped score visualizations, and an interactive Shiny app.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <p>You can install the development version from GitHub with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install-deprecated.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"yejinjo0220/dppca"</span><span class="op">)</span></span></code></pre></div>
-<p>After the package is available on CRAN, you will be able to install it with:</p>
+<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install-deprecated.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"yejinjo0220/dppca"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="basic-workflow">Basic workflow<a class="anchor" aria-label="anchor" href="#basic-workflow"></a>
+</h2>
+<p>The main workflow is:</p>
+<ol style="list-style-type: decimal">
+<li>estimate private PC directions with <code><a href="reference/dp_pc_dir.html">dp_pc_dir()</a></code>.</li>
+<li>estimate and plot private scree/PVE summaries with <code><a href="reference/dp_scree.html">dp_scree()</a></code> and <code><a href="reference/dp_scree_plot.html">dp_scree_plot()</a></code>.</li>
+<li>compute and plot private PCA score summaries with <code><a href="reference/dp_score.html">dp_score()</a></code> and <code><a href="reference/dp_score_plot.html">dp_score_plot()</a></code>.</li>
+<li>optionally use grouped score visualizations or the Shiny app.</li>
+</ol>
+<p>The examples below use the synthetic Gaussian cluster dataset included in the package.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"dppca"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
-</h2>
-<p>The package contains four main groups of functions.</p>
-<div class="section level3">
-<h3 id="id_1-differentially-private-pc-directions">1. Differentially private PC directions<a class="anchor" aria-label="anchor" href="#id_1-differentially-private-pc-directions"></a>
-</h3>
-<p><code><a href="reference/dp_pc_dir.html">dp_pc_dir()</a></code> estimates leading principal component directions under differential privacy.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">V_dp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_pc_dir.html">dp_pc_dir</a></span><span class="op">(</span></span>
-<span>  <span class="va">X</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>The input <code>X</code> is the original data matrix with observations in rows. Centering and standardization are handled internally through <code>center</code> and <code>standardize</code>.</p>
-</div>
-<div class="section level3">
-<h3 id="id_2-differentially-private-scree-and-pve-plots">2. Differentially private scree and PVE plots<a class="anchor" aria-label="anchor" href="#id_2-differentially-private-scree-and-pve-plots"></a>
-</h3>
-<p><code><a href="reference/dp_scree.html">dp_scree()</a></code> computes private scree values or proportions of variance explained using one of several private estimators.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree.html">dp_scree</a></span><span class="op">(</span></span>
-<span>  <span class="va">X</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"pmwm"</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  control <span class="op">=</span> <span class="fu"><a href="reference/pmwm_control.html">pmwm_control</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>, b <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Available methods are:</p>
-<ul>
-<li>
-<code>"clipped"</code>: clipped mean based estimator</li>
-<li>
-<code>"pmwm"</code>: private modified winsorized mean based estimator</li>
-<li>
-<code>"huber"</code>: Huber-type robust estimator</li>
-</ul>
-<p>Method-specific tuning parameters are supplied through control helper functions:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/clipped_control.html">clipped_control</a></span><span class="op">(</span>C_clip <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/pmwm_control.html">pmwm_control</a></span><span class="op">(</span></span>
-<span>  beta <span class="op">=</span> <span class="fl">1.01</span>,</span>
-<span>  a <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  b <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  trim_const <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  eta <span class="op">=</span> <span class="fl">0.01</span>,</span>
-<span>  split_mode <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/huber_control.html">huber_control</a></span><span class="op">(</span></span>
-<span>  mu0 <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  eta0 <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  T <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  M <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>  k_min_m2 <span class="op">=</span> <span class="op">-</span><span class="fl">40</span>,</span>
-<span>  k_max_m2 <span class="op">=</span> <span class="fl">40</span>,</span>
-<span>  m2_frac <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>To draw a private scree/PVE plot, use <code><a href="reference/dp_scree_plot.html">dp_scree_plot()</a></code>:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
-<span>  <span class="va">X</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  dp_scree_method <span class="op">=</span> <span class="st">"all"</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  type <span class="op">=</span> <span class="st">"pve"</span>,</span>
-<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    clipped <span class="op">=</span> <span class="fu"><a href="reference/clipped_control.html">clipped_control</a></span><span class="op">(</span>C_clip <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
-<span>    pmwm <span class="op">=</span> <span class="fu"><a href="reference/pmwm_control.html">pmwm_control</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>, b <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
-<span>    huber <span class="op">=</span> <span class="fu"><a href="reference/huber_control.html">huber_control</a></span><span class="op">(</span>T <span class="op">=</span> <span class="fl">50</span>, M <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Use <code>type = "pve"</code> to plot proportions of variance explained, or <code>type = "scree"</code> to plot raw scree values. Plot styling is handled internally so that the user-facing interface stays simple.</p>
-</div>
-<div class="section level3">
-<h3 id="id_3-differentially-private-score-plots">3. Differentially private score plots<a class="anchor" aria-label="anchor" href="#id_3-differentially-private-score-plots"></a>
-</h3>
-<p><code><a href="reference/dp_score.html">dp_score()</a></code> computes differentially private PCA scores, and <code><a href="reference/dp_score_plot.html">dp_score_plot()</a></code> visualizes the first two private score coordinates.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">score_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_score.html">dp_score</a></span><span class="op">(</span></span>
-<span>  <span class="va">X</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  bin_method <span class="op">=</span> <span class="st">"WZ"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_score_plot.html">dp_score_plot</a></span><span class="op">(</span></span>
-<span>  <span class="va">X</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  bin_method <span class="op">=</span> <span class="st">"WZ"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">p</span></span></code></pre></div>
-<p>For bin recommendation in score-based visualizations, the available options are:</p>
-<ul>
-<li><code>"WZ"</code></li>
-<li><code>"Lei"</code></li>
-<li><code>"none"</code></li>
-</ul>
-<p>Grouped score plots are also supported:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/dp_score_plot_group.html">dp_score_plot_group</a></span><span class="op">(</span></span>
-<span>  <span class="va">X</span>,</span>
-<span>  group <span class="op">=</span> <span class="va">group_labels</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  bin_method <span class="op">=</span> <span class="st">"Lei"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="id_4-differentially-private-histogram-summaries">4. Differentially private histogram summaries<a class="anchor" aria-label="anchor" href="#id_4-differentially-private-histogram-summaries"></a>
-</h3>
-<p>The package also provides helper functions for histogram-based visualization of private PCA scores. These functions are useful when the goal is to summarize the distribution of projected observations rather than release individual private score points.</p>
-<p>The histogram routines support both single-sample and grouped visualizations and are designed to work together with the score plot workflow.</p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="example-datasets">Example datasets<a class="anchor" aria-label="anchor" href="#example-datasets"></a>
-</h2>
-<p><code>dppca</code> includes several example datasets for demonstrations and vignettes:</p>
-<ul>
-<li><code>adult</code></li>
-<li><code>eur_map</code></li>
-<li><code>eur_map_g</code></li>
-<li><code>gau</code></li>
-<li><code>gau_g</code></li>
-<li><code>gaussian_groups</code></li>
-</ul>
-<p>For example:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gau</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gau_g</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">gau</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">gau_g</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="typical-workflow">Typical workflow<a class="anchor" aria-label="anchor" href="#typical-workflow"></a>
-</h2>
-<p>A typical analysis consists of the following steps.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/yejinjo0220/dppca" class="external-link">dppca</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 1. Load or prepare a numeric data matrix</span></span>
-<span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">gau</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gau</span>, package <span class="op">=</span> <span class="st">"dppca"</span><span class="op">)</span></span>
+<span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">gau</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="id_1-private-pc-directions">1. Private PC directions<a class="anchor" aria-label="anchor" href="#id_1-private-pc-directions"></a>
+</h2>
+<p><code><a href="reference/dp_pc_dir.html">dp_pc_dir()</a></code> estimates leading principal component directions under differential privacy.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Estimate private PC directions</span></span>
-<span><span class="va">V_dp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_pc_dir.html">dp_pc_dir</a></span><span class="op">(</span></span>
-<span>  <span class="va">X</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3. Plot private PVE curves</span></span>
-<span><span class="va">pve_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
+<span><span class="va">V</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_pc_dir.html">dp_pc_dir</a></span><span class="op">(</span></span>
 <span>  <span class="va">X</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  dp_scree_method <span class="op">=</span> <span class="st">"all"</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  type <span class="op">=</span> <span class="st">"pve"</span>,</span>
+<span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">V</span> </span></code></pre></div>
+<p>The returned object contains private principal component directions that can be used PCA summaries and visualizations.</p>
+</div>
+<div class="section level2">
+<h2 id="id_2-private-scree-values">2. Private scree values<a class="anchor" aria-label="anchor" href="#id_2-private-scree-values"></a>
+</h2>
+<p><code><a href="reference/dp_scree.html">dp_scree()</a></code> estimates private scree values or proportions of variance explained. The method is chosen by the <code>method</code> argument.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">scree_clpped</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree.html">dp_scree</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"clipped"</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="reference/clipped_control.html">clipped_control</a></span><span class="op">(</span>C_clip <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">scree_clpped</span></span></code></pre></div>
+<p>The package currently supports three scree estimation methods:</p>
+<ul>
+<li>
+<code>"clipped"</code>: clipped mean based estimator;</li>
+<li>
+<code>"pmwm"</code>: private modified winsorized mean based estimator;</li>
+<li>
+<code>"huber"</code>: Huber-type robust estimator.</li>
+</ul>
+<p>Method-specific tuning parameters are specified using the control helper unctions <code><a href="reference/clipped_control.html">clipped_control()</a></code>, <code><a href="reference/pmwm_control.html">pmwm_control()</a></code>, and <code><a href="reference/huber_control.html">huber_control()</a></code>.</p>
+<p>For example, multiple scree methods can be requested by passing a vector to <code>method</code> and a named list to <code>control</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">scree_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree.html">dp_scree</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"clipped"</span>, <span class="st">"pmwm"</span>, <span class="st">"huber"</span><span class="op">)</span>,</span>
 <span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    clipped <span class="op">=</span> <span class="fu"><a href="reference/clipped_control.html">clipped_control</a></span><span class="op">(</span>C_clip <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
-<span>    pmwm <span class="op">=</span> <span class="fu"><a href="reference/pmwm_control.html">pmwm_control</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>, b <span class="op">=</span> <span class="fl">10</span><span class="op">)</span>,</span>
-<span>    huber <span class="op">=</span> <span class="fu"><a href="reference/huber_control.html">huber_control</a></span><span class="op">(</span>T <span class="op">=</span> <span class="fl">50</span>, M <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span>    pmwm <span class="op">=</span> <span class="fu"><a href="reference/pmwm_control.html">pmwm_control</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>, b <span class="op">=</span> <span class="fl">50</span>, trim_const <span class="op">=</span> <span class="fl">10</span>, eta <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span>,</span>
+<span>    huber <span class="op">=</span> <span class="fu"><a href="reference/huber_control.html">huber_control</a></span><span class="op">(</span>k_min_m2 <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>, k_max_m2 <span class="op">=</span> <span class="fl">10</span>, m2_frac <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fl">1e-4</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 4. Draw a private score plot</span></span>
+<span><span class="va">scree_all</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="private-scree-plots">Private scree plots<a class="anchor" aria-label="anchor" href="#private-scree-plots"></a>
+</h2>
+<p><code><a href="reference/dp_scree_plot.html">dp_scree_plot()</a></code> visualizes private scree values or private proportions of variance explained.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">scree_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"clipped"</span>, <span class="st">"pmwm"</span>, <span class="st">"huber"</span><span class="op">)</span>,</span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    clipped <span class="op">=</span> <span class="fu"><a href="reference/clipped_control.html">clipped_control</a></span><span class="op">(</span>C_clip <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
+<span>    pmwm <span class="op">=</span> <span class="fu"><a href="reference/pmwm_control.html">pmwm_control</a></span><span class="op">(</span>a <span class="op">=</span> <span class="fl">0</span>, b <span class="op">=</span> <span class="fl">50</span>, trim_const <span class="op">=</span> <span class="fl">10</span>, eta <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span>,</span>
+<span>    huber <span class="op">=</span> <span class="fu"><a href="reference/huber_control.html">huber_control</a></span><span class="op">(</span>k_min_m2 <span class="op">=</span> <span class="op">-</span><span class="fl">10</span>, k_max_m2 <span class="op">=</span> <span class="fl">10</span>, m2_frac <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fl">1e-4</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">scree_all</span></span></code></pre></div>
+<p align="center">
+<img src="reference/figures/scree_plot.png" width="75%" alt="Private scree plot produced by dppca"></p>
+</div>
+<div class="section level2">
+<h2 id="id_3-private-pca-score">3. Private PCA score<a class="anchor" aria-label="anchor" href="#id_3-private-pca-score"></a>
+</h2>
+<p><code><a href="reference/dp_score.html">dp_score()</a></code> computes differentially private summaries of two-dimensional PCA scores using histogram-based methods.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">score_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_score.html">dp_score</a></span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fl">1e-4</span>,</span>
+<span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">8</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"add"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">score_result</span> </span></code></pre></div>
+<p>Available score methods include:</p>
+<ul>
+<li>
+<code>"add"</code>: additive histogram method;</li>
+<li>
+<code>"sparse"</code>: sparse histogram method.</li>
+</ul>
+<p>Use <code>method = "add"</code> or <code>method = "sparse"</code> to run one histogram method, or <code>method = c("add", "sparse")</code> to compute both.</p>
+</div>
+<div class="section level2">
+<h2 id="private-score-plot">Private score plot<a class="anchor" aria-label="anchor" href="#private-score-plot"></a>
+</h2>
+<p><code><a href="reference/dp_score_plot.html">dp_score_plot()</a></code> draws private score plots based on the histogram summaries returned by <code><a href="reference/dp_score.html">dp_score()</a></code>.</p>
+<p>If <code>method</code> is omitted, both additive and sparse histogram methods are used.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">score_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_score_plot.html">dp_score_plot</a></span><span class="op">(</span></span>
 <span>  <span class="va">X</span>,</span>
-<span>  k <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  bin_method <span class="op">=</span> <span class="st">"WZ"</span></span>
+<span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fl">1e-4</span>,</span>
+<span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">15</span>, <span class="fl">15</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">score_plot</span></span>
+<span><span class="va">score_plot</span></span></code></pre></div>
+<p align="center">
+<img src="reference/figures/score_plot.png" width="100%" alt="Private score plot produced by dppca"></p>
+</div>
+<div class="section level2">
+<h2 id="grouped-score-plot">Grouped score plot<a class="anchor" aria-label="anchor" href="#grouped-score-plot"></a>
+</h2>
+<p>For data with group labels, <code><a href="reference/dp_score_group.html">dp_score_group()</a></code> and <code><a href="reference/dp_score_plot_group.html">dp_score_plot_group()</a></code> provide grouped versions of the private score.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gau_g</span>, package <span class="op">=</span> <span class="st">"dppca"</span><span class="op">)</span></span>
+<span><span class="va">X_g</span> <span class="op">&lt;-</span> <span class="va">gau_g</span></span></code></pre></div>
+<p>Compute grouped private score.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span><span class="va">score_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_score_group.html">dp_score_group</a></span><span class="op">(</span></span>
+<span>  <span class="va">X_g</span>,</span>
+<span>  group <span class="op">=</span> <span class="st">"group"</span>,</span>
+<span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fl">1e-4</span>,</span>
+<span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">8</span><span class="op">)</span>,</span>
+<span>  method <span class="op">=</span> <span class="st">"add"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/dp_score_plot_group.html">dp_score_plot_group</a></span><span class="op">(</span></span>
-<span>  X <span class="op">=</span> <span class="va">gau_g</span>,</span>
-<span>  G <span class="op">=</span> <span class="st">"color"</span>,</span>
-<span>  eps_total <span class="op">=</span> <span class="fl">5</span>,</span>
-<span>  delta_total <span class="op">=</span> <span class="fl">1e-6</span>,</span>
-<span>  center <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  bin_method <span class="op">=</span> <span class="st">"WZ"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="notes-on-preprocessing">Notes on preprocessing<a class="anchor" aria-label="anchor" href="#notes-on-preprocessing"></a>
-</h2>
-<p>Most user-facing PCA functions accept:</p>
+<span><span class="va">score_group</span></span></code></pre></div>
+<p>Draw a grouped private score plot.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">center</span> <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="va">standardize</span> <span class="op">=</span> <span class="cn">FALSE</span></span></code></pre></div>
-<p>By default, columns are centered but not standardized. This corresponds to a covariance-based PCA convention. Set <code>standardize = TRUE</code> when correlation-based PCA is desired.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">score_group_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_score_plot_group.html">dp_score_plot_group</a></span><span class="op">(</span></span>
+<span>  <span class="va">X_g</span>,</span>
+<span>  group <span class="op">=</span> <span class="st">"group"</span>,</span>
+<span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fl">1e-4</span>,</span>
+<span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">15</span>, <span class="fl">15</span><span class="op">)</span>,</span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">score_group_plot</span></span></code></pre></div>
+<p align="center">
+<img src="reference/figures/score_plot_group.png" width="100%" alt="Private group score plot produced by dppca"></p>
+<hr>
 </div>
 <div class="section level2">
-<h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+<h2 id="shiny-app">Shiny app<a class="anchor" aria-label="anchor" href="#shiny-app"></a>
 </h2>
-<p>If you use <code>dppca</code> in your work, please cite the package and the associated methodological references described in the vignettes.</p>
+<p><code><a href="reference/dppca_app.html">dppca_app()</a></code> launches a Shiny app for exploring private scree and score plots through a graphical interface.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/dppca_app.html">dppca_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>You can also launch the app with a user-supplied dataset.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gau_g</span>, package <span class="op">=</span> <span class="st">"dppca"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/dppca_app.html">dppca_app</a></span><span class="op">(</span><span class="va">gau_g</span>, group <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span></code></pre></div>
+<hr>
 </div>
 <div class="section level2">
-<h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
+<h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h2>
-<p>This package is released under the license specified in the <code>DESCRIPTION</code> file.</p>
+<p><code>dppca</code> includes three datasets for examples and demonstrations:</p>
+<ul>
+<li>
+<code>gau</code>: a synthetic 20-dimensional Gaussian cluster dataset;</li>
+<li>
+<code>gau_g</code>: a grouped version of <code>gau</code> with an additional <code>group</code> column;</li>
+<li>
+<code>adult</code>: a numerical subset of the Adult dataset from the UCI Machine Learning Repository.</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="data-sources">Data sources<a class="anchor" aria-label="anchor" href="#data-sources"></a>
 </h2>
-<p>The package includes a numerical subset of the Adult dataset from the UCI Machine Learning Repository. The Adult dataset is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) license. We retain five numerical variables: <code>age</code>, <code>education_num</code>, <code>capital_gain</code>, <code>capital_loss</code>, and <code>hours_per_week</code>.</p>
-<p>The package also includes simulated Gaussian cluster datasets generated by the package authors for reproducible examples.</p>
+<p>The package includes a numerical subset of the Adult dataset from the UCI Machine Learning Repository. The Adult dataset is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) license. This package retains five numerical variables: <code>age</code>, <code>education_num</code>, <code>capital_gain</code>, <code>capital_loss</code>, and <code>hours_per_week</code>.</p>
+<p>The package also includes synthetic Gaussian cluster datasets generated by the package authors for reproducible examples.</p>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p>The methods and examples in <code>dppca</code> are related to the following references.</p>
+<ul>
+<li><p>Kim, M. and Jung, S. (2025). Robust and Differentially Private Principal Component Analysis. <em>Statistical Analysis and Data Mining: An ASA Data Science Journal</em>, 18(6), e70053. <a href="doi:10.1002/sam.70053" class="uri">doi:10.1002/sam.70053</a>.</p></li>
+<li><p>Dwork, C. and Roth, A. (2014). The Algorithmic Foundations of Differential Privacy. <em>Foundations and Trends in Theoretical Computer Science</em>, 9(3–4), 211–407. <a href="doi:10.1561/0400000042" class="uri">doi:10.1561/0400000042</a>.</p></li>
+<li><p>Ramsay, K. and Spicker, D. (2025). Improved subsample-and-aggregate via the private modified winsorized mean. arXiv:2501.14095.</p></li>
+<li><p>Yu, M., Ren, Z., and Zhou, W.-X. (2024). Gaussian differentially private robust mean estimation and inference. <em>Bernoulli</em>, 30(4), 3059–3088.</p></li>
+<li><p>Nissim, K., Raskhodnikova, S., and Smith, A. (2007). Smooth Sensitivity and Sampling in Private Data Analysis. In <em>STOC’07: Proceedings of the 39th Annual ACM Symposium on Theory of Computing</em>, 75–84. <a href="doi:10.1145/1250790.1250803" class="uri">doi:10.1145/1250790.1250803</a>.</p></li>
+<li><p>Wasserman, L. and Zhou, S. (2010). A Statistical Framework for Differential Privacy. <em>Journal of the American Statistical Association</em>, 105(489), 375–389. <a href="doi:10.1198/jasa.2009.tm08651" class="uri">doi:10.1198/jasa.2009.tm08651</a>.</p></li>
+<li><p>Karwa, V. and Vadhan, S. P. (2017). Finite Sample Differentially Private Confidence Intervals. arXiv:1711.03908.</p></li>
+<li><p>Becker, B. and Kohavi, R. (1996). Adult dataset. UCI Machine Learning Repository. <a href="doi:10.24432/C5XW20" class="uri">doi:10.24432/C5XW20</a>.</p></li>
+</ul>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

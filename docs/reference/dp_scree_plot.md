@@ -41,7 +41,7 @@ dp_scree_plot(
 - method:
 
   Scree estimation method or methods to plot. One or more of
-  `"clipped"`, `"pmwm"`, or `"huber"`.
+  `"clipped"`, `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
 
 - control:
 
@@ -165,7 +165,6 @@ for method-specific tuning parameters.
 data(gau, package = "dppca")
 
 # Use a small subset to keep the example fast.
-data(gau, package = "dppca")
 X <- gau[1:200, ]
 
 # Draw a private scree plot using the clipped mean method.
