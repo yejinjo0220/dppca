@@ -1,4 +1,4 @@
 # License
 
     YEAR: 2026
-    COPYRIGHT HOLDER: Yejin Jo
+    COPYRIGHT HOLDER: Yejin Jo and Minwoo Kim

@@ -11,12 +11,11 @@
 Source:
 [`DESCRIPTION`](https://github.com/yejinjo0220/dppca/blob/HEAD/DESCRIPTION)
 
-Jo Y, Kim M (2026). *dppca: Differentially Private Scree and Score
-Visualization*. R package version 0.1.0,
-<https://github.com/yejinjo0220/dppca>.
+Jo Y, Kim M (2026). *dppca: Differentially Private PCA Visualization*. R
+package version 0.1.0, <https://github.com/yejinjo0220/dppca>.
 
     @Manual{,
-      title = {dppca: Differentially Private Scree and Score Visualization},
+      title = {dppca: Differentially Private PCA Visualization},
       author = {Yejin Jo and Minwoo Kim},
       year = {2026},
       note = {R package version 0.1.0},
