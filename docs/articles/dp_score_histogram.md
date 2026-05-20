@@ -29,7 +29,6 @@ This article describes the main steps:
 
 Let
 ``` math
-
 X_c \in \mathbb{R}^{n \times p}
 ```
 be the preprocessed data matrix. Typically, this means that the data
@@ -37,7 +36,6 @@ have been centered, and possibly standardized.
 
 Let
 ``` math
-
 V_k = [v_1,\ldots,v_k] \in \mathbb{R}^{p \times k}
 ```
 be the principal component direction matrix, where each column
@@ -45,7 +43,6 @@ $`v_\ell`$ is a principal component direction.
 
 The $`k`$-dimensional PCA score for the $`i`$-th observation is
 ``` math
-
 z_i
 =
 V_k^\top x_{c,i}
@@ -57,7 +54,6 @@ column vector.
 
 Equivalently, the score matrix is
 ``` math
-
 Z = X_c V_k
 \in
 \mathbb{R}^{n \times k}.
@@ -73,18 +69,15 @@ all $`k`$ score dimensions.
 
 Let
 ``` math
-
 (a,b)
 ```
 be the two selected component indices. A common choice is
 ``` math
-
 (a,b) = (1,2).
 ```
 
 For each observation, define the two-dimensional score point
 ``` math
-
 s_i
 =
 (z_{i,a}, z_{i,b})
@@ -96,14 +89,12 @@ i=1,\ldots,n.
 
 The collection
 ``` math
-
 S = \{s_i\}_{i=1}^n
 ```
 is the two-dimensional score point cloud.
 
 A non-private score plot would draw all points
 ``` math
-
 s_1,\ldots,s_n
 ```
 directly. In the private setting, we instead approximate the empirical
@@ -114,7 +105,6 @@ distribution of $`S`$ through a private histogram.
 The goal is to produce a visualization that approximates the empirical
 distribution of
 ``` math
-
 S = \{s_i\}_{i=1}^n
 \subset
 \mathbb{R}^2
@@ -150,19 +140,16 @@ quantile estimation.
 
 Let
 ``` math
-
 S \in \mathbb{R}^{n \times 2}
 ```
 be the matrix of two-dimensional scores, where the $`i`$-th row is
 ``` math
-
 s_i^\top = (z_{i,a}, z_{i,b}).
 ```
 
 To construct one common range for both axes, we stack the two score
 coordinates into a single vector:
 ``` math
-
 z
 =
 (z_1,\ldots,z_m)^\top
@@ -175,7 +162,6 @@ m = 2n.
 Here, the vector $`z`$ contains all values from both selected score
 coordinates:
 ``` math
-
 \{z_{i,a}\}_{i=1}^n
 \cup
 \{z_{i,b}\}_{i=1}^n.
@@ -189,7 +175,6 @@ into a one-dimensional private quantile estimation problem.
 To determine the lower and upper boundaries of the plotting frame,
 define
 ``` math
-
 q_{\min} = \frac{1}{m},
 \qquad
 q_{\max} = \frac{m-1}{m}.
@@ -200,7 +185,6 @@ stacked score coordinates.
 
 Let
 ``` math
-
 \widetilde z_{\min}
 \quad\text{and}\quad
 \widetilde z_{\max}
@@ -215,14 +199,12 @@ sensitivity based DP quantile estimator.
 
 Given the private lower and upper quantile estimates, define the center
 ``` math
-
 c
 =
 \frac{\widetilde z_{\min}+\widetilde z_{\max}}{2}
 ```
 and the half-length
 ``` math
-
 L
 =
 \frac{\widetilde z_{\max}-\widetilde z_{\min}}{2}.
@@ -231,13 +213,11 @@ L
 To add a visual margin and reduce boundary effects, introduce an inflate
 parameter
 ``` math
-
 \alpha > 0.
 ```
 
 The inflated half-length is
 ``` math
-
 L'
 =
 (1+\alpha)L.
@@ -245,7 +225,6 @@ L'
 
 The final square plotting frame is
 ``` math
-
 F
 =
 [c-L',c+L']
@@ -277,13 +256,11 @@ into histogram bins.
 
 Let
 ``` math
-
 m_{\mathrm{axis}}
 ```
 be the number of bins per axis. Then the total number of two-dimensional
 bins is
 ``` math
-
 m = m_{\mathrm{axis}}^2.
 ```
 
@@ -291,14 +268,12 @@ The number of bins can be chosen by the user or selected using a
 heuristic rule. For a $`d`$-dimensional histogram, common rules have the
 form
 ``` math
-
 m_{\mathrm{axis}}
 \asymp
 n^{1/(2+d)}
 ```
 or
 ``` math
-
 m_{\mathrm{axis}}
 \asymp
 \left(
@@ -308,7 +283,6 @@ m_{\mathrm{axis}}
 
 Since a score histogram is two-dimensional, we typically take
 ``` math
-
 d = 2.
 ```
 
@@ -320,18 +294,15 @@ sample size, privacy budget, and the amount of structure in the data.
 
 Let the private plotting frame be divided into bins
 ``` math
-
 B_1,\ldots,B_m.
 ```
 
 For the score point set
 ``` math
-
 S = \{s_i\}_{i=1}^n,
 ```
 the non-private count in bin $`B_k`$ is
 ``` math
-
 c_k
 =
 \sum_{i=1}^n
@@ -342,7 +313,6 @@ k=1,\ldots,m.
 
 The count vector is
 ``` math
-
 c = (c_1,\ldots,c_m)
 \in
 \mathbb{N}^m.
@@ -350,7 +320,6 @@ c = (c_1,\ldots,c_m)
 
 If the histogram is normalized to a frequency vector, then
 ``` math
-
 q_k
 =
 \frac{c_k}{\sum_{j=1}^m c_j}
@@ -364,7 +333,6 @@ assuming all points are assigned to bins in the frame.
 The final private score visualization displays a noisy version of the
 frequency vector
 ``` math
-
 q = (q_1,\ldots,q_m).
 ```
 
@@ -377,14 +345,12 @@ bin to another.
 Therefore, the count vector can change by at most $`+1`$ in one bin and
 $`-1`$ in another bin. Hence,
 ``` math
-
 \Delta_1(c)
 \leq
 2
 ```
 and
 ``` math
-
 \Delta_2(c)
 \leq
 \sqrt{2}.
@@ -406,7 +372,6 @@ privacy parameters $`(\epsilon,\delta)`$.
 
 **Output:** a private normalized histogram
 ``` math
-
 \hat q = (\hat q_1,\ldots,\hat q_m).
 ```
 
@@ -429,7 +394,6 @@ privacy parameters $`(\epsilon,\delta)`$.
 
 Using Gaussian noise, the noisy count can be written as
 ``` math
-
 \widetilde c_k
 =
 c_k + \eta_k,
@@ -440,7 +404,6 @@ c_k + \eta_k,
 With $`\ell_2`$-sensitivity $`\sqrt{2}`$, one possible Gaussian noise
 scale is
 ``` math
-
 \sigma
 =
 \sqrt{2}
@@ -477,7 +440,6 @@ privacy parameters $`(\epsilon,\delta)`$.
 
 **Output:** a private normalized histogram
 ``` math
-
 \hat q = (\hat q_1,\ldots,\hat q_m).
 ```
 
@@ -508,7 +470,6 @@ privacy parameters $`(\epsilon,\delta)`$.
 
 The threshold is
 ``` math
-
 t
 =
 \frac{2\log(2/\delta)}{\epsilon}
@@ -518,7 +479,6 @@ t
 
 The Laplace noise scale is
 ``` math
-
 \frac{2}{\epsilon}.
 ```
 
@@ -544,18 +504,15 @@ privacy-consuming steps:
 
 Let the frame construction budget be
 ``` math
-
 (\epsilon_{\mathrm{frame}},\delta_{\mathrm{frame}})
 ```
 and the histogram budget be
 ``` math
-
 (\epsilon_{\mathrm{hist}},\delta_{\mathrm{hist}}).
 ```
 
 By basic composition, the combined procedure satisfies
 ``` math
-
 (\epsilon_{\mathrm{frame}}+\epsilon_{\mathrm{hist}},
 \delta_{\mathrm{frame}}+\delta_{\mathrm{hist}})
 \text{-DP}.
@@ -565,12 +522,10 @@ If the PCA directions are also estimated privately, then the
 direction-estimation budget must be included as well. For example, if
 the private direction step uses
 ``` math
-
 (\epsilon_{\mathrm{dir}},\delta_{\mathrm{dir}}),
 ```
 then the full procedure satisfies
 ``` math
-
 (\epsilon_{\mathrm{dir}}
 +
 \epsilon_{\mathrm{frame}}
@@ -589,13 +544,11 @@ then the full procedure satisfies
 In many applications, one may want to compare PCA score distributions
 across groups. For example, observations may have group labels
 ``` math
-
 g_i \in \mathcal{G}.
 ```
 
 The data are then represented as
 ``` math
-
 \{(s_i,g_i)\}_{i=1}^n,
 ```
 where $`s_i \in \mathbb{R}^2`$ is the two-dimensional PCA score and
@@ -604,7 +557,6 @@ $`g_i`$ is the group label.
 A group-wise DP score histogram releases one private histogram for each
 group:
 ``` math
-
 \{\hat q^{(g)}\}_{g\in\mathcal{G}}.
 ```
 
@@ -612,7 +564,6 @@ group:
 
 For each group $`g\in\mathcal{G}`$, define the group-specific bin count
 ``` math
-
 c_k^{(g)}
 =
 \sum_{i=1}^n
@@ -622,7 +573,6 @@ c_k^{(g)}
 The additive group-wise mechanism adds Gaussian noise to each group-bin
 count:
 ``` math
-
 \widetilde c_k^{(g)}
 =
 c_k^{(g)}
@@ -632,7 +582,6 @@ c_k^{(g)}
 
 Then the noisy counts are truncated and normalized within each group:
 ``` math
-
 \hat q_k^{(g)}
 =
 \frac{\hat c_k^{(g)}}{\sum_{j=1}^m \hat c_j^{(g)}}.
@@ -716,6 +665,7 @@ The exact function arguments may depend on the installed version of
 `dppca`. A typical workflow is as follows.
 
 ``` r
+
 library(dppca)
 
 # x: numeric data matrix or data frame
@@ -735,6 +685,7 @@ out
 A sparse histogram version may look like:
 
 ``` r
+
 out_sparse <- dp_score_plot(
   x,
   k = 2,
@@ -747,6 +698,7 @@ out_sparse <- dp_score_plot(
 For group-wise score visualization:
 
 ``` r
+
 out_group <- group_dp_score_plot(
   x,
   group = group_label,
@@ -767,7 +719,6 @@ The private PCA score histogram workflow can be summarized as follows.
 1.  Compute or obtain principal component directions $`V_k`$.
 2.  Project the data:
     ``` math
-
     Z = X_c V_k.
     ```
 3.  Select two score coordinates $`(a,b)`$.

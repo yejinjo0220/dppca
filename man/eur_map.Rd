@@ -9,6 +9,7 @@ A data frame or matrix.
 }
 \source{
 Prepared for examples in the dppca package.
+(\emph{We need to add a reference of this dataset})
 }
 \usage{
 data(eur_map)

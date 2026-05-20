@@ -37,11 +37,12 @@
 #'
 #' @details
 #' Let \eqn{v_a} and \eqn{v_b} be the principal component directions selected
-#' by `axes = c(a, b)`. After preprocessing, the score point for observation
-#' \eqn{i} is \eqn{s_i = (x_i^\top v_a, x_i^\top v_b)}. A non-private score
+#' by `axes = c(a, b)` for some \eqn{1 \le a < b \le ncol(X)}.
+#' After preprocessing, the score point for \eqn{i}th observation
+#' is \eqn{s_i = (x_i^\top v_a, x_i^\top v_b)}. A non-private score
 #' plot would display the points \eqn{s_1, \ldots, s_n} directly. This function
 #' instead summarizes their empirical distribution by a two-dimensional histogram
-#' and releases private versions of the histogram.
+#' and releases private versions of the histogram for the visualization.
 #'
 #' If `fixed_frame = NULL`, the plotting frame is constructed privately. The two
 #' score coordinates are stacked into one vector, private lower and upper
@@ -80,9 +81,13 @@
 #' histogram release. If `fixed_frame` is supplied, the frame step is skipped and
 #' the remaining steps split the privacy parameters equally.
 #'
+#' For a detailed procedure and mathematical formulations,
+#' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
+#'
 #' @return A list with components:
 #' \describe{
-#'   \item{score}{An \eqn{n \times 2} matrix of score coordinates.}
+#'   \item{score}{An \eqn{n \times 2} matrix containing the PC scores for the
+#'     two selected axes.}
 #'   \item{frame}{A list with components `xlim` and `ylim`.}
 #'   \item{none}{Data frame for the non-private empirical histogram.}
 #'   \item{add}{Data frame for the additive Gaussian private histogram, or
@@ -345,6 +350,10 @@ dp_score_plot <- function(
 #' distribution should be compared across groups.
 #'
 #' @inheritParams dp_score
+#' @param X A matrix or data frame where rows correspond to observations
+#'   and columns correspond to variables.
+#'   `X` can additionally include a named column representing the group label
+#'   for each observation.
 #' @param group Group labels. This can be a vector of length `nrow(X)` or a
 #'   single column name in `X`. If a column name is supplied, that column is
 #'   used as the group label and removed from the feature matrix.
@@ -359,7 +368,8 @@ dp_score_plot <- function(
 #'
 #' @return A list with components:
 #' \describe{
-#'   \item{score}{An \eqn{n \times 2} matrix of score coordinates.}
+#'   \item{score}{An \eqn{n \times 2} matrix containing the PC scores for the
+#'     two selected axes.}
 #'   \item{frame}{A list with components `xlim` and `ylim`.}
 #'   \item{groups}{A named list of group-specific histogram outputs.}
 #'   \item{method}{Character vector of private histogram methods used.}

@@ -86,11 +86,11 @@ X \in \mathbb{R}^{n \times p}
 <p>be the preprocessed data matrix. Typically, this means that the data
 have been centered, and possibly standardized.</p>
 <p>Let
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mi>k</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>v</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>v</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>p</mi><mo>×</mo><mi>k</mi></mrow></msup></mrow><annotation encoding="application/x-tex">
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mi>k</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mi>v</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>v</mi><mi>k</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>p</mi><mo>×</mo><mi>k</mi></mrow></msup></mrow><annotation encoding="application/x-tex">
 V_k = [v_1,\ldots,v_k] \in \mathbb{R}^{p \times k}
 </annotation></semantics></math></p>
 <p>be the pc direction matrix where each column
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>v</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">v_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>v</mi><mi>ℓ</mi></msub><annotation encoding="application/x-tex">v_\ell</annotation></semantics></math>
 is a pc direction.</p>
 <p>The
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-dimensional
@@ -111,11 +111,11 @@ plotting all
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
 score dimensions.</p>
 <p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(a,b)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(a,b)</annotation></semantics></math>
 be the two selected component indices. A common choice is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">(a,b) = (1,2)</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>,</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(a,b) = (1,2)</annotation></semantics></math>.</p>
 <p>For each observation, define the two-dimensional score point</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>z</mi><mrow><mi>i</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>,</mo><msub><mi>z</mi><mrow><mi>i</mi><mo>,</mo><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∈</mo><msup><mi>ℝ</mi><mn>2</mn></msup><mo>,</mo><mspace width="2.0em"></mspace><mi>i</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>n</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mrow><mi>i</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>,</mo><msub><mi>z</mi><mrow><mi>i</mi><mo>,</mo><mi>b</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mo>∈</mo><msup><mi>ℝ</mi><mn>2</mn></msup><mo>,</mo><mspace width="2.0em"></mspace><mi>i</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>n</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 s_i
 =
 (z_{i,a}, z_{i,b})
@@ -169,10 +169,10 @@ using private quantile estimation.</p>
 be the matrix of two-dimensional scores, where the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>-th
 row is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>s</mi><mi>i</mi><mi>⊤</mi></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>z</mi><mrow><mi>i</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>,</mo><msub><mi>z</mi><mrow><mi>i</mi><mo>,</mo><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">s_i^\top = (z_{i,a}, z_{i,b})</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>s</mi><mi>i</mi><mi>⊤</mi></msubsup><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mrow><mi>i</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>,</mo><msub><mi>z</mi><mrow><mi>i</mi><mo>,</mo><mi>b</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">s_i^\top = (z_{i,a}, z_{i,b})</annotation></semantics></math>.</p>
 <p>To construct one common range for both axes, we stack the two score
 coordinates into a single vector.</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>s</mi><mo>*</mo></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>s</mi><mn>1</mn><mo>*</mo></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>s</mi><mi>m</mi><mo>*</mo></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mo>∈</mo><msup><mi>ℝ</mi><mi>m</mi></msup><mo>,</mo><mspace width="2.0em"></mspace><mi>m</mi><mo>=</mo><mn>2</mn><mi>n</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>s</mi><mo>*</mo></msup><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msubsup><mi>s</mi><mn>1</mn><mo>*</mo></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>s</mi><mi>m</mi><mo>*</mo></msubsup><msup><mo stretchy="false" form="postfix">)</mo><mi>⊤</mi></msup><mo>∈</mo><msup><mi>ℝ</mi><mi>m</mi></msup><mo>,</mo><mspace width="2.0em"></mspace><mi>m</mi><mo>=</mo><mn>2</mn><mi>n</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 s^{*}
 =
 (s_1^{*},\ldots,s_m^{*})^\top
@@ -193,7 +193,7 @@ into a one-dimensional private quantile estimation problem.</p>
 </h3>
 <p>To determine the lower and upper boundaries of the plotting frame,
 define</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mo>min</mo></msub><mo>=</mo><mfrac><mn>1</mn><mi>m</mi></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>q</mi><mo>max</mo></msub><mo>=</mo><mfrac><mrow><mi>m</mi><mo>−</mo><mn>1</mn></mrow><mi>m</mi></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mi mathvariant="normal">min</mi></msub><mo>=</mo><mfrac><mn>1</mn><mi>m</mi></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>q</mi><mi mathvariant="normal">max</mi></msub><mo>=</mo><mfrac><mrow><mi>m</mi><mo>−</mo><mn>1</mn></mrow><mi>m</mi></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
 q_{\min} = \frac{1}{m},
 \qquad
 q_{\max} = \frac{m-1}{m}.
@@ -201,13 +201,13 @@ q_{\max} = \frac{m-1}{m}.
 <p>These levels correspond approximately to the minimum and maximum of
 the stacked score coordinates.</p>
 <p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mo>min</mo></msub><annotation encoding="application/x-tex">\widetilde q_{\min}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mi mathvariant="normal">min</mi></msub><annotation encoding="application/x-tex">\widetilde q_{\min}</annotation></semantics></math>
 and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mo>max</mo></msub><annotation encoding="application/x-tex">\widetilde q_{\max}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mi mathvariant="normal">max</mi></msub><annotation encoding="application/x-tex">\widetilde q_{\max}</annotation></semantics></math>
 be private estimates of the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>q</mi><mo>min</mo></msub><annotation encoding="application/x-tex">q_{\min}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>q</mi><mi mathvariant="normal">min</mi></msub><annotation encoding="application/x-tex">q_{\min}</annotation></semantics></math>
 and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>q</mi><mo>max</mo></msub><annotation encoding="application/x-tex">q_{\max}</annotation></semantics></math>-quantiles
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>q</mi><mi mathvariant="normal">max</mi></msub><annotation encoding="application/x-tex">q_{\max}</annotation></semantics></math>-quantiles
 of the vector
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>s</mi><mo>*</mo></msup><annotation encoding="application/x-tex">s^{*}</annotation></semantics></math>.</p>
 <p>In <code>dppca</code>, these private quantiles may be computed using
@@ -218,13 +218,13 @@ a smooth sensitivity based DP quantile estimator in <a href="#ref-Nissim2007">Ni
 </h3>
 <p>Given the private lower and upper quantile estimates, define the
 center</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><mfrac><mrow><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mo>min</mo></msub><mo>+</mo><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mo>max</mo></msub></mrow><mn>2</mn></mfrac></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><mfrac><mrow><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mi mathvariant="normal">min</mi></msub><mo>+</mo><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mi mathvariant="normal">max</mi></msub></mrow><mn>2</mn></mfrac></mrow><annotation encoding="application/x-tex">
 c
 =
 \frac{\widetilde q_{\min}+\widetilde q_{\max}}{2}
 </annotation></semantics></math></p>
 <p>and the half-length</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mo>=</mo><mfrac><mrow><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mo>max</mo></msub><mo>−</mo><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mo>min</mo></msub></mrow><mn>2</mn></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mo>=</mo><mfrac><mrow><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mi mathvariant="normal">max</mi></msub><mo>−</mo><msub><mover><mi>q</mi><mo accent="true">̃</mo></mover><mi mathvariant="normal">min</mi></msub></mrow><mn>2</mn></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
 L
 =
 \frac{\widetilde q_{\max}-\widetilde q_{\min}}{2}.
@@ -233,9 +233,9 @@ L
 inflate parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha &gt; 0</annotation></semantics></math>.</p>
 <p>The inflated half-length is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi><mi>′</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>L</mi></mrow><annotation encoding="application/x-tex">L' = (1+\alpha)L</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>L</mi><mo>′</mo></msup><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>α</mi><mo stretchy="false" form="postfix">)</mo><mi>L</mi></mrow><annotation encoding="application/x-tex">L' = (1+\alpha)L</annotation></semantics></math>.
 The final square plotting frame is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mi>c</mi><mo>−</mo><mi>L</mi><mi>′</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>L</mi><mi>′</mi><mo stretchy="true" form="postfix">]</mo></mrow><mo>×</mo><mrow><mo stretchy="true" form="prefix">[</mo><mi>c</mi><mo>−</mo><mi>L</mi><mi>′</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>L</mi><mi>′</mi><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mo stretchy="false" form="prefix">[</mo><mi>c</mi><mo>−</mo><msup><mi>L</mi><mo>′</mo></msup><mo>,</mo><mi>c</mi><mo>+</mo><msup><mi>L</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">]</mo><mo>×</mo><mo stretchy="false" form="prefix">[</mo><mi>c</mi><mo>−</mo><msup><mi>L</mi><mo>′</mo></msup><mo>,</mo><mi>c</mi><mo>+</mo><msup><mi>L</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">]</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
 F
 =
 [c-L',c+L']
@@ -262,12 +262,12 @@ heuristic rule. In <code>dppca</code>, the user may specify
 directly.</p>
 <p>When a default choice is needed, we use common asymptotic rules as
 practical guidelines. Following common rules of thumb, we consider</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi></mrow></msub><mo>≍</mo><msup><mi>n</mi><mrow><mn>1</mn><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mo>+</mo><mi>d</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msup></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi></mrow></msub><mo>≍</mo><msup><mi>n</mi><mrow><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mo>+</mo><mi>d</mi><mo stretchy="false" form="postfix">)</mo></mrow></msup></mrow><annotation encoding="application/x-tex">
 m_{\mathrm{axis}} \asymp n^{1/(2+d)}
 </annotation></semantics></math></p>
 <p>as in <a href="#ref-Wasserman2010">Wasserman and Zhou (2010)</a>,
 and</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi></mrow></msub><mo>≍</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mi>n</mi><mrow><mo>log</mo><mi>n</mi></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mn>1</mn><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>d</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msup></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi></mrow></msub><mo>≍</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mi>n</mi><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>n</mi></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>d</mi><mo stretchy="false" form="postfix">)</mo></mrow></msup></mrow><annotation encoding="application/x-tex">
 m_{\mathrm{axis}}
 \asymp
 \left(
@@ -301,7 +301,7 @@ c_k
 k=1,\ldots,m.
 </annotation></semantics></math></p>
 <p>The count vector is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>c</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>c</mi><mi>m</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∈</mo><msup><mi>ℕ</mi><mi>m</mi></msup></mrow><annotation encoding="application/x-tex">c = (c_1,\ldots,c_m) \in \mathbb{N}^m</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>c</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>c</mi><mi>m</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>∈</mo><msup><mi>ℕ</mi><mi>m</mi></msup></mrow><annotation encoding="application/x-tex">c = (c_1,\ldots,c_m) \in \mathbb{N}^m</annotation></semantics></math>.
 If the histogram is normalized to a frequency vector, then</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mi>k</mi></msub><mo>=</mo><mfrac><msub><mi>c</mi><mi>k</mi></msub><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><msub><mi>c</mi><mi>j</mi></msub></mrow></mfrac><mo>=</mo><mfrac><msub><mi>c</mi><mi>k</mi></msub><mi>n</mi></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mi>k</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>m</mi></mrow><annotation encoding="application/x-tex">
 q_k
@@ -314,7 +314,7 @@ k=1,\ldots,m
 </annotation></semantics></math></p>
 <p>The final private score visualization displays a noisy version of the
 frequency vector
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>q</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>q</mi><mi>m</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">q = (q_1,\ldots,q_m)</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>q</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>q</mi><mi>m</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">q = (q_1,\ldots,q_m)</annotation></semantics></math>.</p>
 <div class="section level3">
 <h3 id="sensitivity-of-histogram-counts">Sensitivity of histogram counts<a class="anchor" aria-label="anchor" href="#sensitivity-of-histogram-counts"></a>
 </h3>
@@ -326,7 +326,7 @@ bin to another.</p>
 in one bin and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>1</mn></mrow><annotation encoding="application/x-tex">-1</annotation></semantics></math>
 in another bin. Hence,
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Δ</mi><mn>1</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>≤</mo><mn>2</mn><mspace width="1.0em"></mspace><mtext mathvariant="normal">and</mtext><mspace width="1.0em"></mspace><msub><mi>Δ</mi><mn>2</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>≤</mo><msqrt><mn>2</mn></msqrt></mrow><annotation encoding="application/x-tex">
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">Δ</mi><mn>1</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>c</mi><mo stretchy="false" form="postfix">)</mo><mo>≤</mo><mn>2</mn><mspace width="1.0em"></mspace><mtext mathvariant="normal">and</mtext><mspace width="1.0em"></mspace><msub><mi mathvariant="normal">Δ</mi><mn>2</mn></msub><mo stretchy="false" form="prefix">(</mo><mi>c</mi><mo stretchy="false" form="postfix">)</mo><mo>≤</mo><msqrt><mn>2</mn></msqrt></mrow><annotation encoding="application/x-tex">
 \Delta_1(c) \leq 2 \quad \text{and} \quad \Delta_2(c) \leq \sqrt{2}
 </annotation></semantics></math></p>
 <p>These sensitivity bounds are used to privacy noise for the histogram
@@ -343,11 +343,11 @@ frame,</li>
 <li>private histogram release.</li>
 </ol>
 <p>Let the frame construction budget be
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ϵ</mi><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\epsilon_{\mathrm{frame}},\delta_{\mathrm{frame}})</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>ϵ</mi><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\epsilon_{\mathrm{frame}},\delta_{\mathrm{frame}})</annotation></semantics></math>
 and the histogram budget be
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ϵ</mi><mrow><mi mathvariant="normal">h</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">h</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\epsilon_{\mathrm{hist}},\delta_{\mathrm{hist}})</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>ϵ</mi><mrow><mi mathvariant="normal">h</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">h</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\epsilon_{\mathrm{hist}},\delta_{\mathrm{hist}})</annotation></semantics></math>.</p>
 <p>By basic composition, the combined procedure satisfies
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ϵ</mi><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>+</mo><msub><mi>ϵ</mi><mrow><mi mathvariant="normal">h</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>+</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">h</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mtext mathvariant="normal">-DP</mtext></mrow><annotation encoding="application/x-tex">(\epsilon_{\mathrm{frame}}+\epsilon_{\mathrm{hist}},
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>ϵ</mi><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>+</mo><msub><mi>ϵ</mi><mrow><mi mathvariant="normal">h</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">f</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>+</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">h</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">t</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo><mtext mathvariant="normal">-DP</mtext></mrow><annotation encoding="application/x-tex">(\epsilon_{\mathrm{frame}}+\epsilon_{\mathrm{hist}},
 \delta_{\mathrm{frame}}+\delta_{\mathrm{hist}}) \text{-DP}</annotation></semantics></math>.</p>
 </div>
 </div>
@@ -373,7 +373,7 @@ are large enough to be distinguishable from noise.</p>
 </h2>
 <p>When group labels are available, DP score histograms can also be
 constructed separately for each group. Let
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>i</mi></msub><mo>,</mo><msub><mi>g</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msubsup><mo stretchy="false" form="postfix">}</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></msubsup></mrow><annotation encoding="application/x-tex">
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>s</mi><mi>i</mi></msub><mo>,</mo><msub><mi>g</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo><msubsup><mo stretchy="false" form="postfix">}</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></msubsup></mrow><annotation encoding="application/x-tex">
 \{(s_i,g_i)\}_{i=1}^n
 </annotation></semantics></math> denote the score data with group
 labels, where
@@ -387,14 +387,14 @@ we construct a private histogram using the same plotting frame and the
 same grid. For each group
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>g</mi><mo>∈</mo><mi>𝒢</mi></mrow><annotation encoding="application/x-tex">g\in\mathcal{G}</annotation></semantics></math>,
 define the group-specific bin count</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>c</mi><mi>k</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>g</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mn>𝟏</mn><mo stretchy="false" form="prefix">{</mo><msub><mi>s</mi><mi>i</mi></msub><mo>∈</mo><msub><mi>B</mi><mi>k</mi></msub><mo>,</mo><mspace width="0.278em"></mspace><msub><mi>g</mi><mi>i</mi></msub><mo>=</mo><mi>g</mi><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>c</mi><mi>k</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mn>𝟏</mn><mo stretchy="false" form="prefix">{</mo><msub><mi>s</mi><mi>i</mi></msub><mo>∈</mo><msub><mi>B</mi><mi>k</mi></msub><mo>,</mo><mspace width="0.278em"></mspace><msub><mi>g</mi><mi>i</mi></msub><mo>=</mo><mi>g</mi><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
 c_k^{(g)}
 =
 \sum_{i=1}^n
 \mathbf{1}\{s_i \in B_k,\; g_i = g\}.
 </annotation></semantics></math></p>
 <p>This gives a collection of group-wise private histograms
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><msup><mover><mi>q</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="true" form="prefix">(</mo><mi>g</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup><msub><mo stretchy="false" form="postfix">}</mo><mrow><mi>g</mi><mo>∈</mo><mi>𝒢</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\{\widehat q^{(g)}\}_{g\in\mathcal{G}}</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><msup><mover><mi>q</mi><mo accent="true">̂</mo></mover><mrow><mo stretchy="false" form="prefix">(</mo><mi>g</mi><mo stretchy="false" form="postfix">)</mo></mrow></msup><msub><mo stretchy="false" form="postfix">}</mo><mrow><mi>g</mi><mo>∈</mo><mi>𝒢</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\{\widehat q^{(g)}\}_{g\in\mathcal{G}}</annotation></semantics></math>.</p>
 <p>These histograms can be used to compare the low-dimensional PCA score
 structure across groups.</p>
 <p>In <code>dppca</code>, the group-wise version can be constructed

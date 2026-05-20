@@ -3,9 +3,14 @@
 #' A sample dataset used for examples in the dppca package.
 #'
 #' @docType data
+
 #' @usage data(adult)
-#' @format A data frame or matrix.
+
+#' @format 32,651 by 5 numeric matrix
+
 #' @source Prepared for examples in the dppca package.
+#'         (*We need to add a reference of this dataset*)
+
 #' @keywords datasets
 "adult"
 
@@ -17,6 +22,7 @@
 #' @usage data(eur_map)
 #' @format A data frame or matrix.
 #' @source Prepared for examples in the dppca package.
+#'         (*We need to add a reference of this dataset*)
 #' @keywords datasets
 "eur_map"
 
@@ -39,12 +45,13 @@
 #' @usage data(gau)
 #' @format A data frame or matrix.
 #' @source Simulated for examples in the dppca package.
+#'         (*Describe how we generate this dataset in the description*)
 #' @keywords datasets
 "gau"
 
-#' Group labels for Gaussian example data
+#' Group labeled Gaussian example data
 #'
-#' Group labels corresponding to observations in \code{gau}.
+#' Gaussian example data \code{gau} with group labels.
 #'
 #' @docType data
 #' @usage data(gau_g)

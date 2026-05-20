@@ -8,7 +8,7 @@ differentially private scree and score summaries.
 - [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
   : Estimate principal component directions
 - [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
-  : Differentially private scree estimates
+  : Differentially private scree values
 - [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md)
   : Differentially private score histograms
 
@@ -65,4 +65,4 @@ Datasets included for examples and demonstrations.
 - [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md) :
   Gaussian example data
 - [`gau_g`](https://yejinjo0220.github.io/dppca/reference/gau_g.md) :
-  Group labels for Gaussian example data
+  Group labeled Gaussian example data

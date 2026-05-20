@@ -1,6 +1,6 @@
-# Group labels for Gaussian example data
+# Group labeled Gaussian example data
 
-Group labels corresponding to observations in `gau`.
+Gaussian example data `gau` with group labels.
 
 ## Usage
 

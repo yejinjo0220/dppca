@@ -3,7 +3,7 @@
 \docType{data}
 \name{gau_g}
 \alias{gau_g}
-\title{Group labels for Gaussian example data}
+\title{Group labeled Gaussian example data}
 \format{
 A vector or data frame containing group labels.
 }
@@ -14,6 +14,6 @@ Simulated for examples in the dppca package.
 data(gau_g)
 }
 \description{
-Group labels corresponding to observations in \code{gau}.
+Gaussian example data \code{gau} with group labels.
 }
 \keyword{datasets}

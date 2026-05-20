@@ -1,15 +1,17 @@
 Package: dppca
-Title: Differentially Private Scree and Score Visualization
+Title: Differentially Private PCA with Scree Plot and Score Visualization
 Version: 0.1.0
 Authors@R: c(
     person("Yejin", "Jo", email = "yejinjo0220@gmail.com", role = c("aut", "cre")),
-    person("Minwoo", "Kim", email = "ekfgusdl@snu.ac.kr", role = c("aut")))
-Description: Tools for performing principal component analysis (PCA) and
-    constructing differentially private scree estimates and score-based
-    visualizations. The package provides non-private and private PCA directions,
+    person("Minwoo", "Kim", email = "mwkim.stat@gmail.com", role = c("aut")))
+Description: Tools for performing end-to-end principal component analysis (PCA).
+    It provides constructing scree plot and score-based visualizations
+    under the constraint of differential privacy.
+    The package provides non-private and private PC directions,
     DP scree estimators based on clipped means, Huber-type private means, and
-    private winsorized means, as well as 2D score histograms with additive and
-    sparse DP mechanisms, including group-wise visualizations.
+    private winsorized means, as well as PC score visualizations based on 
+    2D score histograms with additive and sparse DP mechanisms, 
+    including group-wise visualizations.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

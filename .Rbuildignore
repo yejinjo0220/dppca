@@ -12,3 +12,5 @@
 ^pkgdown$
 ^data-raw$
 ^LICENSE\.md$
+^\.positai$
+^\.claude$

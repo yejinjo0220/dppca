@@ -63,6 +63,8 @@ Kendall mechanism of \insertCite{kim2025robustdppca;textual}{dppca}: it first
 forms the spherical Kendall matrix from pairwise normalized differences, adds
 symmetric Gaussian noise, and then computes leading eigenvectors. The final
 eigenvector matrix is re-orthonormalized by QR decomposition.
+For a detailed procedure and mathematical formulations,
+refer \url{https://yejinjo0220.github.io/dppca/articles/pc_direction}.
 }
 \examples{
 data(gau, package = "dppca")

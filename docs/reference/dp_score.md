@@ -92,7 +92,8 @@ A list with components:
 
 - score:
 
-  An \\n \times 2\\ matrix of score coordinates.
+  An \\n \times 2\\ matrix containing the PC scores for the two selected
+  axes.
 
 - frame:
 
@@ -119,12 +120,12 @@ A list with components:
 ## Details
 
 Let \\v_a\\ and \\v_b\\ be the principal component directions selected
-by `axes = c(a, b)`. After preprocessing, the score point for
-observation \\i\\ is \\s_i = (x_i^\top v_a, x_i^\top v_b)\\. A
-non-private score plot would display the points \\s_1, \ldots, s_n\\
-directly. This function instead summarizes their empirical distribution
-by a two-dimensional histogram and releases private versions of the
-histogram.
+by `axes = c(a, b)` for some \\1 \le a \< b \le ncol(X)\\. After
+preprocessing, the score point for \\i\\th observation is \\s_i =
+(x_i^\top v_a, x_i^\top v_b)\\. A non-private score plot would display
+the points \\s_1, \ldots, s_n\\ directly. This function instead
+summarizes their empirical distribution by a two-dimensional histogram
+and releases private versions of the histogram for the visualization.
 
 If `fixed_frame = NULL`, the plotting frame is constructed privately.
 The two score coordinates are stacked into one vector, private lower and
@@ -163,6 +164,9 @@ construction, and private histogram release. If `fixed_frame` is
 supplied, the frame step is skipped and the remaining steps split the
 privacy parameters equally.
 
+For a detailed procedure and mathematical formulations, refer
+<https://yejinjo0220.github.io/dppca/articles/dp_score>.
+
 ## References
 
 Dwork C, Roth A (2014). “The Algorithmic Foundations of Differential
@@ -187,9 +191,7 @@ Confidence Intervals.” *CoRR*, **abs/1711.03908**. 1711.03908.
 Kim M, Jung S (2025). “Robust and Differentially Private Principal
 Component Analysis.” *Statistical Analysis and Data Mining: An ASA Data
 Science Journal*, **18**(6), e70053.
-[doi:10.1002/sam.70053](https://doi.org/10.1002/sam.70053) ,
-https://onlinelibrary.wiley.com/doi/pdf/10.1002/sam.70053,
-<https://onlinelibrary.wiley.com/doi/abs/10.1002/sam.70053>.
+[doi:10.1002/sam.70053](https://doi.org/10.1002/sam.70053) .
 
 ## See also
 

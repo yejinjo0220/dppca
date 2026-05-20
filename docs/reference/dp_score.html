@@ -134,7 +134,8 @@ from the score coordinates.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with components:</p><dl><dt>score</dt>
-<dd><p>An \(n \times 2\) matrix of score coordinates.</p></dd>
+<dd><p>An \(n \times 2\) matrix containing the PC scores for the
+two selected axes.</p></dd>
 
 <dt>frame</dt>
 <dd><p>A list with components <code>xlim</code> and <code>ylim</code>.</p></dd>
@@ -158,11 +159,12 @@ not requested.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Let \(v_a\) and \(v_b\) be the principal component directions selected
-by <code>axes = c(a, b)</code>. After preprocessing, the score point for observation
-\(i\) is \(s_i = (x_i^\top v_a, x_i^\top v_b)\). A non-private score
+by <code>axes = c(a, b)</code> for some \(1 \le a &lt; b \le ncol(X)\).
+After preprocessing, the score point for \(i\)th observation
+is \(s_i = (x_i^\top v_a, x_i^\top v_b)\). A non-private score
 plot would display the points \(s_1, \ldots, s_n\) directly. This function
 instead summarizes their empirical distribution by a two-dimensional histogram
-and releases private versions of the histogram.</p>
+and releases private versions of the histogram for the visualization.</p>
 <p>If <code>fixed_frame = NULL</code>, the plotting frame is constructed privately. The two
 score coordinates are stacked into one vector, private lower and upper
 quantiles are estimated using a smooth-sensitivity based quantile mechanism
@@ -195,6 +197,8 @@ for private frame construction and half for the private histogram. If
 among private direction estimation, private frame construction, and private
 histogram release. If <code>fixed_frame</code> is supplied, the frame step is skipped and
 the remaining steps split the privacy parameters equally.</p>
+<p>For a detailed procedure and mathematical formulations,
+refer <a href="https://yejinjo0220.github.io/dppca/articles/dp_score">https://yejinjo0220.github.io/dppca/articles/dp_score</a>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -221,7 +225,7 @@ ISBN 9781595936318, <a href="https://doi.org/10.1145/1250790.1250803" class="ext
 “Robust and Differentially Private Principal Component Analysis.”
 <em>Statistical Analysis and Data Mining: An ASA Data Science Journal</em>, <b>18</b>(6), e70053.
 <a href="https://doi.org/10.1002/sam.70053" class="external-link">doi:10.1002/sam.70053</a>
-, https://onlinelibrary.wiley.com/doi/pdf/10.1002/sam.70053, <a href="https://onlinelibrary.wiley.com/doi/abs/10.1002/sam.70053" class="external-link">https://onlinelibrary.wiley.com/doi/abs/10.1002/sam.70053</a>.</p>
+.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

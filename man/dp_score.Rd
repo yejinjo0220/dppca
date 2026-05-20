@@ -57,7 +57,8 @@ from the score coordinates.}
 \value{
 A list with components:
 \describe{
-\item{score}{An \eqn{n \times 2} matrix of score coordinates.}
+\item{score}{An \eqn{n \times 2} matrix containing the PC scores for the
+two selected axes.}
 \item{frame}{A list with components \code{xlim} and \code{ylim}.}
 \item{none}{Data frame for the non-private empirical histogram.}
 \item{add}{Data frame for the additive Gaussian private histogram, or
@@ -75,11 +76,12 @@ requested private histogram estimates.
 }
 \details{
 Let \eqn{v_a} and \eqn{v_b} be the principal component directions selected
-by \code{axes = c(a, b)}. After preprocessing, the score point for observation
-\eqn{i} is \eqn{s_i = (x_i^\top v_a, x_i^\top v_b)}. A non-private score
+by \code{axes = c(a, b)} for some \eqn{1 \le a < b \le ncol(X)}.
+After preprocessing, the score point for \eqn{i}th observation
+is \eqn{s_i = (x_i^\top v_a, x_i^\top v_b)}. A non-private score
 plot would display the points \eqn{s_1, \ldots, s_n} directly. This function
 instead summarizes their empirical distribution by a two-dimensional histogram
-and releases private versions of the histogram.
+and releases private versions of the histogram for the visualization.
 
 If \code{fixed_frame = NULL}, the plotting frame is constructed privately. The two
 score coordinates are stacked into one vector, private lower and upper
@@ -117,6 +119,9 @@ for private frame construction and half for the private histogram. If
 among private direction estimation, private frame construction, and private
 histogram release. If \code{fixed_frame} is supplied, the frame step is skipped and
 the remaining steps split the privacy parameters equally.
+
+For a detailed procedure and mathematical formulations,
+refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
 }
 \examples{
 data(gau, package = "dppca")

@@ -81,15 +81,15 @@ on the spherical Kendall mechanism of Kim and Jung (2025) : it first
 forms the spherical Kendall matrix from pairwise normalized differences,
 adds symmetric Gaussian noise, and then computes leading eigenvectors.
 The final eigenvector matrix is re-orthonormalized by QR decomposition.
+For a detailed procedure and mathematical formulations, refer
+<https://yejinjo0220.github.io/dppca/articles/pc_direction>.
 
 ## References
 
 Kim M, Jung S (2025). “Robust and Differentially Private Principal
 Component Analysis.” *Statistical Analysis and Data Mining: An ASA Data
 Science Journal*, **18**(6), e70053.
-[doi:10.1002/sam.70053](https://doi.org/10.1002/sam.70053) ,
-https://onlinelibrary.wiley.com/doi/pdf/10.1002/sam.70053,
-<https://onlinelibrary.wiley.com/doi/abs/10.1002/sam.70053>.
+[doi:10.1002/sam.70053](https://doi.org/10.1002/sam.70053) .
 
 ## Examples
 

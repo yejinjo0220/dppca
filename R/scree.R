@@ -1,21 +1,23 @@
-# ============================================================
+# ============================================================-
 # scree.R
 # functions for differentially private scree estimation
-# ============================================================
+# ============================================================-
 
-#' Differentially private scree estimates
+#' Differentially private scree values
 #'
-#' This function computes scree estimates for principal component analysis,
+#' This function computes estimates of scree values, eigenvalues of covariance
+#' matrix, for principal component analysis,
 #' including both the usual non-private estimates and differentially private
-#' estimates. The private estimates are computed from principal component scores
-#' using one of the supported private mean estimators. See Details for the
-#' estimating equations and method-specific construction.
+#' estimates.
+#' The private estimates are computed as the private mean of the squared
+#' principal component scores.
+#' See Details for the estimating equations and method-specific construction.
 #'
 #' @param X A numeric matrix or data frame. Rows correspond to observations and
 #'  columns correspond to variables.
 #' @param k Positive integer defining the number of leading principal components
 #'   to estimate. Must be an integer between `1` and the number of columns in `X`.
-#' @param method Scree estimation method. One of `"clipped"`, `"pmwm"`, or
+#' @param method Scree value estimation method. One of `"clipped"`, `"pmwm"`, or
 #'  `"huber"`.
 #' @param control Optional method-specific control list created by
 #'   [clipped_control()], [pmwm_control()], or [huber_control()].
@@ -36,14 +38,15 @@
 #' @param cpp.option A logical value passed to [dp_pc_dir()] when
 #'   `g_dppca = TRUE`. The default is `FALSE`.
 #' @param mono A logical value indicating whether to apply monotone
-#'   post-processing to the private scree vector. The default is `TRUE`.
+#'   post-processing to the vector of private scree values. The default is `TRUE`.
 #'
 #' @details
-#' Let `X` denote the preprocessed data matrix and let \eqn{v_l} be the \eqn{l}th
+#' Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the \eqn{l}th
 #' principal component direction. The \eqn{l}th score vector is
 #' \eqn{z_l = X v_l}. The corresponding sample scree value can be written as
 #' \deqn{
 #'   \hat{\lambda}_l
+#'   = v_l^\top \widehat{\Sigma} v_l
 #'   = \frac{1}{n - 1}\sum_{i = 1}^n z_{il}^2
 #'   = \frac{n}{n - 1}\left(\frac{1}{n}\sum_{i = 1}^n w_{il}\right),
 #'   \qquad w_{il} = z_{il}^2.
@@ -66,21 +69,25 @@
 #' }
 #'
 #' The argument `g_dppca` controls how the principal component directions are
-#' obtained. If `g_dppca = FALSE`, the directions are computed non-privately and
-#' the full privacy parameters `eps` and `delta` are used for private scree
-#' estimation. If `g_dppca = TRUE`, the directions are computed privately using
-#' [dp_pc_dir()]. In that case, the privacy parameters are split equally:
+#' obtained. If `g_dppca = FALSE`, the directions are computed non-privately as
+#' an eigenvector of sample covariance, and the full privacy parameters
+#' `eps` and `delta` are used for private scree value estimation. If `g_dppca = TRUE`,
+#' the directions are computed privately using [dp_pc_dir()].
+#' In that case, the privacy parameters are split equally:
 #' `eps / 2` and `delta / 2` are used for private direction estimation, and the
-#' remaining `eps / 2` and `delta / 2` are used for private scree estimation.
-#' If `mono = TRUE`, the final monotone adjustment is a post-processing step and
+#' remaining `eps / 2` and `delta / 2` are used for private scree value estimation.
+#' When `mono = TRUE`, the final monotone adjustment is a post-processing step and
 #' does not change the privacy guarantee.
+#'
+#' For a detailed procedure and mathematical formulations,
+#' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_scree}.
 #'
 #' @return A list with components:
 #' \itemize{
-#'   \item `method`: scree estimation method.
+#'   \item `method`: scree value estimation method.
 #'   \item `scree_np`: non-private scree estimates.
 #'   \item `pve_np`: non-private proportions of variance explained.
-#'   \item `scree`: differentially private scree estimates.
+#'   \item `scree`: differentially private scree value estimates.
 #'   \item `pve`: differentially private proportions of variance explained.
 #' }
 #'

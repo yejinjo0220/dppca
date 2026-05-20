@@ -29,8 +29,9 @@ dp_score_plot_group(
 
 - X:
 
-  A numeric matrix or data frame. Rows correspond to observations and
-  columns correspond to variables.
+  A matrix or data frame where rows correspond to observations and
+  columns correspond to variables. `X` can additionally include a named
+  column representing the group label for each observation.
 
 - group:
 

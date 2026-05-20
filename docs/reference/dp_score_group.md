@@ -28,8 +28,9 @@ dp_score_group(
 
 - X:
 
-  A numeric matrix or data frame. Rows correspond to observations and
-  columns correspond to variables.
+  A matrix or data frame where rows correspond to observations and
+  columns correspond to variables. `X` can additionally include a named
+  column representing the group label for each observation.
 
 - group:
 
@@ -99,7 +100,8 @@ A list with components:
 
 - score:
 
-  An \\n \times 2\\ matrix of score coordinates.
+  An \\n \times 2\\ matrix containing the PC scores for the two selected
+  axes.
 
 - frame:
 

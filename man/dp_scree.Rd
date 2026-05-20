@@ -2,7 +2,7 @@
 % Please edit documentation in R/scree.R
 \name{dp_scree}
 \alias{dp_scree}
-\title{Differentially private scree estimates}
+\title{Differentially private scree values}
 \usage{
 dp_scree(
   X,
@@ -25,7 +25,7 @@ columns correspond to variables.}
 \item{k}{Positive integer defining the number of leading principal components
 to estimate. Must be an integer between \code{1} and the number of columns in \code{X}.}
 
-\item{method}{Scree estimation method. One of \code{"clipped"}, \code{"pmwm"}, or
+\item{method}{Scree value estimation method. One of \code{"clipped"}, \code{"pmwm"}, or
 \code{"huber"}.}
 
 \item{control}{Optional method-specific control list created by
@@ -54,31 +54,34 @@ component directions for scree estimation. The default is \code{FALSE}. See
 \code{g_dppca = TRUE}. The default is \code{FALSE}.}
 
 \item{mono}{A logical value indicating whether to apply monotone
-post-processing to the private scree vector. The default is \code{TRUE}.}
+post-processing to the vector of private scree values. The default is \code{TRUE}.}
 }
 \value{
 A list with components:
 \itemize{
-\item \code{method}: scree estimation method.
+\item \code{method}: scree value estimation method.
 \item \code{scree_np}: non-private scree estimates.
 \item \code{pve_np}: non-private proportions of variance explained.
-\item \code{scree}: differentially private scree estimates.
+\item \code{scree}: differentially private scree value estimates.
 \item \code{pve}: differentially private proportions of variance explained.
 }
 }
 \description{
-This function computes scree estimates for principal component analysis,
+This function computes estimates of scree values, eigenvalues of covariance
+matrix, for principal component analysis,
 including both the usual non-private estimates and differentially private
-estimates. The private estimates are computed from principal component scores
-using one of the supported private mean estimators. See Details for the
-estimating equations and method-specific construction.
+estimates.
+The private estimates are computed as the private mean of the squared
+principal component scores.
+See Details for the estimating equations and method-specific construction.
 }
 \details{
-Let \code{X} denote the preprocessed data matrix and let \eqn{v_l} be the \eqn{l}th
+Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the \eqn{l}th
 principal component direction. The \eqn{l}th score vector is
 \eqn{z_l = X v_l}. The corresponding sample scree value can be written as
 \deqn{
   \hat{\lambda}_l
+  = v_l^\top \widehat{\Sigma} v_l
   = \frac{1}{n - 1}\sum_{i = 1}^n z_{il}^2
   = \frac{n}{n - 1}\left(\frac{1}{n}\sum_{i = 1}^n w_{il}\right),
   \qquad w_{il} = z_{il}^2.
@@ -101,14 +104,18 @@ noisy gradient descent, following \insertCite{yu2024gaussian;textual}{dppca}.
 }
 
 The argument \code{g_dppca} controls how the principal component directions are
-obtained. If \code{g_dppca = FALSE}, the directions are computed non-privately and
-the full privacy parameters \code{eps} and \code{delta} are used for private scree
-estimation. If \code{g_dppca = TRUE}, the directions are computed privately using
-\code{\link[=dp_pc_dir]{dp_pc_dir()}}. In that case, the privacy parameters are split equally:
+obtained. If \code{g_dppca = FALSE}, the directions are computed non-privately as
+an eigenvector of sample covariance, and the full privacy parameters
+\code{eps} and \code{delta} are used for private scree value estimation. If \code{g_dppca = TRUE},
+the directions are computed privately using \code{\link[=dp_pc_dir]{dp_pc_dir()}}.
+In that case, the privacy parameters are split equally:
 \code{eps / 2} and \code{delta / 2} are used for private direction estimation, and the
-remaining \code{eps / 2} and \code{delta / 2} are used for private scree estimation.
-If \code{mono = TRUE}, the final monotone adjustment is a post-processing step and
+remaining \code{eps / 2} and \code{delta / 2} are used for private scree value estimation.
+When \code{mono = TRUE}, the final monotone adjustment is a post-processing step and
 does not change the privacy guarantee.
+
+For a detailed procedure and mathematical formulations,
+refer \url{https://yejinjo0220.github.io/dppca/articles/dp_scree}.
 }
 \examples{
 set.seed(123)

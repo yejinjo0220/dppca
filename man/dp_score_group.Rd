@@ -20,8 +20,10 @@ dp_score_group(
 )
 }
 \arguments{
-\item{X}{A numeric matrix or data frame. Rows correspond to observations and
-columns correspond to variables.}
+\item{X}{A matrix or data frame where rows correspond to observations
+and columns correspond to variables.
+\code{X} can additionally include a named column representing the group label
+for each observation.}
 
 \item{group}{Group labels. This can be a vector of length \code{nrow(X)} or a
 single column name in \code{X}. If a column name is supplied, that column is
@@ -62,7 +64,8 @@ from the score coordinates.}
 \value{
 A list with components:
 \describe{
-\item{score}{An \eqn{n \times 2} matrix of score coordinates.}
+\item{score}{An \eqn{n \times 2} matrix containing the PC scores for the
+two selected axes.}
 \item{frame}{A list with components \code{xlim} and \code{ylim}.}
 \item{groups}{A named list of group-specific histogram outputs.}
 \item{method}{Character vector of private histogram methods used.}

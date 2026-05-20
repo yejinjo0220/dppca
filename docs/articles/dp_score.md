@@ -9,7 +9,6 @@ differentially private histogram.
 
 Let
 ``` math
-
 X \in \mathbb{R}^{n \times p}
 ```
 
@@ -18,7 +17,6 @@ have been centered, and possibly standardized.
 
 Let
 ``` math
-
 V_k = [v_1,\ldots,v_k] \in \mathbb{R}^{p \times k}
 ```
 
@@ -28,7 +26,6 @@ direction.
 The $`k`$-dimensional PCA score for the $`i`$-th observation is
 
 ``` math
-
 z_i
 =
 V_k^\top x_{i}
@@ -47,7 +44,6 @@ $`(a,b) = (1,2)`$.
 For each observation, define the two-dimensional score point
 
 ``` math
-
 s_i
 =
 (z_{i,a}, z_{i,b})
@@ -97,7 +93,6 @@ To construct one common range for both axes, we stack the two score
 coordinates into a single vector.
 
 ``` math
-
 s^{*}
 =
 (s_1^{*},\ldots,s_m^{*})^\top
@@ -118,7 +113,6 @@ To determine the lower and upper boundaries of the plotting frame,
 define
 
 ``` math
-
 q_{\min} = \frac{1}{m},
 \qquad
 q_{\max} = \frac{m-1}{m}.
@@ -140,7 +134,6 @@ Smith (2007)](#ref-Nissim2007).
 Given the private lower and upper quantile estimates, define the center
 
 ``` math
-
 c
 =
 \frac{\widetilde q_{\min}+\widetilde q_{\max}}{2}
@@ -149,7 +142,6 @@ c
 and the half-length
 
 ``` math
-
 L
 =
 \frac{\widetilde q_{\max}-\widetilde q_{\min}}{2}.
@@ -162,7 +154,6 @@ The inflated half-length is $`L' = (1+\alpha)L`$. The final square
 plotting frame is
 
 ``` math
-
 F
 =
 [c-L',c+L']
@@ -187,14 +178,12 @@ When a default choice is needed, we use common asymptotic rules as
 practical guidelines. Following common rules of thumb, we consider
 
 ``` math
-
 m_{\mathrm{axis}} \asymp n^{1/(2+d)}
 ```
 
 as in [Wasserman and Zhou (2010)](#ref-Wasserman2010), and
 
 ``` math
-
 m_{\mathrm{axis}}
 \asymp
 \left(
@@ -216,7 +205,6 @@ For the score point set $`S = \{s_i\}_{i=1}^n`$, the non-private count
 in bin $`B_k`$ is
 
 ``` math
-
 c_k
 =
 \sum_{i=1}^n
@@ -229,7 +217,6 @@ The count vector is $`c = (c_1,\ldots,c_m) \in \mathbb{N}^m`$. If the
 histogram is normalized to a frequency vector, then
 
 ``` math
-
 q_k
 =
 \frac{c_k}{\sum_{j=1}^m c_j}
@@ -251,7 +238,6 @@ bin to another.
 Therefore, the count vector can change by at most $`+1`$ in one bin and
 $`-1`$ in another bin. Hence,
 ``` math
-
 \Delta_1(c) \leq 2 \quad \text{and} \quad \Delta_2(c) \leq \sqrt{2}
 ```
 
@@ -299,7 +285,6 @@ histogram](https://yejinjo0220.github.io/dppca/articles/algorithms.html#alg-spar
 When group labels are available, DP score histograms can also be
 constructed separately for each group. Let
 ``` math
-
 \{(s_i,g_i)\}_{i=1}^n
 ```
 denote the score data with group labels, where $`s_i \in \mathbb{R}^2`$
@@ -311,7 +296,6 @@ using the same plotting frame and the same grid. For each group
 $`g\in\mathcal{G}`$, define the group-specific bin count
 
 ``` math
-
 c_k^{(g)}
 =
 \sum_{i=1}^n
@@ -338,6 +322,7 @@ The exact function arguments may depend on the installed version of
 A typical workflow is as follows.
 
 ``` r
+
 dp_score_plot(
   X,
   k = 2,
@@ -350,6 +335,7 @@ dp_score_plot(
 For group-wise score histogram:
 
 ``` r
+
 dp_score_plot_group(
   X = gau_g,
   G = "color",

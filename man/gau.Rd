@@ -9,6 +9,7 @@ A data frame or matrix.
 }
 \source{
 Simulated for examples in the dppca package.
+(\emph{Describe how we generate this dataset in the description})
 }
 \usage{
 data(gau)

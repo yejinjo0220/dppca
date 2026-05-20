@@ -14,4 +14,5 @@ A data frame or matrix.
 
 ## Source
 
-Simulated for examples in the dppca package.
+Simulated for examples in the dppca package. (*Describe how we generate
+this dataset in the description*)

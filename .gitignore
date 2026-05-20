@@ -3,3 +3,4 @@
 .Rproj.user
 *.tar.gz
 inst/doc
+.positai

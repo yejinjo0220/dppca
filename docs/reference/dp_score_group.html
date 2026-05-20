@@ -76,8 +76,10 @@ distribution should be compared across groups.</p>
 
 
 <dl><dt id="arg-x">X<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A numeric matrix or data frame. Rows correspond to observations and
-columns correspond to variables.</p></dd>
+<dd><p>A matrix or data frame where rows correspond to observations
+and columns correspond to variables.
+<code>X</code> can additionally include a named column representing the group label
+for each observation.</p></dd>
 
 
 <dt id="arg-group">group<a class="anchor" aria-label="anchor" href="#arg-group"></a></dt>
@@ -141,7 +143,8 @@ from the score coordinates.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with components:</p><dl><dt>score</dt>
-<dd><p>An \(n \times 2\) matrix of score coordinates.</p></dd>
+<dd><p>An \(n \times 2\) matrix containing the PC scores for the
+two selected axes.</p></dd>
 
 <dt>frame</dt>
 <dd><p>A list with components <code>xlim</code> and <code>ylim</code>.</p></dd>

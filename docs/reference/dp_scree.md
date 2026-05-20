@@ -1,10 +1,11 @@
-# Differentially private scree estimates
+# Differentially private scree values
 
-This function computes scree estimates for principal component analysis,
-including both the usual non-private estimates and differentially
-private estimates. The private estimates are computed from principal
-component scores using one of the supported private mean estimators. See
-Details for the estimating equations and method-specific construction.
+This function computes estimates of scree values, eigenvalues of
+covariance matrix, for principal component analysis, including both the
+usual non-private estimates and differentially private estimates. The
+private estimates are computed as the private mean of the squared
+principal component scores. See Details for the estimating equations and
+method-specific construction.
 
 ## Usage
 
@@ -39,7 +40,8 @@ dp_scree(
 
 - method:
 
-  Scree estimation method. One of `"clipped"`, `"pmwm"`, or `"huber"`.
+  Scree value estimation method. One of `"clipped"`, `"pmwm"`, or
+  `"huber"`.
 
 - control:
 
@@ -88,32 +90,32 @@ dp_scree(
 - mono:
 
   A logical value indicating whether to apply monotone post-processing
-  to the private scree vector. The default is `TRUE`.
+  to the vector of private scree values. The default is `TRUE`.
 
 ## Value
 
 A list with components:
 
-- `method`: scree estimation method.
+- `method`: scree value estimation method.
 
 - `scree_np`: non-private scree estimates.
 
 - `pve_np`: non-private proportions of variance explained.
 
-- `scree`: differentially private scree estimates.
+- `scree`: differentially private scree value estimates.
 
 - `pve`: differentially private proportions of variance explained.
 
 ## Details
 
-Let `X` denote the preprocessed data matrix and let \\v_l\\ be the
+Let \\X\\ denote the preprocessed data matrix and let \\v_l\\ be the
 \\l\\th principal component direction. The \\l\\th score vector is \\z_l
 = X v_l\\. The corresponding sample scree value can be written as \$\$
-\hat{\lambda}\_l = \frac{1}{n - 1}\sum\_{i = 1}^n z\_{il}^2 =
-\frac{n}{n - 1}\left(\frac{1}{n}\sum\_{i = 1}^n w\_{il}\right), \qquad
-w\_{il} = z\_{il}^2. \$\$ Therefore, each scree value is estimated by
-privately estimating the mean of \\w\_{1l}, \ldots, w\_{nl}\\ and
-multiplying by \\n/(n - 1)\\.
+\hat{\lambda}\_l = v_l^\top \widehat{\Sigma} v_l = \frac{1}{n -
+1}\sum\_{i = 1}^n z\_{il}^2 = \frac{n}{n - 1}\left(\frac{1}{n}\sum\_{i =
+1}^n w\_{il}\right), \qquad w\_{il} = z\_{il}^2. \$\$ Therefore, each
+scree value is estimated by privately estimating the mean of \\w\_{1l},
+\ldots, w\_{nl}\\ and multiplying by \\n/(n - 1)\\.
 
 The supported methods differ in how this private mean is estimated:
 
@@ -132,15 +134,19 @@ The supported methods differ in how this private mean is estimated:
 
 The argument `g_dppca` controls how the principal component directions
 are obtained. If `g_dppca = FALSE`, the directions are computed
-non-privately and the full privacy parameters `eps` and `delta` are used
-for private scree estimation. If `g_dppca = TRUE`, the directions are
-computed privately using
+non-privately as an eigenvector of sample covariance, and the full
+privacy parameters `eps` and `delta` are used for private scree value
+estimation. If `g_dppca = TRUE`, the directions are computed privately
+using
 [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md).
 In that case, the privacy parameters are split equally: `eps / 2` and
 `delta / 2` are used for private direction estimation, and the remaining
-`eps / 2` and `delta / 2` are used for private scree estimation. If
-`mono = TRUE`, the final monotone adjustment is a post-processing step
-and does not change the privacy guarantee.
+`eps / 2` and `delta / 2` are used for private scree value estimation.
+When `mono = TRUE`, the final monotone adjustment is a post-processing
+step and does not change the privacy guarantee.
+
+For a detailed procedure and mathematical formulations, refer
+<https://yejinjo0220.github.io/dppca/articles/dp_scree>.
 
 ## References
 
@@ -160,9 +166,7 @@ estimation and inference.” *Bernoulli*, **30**(4), 3059–3088.
 Kim M, Jung S (2025). “Robust and Differentially Private Principal
 Component Analysis.” *Statistical Analysis and Data Mining: An ASA Data
 Science Journal*, **18**(6), e70053.
-[doi:10.1002/sam.70053](https://doi.org/10.1002/sam.70053) ,
-https://onlinelibrary.wiley.com/doi/pdf/10.1002/sam.70053,
-<https://onlinelibrary.wiley.com/doi/abs/10.1002/sam.70053>.
+[doi:10.1002/sam.70053](https://doi.org/10.1002/sam.70053) .
 
 ## See also
 

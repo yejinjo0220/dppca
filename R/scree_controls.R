@@ -3,6 +3,7 @@
 # control constructors for DP scree estimators
 # ============================================================
 
+
 #' Control options for clipped scree estimation
 #'
 #' Creates a control list for the clipped-mean scree estimator used by
