@@ -106,13 +106,13 @@ observation. We assume that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
 has been centered, and optionally standardized.</p>
 <p>The principal component direction matrix is denoted by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mi>k</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>v</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>v</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>p</mi><mo>×</mo><mi>k</mi></mrow></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>V</mi><mi>k</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mi>v</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>v</mi><mi>k</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>p</mi><mo>×</mo><mi>k</mi></mrow></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">
 V_k = [v_1,\ldots,v_k] \in \mathbb{R}^{p \times k},
 </annotation></semantics></math></p>
 <p>where each column
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>v</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">v_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>v</mi><mi>ℓ</mi></msub><annotation encoding="application/x-tex">v_\ell</annotation></semantics></math>
 is a unit vector representing the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 pc direction.</p>
 <p>The corresponding score matrix is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Z</mi><mo>=</mo><mi>X</mi><msub><mi>V</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">Z = X V_k</annotation></semantics></math>.</p>
@@ -121,20 +121,20 @@ pc direction.</p>
 <h2 id="non-private-pc-directions">1. Non-private PC directions<a class="anchor" aria-label="anchor" href="#non-private-pc-directions"></a>
 </h2>
 <p>The classical sample covariance matrix is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><msup><mi>X</mi><mi>⊤</mi></msup><mi>X</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><msup><mi>X</mi><mi>⊤</mi></msup><mi>X</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat\Sigma
 =
 \frac{1}{n-1}X^\top X.
 </annotation></semantics></math></p>
 <p>The non-private PCA directions are obtained from the eigenvalue
 decomposition</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mover><mi>V</mi><mo accent="true">̂</mo></mover><mover><mi>Λ</mi><mo accent="true">̂</mo></mover><msup><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>⊤</mi></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mover><mi>V</mi><mo accent="true">̂</mo></mover><mover><mi mathvariant="normal">Λ</mi><mo accent="true">̂</mo></mover><msup><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>⊤</mi></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">
 \hat\Sigma
 =
 \hat V \hat\Lambda \hat V^\top,
 </annotation></semantics></math></p>
 <p>where</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>V</mi><mo accent="true">̂</mo></mover><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><mover><mi>Λ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="1.0em"></mspace><mtext mathvariant="normal">with</mtext><mspace width="1.0em"></mspace><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>≥</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mn>2</mn></msub><mo>≥</mo><mi>⋯</mi><mo>≥</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo>≥</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>V</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>,</mo><mspace width="1.0em"></mspace><mover><mi mathvariant="normal">Λ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mrow><mi mathvariant="normal">diag</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo stretchy="false" form="postfix">)</mo><mspace width="1.0em"></mspace><mtext mathvariant="normal">with</mtext><mspace width="1.0em"></mspace><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>≥</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mn>2</mn></msub><mo>≥</mo><mi>⋯</mi><mo>≥</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo>≥</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat V = [\hat v_1,\ldots,\hat v_p],
 \quad
 \hat\Lambda
@@ -144,11 +144,11 @@ decomposition</p>
 \hat\lambda_1 \geq \hat\lambda_2 \geq \cdots \geq \hat\lambda_p \geq 0.
 </annotation></semantics></math></p>
 <p>The
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 sample principal component direction is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>.</p>
 <p>Equivalently,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><mo>arg</mo><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mi>v</mi><mspace width="1.0em"></mspace><mtext mathvariant="normal">subject to</mtext><mspace width="1.0em"></mspace><msup><mi>v</mi><mi>⊤</mi></msup><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mo>ℓ</mo><mo>−</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">arg</mi><mo>⁡</mo></mrow><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><mi>v</mi><mspace width="1.0em"></mspace><mtext mathvariant="normal">subject to</mtext><mspace width="1.0em"></mspace><msup><mi>v</mi><mi>⊤</mi></msup><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>ℓ</mi><mo>−</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat v_\ell
 =
 \arg\max_{\|v\|_2 = 1}
@@ -161,7 +161,7 @@ v^\top \hat v_j = 0,
 </annotation></semantics></math></p>
 <p>In the non-private option of <code>dppca</code>, the direction matrix
 used for projection is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo stretchy="false" form="postfix">]</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat V_k = [\hat v_1,\ldots,\hat v_k].
 </annotation></semantics></math></p>
 </div>
@@ -172,22 +172,27 @@ used for projection is</p>
 <code>g-DPPCA</code> by adding matrix Gaussian mechanism on the
 generalized multivariate Kendall’s tau matrix which based on the robust
 data transformation called generalized spatial sign proposed by <a href="#ref-Raymaekers2019">Raymakers and Rousseeuw (2019)</a>.</p>
-<p>For a positive valued scale function $ : (0, ) (0, ) $, consider a
-map $ g_: ^d ^d $ defined as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>ξ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>ξ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo stretchy="false" form="postfix">∥</mo><mi>t</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>⋅</mo><mfrac><mi>t</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>t</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>For a positive valued scale function
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ξ</mi><mo>:</mo><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mi>∞</mi><mo stretchy="false" form="postfix">)</mo><mo>→</mo><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mi>∞</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\xi: (0, \infty) \to (0, \infty)</annotation></semantics></math>,
+consider a map
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>ξ</mi></msub><mo>:</mo><msup><mi>ℝ</mi><mi>d</mi></msup><mo>→</mo><msup><mi>ℝ</mi><mi>d</mi></msup></mrow><annotation encoding="application/x-tex">g_\xi: \mathbb{R}^d \to \mathbb{R}^d</annotation></semantics></math>
+defined as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>ξ</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>ξ</mi><mo stretchy="false" form="prefix">(</mo><mo stretchy="false" form="postfix">∥</mo><mi>t</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo stretchy="false" form="postfix">)</mo><mo>⋅</mo><mfrac><mi>t</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>t</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
 g_\xi(t) = \xi(\|t\|_2)\cdot \frac{t}{\|t\|_2}.
 </annotation></semantics></math></p>
 <p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>g</mi><mi>ξ</mi></msub><annotation encoding="application/x-tex">g_{\xi}</annotation></semantics></math>
 is called as a <em>generalized spatial sign</em> with respect to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ξ</mi><annotation encoding="application/x-tex">\xi</annotation></semantics></math>.</p>
 <p>The <em>generalized multivariate Kendall’s tau</em> matrix with
-respect to $ g_$ is defined as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><msub><mi>g</mi><mi>ξ</mi></msub></msub><mo>=</mo><msub><mi>𝔼</mi><mrow><mi>X</mi><mo>,</mo><mover><mi>X</mi><mo accent="true">̃</mo></mover></mrow></msub><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>g</mi><mi>ξ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mi>X</mi><mo>−</mo><mover><mi>X</mi><mo accent="true">̃</mo></mover></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>g</mi><mi>ξ</mi></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mi>X</mi><mo>−</mo><mover><mi>X</mi><mo accent="true">̃</mo></mover></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mspace width="0.222em"></mspace><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
-K_{g_\xi} = \mathbb{E}_{X, \widetilde X}\left[ g_\xi\left( \frac{X - \widetilde X}{\sqrt{2}}\right) 
-            g_\xi\left( \frac{X - \widetilde X}{\sqrt{2}}\right)^\top ~ \right],
+respect to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>g</mi><mi>ξ</mi></msub><annotation encoding="application/x-tex">g_\xi</annotation></semantics></math>
+is defined as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>K</mi><msub><mi>g</mi><mi>ξ</mi></msub></msub><mo>=</mo><msub><mi>𝔼</mi><mrow><mi>X</mi><mo>,</mo><msup><mi>X</mi><mo>′</mo></msup></mrow></msub><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>g</mi><mi>ξ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mi>X</mi><mo>−</mo><msup><mi>X</mi><mo>′</mo></msup></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>g</mi><mi>ξ</mi></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mi>X</mi><mo>−</mo><msup><mi>X</mi><mo>′</mo></msup></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mspace width="0.222em"></mspace><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+K_{g_\xi} = \mathbb{E}_{X, X'}\left[ g_\xi\left( \frac{X - X'}{\sqrt{2}}\right) 
+            g_\xi\left( \frac{X - X'}{\sqrt{2}}\right)^\top ~ \right],
 </annotation></semantics></math></p>
 <p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>X</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde X</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>X</mi><mo>′</mo></msup><annotation encoding="application/x-tex">X'</annotation></semantics></math>
 is an independent copy of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>.
 Importantly, if
@@ -197,56 +202,65 @@ multivariate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>-distributions),
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><msub><mi>g</mi><mi>ξ</mi></msub></msub><annotation encoding="application/x-tex">K_{g_\xi}</annotation></semantics></math>
 shares the same eigenvectors with same order to the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">cov</mtext><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mbox{cov}(X)</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">cov</mtext><mo stretchy="false" form="prefix">(</mo><mi>X</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mbox{cov}(X)</annotation></semantics></math>.
 So, one can conduct a PCA by estimating
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><msub><mi>g</mi><mi>ξ</mi></msub></msub><annotation encoding="application/x-tex">K_{g_\xi}</annotation></semantics></math>
 and then get eigenvectors of it.</p>
 <p>For a convenience, we write
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>
 as the given sign function. For a random sample
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>X</mi><mi>n</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">S = (X_1, \dots, X_n)</annotation></semantics></math>,
-the second order $ U $-statistic of $ K_g $ is could be written as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mn>2</mn><mrow><mi>n</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>X</mi><mi>j</mi></msub><mo>−</mo><msub><mi>X</mi><mi>i</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>g</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>X</mi><mi>j</mi></msub><mo>−</mo><msub><mi>X</mi><mi>i</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>X</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>X</mi><mi>n</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">S = (X_1, \dots, X_n)</annotation></semantics></math>,
+the second order <em>U</em>-statistic of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>K</mi><mi>g</mi></msub><annotation encoding="application/x-tex">K_{g}</annotation></semantics></math>
+can be written as</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>S</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mfrac><mn>2</mn><mrow><mi>n</mi><mo stretchy="false" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>X</mi><mi>j</mi></msub><mo>−</mo><msub><mi>X</mi><mi>i</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>g</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>X</mi><mi>j</mi></msub><mo>−</mo><msub><mi>X</mi><mi>i</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \widehat{K}_g(S) = \frac{2}{n(n-1)} \sum_{i &lt; j} g\left(\frac{X_j - X_i}{\sqrt{2}}\right)
      g\left(\frac{X_j - X_i}{\sqrt{2}}\right)^\top.
 </annotation></semantics></math></p>
 <p>Note that the sensitivity of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><annotation encoding="application/x-tex">\widehat K_g</annotation></semantics></math>
-with respec to the Frobenius norm can be upper bounded by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Δ</mi><mi>F</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><mo>sup</mo><mrow><mi>S</mi><mo>∼</mo><mi>S</mi><mi>′</mi></mrow></munder><mo stretchy="false" form="postfix">∥</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mi>′</mi><mo stretchy="true" form="postfix">)</mo></mrow><msub><mo stretchy="false" form="postfix">∥</mo><mi>F</mi></msub><mo>≤</mo><mfrac><mrow><mn>4</mn><mo stretchy="false" form="postfix">∥</mo><mi>g</mi><msubsup><mo stretchy="false" form="postfix">∥</mo><mi>∞</mi><mn>2</mn></msubsup></mrow><mi>n</mi></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><annotation encoding="application/x-tex">\widehat{K}_g</annotation></semantics></math>
+with respect to the Frobenius norm can be upper bounded by</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">Δ</mi><mi>F</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><munder><mi mathvariant="normal">sup</mi><mrow><mi>S</mi><mo>∼</mo><msup><mi>S</mi><mo>′</mo></msup></mrow></munder><mo stretchy="false" form="postfix">∥</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>S</mi><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mi>g</mi></msub><mo stretchy="false" form="prefix">(</mo><msup><mi>S</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">)</mo><msub><mo stretchy="false" form="postfix">∥</mo><mi>F</mi></msub><mo>≤</mo><mfrac><mrow><mn>4</mn><mo stretchy="false" form="postfix">∥</mo><mi>g</mi><msubsup><mo stretchy="false" form="postfix">∥</mo><mi>∞</mi><mn>2</mn></msubsup></mrow><mi>n</mi></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \Delta_F(\widehat{K}_g) 
 = \sup_{S \sim S'} \|\widehat{K}_g(S) - \widehat{K}_g(S')\|_F
 \le \frac{4\|g\|_\infty^2}{n}.
 </annotation></semantics></math></p>
 <p>So, for a dataset
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>x</mi><mi>n</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">S = (x_1, \dots, x_n)</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>x</mi><mi>n</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">S = (x_1, \dots, x_n)</annotation></semantics></math>
 the randomized mechanism
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>K</mi><mo accent="true">̃</mo></mover><mi>g</mi></msub><annotation encoding="application/x-tex">\widetilde{K}_g</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>K</mi><mo accent="true">‾</mo></mover><mi>g</mi></msub><annotation encoding="application/x-tex">\bar{K}_g</annotation></semantics></math>
 defined as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>K</mi><mo accent="true">̃</mo></mover><mi>g</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>:=</mo><mfrac><mn>2</mn><mrow><mi>n</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>x</mi><mi>j</mi></msub><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>g</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>x</mi><mi>j</mi></msub><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mo>+</mo><msup><mtext mathvariant="normal">vecd</mtext><mrow><mi>−</mi><mn>1</mn></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>ξ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
-\widetilde K_g(S) :=   
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>K</mi><mo accent="true">‾</mo></mover><mi>g</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>S</mi><mo stretchy="false" form="postfix">)</mo><mo>:=</mo><mfrac><mn>2</mn><mrow><mi>n</mi><mo stretchy="false" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><mi>g</mi><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>x</mi><mi>j</mi></msub><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>g</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>x</mi><mi>j</mi></msub><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mo>+</mo><msup><mtext mathvariant="normal">vecd</mtext><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="prefix">(</mo><mi>ξ</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">
+\bar{K}_g(S) :=   
 \frac{2}{n(n-1)} \sum_{i &lt; j} g\left(\frac{x_j-x_i}{\sqrt{2}}\right)g\left(\frac{x_j-x_i}{\sqrt{2}}\right)^\top + \mbox{vecd}^{-1}(\xi),
-</annotation></semantics></math> where $N_{d(d+1)/2}(0, <em>{, }^2
-I</em>{d(d+1)/2}) $ and $ _{, } = $, satisfies
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>ε</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon, \delta)</annotation></semantics></math>-DP.</p>
-<p>Define $ V_{g, m}(S) (d, m)$ as the matrix of the first
+</annotation></semantics></math> where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ξ</mi><mo>∼</mo><msub><mi>N</mi><mrow><mi>d</mi><mo stretchy="false" form="prefix">(</mo><mi>d</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow></msub><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mrow><mi>ε</mi><mo>,</mo><mi>δ</mi></mrow><mn>2</mn></msubsup><msub><mi>I</mi><mrow><mi>d</mi><mo stretchy="false" form="prefix">(</mo><mi>d</mi><mo>+</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\xi \sim N_{d(d+1)/2}(0, \sigma_{\varepsilon, \delta}^2 I_{d(d+1)/2})</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mrow><mi>ε</mi><mo>,</mo><mi>δ</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>4</mn><mo stretchy="false" form="postfix">∥</mo><mi>g</mi><msubsup><mo stretchy="false" form="postfix">∥</mo><mi>∞</mi><mn>2</mn></msubsup><msqrt><mrow><mn>2</mn><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>1.25</mn><mi>/</mi><mi>δ</mi><mo stretchy="false" form="postfix">)</mo></mrow></msqrt></mrow><mrow><mi>n</mi><mi>ε</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\sigma_{\varepsilon, \delta} = \frac{4\|g\|_{\infty}^2 \sqrt{2 \ln(1.25/\delta)}}{n\varepsilon}</annotation></semantics></math>,
+satisfies
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>ε</mi><mo>,</mo><mi>δ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon, \delta)</annotation></semantics></math>-DP.</p>
+<p>Define
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">‾</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>m</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>S</mi><mo stretchy="false" form="postfix">)</mo><mo>∈</mo><mi>𝒪</mi><mo stretchy="false" form="prefix">(</mo><mi>d</mi><mo>,</mo><mi>m</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{V}_{g, m}(S) \in \mathcal{O}(d, m)</annotation></semantics></math>
+as the matrix of the first
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
 eigenvectors of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>K</mi><mo accent="true">̃</mo></mover><mi>g</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widetilde K_g(S)</annotation></semantics></math>.
-Then, $ V_{g, m}(S) $ satisfies
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>ε</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon, \delta)</annotation></semantics></math>-DP
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>K</mi><mo accent="true">‾</mo></mover><mi>g</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>S</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{K}_g(S)</annotation></semantics></math>.
+Then,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">‾</mo></mover><mrow><mi>g</mi><mo>,</mo><mi>m</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>S</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{V}_{g, m}(S)</annotation></semantics></math>
+satisfies
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>ε</mi><mo>,</mo><mi>δ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon, \delta)</annotation></semantics></math>-DP
 due to the post-processing property, and it can be served as a DP
 principal components. Kim and Jung (2025) calls these process as a
 <code>g-DPPCA</code>.</p>
 <p>In the implementation of the function <code>dp_pc_dir</code> with
 option <code>g_dppca=TRUE</code>, we use the spherical transformation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mrow><mi>s</mi><mi>p</mi><mi>h</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>t</mi><mi>/</mi><mo stretchy="false" form="postfix">∥</mo><mi>t</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">g_{sph}(t) = t/\|t\|_2</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mrow><mi>s</mi><mi>p</mi><mi>h</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>t</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>t</mi><mi>/</mi><mo stretchy="false" form="postfix">∥</mo><mi>t</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">g_{sph}(t) = t/\|t\|_2</annotation></semantics></math>
 to output differentially private PC directions
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mrow><mi>s</mi><mi>p</mi><mi>h</mi><mo>,</mo><mi>m</mi></mrow></msub><annotation encoding="application/x-tex">\widetilde{V}_{sph,m}</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>V</mi><mo accent="true">‾</mo></mover><mrow><mi>s</mi><mi>p</mi><mi>h</mi><mo>,</mo><mi>m</mi></mrow></msub><annotation encoding="application/x-tex">\bar{V}_{sph,m}</annotation></semantics></math>.
 In this case, it holds that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="postfix">∥</mo><msub><mi>g</mi><mrow><mi>s</mi><mi>p</mi><mi>h</mi></mrow></msub><msub><mo stretchy="false" form="postfix">∥</mo><mi>∞</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\|g_{sph}\|_{\infty} = 1</annotation></semantics></math>,
-and thus the variance of additive Gaussian noise is set as $ _{, } =
-$.</p>
+and thus the variance of additive Gaussian noise is set as
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mrow><mi>ε</mi><mo>,</mo><mi>δ</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>4</mn><msqrt><mrow><mn>2</mn><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>1.25</mn><mi>/</mi><mi>δ</mi><mo stretchy="false" form="postfix">)</mo></mrow></msqrt></mrow><mrow><mi>n</mi><mi>ε</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\sigma_{\varepsilon, \delta} = \frac{4\sqrt{2 \ln(1.25/\delta)}}{n\varepsilon}</annotation></semantics></math>.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
