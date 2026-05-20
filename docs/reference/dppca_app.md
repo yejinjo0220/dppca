@@ -1,21 +1,19 @@
 # Launch the dppca Shiny app
 
-Opens an interactive Shiny app for exploring
+Launches an interactive Shiny application for exploring differentially
+private PCA visualizations. The app provides interfaces for
 [`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
 and
-[`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md)
-with the updated scree and score method options. If `X` is supplied, the
-app opens using that data. If `group` is supplied, the score plot uses
-the grouped version when the group labels are available. If
-`group = "group"`, the column named `group` is used as group labels and
-removed from the PCA feature matrix. In the app, the scree menu uses
-checkboxes and can overlay `method = "clipped"`, `method = "pmwm"`,
-`method = "huber"`, or a vector such as
-`method = c("clipped", "pmwm", "huber")`. The score menu can pass
-`method = "add"`, `method = "sparse"`, or `method = c("add", "sparse")`
-and bin counts through `bins = c(m_x, m_y)` to the score plotting
-functions. The app uses a taller, centered scree plot panel so that the
-scree curves are not visually flattened on wide screens.
+[`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md),
+including private scree plot methods and histogram-based private score
+plot methods.
+
+If `X` is supplied, the app starts with `X` as the initial dataset. If
+`group` is supplied, the score plot can use the group labels for
+coloring. The argument `group` can be either a vector of length
+`nrow(X)` or the name of a column in `X`. When `group` is a column name,
+that column is used as group labels and removed from the PCA feature
+matrix.
 
 ## Usage
 
@@ -28,7 +26,7 @@ dppca_app(X = NULL, group = NULL)
 - X:
 
   Optional numeric matrix or data frame. If supplied, the app opens with
-  this data selected as the default data source.
+  this data as the initial data source.
 
 - group:
 
@@ -37,7 +35,8 @@ dppca_app(X = NULL, group = NULL)
 
 ## Value
 
-Invisibly launches a Shiny application.
+No return value. This function is called for its side effect of
+launching a Shiny application.
 
 ## Examples
 

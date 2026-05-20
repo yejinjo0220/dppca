@@ -8,35 +8,36 @@ dppca_app(X = NULL, group = NULL)
 }
 \arguments{
 \item{X}{Optional numeric matrix or data frame. If supplied, the app opens
-with this data selected as the default data source.}
+with this data as the initial data source.}
 
 \item{group}{Optional group labels. This can be either a vector of length
 \code{nrow(X)} or a single column name in \code{X}.}
 }
 \value{
-Invisibly launches a Shiny application.
+No return value. This function is called for its side effect of
+launching a Shiny application.
 }
 \description{
-Opens an interactive Shiny app for exploring \code{dp_scree_plot()} and
-\code{dp_score_plot()} with the updated scree and score method options.
-If \code{X} is supplied, the app opens using that
-data. If \code{group} is supplied, the score plot uses the grouped version
-when the group labels are available. If \code{group = "color"}, the
-column named \code{color} is used as group labels and removed from the
-PCA feature matrix. In the app, the scree menu uses checkboxes and can overlay
-\code{method = "clipped"}, \code{method = "pmwm"}, \code{method = "huber"},
-or a vector such as \code{method = c("clipped", "pmwm", "huber")}. The
-score menu can pass \code{method = "add"},
-\code{method = "sparse"}, or \code{method = c("add", "sparse")} and
-bin counts through \code{bins = c(m_x, m_y)} to the score plotting
-functions. The app uses a taller, centered scree plot panel
-so that the scree curves are not visually flattened on wide screens.
+Launches an interactive Shiny application for exploring differentially
+private PCA visualizations. The app provides interfaces for
+\code{\link[=dp_scree_plot]{dp_scree_plot()}} and \code{\link[=dp_score_plot]{dp_score_plot()}}, including private scree plot
+methods and histogram-based private score plot methods.
+
+If \code{X} is supplied, the app starts with \code{X} as the initial dataset. If
+\code{group} is supplied, the score plot can use the group labels for coloring.
+The argument \code{group} can be either a vector of length \code{nrow(X)} or the name
+of a column in \code{X}. When \code{group} is a column name, that column is used as
+group labels and removed from the PCA feature matrix.
 }
 \examples{
-\dontrun{
-dppca_app()
-dppca_app(gau)
-dppca_app(gau_g, group = "color")
+if (interactive()) {
+  dppca_app()
+
+  data(gau, package = "dppca")
+  dppca_app(gau)
+
+  data(gau_g, package = "dppca")
+  dppca_app(gau_g, group = "group")
 }
 
 }
