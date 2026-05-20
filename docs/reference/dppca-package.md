@@ -19,4 +19,4 @@ Useful links:
 
 Authors:
 
-- Minwoo Kim <mwkim.stat@gmail.com>
+- Minwoo Kim <ekfgusdl@snu.ac.kr>

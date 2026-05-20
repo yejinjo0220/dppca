@@ -42,9 +42,13 @@ Invisibly launches a Shiny application.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
-dppca_app()
-dppca_app(gau)
-dppca_app(gau_g, group = "group")
-} # }
+if (interactive()) {
+  dppca_app()
+
+  data(gau, package = "dppca")
+  dppca_app(gau)
+
+  data(gau_g, package = "dppca")
+  dppca_app(gau_g, group = "group")
+}
 ```
