@@ -214,29 +214,28 @@ X <- gau[1:300, ]
 
 # Compute private two-dimensional PCA scores using the additive histogram method.
 set.seed(123)
-score_plot <- dp_score(
+score_gau <- dp_score(
   X,
-  k = 2,
+  eps = 2,
+  delta = 1e-3,
   method = "add",
-  eps = 2,
-  delta = 1e-3,
   bins = c(10, 10)
 )
-#> Error in dp_score(X, k = 2, method = "add", eps = 2, delta = 0.001, bins = c(10,     10)): argument 4 matches multiple formal arguments
 
-score_plot
-#> Error: object 'score_plot' not found
-
-dp_score(
-  X,
-  k = 2,
-  method = c("add", "sparse"),
-  eps = 2,
-  delta = 1e-3,
-  bins = c(10, 10)
-)
-#> Error in dp_score(X, k = 2, method = c("add", "sparse"), eps = 2, delta = 0.001,     bins = c(10, 10)): argument 4 matches multiple formal arguments
-
-score_plot
-#> Error: object 'score_plot' not found
+head(score_gau$score)
+#>          PC1        PC2
+#> 1 -1.6418971 -2.9417503
+#> 2  2.4192805 -1.9747774
+#> 3 -1.5647289  2.4500389
+#> 4  1.1818664  0.6632302
+#> 5 -0.7668155 -2.7729387
+#> 6  1.4701354  3.1142919
+head(score_gau$add)
+#>         xmin       xmax      ymin      ymax         prob
+#> 1 -6.7554436 -5.3600789 -6.755444 -5.360079 0.0000000000
+#> 2 -5.3600789 -3.9647142 -6.755444 -5.360079 0.0176699895
+#> 3 -3.9647142 -2.5693495 -6.755444 -5.360079 0.0007993045
+#> 4 -2.5693495 -1.1739848 -6.755444 -5.360079 0.0014656449
+#> 5 -1.1739848  0.2213799 -6.755444 -5.360079 0.0194424961
+#> 6  0.2213799  1.6167446 -6.755444 -5.360079 0.0052250857
 ```

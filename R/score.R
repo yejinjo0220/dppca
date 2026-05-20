@@ -122,27 +122,16 @@
 #'
 #' # Compute private two-dimensional PCA scores using the additive histogram method.
 #' set.seed(123)
-#' score_plot <- dp_score(
+#' score_gau <- dp_score(
 #'   X,
-#'   k = 2,
+#'   eps = 2,
+#'   delta = 1e-3,
 #'   method = "add",
-#'   eps = 2,
-#'   delta = 1e-3,
 #'   bins = c(10, 10)
 #' )
 #'
-#' score_plot
-#'
-#' dp_score(
-#'   X,
-#'   k = 2,
-#'   method = c("add", "sparse"),
-#'   eps = 2,
-#'   delta = 1e-3,
-#'   bins = c(10, 10)
-#' )
-#'
-#' score_plot
+#' head(score_gau$score)
+#' head(score_gau$add)
 #'
 #' @importFrom VGAM rlaplace
 #' @export
@@ -248,17 +237,30 @@ dp_score <- function(
 #'
 #' @examples
 #' data(gau, package = "dppca")
-#' X <- head(gau, 50)
 #'
+#' # Use a small subset to keep the example fast.
+#' X <- gau[1:300, ]
+#'
+#' # Draw a private score plot using the additive histogram method.
 #' set.seed(123)
-#' p <- dp_score_plot(
+#' score_plot <- dp_score_plot(
 #'   X,
-#'   eps = 1,
-#'   delta = 1e-2,
-#'   bins = c(3, 3),
+#'   eps = 3,
+#'   delta = 1e-3,
+#'   bins = c(8, 8),
 #'   method = "add"
 #' )
-#' p$plot$all
+#' score_plot$plot$add
+#'
+#' # Draw score plots for all available histogram methods.
+#' set.seed(123)
+#' score_plot <- dp_score_plot(
+#'   X,
+#'   eps = 3,
+#'   delta = 1e-3,
+#'   bins = c(8, 8)
+#' )
+#' score_plot$plot$all
 #'
 #' @export
 dp_score_plot <- function(
@@ -380,18 +382,18 @@ dp_score_plot <- function(
 #' @examples
 #' data(gau_g, package = "dppca")
 #'
-#' X <- head(gau_g, 60)
-#'
+#' # Compute private grouped PCA scores.
 #' set.seed(123)
-#' group_out <- dp_score_group(
-#'   X,
+#' score_gau_g <- dp_score_group(
+#'   gau_g,
 #'   group = "group",
-#'   eps = 1,
-#'   delta = 1e-2,
-#'   bins = c(3, 3),
-#'   method = "add"
+#'   eps = 3,
+#'   delta = 1e-3,
+#'   bins = c(8, 8),
 #' )
-#' names(group_out$groups)
+#'
+#' head(score_gau_g$score)
+#' head(score_gau_g$groups$group1$add)
 #'
 #' @importFrom VGAM rlaplace
 #' @export
@@ -531,18 +533,17 @@ dp_score_group <- function(
 #' @examples
 #' data(gau_g, package = "dppca")
 #'
-#' X <- head(gau_g, 60)
-#'
+#' # Draw a private grouped score plot.
 #' set.seed(123)
-#' p <- dp_score_plot_group(
-#'   X,
+#' score_plot_gau_g <- dp_score_plot_group(
+#'   gau_g,
 #'   group = "group",
-#'   eps = 1,
-#'   delta = 1e-5,
-#'   bins = c(8, 8),
-#'   method = "add"
+#'   eps = 3,
+#'   delta = 1e-3,
+#'   bins = c(8, 8)
 #' )
-#' p$plot$all
+#'
+#' score_plot_gau_g$plot$all
 #'
 #' @export
 dp_score_plot_group <- function(

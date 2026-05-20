@@ -137,18 +137,30 @@ for pooled score histograms.
 ``` r
 data(gau_g, package = "dppca")
 
-X <- head(gau_g, 60)
-
+# Compute private grouped PCA scores.
 set.seed(123)
-group_out <- dp_score_group(
-  X,
+score_gau_g <- dp_score_group(
+  gau_g,
   group = "group",
-  eps = 1,
-  delta = 1e-2,
-  bins = c(3, 3),
-  method = "add"
+  eps = 3,
+  delta = 1e-3,
+  bins = c(8, 8),
 )
-#> Error in dp_score_group(X, group = "group", eps = 1, delta = 0.01, bins = c(3,     3), method = "add"): argument 3 matches multiple formal arguments
-names(group_out$groups)
-#> Error: object 'group_out' not found
+
+head(score_gau_g$score)
+#>            PC1        PC2
+#> [1,] 0.5752441  0.9711984
+#> [2,] 3.1987535  1.5765379
+#> [3,] 2.0936989  1.0882390
+#> [4,] 0.9725891  1.5285036
+#> [5,] 1.0839100  0.4533152
+#> [6,] 1.5430497 -1.0954815
+head(score_gau_g$groups$group1$add)
+#>         xmin       xmax      ymin     ymax         prob
+#> 1 -24.964534 -18.961402 -24.96453 -18.9614 0.0000000000
+#> 2 -18.961402 -12.958271 -24.96453 -18.9614 0.0102258822
+#> 3 -12.958271  -6.955139 -24.96453 -18.9614 0.0004625692
+#> 4  -6.955139  -0.952008 -24.96453 -18.9614 0.0008481902
+#> 5  -0.952008   5.051123 -24.96453 -18.9614 0.0112516577
+#> 6   5.051123  11.054255 -24.96453 -18.9614 0.0030238337
 ```

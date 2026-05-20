@@ -77,18 +77,17 @@ both the computed group-wise score output and \code{ggplot} objects.
 \examples{
 data(gau_g, package = "dppca")
 
-X <- head(gau_g, 60)
-
+# Draw a private grouped score plot.
 set.seed(123)
-p <- dp_score_plot_group(
-  X,
+score_plot_gau_g <- dp_score_plot_group(
+  gau_g,
   group = "group",
-  eps = 1,
-  delta = 1e-5,
-  bins = c(8, 8),
-  method = "add"
+  eps = 3,
+  delta = 1e-3,
+  bins = c(8, 8)
 )
-p$plot$all
+
+score_plot_gau_g$plot$all
 
 }
 \seealso{

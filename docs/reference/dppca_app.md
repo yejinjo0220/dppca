@@ -1,19 +1,20 @@
 # Launch the dppca Shiny app
 
 Launches an interactive Shiny application for exploring differentially
-private PCA visualizations. The app provides interfaces for
+private PCA visualizations. The app provides a graphical interface for
 [`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
 and
 [`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md),
 including private scree plot methods and histogram-based private score
 plot methods.
 
-If `X` is supplied, the app starts with `X` as the initial dataset. If
-`group` is supplied, the score plot can use the group labels for
-coloring. The argument `group` can be either a vector of length
-`nrow(X)` or the name of a column in `X`. When `group` is a column name,
-that column is used as group labels and removed from the PCA feature
-matrix.
+The app can be opened with built-in example datasets or with a
+user-supplied dataset. If `X` is supplied, the app starts with `X` as
+the initial dataset. If `group` is supplied, the score plot can use the
+group labels for coloring. The `group` argument can be either a vector
+of length `nrow(X)` or the name of a column in `X`. When `group` is a
+column name, that column is used as group labels and is removed from the
+PCA feature matrix.
 
 ## Usage
 
@@ -26,7 +27,7 @@ dppca_app(X = NULL, group = NULL)
 - X:
 
   Optional numeric matrix or data frame. If supplied, the app opens with
-  this data as the initial data source.
+  this data as the initial dataset.
 
 - group:
 
@@ -35,19 +36,24 @@ dppca_app(X = NULL, group = NULL)
 
 ## Value
 
-No return value. This function is called for its side effect of
-launching a Shiny application.
+Invisibly returns the value returned by
+[`shiny::runApp()`](https://rdrr.io/pkg/shiny/man/runApp.html). The
+function is primarily called for its side effect of launching a Shiny
+application.
 
 ## Examples
 
 ``` r
-if (interactive()) {
-  dppca_app()
+if (FALSE) { # \dontrun{
+# Launch the app with built-in example datasets.
+dppca_app()
 
-  data(gau, package = "dppca")
-  dppca_app(gau)
+# Launch the app with a user-supplied numeric dataset.
+data(gau, package = "dppca")
+dppca_app(gau)
 
-  data(gau_g, package = "dppca")
-  dppca_app(gau_g, group = "group")
-}
+# Launch the app with group labels stored in a column.
+data(gau_g, package = "dppca")
+dppca_app(gau_g, group = "group")
+} # }
 ```

@@ -8,36 +8,42 @@ dppca_app(X = NULL, group = NULL)
 }
 \arguments{
 \item{X}{Optional numeric matrix or data frame. If supplied, the app opens
-with this data as the initial data source.}
+with this data as the initial dataset.}
 
 \item{group}{Optional group labels. This can be either a vector of length
 \code{nrow(X)} or a single column name in \code{X}.}
 }
 \value{
-No return value. This function is called for its side effect of
-launching a Shiny application.
+Invisibly returns the value returned by \code{shiny::runApp()}.
+The function is primarily called for its side effect of launching a Shiny
+application.
 }
 \description{
 Launches an interactive Shiny application for exploring differentially
-private PCA visualizations. The app provides interfaces for
-\code{\link[=dp_scree_plot]{dp_scree_plot()}} and \code{\link[=dp_score_plot]{dp_score_plot()}}, including private scree plot
-methods and histogram-based private score plot methods.
+private PCA visualizations. The app provides a graphical interface for
+\code{dp_scree_plot()} and \code{dp_score_plot()}, including private scree
+plot methods and histogram-based private score plot methods.
 
-If \code{X} is supplied, the app starts with \code{X} as the initial dataset. If
-\code{group} is supplied, the score plot can use the group labels for coloring.
-The argument \code{group} can be either a vector of length \code{nrow(X)} or the name
-of a column in \code{X}. When \code{group} is a column name, that column is used as
-group labels and removed from the PCA feature matrix.
+The app can be opened with built-in example datasets or with a user-supplied
+dataset. If \code{X} is supplied, the app starts with \code{X} as the initial
+dataset. If \code{group} is supplied, the score plot can use the group labels
+for coloring. The \code{group} argument can be either a vector of length
+\code{nrow(X)} or the name of a column in \code{X}. When \code{group} is a
+column name, that column is used as group labels and is removed from the PCA
+feature matrix.
 }
 \examples{
-if (interactive()) {
-  dppca_app()
+\dontrun{
+# Launch the app with built-in example datasets.
+dppca_app()
 
-  data(gau, package = "dppca")
-  dppca_app(gau)
+# Launch the app with a user-supplied numeric dataset.
+data(gau, package = "dppca")
+dppca_app(gau)
 
-  data(gau_g, package = "dppca")
-  dppca_app(gau_g, group = "group")
+# Launch the app with group labels stored in a column.
+data(gau_g, package = "dppca")
+dppca_app(gau_g, group = "group")
 }
 
 }

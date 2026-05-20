@@ -71,17 +71,30 @@ computed score output and \code{ggplot} objects.
 }
 \examples{
 data(gau, package = "dppca")
-X <- head(gau, 50)
 
+# Use a small subset to keep the example fast.
+X <- gau[1:300, ]
+
+# Draw a private score plot using the additive histogram method.
 set.seed(123)
-p <- dp_score_plot(
+score_plot <- dp_score_plot(
   X,
-  eps = 1,
-  delta = 1e-2,
-  bins = c(3, 3),
+  eps = 3,
+  delta = 1e-3,
+  bins = c(8, 8),
   method = "add"
 )
-p$plot$all
+score_plot$plot$add
+
+# Draw score plots for all available histogram methods.
+set.seed(123)
+score_plot <- dp_score_plot(
+  X,
+  eps = 3,
+  delta = 1e-3,
+  bins = c(8, 8)
+)
+score_plot$plot$all
 
 }
 \seealso{

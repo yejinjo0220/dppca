@@ -92,23 +92,25 @@ construction, see \code{\link[=dp_scree]{dp_scree()}}.
 data(gau, package = "dppca")
 
 # Use a small subset to keep the example fast.
+data(gau, package = "dppca")
 X <- gau[1:200, ]
 
 # Draw a private scree plot using the clipped mean method.
+set.seed(123)
 dp_scree_plot(
   X,
-  k = 3,
+  k = 5,
   method = "clipped",
   control = clipped_control(C_clip = 3),
   eps = 3,
   delta = 1e-3
 )
+
 # Multiple scree methods can be overlaid by passing a vector to `method`
 # and a named list to `control`, for example:
-#
 # dp_scree_plot(
 #   X,
-#   k = 2,
+#   k = 5,
 #   method = c("clipped", "pmwm", "huber"),
 #   control = list(
 #     clipped = clipped_control(C_clip = 3),
@@ -118,6 +120,7 @@ dp_scree_plot(
 #   eps = 3,
 #   delta = 1e-3
 # )
+
 }
 \references{
 \insertRef{dwork2014algorithmic}{dppca}

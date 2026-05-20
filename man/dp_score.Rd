@@ -131,27 +131,16 @@ X <- gau[1:300, ]
 
 # Compute private two-dimensional PCA scores using the additive histogram method.
 set.seed(123)
-score_plot <- dp_score(
+score_gau <- dp_score(
   X,
-  k = 2,
+  eps = 2,
+  delta = 1e-3,
   method = "add",
-  eps = 2,
-  delta = 1e-3,
   bins = c(10, 10)
 )
 
-score_plot
-
-dp_score(
-  X,
-  k = 2,
-  method = c("add", "sparse"),
-  eps = 2,
-  delta = 1e-3,
-  bins = c(10, 10)
-)
-
-score_plot
+head(score_gau$score)
+head(score_gau$add)
 
 }
 \references{

@@ -553,8 +553,8 @@ ui <- fluidPage(
             selected = c("add", "sparse"),
             inline = TRUE
           ),
-          numericInput("bins_x", "Number of x-axis bins", value = 20, min = 1, step = 1),
-          numericInput("bins_y", "Number of y-axis bins", value = 20, min = 1, step = 1),
+          numericInput("bins_x", "Number of x-axis bins", value = 10, min = 1, step = 1),
+          numericInput("bins_y", "Number of y-axis bins", value = 10, min = 1, step = 1),
           checkboxInput("use_group", "Use group labels when available", value = TRUE),
           conditionalPanel(
             condition = "input.data_source == 'upload' && input.use_group",

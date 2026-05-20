@@ -2,33 +2,37 @@
 #'
 #' @description
 #' Launches an interactive Shiny application for exploring differentially
-#' private PCA visualizations. The app provides interfaces for
-#' [dp_scree_plot()] and [dp_score_plot()], including private scree plot
-#' methods and histogram-based private score plot methods.
+#' private PCA visualizations. The app provides a graphical interface for
+#' \code{dp_scree_plot()} and \code{dp_score_plot()}, including private scree
+#' plot methods and histogram-based private score plot methods.
 #'
-#' If `X` is supplied, the app starts with `X` as the initial dataset. If
-#' `group` is supplied, the score plot can use the group labels for coloring.
-#' The argument `group` can be either a vector of length `nrow(X)` or the name
-#' of a column in `X`. When `group` is a column name, that column is used as
-#' group labels and removed from the PCA feature matrix.
+#' The app can be opened with built-in example datasets or with a user-supplied
+#' dataset. If \code{X} is supplied, the app starts with \code{X} as the initial
+#' dataset. If \code{group} is supplied, the score plot can use the group labels
+#' for coloring. The \code{group} argument can be either a vector of length
+#' \code{nrow(X)} or the name of a column in \code{X}. When \code{group} is a
+#' column name, that column is used as group labels and is removed from the PCA
+#' feature matrix.
 #'
 #' @param X Optional numeric matrix or data frame. If supplied, the app opens
-#'   with this data as the initial data source.
+#'   with this data as the initial dataset.
 #' @param group Optional group labels. This can be either a vector of length
-#'   `nrow(X)` or a single column name in `X`.
+#'   \code{nrow(X)} or a single column name in \code{X}.
 #'
-#' @return No return value. This function is called for its side effect of
-#'   launching a Shiny application.
+#' @return No return value. This function opens a Shiny application.
 #'
 #' @examples
-#' if (interactive()) {
-#'   dppca_app()
+#' \dontrun{
+#' # Launch the app with built-in example datasets.
+#' dppca_app()
 #'
-#'   data(gau, package = "dppca")
-#'   dppca_app(gau)
+#' # Launch the app with a user-supplied numeric dataset.
+#' data(gau, package = "dppca")
+#' dppca_app(gau)
 #'
-#'   data(gau_g, package = "dppca")
-#'   dppca_app(gau_g, group = "group")
+#' # Launch the app with group labels stored in a column.
+#' data(gau_g, package = "dppca")
+#' dppca_app(gau_g, group = "group")
 #' }
 #'
 #' @export

@@ -176,20 +176,32 @@ privacy parameters for each group by parallel composition.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">gau_g</span>, package <span class="op">=</span> <span class="st">"dppca"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">gau_g</span>, <span class="fl">60</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Compute private grouped PCA scores.</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">group_out</span> <span class="op">&lt;-</span> <span class="fu">dp_score_group</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">X</span>,</span></span>
+<span class="r-in"><span><span class="va">score_gau_g</span> <span class="op">&lt;-</span> <span class="fu">dp_score_group</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">gau_g</span>,</span></span>
 <span class="r-in"><span>  group <span class="op">=</span> <span class="st">"group"</span>,</span></span>
-<span class="r-in"><span>  eps <span class="op">=</span> <span class="fl">1</span>,</span></span>
-<span class="r-in"><span>  delta <span class="op">=</span> <span class="fl">1e-2</span>,</span></span>
-<span class="r-in"><span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">3</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  method <span class="op">=</span> <span class="st">"add"</span></span></span>
+<span class="r-in"><span>  eps <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span>  delta <span class="op">=</span> <span class="fl">1e-3</span>,</span></span>
+<span class="r-in"><span>  bins <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">8</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in dp_score_group(X, group = "group", eps = 1, delta = 0.01, bins = c(3,     3), method = "add"):</span> argument 3 matches multiple formal arguments</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">group_out</span><span class="op">$</span><span class="va">groups</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'group_out' not found</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">score_gau_g</span><span class="op">$</span><span class="va">score</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            PC1        PC2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,] 0.5752441  0.9711984</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] 3.1987535  1.5765379</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,] 2.0936989  1.0882390</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4,] 0.9725891  1.5285036</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5,] 1.0839100  0.4533152</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6,] 1.5430497 -1.0954815</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">score_gau_g</span><span class="op">$</span><span class="va">groups</span><span class="op">$</span><span class="va">group1</span><span class="op">$</span><span class="va">add</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         xmin       xmax      ymin     ymax         prob</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 -24.964534 -18.961402 -24.96453 -18.9614 0.0000000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 -18.961402 -12.958271 -24.96453 -18.9614 0.0102258822</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 -12.958271  -6.955139 -24.96453 -18.9614 0.0004625692</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4  -6.955139  -0.952008 -24.96453 -18.9614 0.0008481902</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5  -0.952008   5.051123 -24.96453 -18.9614 0.0112516577</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6   5.051123  11.054255 -24.96453 -18.9614 0.0030238337</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

@@ -88,18 +88,18 @@ privacy parameters for each group by parallel composition.
 \examples{
 data(gau_g, package = "dppca")
 
-X <- head(gau_g, 60)
-
+# Compute private grouped PCA scores.
 set.seed(123)
-group_out <- dp_score_group(
-  X,
+score_gau_g <- dp_score_group(
+  gau_g,
   group = "group",
-  eps = 1,
-  delta = 1e-2,
-  bins = c(3, 3),
-  method = "add"
+  eps = 3,
+  delta = 1e-3,
+  bins = c(8, 8),
 )
-names(group_out$groups)
+
+head(score_gau_g$score)
+head(score_gau_g$groups$group1$add)
 
 }
 \seealso{

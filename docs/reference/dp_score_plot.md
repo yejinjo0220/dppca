@@ -113,17 +113,30 @@ for group-wise score histogram plots.
 
 ``` r
 data(gau, package = "dppca")
-X <- head(gau, 50)
 
+# Use a small subset to keep the example fast.
+X <- gau[1:300, ]
+
+# Draw a private score plot using the additive histogram method.
 set.seed(123)
-p <- dp_score_plot(
+score_plot <- dp_score_plot(
   X,
-  eps = 1,
-  delta = 1e-2,
-  bins = c(3, 3),
+  eps = 3,
+  delta = 1e-3,
+  bins = c(8, 8),
   method = "add"
 )
-#> Error in dp_score_plot(X, eps = 1, delta = 0.01, bins = c(3, 3), method = "add"): argument 2 matches multiple formal arguments
-p$plot$all
-#> Error: object 'p' not found
+score_plot$plot$add
+
+
+# Draw score plots for all available histogram methods.
+set.seed(123)
+score_plot <- dp_score_plot(
+  X,
+  eps = 3,
+  delta = 1e-3,
+  bins = c(8, 8)
+)
+score_plot$plot$all
+
 ```
