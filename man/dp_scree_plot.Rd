@@ -27,7 +27,7 @@ columns correspond to variables.}
 to estimate. Must be an integer between \code{1} and the number of columns in \code{X}.}
 
 \item{method}{Scree estimation method or methods to plot. One or more of
-\code{"clipped"}, \code{"pmwm"}, or \code{"huber"}.}
+\code{"clipped"}, \code{"pmwm"}, or \code{"huber"}. If omitted, \code{"clipped"} is used.}
 
 \item{control}{Optional method-specific control list, or a named list of
 control lists when multiple methods are requested. Use \code{\link[=clipped_control]{clipped_control()}},
@@ -92,7 +92,6 @@ construction, see \code{\link[=dp_scree]{dp_scree()}}.
 data(gau, package = "dppca")
 
 # Use a small subset to keep the example fast.
-data(gau, package = "dppca")
 X <- gau[1:200, ]
 
 # Draw a private scree plot using the clipped mean method.

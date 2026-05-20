@@ -83,13 +83,6 @@ of blocks used in the private estimator of \eqn{m_2} is chosen as
 }
 \examples{
 huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
-huber_control(
-  k_min_m2 = -10,
-  k_max_m2 = 10,
-  m2_frac = 1 / 4,
-  T = 50,
-  M = 20
-)
 
 }
 \references{

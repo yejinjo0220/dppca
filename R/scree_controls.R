@@ -117,14 +117,6 @@ clipped_control <- function(C_clip) {
 #'
 #' @examples
 #' pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01)
-#' pmwm_control(
-#'   a = 0,
-#'   b = 20,
-#'   trim_const = 10,
-#'   eta = 0.01,
-#'   beta = 1.001,
-#'   split_mode = FALSE
-#' )
 #'
 #' @export
 pmwm_control <- function(
@@ -242,13 +234,6 @@ pmwm_control <- function(
 #'
 #' @examples
 #' huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
-#' huber_control(
-#'   k_min_m2 = -10,
-#'   k_max_m2 = 10,
-#'   m2_frac = 1 / 4,
-#'   T = 50,
-#'   M = 20
-#' )
 #'
 #' @export
 huber_control <- function(

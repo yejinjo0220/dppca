@@ -14,9 +14,7 @@ with this data as the initial dataset.}
 \code{nrow(X)} or a single column name in \code{X}.}
 }
 \value{
-Invisibly returns the value returned by \code{shiny::runApp()}.
-The function is primarily called for its side effect of launching a Shiny
-application.
+No return value. This function opens a Shiny application.
 }
 \description{
 Launches an interactive Shiny application for exploring differentially

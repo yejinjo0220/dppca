@@ -17,10 +17,11 @@
 #'  columns correspond to variables.
 #' @param k Positive integer defining the number of leading principal components
 #'   to estimate. Must be an integer between `1` and the number of columns in `X`.
-#' @param method Scree value estimation method. One of `"clipped"`, `"pmwm"`, or
-#'  `"huber"`.
+#' @param method Scree value estimation method or methods. One or more of
+#'   `"clipped"`, `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
 #' @param control Optional method-specific control list created by
-#'   [clipped_control()], [pmwm_control()], or [huber_control()].
+#'   [clipped_control()], [pmwm_control()], or [huber_control()]. When multiple
+#'   methods are requested, use a named list with method names.
 #' @param eps Positive number defining the total `epsilon` privacy parameter.
 #'   If `g_dppca = TRUE`, it is split between private direction estimation and
 #'   private scree estimation.
@@ -82,7 +83,7 @@
 #' For a detailed procedure and mathematical formulations,
 #' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_scree}.
 #'
-#' @return A list with components:
+#' @return If one method is requested, a list with components:
 #' \itemize{
 #'   \item `method`: scree value estimation method.
 #'   \item `scree_np`: non-private scree estimates.
@@ -90,6 +91,8 @@
 #'   \item `scree`: differentially private scree value estimates.
 #'   \item `pve`: differentially private proportions of variance explained.
 #' }
+#' If multiple methods are requested, a named list of method-specific results is
+#' returned.
 #'
 #' @seealso
 #' [dp_pc_dir()] for principal component direction estimation.
@@ -137,12 +140,55 @@ dp_scree <- function(
     center = TRUE, standardize = FALSE,
     g_dppca = FALSE, cpp.option = FALSE, mono = TRUE
 ) {
-  method <- match.arg(
-    method,
-    choices = c("clipped", "pmwm", "huber"),
-    several.ok = TRUE
-  )
-  method <- unique(method)
+  if (missing(method)) {
+    method <- "clipped"
+  } else {
+    method <- match.arg(
+      method,
+      choices = c("clipped", "pmwm", "huber"),
+      several.ok = TRUE
+    )
+    method <- unique(method)
+  }
+
+  if (length(method) > 1L) {
+    if (!is.null(control)) {
+      if (!is.list(control) || is.null(names(control)) || any(names(control) == "")) {
+        stop(
+          "When multiple methods are requested, `control` must be a named list, ",
+          "for example list(clipped = clipped_control(...), pmwm = pmwm_control(...)).",
+          call. = FALSE
+        )
+      }
+    }
+
+    out <- stats::setNames(vector("list", length(method)), method)
+
+    for (m in method) {
+      control_m <- if (!is.null(control) && m %in% names(control)) {
+        control[[m]]
+      } else {
+        NULL
+      }
+
+      out[[m]] <- dp_scree(
+        X = X,
+        k = k,
+        method = m,
+        control = control_m,
+        eps = eps,
+        delta = delta,
+        center = center,
+        standardize = standardize,
+        g_dppca = g_dppca,
+        cpp.option = cpp.option,
+        mono = mono
+      )
+    }
+
+    return(out)
+  }
+
   control <- .merge_scree_control(method, control)
 
   X <- as.matrix(X)
@@ -225,7 +271,7 @@ dp_scree <- function(
 #' @param k Positive integer defining the number of leading principal components
 #'   to estimate. Must be an integer between `1` and the number of columns in `X`.
 #' @param method Scree estimation method or methods to plot. One or more of
-#'   `"clipped"`, `"pmwm"`, or `"huber"`.
+#'   `"clipped"`, `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
 #' @param control Optional method-specific control list, or a named list of
 #'   control lists when multiple methods are requested. Use [clipped_control()],
 #'   [pmwm_control()], and [huber_control()].
@@ -291,7 +337,6 @@ dp_scree <- function(
 #' data(gau, package = "dppca")
 #'
 #' # Use a small subset to keep the example fast.
-#' data(gau, package = "dppca")
 #' X <- gau[1:200, ]
 #'
 #' # Draw a private scree plot using the clipped mean method.
@@ -331,7 +376,16 @@ dp_scree_plot <- function(
     g_dppca = FALSE, cpp.option = FALSE, mono = TRUE,
     type = c("pve", "scree")
 ) {
-  method <- match.arg(method)
+  if (missing(method)) {
+    method <- "clipped"
+  } else {
+    method <- match.arg(
+      method,
+      choices = c("clipped", "pmwm", "huber"),
+      several.ok = TRUE
+    )
+    method <- unique(method)
+  }
   type <- match.arg(type)
 
   X <- as.matrix(X)

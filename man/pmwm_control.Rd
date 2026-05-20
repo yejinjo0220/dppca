@@ -76,14 +76,6 @@ deliberately by the user.
 }
 \examples{
 pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01)
-pmwm_control(
-  a = 0,
-  b = 20,
-  trim_const = 10,
-  eta = 0.01,
-  beta = 1.001,
-  split_mode = FALSE
-)
 
 }
 \references{

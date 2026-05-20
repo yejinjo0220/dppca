@@ -125,30 +125,4 @@ pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01)
 #> $split_mode
 #> [1] TRUE
 #> 
-pmwm_control(
-  a = 0,
-  b = 20,
-  trim_const = 10,
-  eta = 0.01,
-  beta = 1.001,
-  split_mode = FALSE
-)
-#> $beta
-#> [1] 1.001
-#> 
-#> $a
-#> [1] 0
-#> 
-#> $b
-#> [1] 20
-#> 
-#> $trim_const
-#> [1] 10
-#> 
-#> $eta
-#> [1] 0.01
-#> 
-#> $split_mode
-#> [1] FALSE
-#> 
 ```

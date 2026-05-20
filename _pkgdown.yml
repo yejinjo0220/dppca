@@ -32,7 +32,7 @@ navbar:
         href: articles/dp_score.html
 
     reference:
-      text: Reference
+      text: Functions
       href: reference/index.html
 
     articles:
@@ -55,52 +55,46 @@ articles:
 
 reference:
 
-- title: "DP PCA"
+- title: "Direction"
   desc: >
-    Core functions for computing principal component directions and
-    differentially private scree and score summaries.
+    Functions for estimating private principal component directions.
   contents:
   - dp_pc_dir
+
+- title: "Scree"
+  desc: >
+    Functions for estimating and visualizing differentially private scree
+    values. The control helpers specify method-specific tuning options for
+    the clipped, private modified winsorized mean, and Huber-type scree
+    estimators.
+  contents:
   - dp_scree
-  - dp_score
-
-- title: "DP PCA visualization"
-  desc: >
-    Plotting functions for differentially private PCA scree curves and
-    score histograms.
-  contents:
   - dp_scree_plot
-  - dp_score_plot
-
-- title: "Group score visualization"
-  desc: >
-    Functions for group-wise differentially private PCA score summaries and
-    visualizations.
-  contents:
-  - dp_score_group
-  - dp_score_plot_group
-
-- title: "Method controls"
-  desc: >
-    Control objects for method-specific tuning parameters used in private
-    scree estimation.
-  contents:
   - clipped_control
   - pmwm_control
   - huber_control
 
+- title: "Score"
+  desc: >
+    Functions for constructing differentially private PCA score summaries,
+    score plots, and group-wise score visualizations.
+  contents:
+  - dp_score
+  - dp_score_plot
+  - dp_score_group
+  - dp_score_plot_group
+
 - title: "Shiny app"
   desc: >
-    Interactive Shiny app for exploring differentially private PCA scree
-    and score plots.
+    Shiny app for exploring differentially private PCA scree and score plots
+    through a graphical interface.
   contents:
   - dppca_app
 
-- title: "Example datasets"
+- title: "Data"
   desc: >
     Datasets included for examples and demonstrations.
   contents:
   - adult
   - gau
   - gau_g
-

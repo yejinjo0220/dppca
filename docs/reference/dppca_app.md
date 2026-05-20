@@ -36,10 +36,7 @@ dppca_app(X = NULL, group = NULL)
 
 ## Value
 
-Invisibly returns the value returned by
-[`shiny::runApp()`](https://rdrr.io/pkg/shiny/man/runApp.html). The
-function is primarily called for its side effect of launching a Shiny
-application.
+No return value. This function opens a Shiny application.
 
 ## Examples
 

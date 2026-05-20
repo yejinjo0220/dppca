@@ -25,11 +25,12 @@ columns correspond to variables.}
 \item{k}{Positive integer defining the number of leading principal components
 to estimate. Must be an integer between \code{1} and the number of columns in \code{X}.}
 
-\item{method}{Scree value estimation method. One of \code{"clipped"}, \code{"pmwm"}, or
-\code{"huber"}.}
+\item{method}{Scree value estimation method or methods. One or more of
+\code{"clipped"}, \code{"pmwm"}, or \code{"huber"}. If omitted, \code{"clipped"} is used.}
 
 \item{control}{Optional method-specific control list created by
-\code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}.}
+\code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}. When multiple
+methods are requested, use a named list with method names.}
 
 \item{eps}{Positive number defining the total \code{epsilon} privacy parameter.
 If \code{g_dppca = TRUE}, it is split between private direction estimation and
@@ -57,7 +58,7 @@ component directions for scree estimation. The default is \code{FALSE}. See
 post-processing to the vector of private scree values. The default is \code{TRUE}.}
 }
 \value{
-A list with components:
+If one method is requested, a list with components:
 \itemize{
 \item \code{method}: scree value estimation method.
 \item \code{scree_np}: non-private scree estimates.
@@ -65,6 +66,8 @@ A list with components:
 \item \code{scree}: differentially private scree value estimates.
 \item \code{pve}: differentially private proportions of variance explained.
 }
+If multiple methods are requested, a named list of method-specific results is
+returned.
 }
 \description{
 This function computes estimates of scree values, eigenvalues of covariance
