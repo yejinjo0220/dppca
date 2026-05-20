@@ -41,7 +41,7 @@ library(dppca)
 
   nm <- names(dat)
   lower_nm <- tolower(nm)
-  preferred <- match(c("color", "colour", "group", "groups", "label", "labels", "class", "cluster", "g"), lower_nm)
+  preferred <- match(c("group", "groups", "label", "labels", "class", "cluster", "g", "color", "colour"), lower_nm)
   preferred <- preferred[!is.na(preferred)]
   if (length(preferred) > 0L) return(nm[preferred[1L]])
 
@@ -80,12 +80,12 @@ library(dppca)
   list(X = dat, group = NULL)
 }
 
-.load_grouped_example <- function(grouped_name, fallback_name, label, group_col = "color") {
+.load_grouped_example <- function(grouped_name, fallback_name, label, group_col = "group") {
   grouped <- .load_dppca_data(grouped_name)
 
-  # For dppca example datasets, gau_g and eur_map_g are the corresponding
-  # feature data with an additional group/color column. Use that column as
-  # group labels, and remove it from the PCA feature matrix.
+  # For dppca example datasets, grouped data contain the corresponding
+  # feature data with an additional group column. Use that column as group
+  # labels, and remove it from the PCA feature matrix.
   if (is.data.frame(grouped) || is.matrix(grouped)) {
     grouped_df <- as.data.frame(grouped)
     if (!is.null(group_col) && group_col %in% names(grouped_df)) {
@@ -106,9 +106,7 @@ library(dppca)
   switch(
     name,
     gau = list(X = .load_dppca_data("gau"), group = NULL, label = "Gaussian"),
-    gau_grouped = .load_grouped_example("gau_g", "gau", "Gaussian with groups", group_col = "color"),
-    eur_map = list(X = .load_dppca_data("eur_map"), group = NULL, label = "Europe map"),
-    eur_map_grouped = .load_grouped_example("eur_map_g", "eur_map", "Europe map with groups", group_col = "color"),
+    gau_grouped = .load_grouped_example("gau_g", "gau", "Gaussian with groups", group_col = "group"),
     adult = list(X = .load_dppca_data("adult"), group = NULL, label = "Adult"),
     stop("Unknown example dataset: ", name)
   )
@@ -459,8 +457,6 @@ ui <- fluidPage(
           choices = c(
             "Gaussian" = "gau",
             "Gaussian with groups" = "gau_grouped",
-            "Europe map" = "eur_map",
-            "Europe map with groups" = "eur_map_grouped",
             "Adult" = "adult"
           ),
           selected = "gau_grouped"
@@ -566,7 +562,7 @@ ui <- fluidPage(
               "upload_group_col",
               "group:",
               value = "",
-              placeholder = "Enter group column name, e.g. color"
+              placeholder = "Enter group column name, e.g. group"
             ),
             helpText("For uploaded CSV files, enter the column name containing group labels. This column is excluded from PCA and used only for grouped score plots.")
           ),
@@ -607,7 +603,7 @@ server <- function(input, output, session) {
       req(.supplied_X)
 
       # For supplied data, keep the original data for dp_score_plot_group()
-      # when `group` is a column name such as "color".  Also prepare a numeric-only
+      # when `group` is a column name such as "group".  Also prepare a numeric-only
       # feature matrix for scree/non-group score calculations.
       split <- .split_grouped_data(.supplied_X, .supplied_group)
 
@@ -629,27 +625,17 @@ server <- function(input, output, session) {
     } else if (input$data_source == "example") {
       ex <- .load_example_dataset(input$example_dataset)
 
-      # For the grouped example datasets, gau_g and eur_map_g already contain
-      # the group column named "color".  Pass the full data frame and group = "color"
+      # For the grouped example dataset, gau_g already contains the group
+      # column named "group". Pass the full data frame and group = "group"
       # to dp_score_plot_group(), matching the console usage:
-      # dp_score_plot_group(X = gau_g, group = "color", ...).
+      # dp_score_plot_group(X = gau_g, group = "group", ...).
       if (input$example_dataset == "gau_grouped") {
         X_raw <- .load_dppca_data("gau_g")
         return(list(
-          X_feature = .split_grouped_data(X_raw, "color")$X,
+          X_feature = .split_grouped_data(X_raw, "group")$X,
           X_score = X_raw,
-          group_arg = "color",
+          group_arg = "group",
           label = "Gaussian with groups"
-        ))
-      }
-
-      if (input$example_dataset == "eur_map_grouped") {
-        X_raw <- .load_dppca_data("eur_map_g")
-        return(list(
-          X_feature = .split_grouped_data(X_raw, "color")$X,
-          X_score = X_raw,
-          group_arg = "color",
-          label = "Europe map with groups"
         ))
       }
 

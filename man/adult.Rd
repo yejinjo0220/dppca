@@ -3,18 +3,42 @@
 \docType{data}
 \name{adult}
 \alias{adult}
-\title{Adult data example}
+\title{Adult numeric data}
 \format{
-32,651 by 5 numeric matrix
+A data frame with 32,561 rows and 5 columns:
+\describe{
+\item{age}{Age of the individual.}
+\item{education_num}{Number of years of education.}
+\item{capital_gain}{Capital gain.}
+\item{capital_loss}{Capital loss.}
+\item{hours_per_week}{Number of working hours per week.}
+}
 }
 \source{
-Prepared for examples in the dppca package.
-(\emph{We need to add a reference of this dataset})
+UCI Machine Learning Repository, Adult dataset.
+The Adult dataset is licensed under the Creative Commons Attribution 4.0
+International (CC BY 4.0) license.
 }
 \usage{
-data(adult)
+adult
 }
 \description{
-A sample dataset used for examples in the dppca package.
+A numerical subset of the Adult dataset from the UCI Machine Learning
+Repository. The original Adult dataset is based on data extracted from
+the 1994 United States Census database.
+}
+\details{
+This package dataset retains five numerical variables:
+\code{age}, \code{education_num}, \code{capital_gain}, \code{capital_loss}, and
+\code{hours_per_week}. These selected numerical variables contain no missing
+values in the original data file used here. The resulting dataset contains
+32,561 observations.
+
+Since the variables have substantially different units and scales, scaling
+is recommended before applying PCA-based methods.
+}
+\references{
+Becker, B. and Kohavi, R. (1996).
+Adult dataset. UCI Machine Learning Repository.
 }
 \keyword{datasets}

@@ -1,14 +1,11 @@
-# 1. eur_map -------------------------------------------------------------
+# data-raw/make_datasets.R
 
-load("data-raw/popres.RData")
-X_eur_map <- read.table("data-raw/eurmap_data.txt")
+# This script creates package datasets used in dppca.
+# The processed datasets are saved in data/ as .rda files.
+#
+# To update package datasets, run this file from the package root.
 
-color <- gsub("[0-9]+", "", popres$x$color)
-
-eur_map <- X_eur_map
-eur_map_g <- data.frame(X_eur_map, color = color)
-
-# 2. gaussian_groups -----------------------------------------------------
+# 1. Five Gaussian clusters ----------------------------------------------
 
 set.seed(123)
 
@@ -32,17 +29,22 @@ Sigma_list <- list(
   8 * diag(d)
 )
 
-X_mix <- do.call(rbind, lapply(1:5, function(i) {
-  MASS::mvrnorm(n = n_per_group, mu = means[[i]], Sigma = Sigma_list[[i]])
+X_mix <- do.call(rbind, lapply(seq_len(n_groups), function(i) {
+  MASS::mvrnorm(
+    n = n_per_group,
+    mu = means[[i]],
+    Sigma = Sigma_list[[i]]
+  )
 }))
 
-colors <- c("red", "orange", "green", "blue", "purple")
-color_gau <- rep(colors, each = n_per_group)
+gau <- as.data.frame(X_mix)
+names(gau) <- paste0("V", seq_len(d))
 
-gau <- X_mix
-gau_g <- data.frame(X_mix, color = color_gau)
+group_gau <- rep(paste0("group", seq_len(n_groups)), each = n_per_group)
+gau_g <- data.frame(gau, group = group_gau)
 
-# 3. adult (numeric subset) ----------------------------------------------
+
+# 2. Adult numeric data ---------------------------------------------------
 
 colnames_adult <- c(
   "age", "workclass", "fnlwgt", "education", "education_num",
@@ -53,23 +55,35 @@ colnames_adult <- c(
 
 adult_data <- read.table(
   "data-raw/adult.data",
-  sep           = ",",
-  strip.white   = TRUE,
-  header        = FALSE,
-  col.names     = colnames_adult,
-  na.strings    = "?",
+  sep = ",",
+  strip.white = TRUE,
+  header = FALSE,
+  col.names = colnames_adult,
+  na.strings = "?",
   stringsAsFactors = FALSE
 )
 
-numeric_vars <- c("age", "education_num",
-                  "capital_gain", "capital_loss",
-                  "hours_per_week")
+numeric_vars <- c(
+  "age",
+  "education_num",
+  "capital_gain",
+  "capital_loss",
+  "hours_per_week"
+)
 
 adult <- adult_data[, numeric_vars]
 
-usethis::use_data(eur_map, eur_map_g,
-                  gau, gau_g,
-                  adult,
-                  overwrite = TRUE)
+# The selected five numerical variables do not contain missing values
+# in the original Adult data file used here.
+stopifnot(!anyNA(adult))
+
+
+# 3. Save package data ----------------------------------------------------
+
+usethis::use_data(
+  gau, gau_g, adult,
+  overwrite = TRUE,
+  compress = "xz"
+)
 
 

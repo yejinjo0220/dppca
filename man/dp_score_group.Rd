@@ -93,7 +93,7 @@ X <- head(gau_g, 60)
 set.seed(123)
 group_out <- dp_score_group(
   X,
-  group = "color",
+  group = "group",
   eps = 1,
   delta = 1e-2,
   bins = c(3, 3),

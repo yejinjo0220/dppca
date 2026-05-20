@@ -1,63 +1,116 @@
-#' Adult data example
+#' Adult numeric data
 #'
-#' A sample dataset used for examples in the dppca package.
+#' A numerical subset of the Adult dataset from the UCI Machine Learning
+#' Repository. The original Adult dataset is based on data extracted from
+#' the 1994 United States Census database.
 #'
-#' @docType data
-
-#' @usage data(adult)
-
-#' @format 32,651 by 5 numeric matrix
-
-#' @source Prepared for examples in the dppca package.
-#'         (*We need to add a reference of this dataset*)
-
-#' @keywords datasets
+#' This package dataset retains five numerical variables:
+#' `age`, `education_num`, `capital_gain`, `capital_loss`, and
+#' `hours_per_week`. These selected numerical variables contain no missing
+#' values in the original data file used here. The resulting dataset contains
+#' 32,561 observations.
+#'
+#' Since the variables have substantially different units and scales, scaling
+#' is recommended before applying PCA-based methods.
+#'
+#' @format A data frame with 32,561 rows and 5 columns:
+#' \describe{
+#'   \item{age}{Age of the individual.}
+#'   \item{education_num}{Number of years of education.}
+#'   \item{capital_gain}{Capital gain.}
+#'   \item{capital_loss}{Capital loss.}
+#'   \item{hours_per_week}{Number of working hours per week.}
+#' }
+#'
+#' @source
+#' UCI Machine Learning Repository, Adult dataset.
+#' The Adult dataset is licensed under the Creative Commons Attribution 4.0
+#' International (CC BY 4.0) license.
+#'
+#' @references
+#' Becker, B. and Kohavi, R. (1996).
+#' Adult dataset. UCI Machine Learning Repository.
+#'
 "adult"
 
-#' Europe map PCA data
-#'
-#' A dataset used for PCA score plot examples.
-#'
-#' @docType data
-#' @usage data(eur_map)
-#' @format A data frame or matrix.
-#' @source Prepared for examples in the dppca package.
-#'         (*We need to add a reference of this dataset*)
-#' @keywords datasets
-"eur_map"
 
-#' Group labels for Europe map data
+#' Five Gaussian clusters
 #'
-#' Group labels corresponding to observations in \code{eur_map}.
+#' A simulated 20-dimensional Gaussian cluster dataset used as an example for
+#' principal component analysis and differentially private PCA visualization.
 #'
-#' @docType data
-#' @usage data(eur_map_g)
-#' @format A vector or data frame containing group labels.
-#' @source Prepared for examples in the dppca package.
-#' @keywords datasets
-"eur_map_g"
-
-#' Gaussian example data
+#' The dataset contains 5,000 observations in 20 dimensions. It consists of
+#' five groups, with 1,000 observations in each group. Each group is generated
+#' from a multivariate normal distribution. The group mean vectors and
+#' covariance matrices are chosen differently across groups so that the data
+#' contain both separated and partially overlapping cluster structures.
 #'
-#' A simulated Gaussian dataset used for examples.
+#' @format A data frame with 5,000 rows and 20 columns:
+#' \describe{
+#'   \item{V1}{Simulated numerical variable.}
+#'   \item{V2}{Simulated numerical variable.}
+#'   \item{V3}{Simulated numerical variable.}
+#'   \item{V4}{Simulated numerical variable.}
+#'   \item{V5}{Simulated numerical variable.}
+#'   \item{V6}{Simulated numerical variable.}
+#'   \item{V7}{Simulated numerical variable.}
+#'   \item{V8}{Simulated numerical variable.}
+#'   \item{V9}{Simulated numerical variable.}
+#'   \item{V10}{Simulated numerical variable.}
+#'   \item{V11}{Simulated numerical variable.}
+#'   \item{V12}{Simulated numerical variable.}
+#'   \item{V13}{Simulated numerical variable.}
+#'   \item{V14}{Simulated numerical variable.}
+#'   \item{V15}{Simulated numerical variable.}
+#'   \item{V16}{Simulated numerical variable.}
+#'   \item{V17}{Simulated numerical variable.}
+#'   \item{V18}{Simulated numerical variable.}
+#'   \item{V19}{Simulated numerical variable.}
+#'   \item{V20}{Simulated numerical variable.}
+#' }
 #'
-#' @docType data
-#' @usage data(gau)
-#' @format A data frame or matrix.
-#' @source Simulated for examples in the dppca package.
-#'         (*Describe how we generate this dataset in the description*)
-#' @keywords datasets
+#' @source
+#' Simulated by the authors of the package. The data-generating code is
+#' available in `data-raw/make_datasets.R` in the package source repository.
+#'
 "gau"
 
-#' Group labeled Gaussian example data
+
+#' Five Gaussian clusters with group labels
 #'
-#' Gaussian example data \code{gau} with group labels.
+#' A grouped version of [`gau`] with an additional group label column.
 #'
-#' @docType data
-#' @usage data(gau_g)
-#' @format A vector or data frame containing group labels.
-#' @source Simulated for examples in the dppca package.
-#' @keywords datasets
+#' The dataset contains 5,000 observations in 20 dimensions and one group label
+#' column. There are five groups, and each group contains 1,000 observations.
+#'
+#' @format A data frame with 5,000 rows and 21 columns:
+#' \describe{
+#'   \item{V1}{Simulated numerical variable.}
+#'   \item{V2}{Simulated numerical variable.}
+#'   \item{V3}{Simulated numerical variable.}
+#'   \item{V4}{Simulated numerical variable.}
+#'   \item{V5}{Simulated numerical variable.}
+#'   \item{V6}{Simulated numerical variable.}
+#'   \item{V7}{Simulated numerical variable.}
+#'   \item{V8}{Simulated numerical variable.}
+#'   \item{V9}{Simulated numerical variable.}
+#'   \item{V10}{Simulated numerical variable.}
+#'   \item{V11}{Simulated numerical variable.}
+#'   \item{V12}{Simulated numerical variable.}
+#'   \item{V13}{Simulated numerical variable.}
+#'   \item{V14}{Simulated numerical variable.}
+#'   \item{V15}{Simulated numerical variable.}
+#'   \item{V16}{Simulated numerical variable.}
+#'   \item{V17}{Simulated numerical variable.}
+#'   \item{V18}{Simulated numerical variable.}
+#'   \item{V19}{Simulated numerical variable.}
+#'   \item{V20}{Simulated numerical variable.}
+#'   \item{group}{Group label. One of `group1`, `group2`, `group3`,
+#'   `group4`, or `group5`.}
+#' }
+#'
+#' @source
+#' Simulated by the authors of the package. The data-generating code is
+#' available in `data-raw/make_datasets.R` in the package source repository.
+#'
 "gau_g"
-
-

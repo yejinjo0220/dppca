@@ -5,8 +5,8 @@
 #' \code{dp_score_plot()} with the updated scree and score method options.
 #' If \code{X} is supplied, the app opens using that
 #' data. If \code{group} is supplied, the score plot uses the grouped version
-#' when the group labels are available. If \code{group = "color"}, the
-#' column named \code{color} is used as group labels and removed from the
+#' when the group labels are available. If \code{group = "group"}, the
+#' column named \code{group} is used as group labels and removed from the
 #' PCA feature matrix. In the app, the scree menu uses checkboxes and can overlay
 #' \code{method = "clipped"}, \code{method = "pmwm"}, \code{method = "huber"},
 #' or a vector such as \code{method = c("clipped", "pmwm", "huber")}. The
@@ -27,7 +27,7 @@
 #' \dontrun{
 #' dppca_app()
 #' dppca_app(gau)
-#' dppca_app(gau_g, group = "color")
+#' dppca_app(gau_g, group = "group")
 #' }
 #'
 #' @export

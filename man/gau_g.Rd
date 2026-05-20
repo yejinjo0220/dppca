@@ -3,17 +3,46 @@
 \docType{data}
 \name{gau_g}
 \alias{gau_g}
-\title{Group labeled Gaussian example data}
+\title{Five Gaussian clusters with group labels}
 \format{
-A vector or data frame containing group labels.
+A data frame with 5,000 rows and 21 columns:
+\describe{
+\item{V1}{Simulated numerical variable.}
+\item{V2}{Simulated numerical variable.}
+\item{V3}{Simulated numerical variable.}
+\item{V4}{Simulated numerical variable.}
+\item{V5}{Simulated numerical variable.}
+\item{V6}{Simulated numerical variable.}
+\item{V7}{Simulated numerical variable.}
+\item{V8}{Simulated numerical variable.}
+\item{V9}{Simulated numerical variable.}
+\item{V10}{Simulated numerical variable.}
+\item{V11}{Simulated numerical variable.}
+\item{V12}{Simulated numerical variable.}
+\item{V13}{Simulated numerical variable.}
+\item{V14}{Simulated numerical variable.}
+\item{V15}{Simulated numerical variable.}
+\item{V16}{Simulated numerical variable.}
+\item{V17}{Simulated numerical variable.}
+\item{V18}{Simulated numerical variable.}
+\item{V19}{Simulated numerical variable.}
+\item{V20}{Simulated numerical variable.}
+\item{group}{Group label. One of \code{group1}, \code{group2}, \code{group3},
+\code{group4}, or \code{group5}.}
+}
 }
 \source{
-Simulated for examples in the dppca package.
+Simulated by the authors of the package. The data-generating code is
+available in \code{data-raw/make_datasets.R} in the package source repository.
 }
 \usage{
-data(gau_g)
+gau_g
 }
 \description{
-Gaussian example data \code{gau} with group labels.
+A grouped version of \code{\link{gau}} with an additional group label column.
+}
+\details{
+The dataset contains 5,000 observations in 20 dimensions and one group label
+column. There are five groups, and each group contains 1,000 observations.
 }
 \keyword{datasets}

@@ -387,7 +387,7 @@ dp_score_plot <- function(
 #' set.seed(123)
 #' group_out <- dp_score_group(
 #'   X,
-#'   group = "color",
+#'   group = "group",
 #'   eps = 1,
 #'   delta = 1e-2,
 #'   bins = c(3, 3),
@@ -538,7 +538,7 @@ dp_score_group <- function(
 #' set.seed(123)
 #' p <- dp_score_plot_group(
 #'   X,
-#'   group = "color",
+#'   group = "group",
 #'   eps = 1,
 #'   delta = 1e-5,
 #'   bins = c(8, 8),
