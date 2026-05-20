@@ -23,7 +23,7 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Minwoo Kim \email{mwkim.stat@gmail.com}
+  \item Minwoo Kim \email{ekfgusdl@snu.ac.kr}
 }
 
 }

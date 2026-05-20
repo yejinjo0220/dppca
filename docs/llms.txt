@@ -15,7 +15,6 @@ interface close to the standard PCA workflow in R.
 You can install the development version from GitHub with:
 
 ``` r
-
 devtools::install_github("yejinjo0220/dppca")
 ```
 
@@ -23,7 +22,6 @@ After the package is available on CRAN, you will be able to install it
 with:
 
 ``` r
-
 install.packages("dppca")
 ```
 
@@ -38,7 +36,6 @@ estimates leading principal component directions under differential
 privacy.
 
 ``` r
-
 V_dp <- dp_pc_dir(
   X,
   k = 2,
@@ -60,7 +57,6 @@ computes private scree values or proportions of variance explained using
 one of several private estimators.
 
 ``` r
-
 res <- dp_scree(
   X,
   k = 5,
@@ -83,7 +79,6 @@ Method-specific tuning parameters are supplied through control helper
 functions:
 
 ``` r
-
 clipped_control(C_clip = 3)
 
 pmwm_control(
@@ -110,7 +105,6 @@ To draw a private scree/PVE plot, use
 [`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md):
 
 ``` r
-
 dp_scree_plot(
   X,
   k = 5,
@@ -140,7 +134,6 @@ computes differentially private PCA scores, and
 visualizes the first two private score coordinates.
 
 ``` r
-
 score_res <- dp_score(
   X,
   k = 2,
@@ -174,7 +167,6 @@ options are:
 Grouped score plots are also supported:
 
 ``` r
-
 dp_score_plot_group(
   X,
   group = group_labels,
@@ -213,7 +205,6 @@ vignettes:
 For example:
 
 ``` r
-
 data(gau)
 data(gau_g)
 
@@ -226,7 +217,6 @@ head(gau_g)
 A typical analysis consists of the following steps.
 
 ``` r
-
 library(dppca)
 
 # 1. Load or prepare a numeric data matrix
@@ -284,7 +274,6 @@ dp_score_plot_group(
 Most user-facing PCA functions accept:
 
 ``` r
-
 center = TRUE
 standardize = FALSE
 ```
@@ -302,6 +291,17 @@ associated methodological references described in the vignettes.
 
 This package is released under the license specified in the
 `DESCRIPTION` file.
+
+## Data sources
+
+The package includes a numerical subset of the Adult dataset from the
+UCI Machine Learning Repository. The Adult dataset is licensed under the
+Creative Commons Attribution 4.0 International (CC BY 4.0) license. We
+retain five numerical variables: `age`, `education_num`, `capital_gain`,
+`capital_loss`, and `hours_per_week`.
+
+The package also includes simulated Gaussian cluster datasets generated
+by the package authors for reproducible examples.
 
 # Package index
 
@@ -362,15 +362,11 @@ score plots.
 Datasets included for examples and demonstrations.
 
 - [`adult`](https://yejinjo0220.github.io/dppca/reference/adult.md) :
-  Adult data example
-- [`eur_map`](https://yejinjo0220.github.io/dppca/reference/eur_map.md)
-  : Europe map PCA data
-- [`eur_map_g`](https://yejinjo0220.github.io/dppca/reference/eur_map_g.md)
-  : Group labels for Europe map data
-- [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md) :
-  Gaussian example data
+  Adult numeric data
+- [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md) : Five
+  Gaussian clusters
 - [`gau_g`](https://yejinjo0220.github.io/dppca/reference/gau_g.md) :
-  Group labeled Gaussian example data
+  Five Gaussian clusters with group labels
 
 # Articles
 

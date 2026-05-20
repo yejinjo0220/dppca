@@ -14,6 +14,7 @@ The package considers three main methods as follows.
 
 Let
 ``` math
+
 X \in \mathbb{R}^{n \times p}
 ```
 
@@ -22,6 +23,7 @@ centered, and possibly standardized.
 
 Let
 ``` math
+
 V_k = [v_1,\ldots,v_k] \in \mathbb{R}^{p \times k}
 ```
 
@@ -35,6 +37,7 @@ way.
 In the sample PCA case, the $`\ell`$-th scree value is
 
 ``` math
+
 \hat\lambda_\ell
 =
 v_\ell^\top \hat\Sigma v_\ell
@@ -54,6 +57,7 @@ score vector $`z_\ell = X v_\ell`$.
 The sample variance of the $`\ell`$-th score vector is
 
 ``` math
+
 \hat\lambda_\ell
 =
 \frac{1}{n-1}
@@ -77,6 +81,7 @@ we first privately estimate the mean of $`W_{1\ell},\ldots,W_{n\ell}`$,
 and then rescale it by $`n/(n-1)`$.
 
 ``` math
+
 \widetilde{\lambda}_\ell
 =
 \frac{n}{n-1}
@@ -94,6 +99,7 @@ interval and then add Gaussian noise.
 
 Choose a clipping threshold
 ``` math
+
 C > 0.
 ```
 
@@ -102,12 +108,14 @@ $`w_{i\ell}^{\mathrm{clip}} = \min(w_{i\ell}, C)`$.
 
 Then
 ``` math
+
 0 \leq w_{i\ell}^{\mathrm{clip}} \leq C.
 ```
 
 The clipped empirical mean is
 
 ``` math
+
 \hat\mu_\ell^{\mathrm{clip}}
 =
 \frac{1}{n}
@@ -121,6 +129,7 @@ w_{i\ell}^{\mathrm{clip}}
 
 The corresponding non-private clipped scree estimate is
 ``` math
+
 \hat\lambda_\ell^{\mathrm{clip}} = \frac{n}{n-1} \hat\mu_\ell^{\mathrm{clip}}.
 ```
 
@@ -133,6 +142,7 @@ After multiplying by $`n/(n-1)`$, the sensitivity of the clipped scree
 estimate is
 
 ``` math
+
 \Delta_\ell
 \leq
 \frac{n}{n-1}
@@ -148,6 +158,7 @@ For privacy parameters $`(\epsilon_\ell,\delta_\ell)`$, the Gaussian
 mechanism releases
 
 ``` math
+
 \widetilde\lambda_\ell^{\mathrm{clip}}
 =
 \hat\lambda_\ell^{\mathrm{clip}}
@@ -158,10 +169,12 @@ mechanism releases
 where
 
 ``` math
+
 \xi_\ell \sim N(0,\sigma_\ell^2)
 ```
 and
 ``` math
+
 \sigma_\ell
 =
 \frac{\Delta_\ell\sqrt{2\log(1.25/\delta_\ell)}}{\epsilon_\ell}
@@ -182,11 +195,11 @@ on the choice of the clipping threshold $`C`$.
 In the `dppca`, we set clipped-mean parameter by
 
 ``` math
+
 \texttt{scree\_clipped\_control(C\_clip = C)}.
 ```
 
 ``` r
-
 library(dppca)
 dp_scree(
   X,
@@ -214,6 +227,7 @@ a robust loss function instead of the ordinary sample mean.
 For a robustification parameter $`\tau > 0`$, the Huber loss is
 
 ``` math
+
 \rho_\tau(r)
 =
 \begin{cases}
@@ -229,6 +243,7 @@ extreme observations.
 The derivative of the Huber loss is the score function
 
 ``` math
+
 \psi_\tau(r)
 =
 \rho_\tau'(r)
@@ -248,6 +263,7 @@ $`[-\tau,\tau]`$.
 For the $`\ell`$-th component, the Huber mean estimator is defined as
 
 ``` math
+
 \hat\mu_{\tau,\ell}
 \in
 \arg\min_{\mu \in \mathbb{R}}
@@ -259,6 +275,7 @@ For the $`\ell`$-th component, the Huber mean estimator is defined as
 The first-order condition is
 
 ``` math
+
 \frac{1}{n}
 \sum_{i=1}^n
 \psi_\tau(w_{i\ell}-\mu)
@@ -278,6 +295,7 @@ Given the current estimate $`\mu_\ell^{(t)}`$ at iteration $`t`$, we
 define the corresponding residuals as
 
 ``` math
+
 r_{i\ell}^{(t)}
 =
 w_{i\ell}
@@ -291,6 +309,7 @@ The clipped score values are $`\psi_\tau(r_{i\ell}^{(t)})`$,
 and the average gradient type quantity is
 
 ``` math
+
 g_\ell^{(t)}
 =
 \frac{1}{n}
@@ -301,6 +320,7 @@ g_\ell^{(t)}
 A non-private update would take the form
 
 ``` math
+
 \mu_\ell^{(t+1)}
 =
 \mu_\ell^{(t)}
@@ -313,6 +333,7 @@ A non-private update would take the form
 To ensure privacy, Gaussian noise is added at each iteration.
 
 ``` math
+
 \mu_\ell^{(t+1)} = \mu_\ell^{(t)} + \eta_t g_\ell^{(t)} + \xi_\ell^{(t)}
 \quad \text{where} \quad
 \xi_\ell^{(t)} \sim N(0,\sigma_{t,\ell}^2).
@@ -323,6 +344,7 @@ To ensure privacy, Gaussian noise is added at each iteration.
 Since
 
 ``` math
+
 \psi_\tau(r) \in [-\tau,\tau],
 ```
 
@@ -333,6 +355,7 @@ After multiplying by the step size $`\eta_t`$, the one-step sensitivity
 is
 
 ``` math
+
 \Delta_{\mathrm{step}} = \frac{2\eta_t \tau}{n}.
 ```
 
@@ -345,12 +368,14 @@ After $`T`$ noisy gradient descent steps, let the final private Huber
 mean estimate be
 
 ``` math
+
 \mu_\ell^{(T)}.
 ```
 
 The final Huber scree estimate is
 
 ``` math
+
 \widetilde\lambda_\ell^{\mathrm{Huber}}
 =
 \frac{n}{n-1}
@@ -373,6 +398,7 @@ In the Huber DP mean, $`\tau`$ is chosen using a scale quantity related
 to the second moment. A typical theoretical form is
 
 ``` math
+
 \tau
 \asymp
 \sqrt{m_2}
@@ -385,6 +411,7 @@ to the second moment. A typical theoretical form is
 where
 
 ``` math
+
 m_2 = \mathbb{E}\|X-\mu\|_2^2 \quad \text{is a second-moment scale.}
 ```
 
@@ -418,6 +445,7 @@ the [Yu, Ren, and Zhou (2024)](#ref-Yu2024)
   searches over scale levels $`2^k`$ for
 
   ``` math
+
    k_{\min} \le k \le k_{\max}.
    
   ```
@@ -438,12 +466,12 @@ the [Yu, Ren, and Zhou (2024)](#ref-Yu2024)
 In `dppca`, the Huber scree estimator is controlled by
 
 ``` math
+
 \texttt{scree\_huber\_control(
 mu0,\ eta0,\ T,\ M,\ k\_min\_m2,\ k\_max\_m2,\ m2\_frac)}.
 ```
 
 ``` r
-
 dp_scree(
   X,
   k = 3,
@@ -487,6 +515,7 @@ and upper quantiles.
 Define the function
 
 ``` math
+
 \phi_{a,b}(x)
 =
 \begin{cases}
@@ -499,6 +528,7 @@ b, & x > b.
 The non-private modified winsorized mean is
 
 ``` math
+
 \hat\mu_p
 =
 \frac{1}{n}
@@ -519,6 +549,7 @@ In the theoretical description, the data may be split into two subsets:
 
 If the full sample size is $`n`$, a simple split is
 ``` math
+
 n_q = n_m = \frac{n}{2}.
 ```
 
@@ -530,12 +561,14 @@ each step instead of splitting the sample.
 PMWM uses private quantile estimates instead of non-private empirical
 quantiles. For component $`\ell`$, let the clipping proportion be
 ``` math
+
 p_\ell = \zeta_\ell.
 ```
 
 A theoretical choice has the form
 
 ``` math
+
 \zeta_\ell
 =
 16\eta
@@ -561,6 +594,7 @@ For practical implementation, the paper suggests using the clipping
 proportion
 
 ``` math
+
 p
 =
 \frac{C}{n_q} \vee \eta,
@@ -575,6 +609,7 @@ Let $`L_\ell`$ and $`U_\ell`$ be private estimates of the lower and
 upper quantiles.
 
 ``` math
+
 L_\ell \approx Q_{\zeta_\ell}(w_{1\ell},\ldots,w_{n\ell}),
 \quad \text{and} \quad
 U_\ell \approx Q_{1-\zeta_\ell}(w_{1\ell},\ldots,w_{n\ell}).
@@ -583,6 +618,7 @@ U_\ell \approx Q_{1-\zeta_\ell}(w_{1\ell},\ldots,w_{n\ell}).
 Define the winsorized observations by
 
 ``` math
+
 w_{i\ell}^{\mathrm{win}}
 =
 \min\left\{
@@ -599,6 +635,7 @@ Equivalently,
 
 Thus,
 ``` math
+
 L_\ell
 \leq
 w_{i\ell}^{\mathrm{win}}
@@ -612,6 +649,7 @@ $`\hat\mu_\ell^{\mathrm{win}} = \frac{1}{n_m} \sum_{i\in I_m} w_{i\ell}^{\mathrm
 The corresponding non-private winsorized scree estimate is
 
 ``` math
+
 \hat\lambda_\ell^{\mathrm{PMWM,np}}
 =
 \frac{n}{n-1}
@@ -624,6 +662,7 @@ Because all winsorized observations lie in $`[L_\ell,U_\ell]`$, the
 sensitivity of the winsorized mean is
 
 ``` math
+
 \Delta_\ell^{(\mu)}
 =
 \frac{U_\ell-L_\ell}{n_m}.
@@ -637,6 +676,7 @@ $`\Delta_\ell^{(\lambda)} = \frac{n}{n-1} \cdot \frac{U_\ell-L_\ell}{n_m}`$.
 The final PMWM scree estimate can be written as
 
 ``` math
+
 \widetilde\lambda_\ell^{\mathrm{PMWM}}
 =
 \hat\lambda_\ell^{\mathrm{PMWM,np}} + Z_\ell 
@@ -648,6 +688,7 @@ For privacy parameters $`(\epsilon_{M,\ell},\delta_{M,\ell})`$, the
 noise scale is
 
 ``` math
+
 \sigma_\ell
 =
 \frac{
@@ -677,6 +718,7 @@ $`(\epsilon_\ell,\delta_\ell)`$.
 
 This can be split as
 ``` math
+
 \epsilon_\ell
 =
 \epsilon_{Q,\ell}
@@ -694,6 +736,7 @@ The quantile budget itself is used to estimate two quantiles, so it can
 be split again.
 
 ``` math
+
 \epsilon_{Q,\ell}
 =
 \epsilon_{q1,\ell}
@@ -724,6 +767,7 @@ estimation and winsorization.
 - `trim_const`, `eta`: Parameters used to set the practical clipping
   proportion
   ``` math
+
   p
   =
   \min\left\{
@@ -749,12 +793,12 @@ estimation and winsorization.
 In `dppca`, the PMWM-specific parameters can be specified through
 
 ``` math
+
 \text{scree_pmw_control(
 beta = beta,a = a,b = b, trim_const = C, eta = eta split_mode = split)}
 ```
 
 ``` r
-
 dp_scree(
   X,
   k = 3,
@@ -779,6 +823,7 @@ dp_scree(
 Because of the added privacy noise, the raw DP scree estimates
 
 ``` math
+
 (\widetilde\lambda_1,\ldots,\widetilde\lambda_k)
 ```
 
@@ -788,6 +833,7 @@ values may be negative.
 In ordinary PCA, scree values satisfy
 
 ``` math
+
 \lambda_1 \ge \lambda_2 \ge \cdots \ge \lambda_k \ge 0.
 ```
 
@@ -795,6 +841,7 @@ Therefore, `dppca` can apply post-processing to make the DP scree
 estimates nonnegative and decreasing.
 
 ``` math
+
 \widetilde\lambda_1^{\mathrm{mono}}
 \ge
 \widetilde\lambda_2^{\mathrm{mono}}
@@ -810,6 +857,7 @@ If monotone post-processing is used, the PVE can be computed from the
 post-processed scree values.
 
 ``` math
+
 \widetilde{\operatorname{PVE}}_\ell^{\mathrm{mono}}
 =
 \frac{\widetilde\lambda_\ell^{\mathrm{mono}}}
@@ -822,7 +870,6 @@ not use any additional privacy budget.
 ### Example usage
 
 ``` r
-
 dp_scree_plot(
   X,
   k = 3,
@@ -836,7 +883,6 @@ dp_scree_plot(
 ```
 
 ``` r
-
 dp_scree_plot(
   X,
   k = 3,

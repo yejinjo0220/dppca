@@ -14,6 +14,7 @@ directions can be computed in two different ways.
 Let
 
 ``` math
+
 X =
 \begin{bmatrix}
 X_1^\top \\
@@ -31,6 +32,7 @@ optionally standardized.
 The principal component direction matrix is denoted by
 
 ``` math
+
 V_k = [v_1,\ldots,v_k] \in \mathbb{R}^{p \times k},
 ```
 
@@ -44,6 +46,7 @@ The corresponding score matrix is $`Z = X V_k`$.
 The classical sample covariance matrix is
 
 ``` math
+
 \hat\Sigma
 =
 \frac{1}{n-1}X^\top X.
@@ -53,6 +56,7 @@ The non-private PCA directions are obtained from the eigenvalue
 decomposition
 
 ``` math
+
 \hat\Sigma
 =
 \hat V \hat\Lambda \hat V^\top,
@@ -61,6 +65,7 @@ decomposition
 where
 
 ``` math
+
 \hat V = [\hat v_1,\ldots,\hat v_p],
 \quad
 \hat\Lambda
@@ -75,6 +80,7 @@ The $`\ell`$-th sample principal component direction is $`\hat v_\ell`$.
 Equivalently,
 
 ``` math
+
 \hat v_\ell
 =
 \arg\max_{\|v\|_2 = 1}
@@ -90,6 +96,7 @@ In the non-private option of `dppca`, the direction matrix used for
 projection is
 
 ``` math
+
 \hat V_k = [\hat v_1,\ldots,\hat v_k].
 ```
 
@@ -105,6 +112,7 @@ $`\xi: (0, \infty) \to (0, \infty)`$, consider a map
 $`g_\xi: \mathbb{R}^d \to \mathbb{R}^d`$ defined as
 
 ``` math
+
 g_\xi(t) = \xi(\|t\|_2)\cdot \frac{t}{\|t\|_2}.
 ```
 
@@ -115,6 +123,7 @@ The *generalized multivariate Kendall’s tau* matrix with respect to
 $`g_\xi`$ is defined as
 
 ``` math
+
 K_{g_\xi} = \mathbb{E}_{X, X'}\left[ g_\xi\left( \frac{X - X'}{\sqrt{2}}\right) 
             g_\xi\left( \frac{X - X'}{\sqrt{2}}\right)^\top ~ \right],
 ```
@@ -131,6 +140,7 @@ random sample $`S = (X_1, \dots, X_n)`$, the second order *U*-statistic
 of $`K_{g}`$ can be written as
 
 ``` math
+
 \widehat{K}_g(S) = \frac{2}{n(n-1)} \sum_{i < j} g\left(\frac{X_j - X_i}{\sqrt{2}}\right)
      g\left(\frac{X_j - X_i}{\sqrt{2}}\right)^\top.
 ```
@@ -139,6 +149,7 @@ Note that the sensitivity of $`\widehat{K}_g`$ with respect to the
 Frobenius norm can be upper bounded by
 
 ``` math
+
 \Delta_F(\widehat{K}_g) 
 = \sup_{S \sim S'} \|\widehat{K}_g(S) - \widehat{K}_g(S')\|_F
 \le \frac{4\|g\|_\infty^2}{n}.
@@ -148,6 +159,7 @@ So, for a dataset $`S = (x_1, \dots, x_n)`$ the randomized mechanism
 $`\bar{K}_g`$ defined as
 
 ``` math
+
 \bar{K}_g(S) :=   
 \frac{2}{n(n-1)} \sum_{i < j} g\left(\frac{x_j-x_i}{\sqrt{2}}\right)g\left(\frac{x_j-x_i}{\sqrt{2}}\right)^\top + \mbox{vecd}^{-1}(\xi),
 ```

@@ -101,8 +101,6 @@ reference:
     Datasets included for examples and demonstrations.
   contents:
   - adult
-  - eur_map
-  - eur_map_g
   - gau
   - gau_g
 

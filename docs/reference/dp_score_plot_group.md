@@ -129,7 +129,7 @@ X <- head(gau_g, 60)
 set.seed(123)
 p <- dp_score_plot_group(
   X,
-  group = "color",
+  group = "group",
   eps = 1,
   delta = 1e-5,
   bins = c(8, 8),

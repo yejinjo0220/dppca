@@ -28,6 +28,7 @@ The package considers three main methods:
 
 Let
 ``` math
+
 X_{\mathrm{proc}} \in \mathbb{R}^{n \times p}
 ```
 be the preprocessed data matrix. In most PCA workflows, this means that
@@ -35,6 +36,7 @@ the data have been centered, and possibly standardized.
 
 Let
 ``` math
+
 V_k = [v_1,\ldots,v_k] \in \mathbb{R}^{p \times k}
 ```
 be the matrix of principal component directions. Depending on the
@@ -42,23 +44,27 @@ analysis, $`V_k`$ may be non-private or differentially private.
 
 The score matrix is
 ``` math
+
 Y = X_{\mathrm{proc}} V_k.
 ```
 
 The goal is to estimate the scree vector
 ``` math
+
 \lambda = (\lambda_1,\ldots,\lambda_k)
 ```
 in a differentially private way.
 
 In the sample PCA case, the $`\ell`$-th scree value is
 ``` math
+
 \hat\lambda_\ell
 =
 v_\ell^\top \hat\Sigma v_\ell,
 ```
 where
 ``` math
+
 \hat\Sigma
 =
 \frac{1}{n-1}X_{\mathrm{proc}}^\top X_{\mathrm{proc}}.
@@ -66,6 +72,7 @@ where
 
 In `dppca`, we construct private estimates
 ``` math
+
 \widetilde\lambda_1,\ldots,\widetilde\lambda_k
 ```
 and use them to build a differentially private scree plot.
@@ -75,12 +82,14 @@ and use them to build a differentially private scree plot.
 For the $`\ell`$-th principal component direction $`v_\ell`$, define the
 score vector
 ``` math
+
 y_\ell = X_{\mathrm{proc}} v_\ell.
 ```
 
 Let $`y_{i\ell}`$ be the $`i`$-th score on component $`\ell`$, and
 define
 ``` math
+
 \bar y_\ell
 =
 \frac{1}{n}
@@ -89,6 +98,7 @@ define
 
 The sample variance of the $`\ell`$-th score vector is
 ``` math
+
 \hat\lambda_\ell
 =
 \frac{1}{n-1}
@@ -98,6 +108,7 @@ The sample variance of the $`\ell`$-th score vector is
 
 Define
 ``` math
+
 w_{i\ell}
 =
 (y_{i\ell}-\bar y_\ell)^2.
@@ -105,6 +116,7 @@ w_{i\ell}
 
 Then
 ``` math
+
 \hat\lambda_\ell
 =
 \frac{1}{n-1}
@@ -118,6 +130,7 @@ Then
 
 Therefore, scree estimation can be viewed as a mean estimation problem:
 ``` math
+
 \text{estimate}
 \qquad
 \frac{1}{n}\sum_{i=1}^n w_{i\ell}
@@ -127,6 +140,7 @@ Therefore, scree estimation can be viewed as a mean estimation problem:
 
 After obtaining a private mean estimate for the transformed values
 ``` math
+
 w_{1\ell},\ldots,w_{n\ell},
 ```
 we multiply by $`n/(n-1)`$ to obtain a private estimate of the scree
@@ -142,14 +156,17 @@ following workflow.
     or privately.
 3.  Compute the score matrix
     ``` math
+
     Y = X_{\mathrm{proc}}V_k.
     ```
 4.  For each component $`\ell = 1,\ldots,k`$, define
     ``` math
+
     w_{i\ell} = (y_{i\ell}-\bar y_\ell)^2.
     ```
 5.  Estimate the mean of
     ``` math
+
     w_{1\ell},\ldots,w_{n\ell}
     ```
     using a differentially private mean estimator.
@@ -171,11 +188,13 @@ interval and then add Gaussian noise.
 
 Choose a clipping threshold
 ``` math
+
 C_\ell > 0.
 ```
 
 Define the clipped observations by
 ``` math
+
 w_{i\ell}^{\mathrm{clip}}
 =
 \min(w_{i\ell}, C_\ell).
@@ -183,11 +202,13 @@ w_{i\ell}^{\mathrm{clip}}
 
 Then
 ``` math
+
 0 \leq w_{i\ell}^{\mathrm{clip}} \leq C_\ell.
 ```
 
 The clipped empirical mean is
 ``` math
+
 \hat\mu_\ell^{\mathrm{clip}}
 =
 \frac{1}{n}
@@ -201,6 +222,7 @@ w_{i\ell}^{\mathrm{clip}}
 
 The corresponding non-private clipped scree estimate is
 ``` math
+
 \hat\lambda_\ell^{\mathrm{clip}}
 =
 \frac{n}{n-1}
@@ -212,12 +234,14 @@ The corresponding non-private clipped scree estimate is
 Because each clipped observation lies in $`[0,C_\ell]`$, changing one
 observation can change the mean by at most
 ``` math
+
 \frac{C_\ell}{n}.
 ```
 
 After multiplying by $`n/(n-1)`$, the sensitivity of the clipped scree
 estimate is
 ``` math
+
 \Delta_\ell
 \leq
 \frac{n}{n-1}
@@ -232,6 +256,7 @@ estimate is
 For privacy parameters $`(\epsilon_\ell,\delta_\ell)`$, the Gaussian
 mechanism releases
 ``` math
+
 \widetilde\lambda_\ell^{\mathrm{clip}}
 =
 \hat\lambda_\ell^{\mathrm{clip}}
@@ -240,10 +265,12 @@ mechanism releases
 ```
 where
 ``` math
+
 \xi_\ell \sim N(0,\sigma_\ell^2)
 ```
 and
 ``` math
+
 \sigma_\ell
 =
 \frac{\Delta_\ell\sqrt{2\log(1.25/\delta_\ell)}}{\epsilon_\ell}
@@ -275,6 +302,7 @@ using a robust loss function instead of the ordinary sample mean.
 
 For a robustification parameter $`\tau > 0`$, the Huber loss is
 ``` math
+
 \rho_\tau(r)
 =
 \begin{cases}
@@ -289,6 +317,7 @@ extreme observations.
 
 The derivative of the Huber loss is the score function
 ``` math
+
 \psi_\tau(r)
 =
 \rho_\tau'(r)
@@ -307,6 +336,7 @@ $`[-\tau,\tau]`$.
 
 For the $`\ell`$-th component, the Huber mean estimator is defined as
 ``` math
+
 \hat\mu_{\tau,\ell}
 \in
 \arg\min_{\mu \in \mathbb{R}}
@@ -317,6 +347,7 @@ For the $`\ell`$-th component, the Huber mean estimator is defined as
 
 The first-order condition is
 ``` math
+
 \frac{1}{n}
 \sum_{i=1}^n
 \psi_\tau(w_{i\ell}-\mu)
@@ -335,6 +366,7 @@ The Huber objective is optimized using noisy gradient descent.
 Let $`\mu_\ell^{(t)}`$ be the current estimate at iteration $`t`$.
 Define the residuals
 ``` math
+
 r_{i\ell}^{(t)}
 =
 w_{i\ell}
@@ -344,10 +376,12 @@ w_{i\ell}
 
 The clipped score values are
 ``` math
+
 \psi_\tau(r_{i\ell}^{(t)}),
 ```
 and the average gradient-type quantity is
 ``` math
+
 g_\ell^{(t)}
 =
 \frac{1}{n}
@@ -357,6 +391,7 @@ g_\ell^{(t)}
 
 A non-private update would take the form
 ``` math
+
 \mu_\ell^{(t+1)}
 =
 \mu_\ell^{(t)}
@@ -367,6 +402,7 @@ where $`\eta_t > 0`$ is the step size.
 
 To ensure privacy, Gaussian noise is added at each iteration:
 ``` math
+
 \mu_\ell^{(t+1)}
 =
 \mu_\ell^{(t)}
@@ -377,6 +413,7 @@ To ensure privacy, Gaussian noise is added at each iteration:
 ```
 where
 ``` math
+
 \xi_\ell^{(t)}
 \sim
 N(0,\sigma_{t,\ell}^2).
@@ -386,16 +423,19 @@ N(0,\sigma_{t,\ell}^2).
 
 Since
 ``` math
+
 \psi_\tau(r) \in [-\tau,\tau],
 ```
 changing one observation can change the average score by at most
 ``` math
+
 \frac{2\tau}{n}.
 ```
 
 After multiplying by the step size $`\eta_t`$, the one-step sensitivity
 is
 ``` math
+
 \Delta_{\mathrm{step}}
 =
 \frac{2\eta_t \tau}{n}.
@@ -416,6 +456,7 @@ but may be less robust and may require more noise.
 In the Huber GDP mean framework, $`\tau`$ is chosen using a scale
 quantity related to the second moment. A typical theoretical form is
 ``` math
+
 \tau
 \asymp
 \sqrt{m_2}
@@ -426,6 +467,7 @@ quantity related to the second moment. A typical theoretical form is
 ```
 where
 ``` math
+
 m_2 = \mathbb{E}\|X-\mu\|_2^2
 ```
 is a second-moment scale.
@@ -440,11 +482,13 @@ purpose.
 After $`T`$ noisy gradient descent steps, let the final private Huber
 mean estimate be
 ``` math
+
 \mu_\ell^{(T)}.
 ```
 
 The final Huber scree estimate is
 ``` math
+
 \widetilde\lambda_\ell^{\mathrm{Huber}}
 =
 \frac{n}{n-1}
@@ -468,11 +512,13 @@ while maintaining differential privacy.
 The non-private modified winsorized mean starts with a clipping
 proportion
 ``` math
+
 0 < p < \frac{1}{2}.
 ```
 
 Let
 ``` math
+
 \hat\xi_p
 \quad\text{and}\quad
 \hat\xi_{1-p}
@@ -481,6 +527,7 @@ be empirical lower and upper quantiles.
 
 Define the projection function
 ``` math
+
 \phi_{a,b}(x)
 =
 \begin{cases}
@@ -492,6 +539,7 @@ b, & x > b.
 
 The non-private modified winsorized mean is
 ``` math
+
 \hat\mu_p
 =
 \frac{1}{n}
@@ -511,6 +559,7 @@ In the theoretical description, the data may be split into two subsets:
 
 If the full sample size is $`n`$, a simple split is
 ``` math
+
 n_q = n_m = \frac{n}{2}.
 ```
 
@@ -522,11 +571,13 @@ depending on the implementation.
 PMWM uses private quantile estimates instead of non-private empirical
 quantiles. For component $`\ell`$, let the clipping proportion be
 ``` math
+
 p_\ell = \zeta_\ell.
 ```
 
 A theoretical choice has the form
 ``` math
+
 \zeta_\ell
 =
 16\eta
@@ -548,6 +599,7 @@ where
 
 In practical implementations, a simpler clipping proportion such as
 ``` math
+
 \zeta_\ell
 =
 \frac{C}{n_q}\vee \eta
@@ -559,12 +611,14 @@ can be used, where $`C`$ is a user-chosen clipping count.
 Let $`L_\ell`$ and $`U_\ell`$ be private estimates of the lower and
 upper quantiles:
 ``` math
+
 L_\ell
 \approx
 Q_{\zeta_\ell}(w_{1\ell},\ldots,w_{n\ell}),
 ```
 and
 ``` math
+
 U_\ell
 \approx
 Q_{1-\zeta_\ell}(w_{1\ell},\ldots,w_{n\ell}).
@@ -572,6 +626,7 @@ Q_{1-\zeta_\ell}(w_{1\ell},\ldots,w_{n\ell}).
 
 Define the winsorized observations by
 ``` math
+
 w_{i\ell}^{\mathrm{win}}
 =
 \min\left\{
@@ -588,6 +643,7 @@ Equivalently,
 
 Thus,
 ``` math
+
 L_\ell
 \leq
 w_{i\ell}^{\mathrm{win}}
@@ -599,6 +655,7 @@ U_\ell.
 
 Using the mean estimation subset $`I_m`$, define
 ``` math
+
 \hat\mu_\ell^{\mathrm{win}}
 =
 \frac{1}{n_m}
@@ -608,6 +665,7 @@ w_{i\ell}^{\mathrm{win}}.
 
 The corresponding non-private winsorized scree estimate is
 ``` math
+
 \hat\lambda_\ell^{\mathrm{PMWM,np}}
 =
 \frac{n}{n-1}
@@ -619,6 +677,7 @@ The corresponding non-private winsorized scree estimate is
 Because all winsorized observations lie in $`[L_\ell,U_\ell]`$, the
 sensitivity of the winsorized mean is
 ``` math
+
 \Delta_\ell^{(\mu)}
 =
 \frac{U_\ell-L_\ell}{n_m}.
@@ -626,6 +685,7 @@ sensitivity of the winsorized mean is
 
 After multiplying by $`n/(n-1)`$, the scree sensitivity is
 ``` math
+
 \Delta_\ell^{(\lambda)}
 =
 \frac{n}{n-1}
@@ -637,6 +697,7 @@ After multiplying by $`n/(n-1)`$, the scree sensitivity is
 
 The final PMWM scree estimate can be written as
 ``` math
+
 \widetilde\lambda_\ell^{\mathrm{PMWM}}
 =
 \max\left\{
@@ -648,12 +709,14 @@ Z_\ell,
 ```
 where
 ``` math
+
 Z_\ell \sim N(0,\sigma_\ell^2).
 ```
 
 For privacy parameters $`(\epsilon_{M,\ell},\delta_{M,\ell})`$, the
 noise scale is
 ``` math
+
 \sigma_\ell
 =
 \frac{
@@ -683,11 +746,13 @@ private mean estimation.
 
 For component $`\ell`$, let the total component-level budget be
 ``` math
+
 (\epsilon_\ell,\delta_\ell).
 ```
 
 This can be split as
 ``` math
+
 \epsilon_\ell
 =
 \epsilon_{Q,\ell}
@@ -704,6 +769,7 @@ This can be split as
 The quantile budget itself is used to estimate two quantiles, so it can
 be split again:
 ``` math
+
 \epsilon_{Q,\ell}
 =
 \epsilon_{q1,\ell}
@@ -724,6 +790,7 @@ privacy budgets used across the quantile and mean estimation steps.
 
 The raw differentially private scree estimates
 ``` math
+
 (\widetilde\lambda_1,\ldots,\widetilde\lambda_k)
 ```
 may fail to satisfy the usual scree constraints because of the added
@@ -731,6 +798,7 @@ privacy noise.
 
 In ordinary PCA, scree values satisfy
 ``` math
+
 \lambda_1
 \geq
 \lambda_2
@@ -744,6 +812,7 @@ In ordinary PCA, scree values satisfy
 
 Therefore, `dppca` may apply monotone post-processing to obtain
 ``` math
+
 \widetilde\lambda_1^{\mathrm{mono}}
 \geq
 \widetilde\lambda_2^{\mathrm{mono}}
@@ -765,6 +834,7 @@ privacy budget.
 After obtaining private scree values, one may also report the private
 explained variance ratio:
 ``` math
+
 \widetilde{\operatorname{EVR}}_\ell
 =
 \frac{\widetilde\lambda_\ell}
@@ -774,6 +844,7 @@ explained variance ratio:
 If monotone post-processing is used, the EVR can be computed from the
 post-processed scree values:
 ``` math
+
 \widetilde{\operatorname{EVR}}_\ell^{\mathrm{mono}}
 =
 \frac{\widetilde\lambda_\ell^{\mathrm{mono}}}
@@ -796,7 +867,6 @@ The exact function arguments may depend on the installed version of
 `dppca`. A typical workflow is as follows.
 
 ``` r
-
 library(dppca)
 
 # x: numeric data matrix or data frame
@@ -816,7 +886,6 @@ out
 A Huber-based version may look like:
 
 ``` r
-
 out_huber <- dp_scree_plot(
   x,
   k = 5,
@@ -830,7 +899,6 @@ out_huber <- dp_scree_plot(
 A PMWM-based version may look like:
 
 ``` r
-
 out_pmwm <- dp_scree_plot(
   x,
   k = 5,

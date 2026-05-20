@@ -33,10 +33,14 @@ functions. The app uses a taller, centered scree plot panel
 so that the scree curves are not visually flattened on wide screens.
 }
 \examples{
-\dontrun{
-dppca_app()
-dppca_app(gau)
-dppca_app(gau_g, group = "group")
+if (interactive()) {
+  dppca_app()
+
+  data(gau, package = "dppca")
+  dppca_app(gau)
+
+  data(gau_g, package = "dppca")
+  dppca_app(gau_g, group = "group")
 }
 
 }

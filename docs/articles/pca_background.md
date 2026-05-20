@@ -4,11 +4,13 @@
 
 Suppose we observe $`n`$ data points
 ``` math
+
 X_1, X_2, \ldots, X_n \in \mathbb{R}^p.
 ```
 
 We write the data matrix as
 ``` math
+
 X =
 \begin{bmatrix}
 X_1^\top \\
@@ -29,6 +31,7 @@ To do this, PCA finds a direction $`v \in \mathbb{R}^p`$ such that the
 projected values
 
 ``` math
+
 X_i^\top v, \qquad i = 1,\ldots,n,
 ```
 
@@ -45,6 +48,7 @@ $`\Sigma = \operatorname{Cov}(Y)`$.
 The first population principal component direction is defined as
 
 ``` math
+
 v_1
 =
 \arg\max_{\|v\|_2 = 1}
@@ -66,6 +70,7 @@ direction, while being orthogonal to the previously chosen directions.
 For $`k \geq 2`$,
 
 ``` math
+
 v_k
 =
 \arg\max_{\|v\|_2 = 1}
@@ -88,10 +93,12 @@ from the eigenvalue decomposition of the covariance matrix $`\Sigma`$.
 We can write
 
 ``` math
+
 \Sigma = V \Lambda V^\top
 ```
 where
 ``` math
+
 V = [v_1,\ldots,v_p], 
 \quad
 \Lambda = \operatorname{diag}(\lambda_1,\ldots,\lambda_p), 
@@ -109,12 +116,14 @@ To see why the PCA directions are eigenvectors, consider the first
 principal component problem
 
 ``` math
+
 \max_{\|v\|_2 = 1} v^\top \Sigma v.
 ```
 
 Using the constraint $`v^\top v = 1`$, define the Lagrangian
 
 ``` math
+
 \mathcal{L}(v,\lambda)
 =
 v^\top \Sigma v
@@ -126,6 +135,7 @@ Taking the derivative with respect to $`v`$ and setting it equal to zero
 gives
 
 ``` math
+
 \frac{\partial \mathcal{L}}{\partial v}
 =
 2\Sigma v - 2\lambda v
@@ -136,6 +146,7 @@ gives
 Therefore,
 
 ``` math
+
 \Sigma v = \lambda v.
 ```
 
@@ -146,6 +157,7 @@ eigenvalue.
 For a unit eigenvector $`v`$, we have
 
 ``` math
+
 v^\top \Sigma v
 =
 v^\top (\lambda v)
@@ -158,6 +170,7 @@ v^\top (\lambda v)
 Thus,
 
 ``` math
+
 \max_{\|v\|_2 = 1} \operatorname{Var}(v^\top Y)
 =
 \max_{\|v\|_2 = 1} v^\top \Sigma v
@@ -173,6 +186,7 @@ Repeating this procedure under orthogonality constraints gives the
 remaining eigenvectors. Therefore,
 
 ``` math
+
 \Sigma v_j = \lambda_j v_j,
 \qquad
 j = 1,\ldots,p,
@@ -180,6 +194,7 @@ j = 1,\ldots,p,
 with
 
 ``` math
+
 \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_p \geq 0.
 ```
 
@@ -188,6 +203,7 @@ projected random variable along the $`\ell`$-th principal component
 direction
 
 ``` math
+
 \lambda_\ell
 =
 v_\ell^\top \Sigma v_\ell
@@ -202,6 +218,7 @@ we use the sample covariance matrix $`\hat\Sigma`$ instead.
 
 Let
 ``` math
+
 \bar X
 =
 \frac{1}{n}
@@ -211,6 +228,7 @@ Let
 be the sample mean. The sample covariance matrix is
 
 ``` math
+
 \hat\Sigma
 =
 \frac{1}{n-1}
@@ -221,6 +239,7 @@ be the sample mean. The sample covariance matrix is
 Equivalently, if $`X_c`$ denotes the centered data matrix, then
 
 ``` math
+
 \hat\Sigma
 =
 \frac{1}{n-1} X_c^\top X_c.
@@ -231,6 +250,7 @@ Equivalently, if $`X_c`$ denotes the centered data matrix, then
 The first sample principal component direction is
 
 ``` math
+
 \hat v_1
 =
 \arg\max_{\|v\|_2 = 1}
@@ -240,6 +260,7 @@ v^\top \hat\Sigma v.
 For $`\ell \geq 2`$,
 
 ``` math
+
 \hat v_\ell
 =
 \arg\max_{\|v\|_2 = 1}
@@ -256,6 +277,7 @@ obtained as the $`\ell`$-th eigenvector of $`\hat\Sigma`$, and the
 corresponding sample eigenvalue is
 
 ``` math
+
 \hat\lambda_\ell
 =
 \hat v_\ell^\top \hat\Sigma \hat v_\ell.
@@ -277,12 +299,14 @@ centered. Let $`\hat v_\ell`$ be the $`\ell`$-th sample principal
 component direction. The $`\ell`$-th PC score vector is defined as
 
 ``` math
+
 z_\ell = X \hat v_\ell \in \mathbb{R}^n.
 ```
 
 Equivalently, the $`i`$-th entry of $`z_\ell`$ is
 
 ``` math
+
 z_{i\ell} = x_i^\top \hat v_\ell,
 ```
 
@@ -293,6 +317,7 @@ If the first $`k`$ principal component directions are used, the score
 matrix is
 
 ``` math
+
 Z_k = X \hat V_k,
 \qquad
 \hat V_k = [\hat v_1,\ldots,\hat v_k].
@@ -307,6 +332,7 @@ groups.
 
 Let
 ``` math
+
 \hat\lambda_1 \ge \hat\lambda_2 \ge \cdots \ge \hat\lambda_p \ge 0
 ```
 
@@ -318,6 +344,7 @@ component direction.
 In terms of the score vector $`z_\ell = X\hat v_\ell`$,
 
 ``` math
+
 \hat\lambda_\ell
 =
 \operatorname{Var}(X\hat v_\ell)
@@ -330,12 +357,14 @@ In terms of the score vector $`z_\ell = X\hat v_\ell`$,
 A scree plot displays the sequence of eigenvalues
 
 ``` math
+
 \hat\lambda_1,\hat\lambda_2,\ldots,\hat\lambda_p,
 ```
 
 or the proportion of variance explained by each principal component,
 
 ``` math
+
 \widehat{\mathrm{PVE}}_\ell
 =
 \frac{\hat\lambda_\ell}{\sum_{j=1}^p \hat\lambda_j}.
@@ -355,6 +384,7 @@ principal component directions. For the $`\ell`$-th principal component
 direction $`\hat v_\ell`$, the scree value is
 
 ``` math
+
 \hat\lambda_\ell
 =
 \hat v_\ell^\top \hat\Sigma \hat v_\ell
@@ -368,11 +398,13 @@ The score plot shows the observations in the principal component
 coordinate system. If
 
 ``` math
+
 \hat V_k = [\hat v_1,\ldots,\hat v_k],
 ```
 
 then the score matrix is
 ``` math
+
 Z_k = X\hat V_k.
 ```
 
@@ -385,6 +417,7 @@ instance, when the first two scree values are large, the two-dimensional
 score plot
 
 ``` math
+
 (X\hat v_1,\; X\hat v_2)
 ```
 

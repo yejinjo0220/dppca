@@ -7,7 +7,7 @@ and
 with the updated scree and score method options. If `X` is supplied, the
 app opens using that data. If `group` is supplied, the score plot uses
 the grouped version when the group labels are available. If
-`group = "color"`, the column named `color` is used as group labels and
+`group = "group"`, the column named `group` is used as group labels and
 removed from the PCA feature matrix. In the app, the scree menu uses
 checkboxes and can overlay `method = "clipped"`, `method = "pmwm"`,
 `method = "huber"`, or a vector such as
@@ -45,6 +45,6 @@ Invisibly launches a Shiny application.
 if (FALSE) { # \dontrun{
 dppca_app()
 dppca_app(gau)
-dppca_app(gau_g, group = "color")
+dppca_app(gau_g, group = "group")
 } # }
 ```

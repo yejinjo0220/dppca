@@ -111,12 +111,12 @@ variance captures more variation in the data.</p>
 <p>Let
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>∈</mo><msup><mi>ℝ</mi><mi>p</mi></msup></mrow><annotation encoding="application/x-tex">Y \in \mathbb{R}^p</annotation></semantics></math>
 be a random vector with covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Σ</mi><mo>=</mo><mrow><mi mathvariant="normal">Cov</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\Sigma = \operatorname{Cov}(Y)</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Σ</mi><mo>=</mo><mo>Cov</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>Y</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Sigma = \operatorname{Cov}(Y)</annotation></semantics></math>.</p>
 <div class="section level3">
 <h3 id="first-principal-component-direction">First principal component direction<a class="anchor" aria-label="anchor" href="#first-principal-component-direction"></a>
 </h3>
 <p>The first population principal component direction is defined as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mn>1</mn></msub><mo>=</mo><mrow><mi mathvariant="normal">arg</mi><mo>⁡</mo></mrow><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><mrow><mi mathvariant="normal">Var</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>Y</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mi mathvariant="normal">arg</mi><mo>⁡</mo></mrow><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi mathvariant="normal">Σ</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mn>1</mn></msub><mo>=</mo><mo>arg</mo><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><mo>Var</mo><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>Y</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>arg</mo><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 v_1
 =
 \arg\max_{\|v\|_2 = 1}
@@ -142,7 +142,7 @@ onto that direction, while being orthogonal to the previously chosen
 directions.</p>
 <p>For
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>≥</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">k \geq 2</annotation></semantics></math>,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mi>k</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">arg</mi><mo>⁡</mo></mrow><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi mathvariant="normal">Σ</mi><mi>v</mi><mspace width="1.0em"></mspace><mtext mathvariant="normal">subject to</mtext><mspace width="1.0em"></mspace><msup><mi>v</mi><mi>⊤</mi></msup><msub><mi>v</mi><mi>j</mi></msub><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>k</mi><mo>−</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mi>k</mi></msub><mo>=</mo><mo>arg</mo><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi><mspace width="1.0em"></mspace><mtext mathvariant="normal">subject to</mtext><mspace width="1.0em"></mspace><msup><mi>v</mi><mi>⊤</mi></msup><msub><mi>v</mi><mi>j</mi></msub><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>k</mi><mo>−</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
 v_k
 =
 \arg\max_{\|v\|_2 = 1}
@@ -163,12 +163,12 @@ ordered by decreasing projected variance.</p>
 </h2>
 <p>The solutions to the above variance maximization problems are
 obtained from the eigenvalue decomposition of the covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>.</p>
 <p>We can write</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Σ</mi><mo>=</mo><mi>V</mi><mi mathvariant="normal">Λ</mi><msup><mi>V</mi><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Σ</mi><mo>=</mo><mi>V</mi><mi>Λ</mi><msup><mi>V</mi><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">
 \Sigma = V \Lambda V^\top
 </annotation></semantics></math> where
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mi>v</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>v</mi><mi>p</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>,</mo><mspace width="1.0em"></mspace><mi mathvariant="normal">Λ</mi><mo>=</mo><mrow><mi mathvariant="normal">diag</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>λ</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>λ</mi><mi>p</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="1.0em"></mspace><mtext mathvariant="normal">and</mtext><mspace width="1.0em"></mspace><msub><mi>λ</mi><mn>1</mn></msub><mo>≥</mo><msub><mi>λ</mi><mn>2</mn></msub><mo>≥</mo><mi>⋯</mi><mo>≥</mo><msub><mi>λ</mi><mi>p</mi></msub><mo>≥</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>v</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>v</mi><mi>p</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><mi>Λ</mi><mo>=</mo><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>λ</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>λ</mi><mi>p</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><mtext mathvariant="normal">and</mtext><mspace width="1.0em"></mspace><msub><mi>λ</mi><mn>1</mn></msub><mo>≥</mo><msub><mi>λ</mi><mn>2</mn></msub><mo>≥</mo><mi>⋯</mi><mo>≥</mo><msub><mi>λ</mi><mi>p</mi></msub><mo>≥</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
 V = [v_1,\ldots,v_p], 
 \quad
 \Lambda = \operatorname{diag}(\lambda_1,\ldots,\lambda_p), 
@@ -188,13 +188,13 @@ onto
 </h3>
 <p>To see why the PCA directions are eigenvectors, consider the first
 principal component problem</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi mathvariant="normal">Σ</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \max_{\|v\|_2 = 1} v^\top \Sigma v.
 </annotation></semantics></math></p>
 <p>Using the constraint
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>v</mi><mi>⊤</mi></msup><mi>v</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">v^\top v = 1</annotation></semantics></math>,
 define the Lagrangian</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℒ</mi><mo stretchy="false" form="prefix">(</mo><mi>v</mi><mo>,</mo><mi>λ</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi mathvariant="normal">Σ</mi><mi>v</mi><mo>−</mo><mi>λ</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>v</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℒ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>v</mi><mo>,</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi><mo>−</mo><mi>λ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>v</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \mathcal{L}(v,\lambda)
 =
 v^\top \Sigma v
@@ -204,7 +204,7 @@ v^\top \Sigma v
 <p>Taking the derivative with respect to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>v</mi><annotation encoding="application/x-tex">v</annotation></semantics></math>
 and setting it equal to zero gives</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>∂</mi><mi>ℒ</mi></mrow><mrow><mi>∂</mi><mi>v</mi></mrow></mfrac><mo>=</mo><mn>2</mn><mi mathvariant="normal">Σ</mi><mi>v</mi><mo>−</mo><mn>2</mn><mi>λ</mi><mi>v</mi><mo>=</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>∂</mi><mi>ℒ</mi></mrow><mrow><mi>∂</mi><mi>v</mi></mrow></mfrac><mo>=</mo><mn>2</mn><mi>Σ</mi><mi>v</mi><mo>−</mo><mn>2</mn><mi>λ</mi><mi>v</mi><mo>=</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \frac{\partial \mathcal{L}}{\partial v}
 =
 2\Sigma v - 2\lambda v
@@ -212,20 +212,20 @@ and setting it equal to zero gives</p>
 0.
 </annotation></semantics></math></p>
 <p>Therefore,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Σ</mi><mi>v</mi><mo>=</mo><mi>λ</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Σ</mi><mi>v</mi><mo>=</mo><mi>λ</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \Sigma v = \lambda v.
 </annotation></semantics></math></p>
 <p>Hence, the optimizer
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>v</mi><annotation encoding="application/x-tex">v</annotation></semantics></math>
 must be an eigenvector of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>,
 and the corresponding Lagrange multiplier
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
 is the associated eigenvalue.</p>
 <p>For a unit eigenvector
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>v</mi><annotation encoding="application/x-tex">v</annotation></semantics></math>,
 we have</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>v</mi><mi>⊤</mi></msup><mi mathvariant="normal">Σ</mi><mi>v</mi><mo>=</mo><msup><mi>v</mi><mi>⊤</mi></msup><mo stretchy="false" form="prefix">(</mo><mi>λ</mi><mi>v</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>λ</mi><msup><mi>v</mi><mi>⊤</mi></msup><mi>v</mi><mo>=</mo><mi>λ</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi><mo>=</mo><msup><mi>v</mi><mi>⊤</mi></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>λ</mi><mi>v</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>λ</mi><msup><mi>v</mi><mi>⊤</mi></msup><mi>v</mi><mo>=</mo><mi>λ</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 v^\top \Sigma v
 =
 v^\top (\lambda v)
@@ -235,7 +235,7 @@ v^\top (\lambda v)
 \lambda.
 </annotation></semantics></math></p>
 <p>Thus,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><mrow><mi mathvariant="normal">Var</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>Y</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi mathvariant="normal">Σ</mi><mi>v</mi><mo>=</mo><msub><mi>λ</mi><mi mathvariant="normal">max</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><mo>Var</mo><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>Y</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi><mo>=</mo><msub><mi>λ</mi><mo>max</mo></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \max_{\|v\|_2 = 1} \operatorname{Var}(v^\top Y)
 =
 \max_{\|v\|_2 = 1} v^\top \Sigma v
@@ -249,7 +249,7 @@ and the maximum projected variance is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>1</mn></msub><annotation encoding="application/x-tex">\lambda_1</annotation></semantics></math>.</p>
 <p>Repeating this procedure under orthogonality constraints gives the
 remaining eigenvectors. Therefore,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Σ</mi><msub><mi>v</mi><mi>j</mi></msub><mo>=</mo><msub><mi>λ</mi><mi>j</mi></msub><msub><mi>v</mi><mi>j</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>p</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Σ</mi><msub><mi>v</mi><mi>j</mi></msub><mo>=</mo><msub><mi>λ</mi><mi>j</mi></msub><msub><mi>v</mi><mi>j</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>p</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">
 \Sigma v_j = \lambda_j v_j,
 \qquad
 j = 1,\ldots,p,
@@ -258,12 +258,12 @@ j = 1,\ldots,p,
 \lambda_1 \geq \lambda_2 \geq \cdots \geq \lambda_p \geq 0.
 </annotation></semantics></math></p>
 <p>The
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 eigenvalue can be interpreted as the variance of the projected random
 variable along the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 principal component direction</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>λ</mi><mi>ℓ</mi></msub><mo>=</mo><msubsup><mi>v</mi><mi>ℓ</mi><mi>⊤</mi></msubsup><mi mathvariant="normal">Σ</mi><msub><mi>v</mi><mi>ℓ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">Var</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>v</mi><mi>ℓ</mi><mi>⊤</mi></msubsup><mi>Y</mi><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>λ</mi><mo>ℓ</mo></msub><mo>=</mo><msubsup><mi>v</mi><mo>ℓ</mo><mi>⊤</mi></msubsup><mi>Σ</mi><msub><mi>v</mi><mo>ℓ</mo></msub><mo>=</mo><mo>Var</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>v</mi><mo>ℓ</mo><mi>⊤</mi></msubsup><mi>Y</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \lambda_\ell
 =
 v_\ell^\top \Sigma v_\ell
@@ -276,9 +276,9 @@ v_\ell^\top \Sigma v_\ell
 <h2 id="sample-pca">3. Sample PCA<a class="anchor" aria-label="anchor" href="#sample-pca"></a>
 </h2>
 <p>In practice, the population covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>
 is unknown, so we use the sample covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\Sigma</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\Sigma</annotation></semantics></math>
 instead.</p>
 <p>Let
 <math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>X</mi><mo accent="true">‾</mo></mover><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msub><mi>X</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">
@@ -288,7 +288,7 @@ instead.</p>
 \sum_{i=1}^n X_i
 </annotation></semantics></math></p>
 <p>be the sample mean. The sample covariance matrix is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mo stretchy="false" form="prefix">(</mo><msub><mi>X</mi><mi>i</mi></msub><mo>−</mo><mover><mi>X</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>X</mi><mi>i</mi></msub><mo>−</mo><mover><mi>X</mi><mo accent="true">‾</mo></mover><msup><mo stretchy="false" form="postfix">)</mo><mi>⊤</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mi>i</mi></msub><mo>−</mo><mover><mi>X</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mi>i</mi></msub><mo>−</mo><mover><mi>X</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat\Sigma
 =
 \frac{1}{n-1}
@@ -298,7 +298,7 @@ instead.</p>
 <p>Equivalently, if
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mi>c</mi></msub><annotation encoding="application/x-tex">X_c</annotation></semantics></math>
 denotes the centered data matrix, then</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><msubsup><mi>X</mi><mi>c</mi><mi>⊤</mi></msubsup><msub><mi>X</mi><mi>c</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><msubsup><mi>X</mi><mi>c</mi><mi>⊤</mi></msubsup><msub><mi>X</mi><mi>c</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat\Sigma
 =
 \frac{1}{n-1} X_c^\top X_c.
@@ -307,15 +307,15 @@ denotes the centered data matrix, then</p>
 <h3 id="sample-principal-component-directions">Sample principal component directions<a class="anchor" aria-label="anchor" href="#sample-principal-component-directions"></a>
 </h3>
 <p>The first sample principal component direction is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>=</mo><mrow><mi mathvariant="normal">arg</mi><mo>⁡</mo></mrow><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>=</mo><mo>arg</mo><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat v_1
 =
 \arg\max_{\|v\|_2 = 1}
 v^\top \hat\Sigma v.
 </annotation></semantics></math></p>
 <p>For
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ℓ</mi><mo>≥</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\ell \geq 2</annotation></semantics></math>,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">arg</mi><mo>⁡</mo></mrow><munder><mi mathvariant="normal">max</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><mi>v</mi><mspace width="1.0em"></mspace><mtext mathvariant="normal">subject to</mtext><mspace width="1.0em"></mspace><msup><mi>v</mi><mi>⊤</mi></msup><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>ℓ</mi><mo>−</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>ℓ</mo><mo>≥</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\ell \geq 2</annotation></semantics></math>,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><mo>arg</mo><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mi>v</mi><mspace width="1.0em"></mspace><mtext mathvariant="normal">subject to</mtext><mspace width="1.0em"></mspace><msup><mi>v</mi><mi>⊤</mi></msup><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mo>ℓ</mo><mo>−</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat v_\ell
 =
 \arg\max_{\|v\|_2 = 1}
@@ -327,30 +327,30 @@ v^\top \hat v_j = 0,
 \qquad j = 1,\ldots,\ell-1.
 </annotation></semantics></math></p>
 <p>The
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 sample principal component direction
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>
 is obtained as the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 eigenvector of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\Sigma</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\Sigma</annotation></semantics></math>,
 and the corresponding sample eigenvalue is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi><mi>⊤</mi></msubsup><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat\lambda_\ell
 =
 \hat v_\ell^\top \hat\Sigma \hat v_\ell.
 </annotation></semantics></math></p>
 <p>This value is the sample variance of the data projected onto the
 direction
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>.</p>
 <p>From an estimation point of view,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>
 and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\hat\lambda_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\hat\lambda_\ell</annotation></semantics></math>
 estimate the population quantities
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>v</mi><mi>ℓ</mi></msub><annotation encoding="application/x-tex">v_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>v</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">v_\ell</annotation></semantics></math>
 and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\lambda_\ell</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\lambda_\ell</annotation></semantics></math>,
 respectively.</p>
 </div>
 </div>
@@ -363,38 +363,38 @@ respectively.</p>
 <p>Assume that the data matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>n</mi><mo>×</mo><mi>p</mi></mrow></msup></mrow><annotation encoding="application/x-tex">X \in \mathbb{R}^{n \times p}</annotation></semantics></math>
 has been centered. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>
 be the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 sample principal component direction. The
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 PC score vector is defined as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mi>ℓ</mi></msub><mo>=</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>∈</mo><msup><mi>ℝ</mi><mi>n</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mo>ℓ</mo></msub><mo>=</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>∈</mo><msup><mi>ℝ</mi><mi>n</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
 z_\ell = X \hat v_\ell \in \mathbb{R}^n.
 </annotation></semantics></math></p>
 <p>Equivalently, the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>-th
 entry of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mi>ℓ</mi></msub><annotation encoding="application/x-tex">z_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">z_\ell</annotation></semantics></math>
 is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mrow><mi>i</mi><mi>ℓ</mi></mrow></msub><mo>=</mo><msubsup><mi>x</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>=</mo><msubsup><mi>x</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">
 z_{i\ell} = x_i^\top \hat v_\ell,
 </annotation></semantics></math></p>
 <p>which is the coordinate of the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>-th
 observation after projection onto the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 principal component direction.</p>
 <p>If the first
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
 principal component directions are used, the score matrix is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mi>k</mi></msub><mo>=</mo><mi>X</mi><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo stretchy="false" form="postfix">]</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mi>k</mi></msub><mo>=</mo><mi>X</mi><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
 Z_k = X \hat V_k,
 \qquad
 \hat V_k = [\hat v_1,\ldots,\hat v_k].
 </annotation></semantics></math></p>
 <p>A score plot usually displays two score vectors, such as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mn>1</mn></msub><mo>,</mo><msub><mi>z</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(z_1,z_2)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>z</mi><mn>1</mn></msub><mo>,</mo><msub><mi>z</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(z_1,z_2)</annotation></semantics></math>,
 as a two-dimensional scatter plot. It is used to explore low-dimensional
 patterns in the data, such as clusters, outliers, or separation between
 groups.</p>
@@ -407,17 +407,17 @@ groups.</p>
 \hat\lambda_1 \ge \hat\lambda_2 \ge \cdots \ge \hat\lambda_p \ge 0
 </annotation></semantics></math></p>
 <p>be the eigenvalues of the sample covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\Sigma</annotation></semantics></math>.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\hat\Sigma</annotation></semantics></math>.
 We call
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\hat\lambda_\ell</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\hat\lambda_\ell</annotation></semantics></math>
 the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 sample scree value. It represents the sample variance explained by the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 principal component direction.</p>
 <p>In terms of the score vector
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mi>ℓ</mi></msub><mo>=</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub></mrow><annotation encoding="application/x-tex">z_\ell = X\hat v_\ell</annotation></semantics></math>,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">Var</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi><mi>⊤</mi></msubsup><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mo stretchy="false" form="postfix">∥</mo><msub><mi>z</mi><mi>ℓ</mi></msub><msubsup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn><mn>2</mn></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mo>ℓ</mo></msub><mo>=</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub></mrow><annotation encoding="application/x-tex">z_\ell = X\hat v_\ell</annotation></semantics></math>,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><mo>Var</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mo stretchy="false" form="postfix">∥</mo><msub><mi>z</mi><mo>ℓ</mo></msub><msubsup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn><mn>2</mn></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat\lambda_\ell
 =
 \operatorname{Var}(X\hat v_\ell)
@@ -432,7 +432,7 @@ principal component direction.</p>
 </annotation></semantics></math></p>
 <p>or the proportion of variance explained by each principal
 component,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mrow><mi mathvariant="normal">P</mi><mi mathvariant="normal">V</mi><mi mathvariant="normal">E</mi></mrow><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>=</mo><mfrac><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>p</mi></munderover><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mrow><mi mathvariant="normal">P</mi><mi mathvariant="normal">V</mi><mi mathvariant="normal">E</mi></mrow><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><mfrac><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>p</mi></munderover><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \widehat{\mathrm{PVE}}_\ell
 =
 \frac{\hat\lambda_\ell}{\sum_{j=1}^p \hat\lambda_j}.
@@ -449,11 +449,11 @@ retained.</p>
 ways.</p>
 <p>The score plot shows the observations after projection onto selected
 principal component directions. For the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℓ</mi><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>-th
 principal component direction
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\hat v_\ell</annotation></semantics></math>,
 the scree value is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi><mi>⊤</mi></msubsup><mover><mi mathvariant="normal">Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mo stretchy="false" form="postfix">∥</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub><msubsup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn><mn>2</mn></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mo stretchy="false" form="postfix">∥</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><msubsup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn><mn>2</mn></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \hat\lambda_\ell
 =
 \hat v_\ell^\top \hat\Sigma \hat v_\ell
@@ -461,10 +461,10 @@ the scree value is</p>
 \frac{1}{n-1}\|X\hat v_\ell\|_2^2.
 </annotation></semantics></math></p>
 <p>This is the sample variance of the projected scores
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>ℓ</mi></msub></mrow><annotation encoding="application/x-tex">X\hat v_\ell</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub></mrow><annotation encoding="application/x-tex">X\hat v_\ell</annotation></semantics></math>.</p>
 <p>The score plot shows the observations in the principal component
 coordinate system. If</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
 \hat V_k = [\hat v_1,\ldots,\hat v_k],
 </annotation></semantics></math></p>
 <p>then the score matrix is
@@ -478,7 +478,7 @@ are the low-dimensional coordinates of the observations.</p>
 important, while the score plot visualizes the data using those
 components. For instance, when the first two scree values are large, the
 two-dimensional score plot</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mspace width="0.278em"></mspace><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>2</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mspace width="0.278em"></mspace><mi>X</mi><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">
 (X\hat v_1,\; X\hat v_2)
 </annotation></semantics></math></p>
 <p>can give an informative view of the main structure in the data.</p>

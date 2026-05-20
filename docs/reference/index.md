@@ -57,12 +57,8 @@ score plots.
 Datasets included for examples and demonstrations.
 
 - [`adult`](https://yejinjo0220.github.io/dppca/reference/adult.md) :
-  Adult data example
-- [`eur_map`](https://yejinjo0220.github.io/dppca/reference/eur_map.md)
-  : Europe map PCA data
-- [`eur_map_g`](https://yejinjo0220.github.io/dppca/reference/eur_map_g.md)
-  : Group labels for Europe map data
-- [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md) :
-  Gaussian example data
+  Adult numeric data
+- [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md) : Five
+  Gaussian clusters
 - [`gau_g`](https://yejinjo0220.github.io/dppca/reference/gau_g.md) :
-  Group labeled Gaussian example data
+  Five Gaussian clusters with group labels
