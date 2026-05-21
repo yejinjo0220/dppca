@@ -57,7 +57,7 @@ The returned object contains private principal component directions that can be 
 ```r
 set.seed(123)
 
-scree_clpped <- dp_scree(
+scree_clipped <- dp_scree(
   X,
   k = 5,
   method = "clipped",
@@ -66,7 +66,7 @@ scree_clpped <- dp_scree(
   delta = 1e-4
 )
 
-scree_clpped
+scree_clipped
 ```
 
 The package currently supports three scree estimation methods:
