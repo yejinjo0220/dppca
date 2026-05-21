@@ -106,7 +106,7 @@ scree_all
 ```r
 set.seed(123)
 
-scree_all <- dp_scree_plot(
+scree_plot_all <- dp_scree_plot(
   X,
   k = 5,
   method = c("clipped", "pmwm", "huber"),
@@ -118,7 +118,7 @@ scree_all <- dp_scree_plot(
   eps = 3,
   delta = 1e-4
 )
-scree_all
+scree_plot_all
 ```
 
 <p align="center">
