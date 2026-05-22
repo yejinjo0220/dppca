@@ -63,36 +63,51 @@ dp_quantile_ss <- function(x, q, epsilon, delta) {
   xs[r] + VGAM::rlaplace(1, location = 0, scale = scale)
 }
 
-#' Construct a plotting frame for two-dimensional scores
+#' Construct a private plotting frame for two-dimensional scores
+#'
+#' The plotting frame is constructed using coordinate-wise private medians as
+#' the center and the private 0.99 quantile of Euclidean distances from that
+#' center as the radius. The same radius is used on both axes, producing a
+#' square plotting frame.
 #'
 #' @param X Numeric matrix with two columns.
 #' @param eps_frame Positive `epsilon` privacy parameter for private frame
-#'   construction. Required when `fixed_frame = NULL`.
-#' @param delta_frame Number in `(0, 1)` defining the `delta` privacy parameter
-#'   for private frame construction. Required when `fixed_frame = NULL`.
-#' @param inflate Nonnegative inflation factor for the private frame.
-#' @param q Optional inner quantile level. If `NULL`, extreme empirical levels
-#'   based on the stacked score coordinates are used.
-#' @param fixed_frame Optional fixed plotting frame.
+#'   construction.
+#' @param delta_frame Number in `(0, 1)` defining the `delta` privacy
+#'   parameter for private frame construction.
+#' @param inflate Nonnegative inflation factor applied to the private radius.
 #'
 #' @return A list with components `xlim` and `ylim`.
 #'
 #' @noRd
 dp_frame <- function(
     X,
-    eps_frame = NULL,
-    delta_frame = NULL,
-    inflate = 0.20,
-    q = NULL,
-    fixed_frame = NULL
+    eps_frame,
+    delta_frame,
+    inflate = 0.20
 ) {
   X <- as.matrix(X)
 
   if (!is.numeric(X) || ncol(X) != 2L) {
     stop("`X` must be a numeric matrix with exactly two columns.", call. = FALSE)
   }
+  if (nrow(X) < 2L) {
+    stop("`X` must have at least two rows.", call. = FALSE)
+  }
   if (anyNA(X) || any(!is.finite(X))) {
     stop("`X` must contain only finite values.", call. = FALSE)
+  }
+  if (
+    !is.numeric(eps_frame) || length(eps_frame) != 1L ||
+    !is.finite(eps_frame) || eps_frame <= 0
+  ) {
+    stop("`eps_frame` must be a positive number.", call. = FALSE)
+  }
+  if (
+    !is.numeric(delta_frame) || length(delta_frame) != 1L ||
+    !is.finite(delta_frame) || delta_frame <= 0 || delta_frame >= 1
+  ) {
+    stop("`delta_frame` must be a number in `(0, 1)`.", call. = FALSE)
   }
   if (
     !is.numeric(inflate) || length(inflate) != 1L ||
@@ -101,105 +116,35 @@ dp_frame <- function(
     stop("`inflate` must be a nonnegative number.", call. = FALSE)
   }
 
-  if (!is.null(fixed_frame)) {
-    return(validate_fixed_frame(fixed_frame))
-  }
+  eps_each <- eps_frame / 3
+  delta_each <- delta_frame / 3
+  q_radius <- 0.99
 
-  if (is.null(eps_frame) || is.null(delta_frame)) {
+  center_x <- dp_quantile_ss(
+    X[, 1], q = 0.5, epsilon = eps_each, delta = delta_each
+  )
+  center_y <- dp_quantile_ss(
+    X[, 2], q = 0.5, epsilon = eps_each, delta = delta_each
+  )
+
+  radius_values <- sqrt((X[, 1] - center_x)^2 + (X[, 2] - center_y)^2)
+  radius <- dp_quantile_ss(
+    radius_values, q = q_radius, epsilon = eps_each, delta = delta_each
+  )
+
+  if (!is.finite(radius) || radius <= 0) {
     stop(
-      "`eps_frame` and `delta_frame` must be supplied when `fixed_frame = NULL`.",
+      "The private frame radius is not positive. ",
+      "Try a larger privacy budget.",
       call. = FALSE
     )
   }
 
-  z <- as.numeric(X)
-  n <- length(z)
-
-  if (n < 2L) {
-    stop("`X` must contain at least two values.", call. = FALSE)
-  }
-
-  if (is.null(q)) {
-    q_min <- 1 / n
-    q_max <- (n - 1) / n
-  } else {
-    if (!is.numeric(q) || length(q) != 1L || !is.finite(q) || q <= 0 || q >= 1) {
-      stop("`q` must be one number in `(0, 1)`.", call. = FALSE)
-    }
-    q_min <- min(q, 1 - q)
-    q_max <- max(q, 1 - q)
-  }
-
-  eps_each <- eps_frame / 2
-  delta_each <- delta_frame / 2
-
-  dp_min <- dp_quantile_ss(z, q = q_min, epsilon = eps_each, delta = delta_each)
-  dp_max <- dp_quantile_ss(z, q = q_max, epsilon = eps_each, delta = delta_each)
-
-  if (dp_min >= dp_max) {
-    stop(
-      "The private lower frame boundary is not smaller than the upper boundary. ",
-      "Try a larger privacy budget or supply `fixed_frame`.",
-      call. = FALSE
-    )
-  }
-
-  center <- (dp_min + dp_max) / 2
-  half_len <- (dp_max - dp_min) / 2
-  inflated_half_len <- (1 + inflate) * half_len
+  inflated_radius <- (1 + inflate) * radius
 
   list(
-    xlim = c(center - inflated_half_len, center + inflated_half_len),
-    ylim = c(center - inflated_half_len, center + inflated_half_len)
-  )
-}
-
-#' Validate a fixed plotting frame
-#'
-#' @param fixed_frame Fixed frame supplied by the user.
-#'
-#' @return A list with components `xlim` and `ylim`.
-#'
-#' @noRd
-validate_fixed_frame <- function(fixed_frame) {
-  if (is.numeric(fixed_frame) && length(fixed_frame) == 2L) {
-    if (anyNA(fixed_frame) || any(!is.finite(fixed_frame)) || fixed_frame[1] >= fixed_frame[2]) {
-      stop(
-        "`fixed_frame` must be a numeric vector `c(lower, upper)` with ",
-        "`lower < upper`.",
-        call. = FALSE
-      )
-    }
-    return(list(xlim = fixed_frame, ylim = fixed_frame))
-  }
-
-  if (is.list(fixed_frame) && all(c("xlim", "ylim") %in% names(fixed_frame))) {
-    xlim <- fixed_frame$xlim
-    ylim <- fixed_frame$ylim
-
-    if (!is.numeric(xlim) || length(xlim) != 2L || anyNA(xlim) ||
-        any(!is.finite(xlim)) || xlim[1] >= xlim[2]) {
-      stop(
-        "`fixed_frame$xlim` must be a numeric vector of length 2 with ",
-        "`xlim[1] < xlim[2]`.",
-        call. = FALSE
-      )
-    }
-    if (!is.numeric(ylim) || length(ylim) != 2L || anyNA(ylim) ||
-        any(!is.finite(ylim)) || ylim[1] >= ylim[2]) {
-      stop(
-        "`fixed_frame$ylim` must be a numeric vector of length 2 with ",
-        "`ylim[1] < ylim[2]`.",
-        call. = FALSE
-      )
-    }
-    return(list(xlim = xlim, ylim = ylim))
-  }
-
-  stop(
-    "`fixed_frame` must be either a numeric vector of length 2 or a list ",
-    "with components `xlim` and `ylim`.",
-    call. = FALSE
+    xlim = c(center_x - inflated_radius, center_x + inflated_radius),
+    ylim = c(center_y - inflated_radius, center_y + inflated_radius)
   )
 }
 
@@ -222,7 +167,7 @@ add_title_dp <- function(plot, title_text) {
       plot.title = ggplot2::element_text(
         hjust = 0.5,
         face = "bold",
-        size = 16
+        size = 14
       )
     )
 }
@@ -445,10 +390,8 @@ NULL
 
 # Internal helpers ------------------------------------------------------------
 
-split_score_privacy_budget <- function(eps, delta, g_dppca, fixed_frame = NULL) {
-  uses_private_frame <- is.null(fixed_frame)
-
-  if (isTRUE(g_dppca) && uses_private_frame) {
+split_score_privacy_budget <- function(eps, delta, g_dppca) {
+  if (isTRUE(g_dppca)) {
     list(
       eps_pc = eps / 3,
       eps_frame = eps / 3,
@@ -457,16 +400,7 @@ split_score_privacy_budget <- function(eps, delta, g_dppca, fixed_frame = NULL) 
       delta_frame = delta / 3,
       delta_hist = delta / 3
     )
-  } else if (isTRUE(g_dppca)) {
-    list(
-      eps_pc = eps / 2,
-      eps_frame = NULL,
-      eps_hist = eps / 2,
-      delta_pc = delta / 2,
-      delta_frame = NULL,
-      delta_hist = delta / 2
-    )
-  } else if (uses_private_frame) {
+  } else {
     list(
       eps_pc = NULL,
       eps_frame = eps / 2,
@@ -474,15 +408,6 @@ split_score_privacy_budget <- function(eps, delta, g_dppca, fixed_frame = NULL) 
       delta_pc = NULL,
       delta_frame = delta / 2,
       delta_hist = delta / 2
-    )
-  } else {
-    list(
-      eps_pc = NULL,
-      eps_frame = NULL,
-      eps_hist = eps,
-      delta_pc = NULL,
-      delta_frame = NULL,
-      delta_hist = delta
     )
   }
 }
@@ -585,8 +510,8 @@ compute_score_coordinates <- function(
     standardize,
     g_dppca,
     cpp.option,
-    eps,
-    delta
+    eps_pc,
+    delta_pc
 ) {
   k_max <- max(axes)
 
@@ -602,8 +527,8 @@ compute_score_coordinates <- function(
     center = center,
     standardize = standardize,
     g_dppca = g_dppca,
-    eps = eps,
-    delta = delta,
+    eps = eps_pc,
+    delta = delta_pc,
     cpp.option = cpp.option
   )
 

@@ -15,8 +15,7 @@ dp_score_group(
   standardize = FALSE,
   g_dppca = FALSE,
   cpp.option = FALSE,
-  axes = c(1, 2),
-  fixed_frame = NULL
+  axes = c(1, 2)
 )
 }
 \arguments{
@@ -55,11 +54,6 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 
 \item{axes}{Integer vector of length 2 specifying the principal components
 used to construct the score coordinates. The default is \code{c(1, 2)}.}
-
-\item{fixed_frame}{Optional fixed plotting frame. If supplied, it can be a
-numeric vector \code{c(lower, upper)} used for both axes, or a list with numeric
-components \code{xlim} and \code{ylim}. If \code{NULL}, a private square frame is estimated
-from the score coordinates.}
 }
 \value{
 A list with components:
@@ -95,7 +89,7 @@ score_gau_g <- dp_score_group(
   group = "group",
   eps = 3,
   delta = 1e-3,
-  bins = c(8, 8),
+  bins = c(8, 8)
 )
 
 head(score_gau_g$score)

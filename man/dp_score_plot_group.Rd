@@ -15,8 +15,7 @@ dp_score_plot_group(
   g_dppca = FALSE,
   cpp.option = FALSE,
   axes = c(1, 2),
-  method = c("add", "sparse"),
-  fixed_frame = NULL
+  method = c("add", "sparse")
 )
 }
 \arguments{
@@ -55,11 +54,6 @@ used to construct the score coordinates. The default is \code{c(1, 2)}.}
 \item{method}{Character vector specifying which private histogram methods to
 compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"} for
 the sparse thresholded histogram. The default is \code{c("add", "sparse")}.}
-
-\item{fixed_frame}{Optional fixed plotting frame. If supplied, it can be a
-numeric vector \code{c(lower, upper)} used for both axes, or a list with numeric
-components \code{xlim} and \code{ylim}. If \code{NULL}, a private square frame is estimated
-from the score coordinates.}
 }
 \value{
 A list with components:

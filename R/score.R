@@ -30,10 +30,6 @@
 #'   `g_dppca = TRUE`. The default is `FALSE`.
 #' @param axes Integer vector of length 2 specifying the principal components
 #'   used to construct the score coordinates. The default is `c(1, 2)`.
-#' @param fixed_frame Optional fixed plotting frame. If supplied, it can be a
-#'   numeric vector `c(lower, upper)` used for both axes, or a list with numeric
-#'   components `xlim` and `ylim`. If `NULL`, a private square frame is estimated
-#'   from the score coordinates.
 #'
 #' @details
 #' Let \eqn{v_a} and \eqn{v_b} be the principal component directions selected
@@ -44,15 +40,16 @@
 #' instead summarizes their empirical distribution by a two-dimensional histogram
 #' and releases private versions of the histogram for the visualization.
 #'
-#' If `fixed_frame = NULL`, the plotting frame is constructed privately. The two
-#' score coordinates are stacked into one vector, private lower and upper
-#' quantiles are estimated using a smooth-sensitivity based quantile mechanism
-#' \insertCite{nissim2007smooth}{dppca}, and the resulting interval is used as a
-#' common square frame for both axes. If `fixed_frame` is supplied, it is treated
-#' as public and no privacy budget is spent on frame construction.
+#' The plotting frame is constructed privately from the score coordinates. The
+#' frame center is estimated by coordinate-wise private medians, and the frame
+#' radius is estimated by the private 0.99 quantile of the Euclidean distances
+#' from this private center. The resulting private radius is inflated by a fixed
+#' factor and used to form a square plotting frame. The private frame is computed
+#' using a smooth-sensitivity based quantile mechanism
+#' \insertCite{nissim2007smooth}{dppca}.
 #'
-#' The private histogram is computed on the rectangular grid defined by
-#' `fixed_frame` or by the private frame and the bin counts in `bins`. Under
+#' The private histogram is computed on the rectangular grid defined by the
+#' private frame and the bin counts in `bins`. Under
 #' row-level adjacency, changing one observation can increase one bin count by
 #' one and decrease another by one, giving \eqn{\ell_1} sensitivity at most
 #' \eqn{2} and \eqn{\ell_2} sensitivity at most \eqn{\sqrt{2}} for the count
@@ -74,12 +71,10 @@
 #' }
 #'
 #' The privacy parameters are allocated across the privacy-consuming steps. If
-#' `g_dppca = FALSE` and `fixed_frame = NULL`, half of `eps` and `delta` is used
-#' for private frame construction and half for the private histogram. If
-#' `g_dppca = TRUE` and `fixed_frame = NULL`, the parameters are split equally
-#' among private direction estimation, private frame construction, and private
-#' histogram release. If `fixed_frame` is supplied, the frame step is skipped and
-#' the remaining steps split the privacy parameters equally.
+#' `g_dppca = FALSE`, half of `eps` and `delta` is used for private frame
+#' construction and half for the private histogram. If `g_dppca = TRUE`, the
+#' parameters are split equally among private direction estimation, private frame
+#' construction, and private histogram release.
 #'
 #' For a detailed procedure and mathematical formulations,
 #' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
@@ -145,8 +140,7 @@ dp_score <- function(
     standardize = FALSE,
     g_dppca = FALSE,
     cpp.option = FALSE,
-    axes = c(1, 2),
-    fixed_frame = NULL
+    axes = c(1, 2)
 ) {
   X <- validate_score_matrix(X)
   validate_score_common(
@@ -170,8 +164,7 @@ dp_score <- function(
   budget <- split_score_privacy_budget(
     eps = eps,
     delta = delta,
-    g_dppca = g_dppca,
-    fixed_frame = fixed_frame
+    g_dppca = g_dppca
   )
 
   score_res <- compute_score_coordinates(
@@ -181,17 +174,15 @@ dp_score <- function(
     standardize = standardize,
     g_dppca = g_dppca,
     cpp.option = cpp.option,
-    eps = budget$eps_pc,
-    delta = budget$delta_pc
+    eps_pc = budget$eps_pc,
+    delta_pc = budget$delta_pc
   )
 
   frame_out <- dp_frame(
     X = score_res$score,
     eps_frame = budget$eps_frame,
     delta_frame = budget$delta_frame,
-    inflate = 0.20,
-    q = NULL,
-    fixed_frame = fixed_frame
+    inflate = 0.20
   )
 
   hist <- score_histograms(
@@ -273,8 +264,7 @@ dp_score_plot <- function(
     standardize = FALSE,
     g_dppca = FALSE,
     cpp.option = FALSE,
-    axes = c(1, 2),
-    fixed_frame = NULL
+    axes = c(1, 2)
 ) {
   method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
   color <- "#6A5ACD"
@@ -289,8 +279,7 @@ dp_score_plot <- function(
     g_dppca = g_dppca,
     cpp.option = cpp.option,
     axes = axes,
-    method = method,
-    fixed_frame = fixed_frame
+    method = method
   )
 
   X_score <- as.data.frame(score_res$score)
@@ -392,7 +381,7 @@ dp_score_plot <- function(
 #'   group = "group",
 #'   eps = 3,
 #'   delta = 1e-3,
-#'   bins = c(8, 8),
+#'   bins = c(8, 8)
 #' )
 #'
 #' head(score_gau_g$score)
@@ -411,8 +400,7 @@ dp_score_group <- function(
     standardize = FALSE,
     g_dppca = FALSE,
     cpp.option = FALSE,
-    axes = c(1, 2),
-    fixed_frame = NULL
+    axes = c(1, 2)
 ) {
   method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
 
@@ -448,8 +436,7 @@ dp_score_group <- function(
   budget <- split_score_privacy_budget(
     eps = eps,
     delta = delta,
-    g_dppca = g_dppca,
-    fixed_frame = fixed_frame
+    g_dppca = g_dppca
   )
 
   score_res <- compute_score_coordinates(
@@ -459,17 +446,15 @@ dp_score_group <- function(
     standardize = standardize,
     g_dppca = g_dppca,
     cpp.option = cpp.option,
-    eps = budget$eps_pc,
-    delta = budget$delta_pc
+    eps_pc = budget$eps_pc,
+    delta_pc = budget$delta_pc
   )
 
   frame_out <- dp_frame(
     X = score_res$score,
     eps_frame = budget$eps_frame,
     delta_frame = budget$delta_frame,
-    inflate = 0.20,
-    q = NULL,
-    fixed_frame = fixed_frame
+    inflate = 0.20
   )
 
   grid <- score_histogram_grid(
@@ -560,8 +545,7 @@ dp_score_plot_group <- function(
     g_dppca = FALSE,
     cpp.option = FALSE,
     axes = c(1, 2),
-    method = c("add", "sparse"),
-    fixed_frame = NULL
+    method = c("add", "sparse")
 ) {
   method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
 
@@ -588,8 +572,7 @@ dp_score_plot_group <- function(
     g_dppca = g_dppca,
     cpp.option = cpp.option,
     axes = axes,
-    method = method,
-    fixed_frame = fixed_frame
+    method = method
   )
 
   X_score <- as.data.frame(score_res$score)

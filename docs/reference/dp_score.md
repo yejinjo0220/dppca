@@ -18,8 +18,7 @@ dp_score(
   standardize = FALSE,
   g_dppca = FALSE,
   cpp.option = FALSE,
-  axes = c(1, 2),
-  fixed_frame = NULL
+  axes = c(1, 2)
 )
 ```
 
@@ -79,13 +78,6 @@ dp_score(
   Integer vector of length 2 specifying the principal components used to
   construct the score coordinates. The default is `c(1, 2)`.
 
-- fixed_frame:
-
-  Optional fixed plotting frame. If supplied, it can be a numeric vector
-  `c(lower, upper)` used for both axes, or a list with numeric
-  components `xlim` and `ylim`. If `NULL`, a private square frame is
-  estimated from the score coordinates.
-
 ## Value
 
 A list with components:
@@ -127,19 +119,19 @@ the points \\s_1, \ldots, s_n\\ directly. This function instead
 summarizes their empirical distribution by a two-dimensional histogram
 and releases private versions of the histogram for the visualization.
 
-If `fixed_frame = NULL`, the plotting frame is constructed privately.
-The two score coordinates are stacked into one vector, private lower and
-upper quantiles are estimated using a smooth-sensitivity based quantile
-mechanism (Nissim et al. 2007) , and the resulting interval is used as a
-common square frame for both axes. If `fixed_frame` is supplied, it is
-treated as public and no privacy budget is spent on frame construction.
+The plotting frame is constructed privately from the score coordinates.
+The frame center is estimated by coordinate-wise private medians, and
+the frame radius is estimated by the private 0.99 quantile of the
+Euclidean distances from this private center. The resulting private
+radius is inflated by a fixed factor and used to form a square plotting
+frame. The private frame is computed using a smooth-sensitivity based
+quantile mechanism (Nissim et al. 2007) .
 
-The private histogram is computed on the rectangular grid defined by
-`fixed_frame` or by the private frame and the bin counts in `bins`.
-Under row-level adjacency, changing one observation can increase one bin
-count by one and decrease another by one, giving \\\ell_1\\ sensitivity
-at most \\2\\ and \\\ell_2\\ sensitivity at most \\\sqrt{2}\\ for the
-count vector.
+The private histogram is computed on the rectangular grid defined by the
+private frame and the bin counts in `bins`. Under row-level adjacency,
+changing one observation can increase one bin count by one and decrease
+another by one, giving \\\ell_1\\ sensitivity at most \\2\\ and
+\\\ell_2\\ sensitivity at most \\\sqrt{2}\\ for the count vector.
 
 Two private histogram mechanisms are supported:
 
@@ -156,13 +148,11 @@ Two private histogram mechanisms are supported:
   Karwa and Vadhan (2017) .
 
 The privacy parameters are allocated across the privacy-consuming steps.
-If `g_dppca = FALSE` and `fixed_frame = NULL`, half of `eps` and `delta`
-is used for private frame construction and half for the private
-histogram. If `g_dppca = TRUE` and `fixed_frame = NULL`, the parameters
-are split equally among private direction estimation, private frame
-construction, and private histogram release. If `fixed_frame` is
-supplied, the frame step is skipped and the remaining steps split the
-privacy parameters equally.
+If `g_dppca = FALSE`, half of `eps` and `delta` is used for private
+frame construction and half for the private histogram. If
+`g_dppca = TRUE`, the parameters are split equally among private
+direction estimation, private frame construction, and private histogram
+release.
 
 For a detailed procedure and mathematical formulations, refer
 <https://yejinjo0220.github.io/dppca/articles/dp_score>.
@@ -231,11 +221,11 @@ head(score_gau$score)
 #> 5 -0.7668155 -2.7729387
 #> 6  1.4701354  3.1142919
 head(score_gau$add)
-#>         xmin       xmax      ymin      ymax         prob
-#> 1 -6.7554436 -5.3600789 -6.755444 -5.360079 0.0000000000
-#> 2 -5.3600789 -3.9647142 -6.755444 -5.360079 0.0176699895
-#> 3 -3.9647142 -2.5693495 -6.755444 -5.360079 0.0007993045
-#> 4 -2.5693495 -1.1739848 -6.755444 -5.360079 0.0014656449
-#> 5 -1.1739848  0.2213799 -6.755444 -5.360079 0.0194424961
-#> 6  0.2213799  1.6167446 -6.755444 -5.360079 0.0052250857
+#>         xmin       xmax      ymin      ymax        prob
+#> 1 -5.3429455 -4.4593527 -3.298014 -2.414422 0.016055676
+#> 2 -4.4593527 -3.5757599 -3.298014 -2.414422 0.000000000
+#> 3 -3.5757599 -2.6921671 -3.298014 -2.414422 0.016720579
+#> 4 -2.6921671 -1.8085743 -3.298014 -2.414422 0.000000000
+#> 5 -1.8085743 -0.9249815 -3.298014 -2.414422 0.005652482
+#> 6 -0.9249815 -0.0413887 -3.298014 -2.414422 0.009703807
 ```

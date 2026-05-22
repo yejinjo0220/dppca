@@ -14,8 +14,7 @@ dp_score(
   standardize = FALSE,
   g_dppca = FALSE,
   cpp.option = FALSE,
-  axes = c(1, 2),
-  fixed_frame = NULL
+  axes = c(1, 2)
 )
 }
 \arguments{
@@ -48,11 +47,6 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 
 \item{axes}{Integer vector of length 2 specifying the principal components
 used to construct the score coordinates. The default is \code{c(1, 2)}.}
-
-\item{fixed_frame}{Optional fixed plotting frame. If supplied, it can be a
-numeric vector \code{c(lower, upper)} used for both axes, or a list with numeric
-components \code{xlim} and \code{ylim}. If \code{NULL}, a private square frame is estimated
-from the score coordinates.}
 }
 \value{
 A list with components:
@@ -83,15 +77,16 @@ plot would display the points \eqn{s_1, \ldots, s_n} directly. This function
 instead summarizes their empirical distribution by a two-dimensional histogram
 and releases private versions of the histogram for the visualization.
 
-If \code{fixed_frame = NULL}, the plotting frame is constructed privately. The two
-score coordinates are stacked into one vector, private lower and upper
-quantiles are estimated using a smooth-sensitivity based quantile mechanism
-\insertCite{nissim2007smooth}{dppca}, and the resulting interval is used as a
-common square frame for both axes. If \code{fixed_frame} is supplied, it is treated
-as public and no privacy budget is spent on frame construction.
+The plotting frame is constructed privately from the score coordinates. The
+frame center is estimated by coordinate-wise private medians, and the frame
+radius is estimated by the private 0.99 quantile of the Euclidean distances
+from this private center. The resulting private radius is inflated by a fixed
+factor and used to form a square plotting frame. The private frame is computed
+using a smooth-sensitivity based quantile mechanism
+\insertCite{nissim2007smooth}{dppca}.
 
-The private histogram is computed on the rectangular grid defined by
-\code{fixed_frame} or by the private frame and the bin counts in \code{bins}. Under
+The private histogram is computed on the rectangular grid defined by the
+private frame and the bin counts in \code{bins}. Under
 row-level adjacency, changing one observation can increase one bin count by
 one and decrease another by one, giving \eqn{\ell_1} sensitivity at most
 \eqn{2} and \eqn{\ell_2} sensitivity at most \eqn{\sqrt{2}} for the count
@@ -113,12 +108,10 @@ following the stability-based private histogram idea of
 }
 
 The privacy parameters are allocated across the privacy-consuming steps. If
-\code{g_dppca = FALSE} and \code{fixed_frame = NULL}, half of \code{eps} and \code{delta} is used
-for private frame construction and half for the private histogram. If
-\code{g_dppca = TRUE} and \code{fixed_frame = NULL}, the parameters are split equally
-among private direction estimation, private frame construction, and private
-histogram release. If \code{fixed_frame} is supplied, the frame step is skipped and
-the remaining steps split the privacy parameters equally.
+\code{g_dppca = FALSE}, half of \code{eps} and \code{delta} is used for private frame
+construction and half for the private histogram. If \code{g_dppca = TRUE}, the
+parameters are split equally among private direction estimation, private frame
+construction, and private histogram release.
 
 For a detailed procedure and mathematical formulations,
 refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.

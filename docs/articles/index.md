@@ -22,11 +22,11 @@
   Differentially private PCA scree estimation in dppca including clipped
   mean, Huber GDP mean, and private modified winsorized mean methods.
 
-- [DP Score plot in
+- [DP score plots in
   dppca](https://yejinjo0220.github.io/dppca/articles/dp_score.md):
 
   Differentially private PCA score visualization in dppca, including
-  private plotting frames, bin selection, additive DP histograms, sparse
+  private center-radius plotting frames, additive DP histograms, sparse
   DP histograms, and group-wise score histograms.
 
 ### Algorithms

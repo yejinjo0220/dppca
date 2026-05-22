@@ -20,8 +20,7 @@ dp_score_plot_group(
   g_dppca = FALSE,
   cpp.option = FALSE,
   axes = c(1, 2),
-  method = c("add", "sparse"),
-  fixed_frame = NULL
+  method = c("add", "sparse")
 )
 ```
 
@@ -87,13 +86,6 @@ dp_score_plot_group(
   compute. Use `"add"` for the additive Gaussian histogram and
   `"sparse"` for the sparse thresholded histogram. The default is
   `c("add", "sparse")`.
-
-- fixed_frame:
-
-  Optional fixed plotting frame. If supplied, it can be a numeric vector
-  `c(lower, upper)` used for both axes, or a list with numeric
-  components `xlim` and `ylim`. If `NULL`, a private square frame is
-  estimated from the score coordinates.
 
 ## Value
 

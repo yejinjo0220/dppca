@@ -68,8 +68,7 @@ computed score output and <code>ggplot</code> objects.</p>
 <span>  standardize <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  g_dppca <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cpp.option <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  axes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span>,</span>
-<span>  fixed_frame <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  axes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -125,13 +124,6 @@ component directions. The default is <code>FALSE</code>. See <code><a href="dp_p
 <dt id="arg-axes">axes<a class="anchor" aria-label="anchor" href="#arg-axes"></a></dt>
 <dd><p>Integer vector of length 2 specifying the principal components
 used to construct the score coordinates. The default is <code>c(1, 2)</code>.</p></dd>
-
-
-<dt id="arg-fixed-frame">fixed_frame<a class="anchor" aria-label="anchor" href="#arg-fixed-frame"></a></dt>
-<dd><p>Optional fixed plotting frame. If supplied, it can be a
-numeric vector <code>c(lower, upper)</code> used for both axes, or a list with numeric
-components <code>xlim</code> and <code>ylim</code>. If <code>NULL</code>, a private square frame is estimated
-from the score coordinates.</p></dd>
 
 </dl></div>
     <div class="section level2">

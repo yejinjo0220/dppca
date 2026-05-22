@@ -297,12 +297,6 @@ library(dppca)
   series_names <- names(y_list)
   first <- series_names[1L]
 
-  x_ticks <- pretty(idx)
-  x_ticks <- x_ticks[x_ticks >= 1 & x_ticks <= k & x_ticks == floor(x_ticks)]
-  if (!length(x_ticks)) {
-    x_ticks <- idx
-  }
-
   graphics::plot(
     idx,
     y_list[[first]],
@@ -313,13 +307,8 @@ library(dppca)
     xlab = "Component",
     ylab = ylab,
     main = main,
-    ylim = ylim,
-    xaxt = "n",
-    cex.main = 2,
-    cex.lab = 1.25,
-    cex.axis = 1.15
+    ylim = ylim
   )
-  graphics::axis(1, at = x_ticks, labels = x_ticks, cex.axis = 1.15)
 
   if (length(series_names) > 1L) {
     for (nm in series_names[-1L]) {
@@ -340,8 +329,7 @@ library(dppca)
     col = unname(col_map[series_names]),
     lty = unname(lty_map[series_names]),
     pch = unname(pch_map[series_names]),
-    bty = "n",
-    cex = 1.25
+    bty = "n"
   )
 
   invisible(list(
@@ -591,6 +579,7 @@ ui <- fluidPage(
         div(
           class = "plot-card plot-card-scree",
           h4("DP Scree Plot"),
+          div(class = "plot-card-note", "PVE curves are shown in a taller, centered panel to avoid a flattened appearance."),
           plotOutput("scree_plot", height = "520px")
         ),
         div(
@@ -754,20 +743,24 @@ server <- function(input, output, session) {
     obj <- scree_event()
     tryCatch(
       {
-        .plot_scree_methods(
-          X = obj$X,
-          k = input$k,
-          method = .selected_scree_methods(input),
-          eps_total = obj$budget$scree_eps,
-          delta_total = obj$budget$scree_delta,
-          center = input$center,
-          standardize = input$standardize,
-          control = obj$control,
-          g_dppca = input$g_dppca,
-          cpp.option = FALSE,
-          mono = input$scree_mono,
-          type = input$scree_type
-        )
+        withProgress(message = "Computing DP scree plot...", value = 0, {
+          incProgress(0.15, detail = "Preparing private scree settings")
+          .plot_scree_methods(
+            X = obj$X,
+            k = input$k,
+            method = .selected_scree_methods(input),
+            eps_total = obj$budget$scree_eps,
+            delta_total = obj$budget$scree_delta,
+            center = input$center,
+            standardize = input$standardize,
+            control = obj$control,
+            g_dppca = input$g_dppca,
+            cpp.option = FALSE,
+            mono = input$scree_mono,
+            type = input$scree_type
+          )
+          incProgress(0.85, detail = "Rendering scree plot")
+        })
       },
       error = function(e) {
         showNotification(paste("Scree plot error:", conditionMessage(e)), type = "error", duration = 10)
@@ -800,34 +793,43 @@ server <- function(input, output, session) {
 
     tryCatch(
       {
-        if (isTRUE(input$use_group) && !is.null(group_arg)) {
-          dp_score_plot_group(
-            X = dat$X_score,
-            group = group_arg,
-            center = input$center,
-            standardize = input$standardize,
-            g_dppca = input$g_dppca,
-            cpp.option = FALSE,
-            axes = axes,
-            eps = budget$score_eps,
-            delta = budget$score_delta,
-            bins = bins,
-            method = input$score_method
-          )
-        } else {
-          dp_score_plot(
-            X = X,
-            center = input$center,
-            standardize = input$standardize,
-            g_dppca = input$g_dppca,
-            cpp.option = FALSE,
-            axes = axes,
-            eps = budget$score_eps,
-            delta = budget$score_delta,
-            bins = bins,
-            method = input$score_method
-          )
-        }
+        withProgress(message = "Computing DP score plot...", value = 0, {
+          incProgress(0.10, detail = "Preparing score plot settings")
+
+          if (isTRUE(input$use_group) && !is.null(group_arg)) {
+            incProgress(0.20, detail = "Computing grouped private score histograms")
+            res <- dp_score_plot_group(
+              X = dat$X_score,
+              group = group_arg,
+              center = input$center,
+              standardize = input$standardize,
+              g_dppca = input$g_dppca,
+              cpp.option = FALSE,
+              axes = axes,
+              eps = budget$score_eps,
+              delta = budget$score_delta,
+              bins = bins,
+              method = input$score_method
+            )
+          } else {
+            incProgress(0.20, detail = "Computing private score histograms")
+            res <- dp_score_plot(
+              X = X,
+              center = input$center,
+              standardize = input$standardize,
+              g_dppca = input$g_dppca,
+              cpp.option = FALSE,
+              axes = axes,
+              eps = budget$score_eps,
+              delta = budget$score_delta,
+              bins = bins,
+              method = input$score_method
+            )
+          }
+
+          incProgress(0.70, detail = "Rendering score plot")
+          res
+        })
       },
       error = function(e) {
         showNotification(paste("Score plot error:", conditionMessage(e)), type = "error", duration = 10)
@@ -853,8 +855,5 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
-
-
-
 
 

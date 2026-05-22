@@ -19,8 +19,7 @@ dp_score_group(
   standardize = FALSE,
   g_dppca = FALSE,
   cpp.option = FALSE,
-  axes = c(1, 2),
-  fixed_frame = NULL
+  axes = c(1, 2)
 )
 ```
 
@@ -87,13 +86,6 @@ dp_score_group(
   Integer vector of length 2 specifying the principal components used to
   construct the score coordinates. The default is `c(1, 2)`.
 
-- fixed_frame:
-
-  Optional fixed plotting frame. If supplied, it can be a numeric vector
-  `c(lower, upper)` used for both axes, or a list with numeric
-  components `xlim` and `ylim`. If `NULL`, a private square frame is
-  estimated from the score coordinates.
-
 ## Value
 
 A list with components:
@@ -144,7 +136,7 @@ score_gau_g <- dp_score_group(
   group = "group",
   eps = 3,
   delta = 1e-3,
-  bins = c(8, 8),
+  bins = c(8, 8)
 )
 
 head(score_gau_g$score)
@@ -156,11 +148,11 @@ head(score_gau_g$score)
 #> [5,] 1.0839100  0.4533152
 #> [6,] 1.5430497 -1.0954815
 head(score_gau_g$groups$group1$add)
-#>         xmin       xmax      ymin     ymax         prob
-#> 1 -24.964534 -18.961402 -24.96453 -18.9614 0.0000000000
-#> 2 -18.961402 -12.958271 -24.96453 -18.9614 0.0102258822
-#> 3 -12.958271  -6.955139 -24.96453 -18.9614 0.0004625692
-#> 4  -6.955139  -0.952008 -24.96453 -18.9614 0.0008481902
-#> 5  -0.952008   5.051123 -24.96453 -18.9614 0.0112516577
-#> 6   5.051123  11.054255 -24.96453 -18.9614 0.0030238337
+#>          xmin        xmax     ymin      ymax        prob
+#> 1 -13.6247864 -10.0056291 -13.7689 -10.14974 0.007860830
+#> 2 -10.0056291  -6.3864719 -13.7689 -10.14974 0.000000000
+#> 3  -6.3864719  -2.7673146 -13.7689 -10.14974 0.008186366
+#> 4  -2.7673146   0.8518427 -13.7689 -10.14974 0.000000000
+#> 5   0.8518427   4.4709999 -13.7689 -10.14974 0.000000000
+#> 6   4.4709999   8.0901572 -13.7689 -10.14974 0.001209186
 ```

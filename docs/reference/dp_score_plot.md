@@ -20,8 +20,7 @@ dp_score_plot(
   standardize = FALSE,
   g_dppca = FALSE,
   cpp.option = FALSE,
-  axes = c(1, 2),
-  fixed_frame = NULL
+  axes = c(1, 2)
 )
 ```
 
@@ -80,13 +79,6 @@ dp_score_plot(
 
   Integer vector of length 2 specifying the principal components used to
   construct the score coordinates. The default is `c(1, 2)`.
-
-- fixed_frame:
-
-  Optional fixed plotting frame. If supplied, it can be a numeric vector
-  `c(lower, upper)` used for both axes, or a list with numeric
-  components `xlim` and `ylim`. If `NULL`, a private square frame is
-  estimated from the score coordinates.
 
 ## Value
 
