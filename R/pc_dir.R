@@ -27,9 +27,9 @@
 #'   the spherical Kendall mechanism based on the g-DPPCA method. If `FALSE`,
 #'   the usual non-private directions are computed from the sample covariance
 #'   matrix. The default is `FALSE`.
-#' @param eps_dir Positive number defining the `epsilon` privacy parameter for
+#' @param eps Positive number defining the `epsilon` privacy parameter for
 #'   private principal component directions. Required when `g_dppca = TRUE`.
-#' @param delta_dir Number in `(0, 1)` defining the `delta` privacy parameter for
+#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter for
 #'   private principal component directions. Required when `g_dppca = TRUE`.
 #' @param cpp.option A logical value reserved for a future C++ implementation of
 #'   the spherical Kendall matrix. Currently only `FALSE` is supported.
@@ -67,8 +67,8 @@
 #'   X,
 #'   k = 2,
 #'   g_dppca = TRUE,
-#'   eps_dir = 2,
-#'   delta_dir = 1e-3
+#'   eps = 2,
+#'   delta = 1e-3
 #' )
 #' head(V_private)
 #'
@@ -79,8 +79,8 @@ dp_pc_dir <- function(X,
                       center = TRUE,
                       standardize = FALSE,
                       g_dppca = FALSE,
-                      eps_dir = NULL,
-                      delta_dir = NULL,
+                      eps = NULL,
+                      delta = NULL,
                       cpp.option = FALSE) {
   X_proc <- prep_matrix_for_pca(X, center = center,standardize = standardize)
 
@@ -91,10 +91,10 @@ dp_pc_dir <- function(X,
   n <- nrow(X_proc)
 
   if (g_dppca) {
-    eps_dir <- validate_positive_number(eps_dir, "eps_dir")
-    delta_dir <- validate_probability(delta_dir, "delta_dir")
+    eps <- validate_positive_number(eps, "eps")
+    delta <- validate_probability(delta, "delta")
 
-    sigma_sph <- 2 * sqrt(2 * log(1.25 / delta_dir)) / (n * eps_dir)
+    sigma_sph <- 2 * sqrt(2 * log(1.25 / delta)) / (n * eps)
     pca_matrix <- mech_tau_sph(
       X_proc,
       sig = sigma_sph,

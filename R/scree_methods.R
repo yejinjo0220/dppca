@@ -134,13 +134,13 @@ dp_scree_clipped <- function(X, k, eps, delta,
   }
 
   if (isTRUE(g_dppca)) {
-    eps_dir <- eps / 2
-    delta_dir <- delta / 2
+    eps_pc <- eps / 2
+    delta_pc <- delta / 2
     eps_scree <- eps / 2
     delta_scree <- delta / 2
   } else {
-    eps_dir <- NULL
-    delta_dir <- NULL
+    eps_pc <- NULL
+    delta_pc <- NULL
     eps_scree <- eps
     delta_scree <- delta
   }
@@ -155,8 +155,8 @@ dp_scree_clipped <- function(X, k, eps, delta,
     X = X,
     k = k,
     g_dppca = g_dppca,
-    eps_dir = eps_dir,
-    delta_dir = delta_dir,
+    eps = eps_pc,
+    delta = delta_pc,
     center = center,
     standardize = standardize,
     cpp.option = cpp.option
@@ -481,13 +481,13 @@ dp_scree_huber <- function(X, k, eps, delta,
   M <- max(1L, as.integer(M))
 
   if (isTRUE(g_dppca)) {
-    eps_dir <- eps / 2
-    delta_dir <- delta / 2
+    eps_pc <- eps / 2
+    delta_pc <- delta / 2
     eps_scree <- eps / 2
     delta_scree <- delta / 2
   } else {
-    eps_dir <- NULL
-    delta_dir <- NULL
+    eps_pc <- NULL
+    delta_pc <- NULL
     eps_scree <- eps
     delta_scree <- delta
   }
@@ -510,8 +510,8 @@ dp_scree_huber <- function(X, k, eps, delta,
     X = X,
     k = k,
     g_dppca = g_dppca,
-    eps_dir = eps_dir,
-    delta_dir = delta_dir,
+    eps = eps_pc,
+    delta = delta_pc,
     center = center,
     standardize = standardize,
     cpp.option = cpp.option
@@ -795,13 +795,13 @@ dp_scree_pmwm <- function(X, k, eps, delta,
   }
 
   if (isTRUE(g_dppca)) {
-    eps_dir <- eps / 2
-    delta_dir <- delta / 2
+    eps_pc <- eps / 2
+    delta_pc <- delta / 2
     eps_scree <- eps / 2
     delta_scree <- delta / 2
   } else {
-    eps_dir <- NULL
-    delta_dir <- NULL
+    eps_pc <- NULL
+    delta_pc <- NULL
     eps_scree <- eps
     delta_scree <- delta
   }
@@ -829,8 +829,8 @@ dp_scree_pmwm <- function(X, k, eps, delta,
     X = X,
     k = k,
     g_dppca = g_dppca,
-    eps_dir = eps_dir,
-    delta_dir = delta_dir,
+    eps = eps_pc,
+    delta = delta_pc,
     center = center,
     standardize = standardize,
     cpp.option = cpp.option

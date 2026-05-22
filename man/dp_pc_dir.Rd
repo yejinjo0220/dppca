@@ -10,8 +10,8 @@ dp_pc_dir(
   center = TRUE,
   standardize = FALSE,
   g_dppca = FALSE,
-  eps_dir = NULL,
-  delta_dir = NULL,
+  eps = NULL,
+  delta = NULL,
   cpp.option = FALSE
 )
 }
@@ -34,10 +34,10 @@ the spherical Kendall mechanism based on the g-DPPCA method. If \code{FALSE},
 the usual non-private directions are computed from the sample covariance
 matrix. The default is \code{FALSE}.}
 
-\item{eps_dir}{Positive number defining the \code{epsilon} privacy parameter for
+\item{eps}{Positive number defining the \code{epsilon} privacy parameter for
 private principal component directions. Required when \code{g_dppca = TRUE}.}
 
-\item{delta_dir}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter for
+\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter for
 private principal component directions. Required when \code{g_dppca = TRUE}.}
 
 \item{cpp.option}{A logical value reserved for a future C++ implementation of
@@ -83,8 +83,8 @@ V_private <- dp_pc_dir(
   X,
   k = 2,
   g_dppca = TRUE,
-  eps_dir = 2,
-  delta_dir = 1e-3
+  eps = 2,
+  delta = 1e-3
 )
 head(V_private)
 

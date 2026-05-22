@@ -222,7 +222,7 @@ add_title_dp <- function(plot, title_text) {
       plot.title = ggplot2::element_text(
         hjust = 0.5,
         face = "bold",
-        size = 14
+        size = 16
       )
     )
 }
@@ -251,11 +251,13 @@ theme_dp_base <- function() {
 #' @param xlim,ylim Plotting limits.
 #' @param color Fill color.
 #' @param title Optional plot title.
+#' @param xlab,ylab Axis labels.
 #'
 #' @return A `ggplot` object or `NULL`.
 #'
 #' @noRd
-make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL) {
+make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL,
+                              xlab = "PC1", ylab = "PC2") {
   if (is.null(hist_df)) {
     return(NULL)
   }
@@ -277,7 +279,7 @@ make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL) {
     ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
     ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, n = 5)) +
     theme_dp_base() +
-    ggplot2::theme(axis.title = ggplot2::element_blank())
+    ggplot2::labs(x = xlab, y = ylab)
 
   add_title_dp(p, title)
 }
@@ -288,11 +290,13 @@ make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL) {
 #' @param xlim,ylim Plotting limits.
 #' @param col_map Named color vector.
 #' @param title Optional plot title.
+#' @param xlab,ylab Axis labels.
 #'
 #' @return A `ggplot` object or a patchwork spacer.
 #'
 #' @noRd
-make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL) {
+make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL,
+                             xlab = "PC1", ylab = "PC2") {
   if (is.null(df)) {
     return(patchwork::plot_spacer())
   }
@@ -350,7 +354,7 @@ make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL) {
     ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
     ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, n = 5)) +
     theme_dp_base() +
-    ggplot2::theme(axis.title = ggplot2::element_blank())
+    ggplot2::labs(x = xlab, y = ylab)
 
   add_title_dp(p, title)
 }
@@ -361,11 +365,13 @@ make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL) {
 #' @param xlim,ylim Plotting limits.
 #' @param col Fill color.
 #' @param title Optional plot title.
+#' @param xlab,ylab Axis labels.
 #'
 #' @return A `ggplot` object or a patchwork spacer.
 #'
 #' @noRd
-make_hist_single_dp <- function(df, xlim, ylim, col, title = NULL) {
+make_hist_single_dp <- function(df, xlim, ylim, col, title = NULL,
+                                xlab = "PC1", ylab = "PC2") {
   if (is.null(df)) {
     return(patchwork::plot_spacer())
   }
@@ -387,7 +393,7 @@ make_hist_single_dp <- function(df, xlim, ylim, col, title = NULL) {
     ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
     ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, n = 5)) +
     theme_dp_base() +
-    ggplot2::theme(axis.title = ggplot2::element_blank())
+    ggplot2::labs(x = xlab, y = ylab)
 
   add_title_dp(p, title)
 }
@@ -444,37 +450,37 @@ split_score_privacy_budget <- function(eps, delta, g_dppca, fixed_frame = NULL) 
 
   if (isTRUE(g_dppca) && uses_private_frame) {
     list(
-      eps_dir = eps / 3,
+      eps_pc = eps / 3,
       eps_frame = eps / 3,
       eps_hist = eps / 3,
-      delta_dir = delta / 3,
+      delta_pc = delta / 3,
       delta_frame = delta / 3,
       delta_hist = delta / 3
     )
   } else if (isTRUE(g_dppca)) {
     list(
-      eps_dir = eps / 2,
+      eps_pc = eps / 2,
       eps_frame = NULL,
       eps_hist = eps / 2,
-      delta_dir = delta / 2,
+      delta_pc = delta / 2,
       delta_frame = NULL,
       delta_hist = delta / 2
     )
   } else if (uses_private_frame) {
     list(
-      eps_dir = NULL,
+      eps_pc = NULL,
       eps_frame = eps / 2,
       eps_hist = eps / 2,
-      delta_dir = NULL,
+      delta_pc = NULL,
       delta_frame = delta / 2,
       delta_hist = delta / 2
     )
   } else {
     list(
-      eps_dir = NULL,
+      eps_pc = NULL,
       eps_frame = NULL,
       eps_hist = eps,
-      delta_dir = NULL,
+      delta_pc = NULL,
       delta_frame = NULL,
       delta_hist = delta
     )
@@ -579,8 +585,8 @@ compute_score_coordinates <- function(
     standardize,
     g_dppca,
     cpp.option,
-    eps_dir,
-    delta_dir
+    eps,
+    delta
 ) {
   k_max <- max(axes)
 
@@ -596,8 +602,8 @@ compute_score_coordinates <- function(
     center = center,
     standardize = standardize,
     g_dppca = g_dppca,
-    eps_dir = eps_dir,
-    delta_dir = delta_dir,
+    eps = eps,
+    delta = delta,
     cpp.option = cpp.option
   )
 

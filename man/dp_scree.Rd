@@ -52,7 +52,9 @@ component directions for scree estimation. The default is \code{FALSE}. See
 \code{\link[=dp_pc_dir]{dp_pc_dir()}} for details.}
 
 \item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
-\code{g_dppca = TRUE}. The default is \code{FALSE}.}
+\code{g_dppca = TRUE}. The default is \code{FALSE}.
+When \code{g_dppca = TRUE}, \code{\link[=dp_pc_dir]{dp_pc_dir()}} is called with arguments
+\code{eps = eps / 2} and \code{delta = delta / 2}.}
 
 \item{mono}{A logical value indicating whether to apply monotone
 post-processing to the vector of private scree values. The default is \code{TRUE}.}
@@ -112,8 +114,9 @@ an eigenvector of sample covariance, and the full privacy parameters
 \code{eps} and \code{delta} are used for private scree value estimation. If \code{g_dppca = TRUE},
 the directions are computed privately using \code{\link[=dp_pc_dir]{dp_pc_dir()}}.
 In that case, the privacy parameters are split equally:
-\code{eps / 2} and \code{delta / 2} are used for private direction estimation, and the
-remaining \code{eps / 2} and \code{delta / 2} are used for private scree value estimation.
+\code{\link[=dp_pc_dir]{dp_pc_dir()}} receives \code{eps = eps / 2} and \code{delta = delta / 2} for
+private direction estimation, and the remaining \code{eps / 2} and \code{delta / 2}
+are used for private scree value estimation.
 When \code{mono = TRUE}, the final monotone adjustment is a post-processing step and
 does not change the privacy guarantee.
 

@@ -42,6 +42,7 @@ set.seed(123)
 V <- dp_pc_dir(
   X,
   k = 5,
+  g_dppca = TRUE,
   eps = 3,
   delta = 1e-4
 )

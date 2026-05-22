@@ -53,7 +53,9 @@ component directions for scree estimation. The default is \code{FALSE}. See
 \code{\link[=dp_pc_dir]{dp_pc_dir()}} for details.}
 
 \item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
-\code{g_dppca = TRUE}. The default is \code{FALSE}.}
+\code{g_dppca = TRUE}. The default is \code{FALSE}.
+When \code{g_dppca = TRUE}, \code{\link[=dp_pc_dir]{dp_pc_dir()}} is called with arguments
+\code{eps = eps / 2} and \code{delta = delta / 2}.}
 
 \item{mono}{A logical value indicating whether to apply monotone
 post-processing to the private scree vector. The default is \code{TRUE}.}

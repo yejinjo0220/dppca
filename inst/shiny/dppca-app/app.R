@@ -297,6 +297,12 @@ library(dppca)
   series_names <- names(y_list)
   first <- series_names[1L]
 
+  x_ticks <- pretty(idx)
+  x_ticks <- x_ticks[x_ticks >= 1 & x_ticks <= k & x_ticks == floor(x_ticks)]
+  if (!length(x_ticks)) {
+    x_ticks <- idx
+  }
+
   graphics::plot(
     idx,
     y_list[[first]],
@@ -307,8 +313,13 @@ library(dppca)
     xlab = "Component",
     ylab = ylab,
     main = main,
-    ylim = ylim
+    ylim = ylim,
+    xaxt = "n",
+    cex.main = 2,
+    cex.lab = 1.25,
+    cex.axis = 1.15
   )
+  graphics::axis(1, at = x_ticks, labels = x_ticks, cex.axis = 1.15)
 
   if (length(series_names) > 1L) {
     for (nm in series_names[-1L]) {
@@ -329,7 +340,8 @@ library(dppca)
     col = unname(col_map[series_names]),
     lty = unname(lty_map[series_names]),
     pch = unname(pch_map[series_names]),
-    bty = "n"
+    bty = "n",
+    cex = 1.25
   )
 
   invisible(list(
@@ -579,7 +591,6 @@ ui <- fluidPage(
         div(
           class = "plot-card plot-card-scree",
           h4("DP Scree Plot"),
-          div(class = "plot-card-note", "PVE curves are shown in a taller, centered panel to avoid a flattened appearance."),
           plotOutput("scree_plot", height = "520px")
         ),
         div(
@@ -842,5 +853,8 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
+
+
+
 
 

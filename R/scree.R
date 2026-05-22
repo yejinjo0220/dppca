@@ -38,6 +38,8 @@
 #'   [dp_pc_dir()] for details.
 #' @param cpp.option A logical value passed to [dp_pc_dir()] when
 #'   `g_dppca = TRUE`. The default is `FALSE`.
+#'   When `g_dppca = TRUE`, [dp_pc_dir()] is called with arguments
+#'   `eps = eps / 2` and `delta = delta / 2`.
 #' @param mono A logical value indicating whether to apply monotone
 #'   post-processing to the vector of private scree values. The default is `TRUE`.
 #'
@@ -75,8 +77,9 @@
 #' `eps` and `delta` are used for private scree value estimation. If `g_dppca = TRUE`,
 #' the directions are computed privately using [dp_pc_dir()].
 #' In that case, the privacy parameters are split equally:
-#' `eps / 2` and `delta / 2` are used for private direction estimation, and the
-#' remaining `eps / 2` and `delta / 2` are used for private scree value estimation.
+#' [dp_pc_dir()] receives `eps = eps / 2` and `delta = delta / 2` for
+#' private direction estimation, and the remaining `eps / 2` and `delta / 2`
+#' are used for private scree value estimation.
 #' When `mono = TRUE`, the final monotone adjustment is a post-processing step and
 #' does not change the privacy guarantee.
 #'
@@ -291,6 +294,8 @@ dp_scree <- function(
 #'   [dp_pc_dir()] for details.
 #' @param cpp.option A logical value passed to [dp_pc_dir()] when
 #'   `g_dppca = TRUE`. The default is `FALSE`.
+#'   When `g_dppca = TRUE`, [dp_pc_dir()] is called with arguments
+#'   `eps = eps / 2` and `delta = delta / 2`.
 #' @param mono A logical value indicating whether to apply monotone
 #'   post-processing to the private scree vector. The default is `TRUE`.
 #' @param type Quantity to plot. Use `"pve"` to plot proportions of variance
@@ -479,14 +484,23 @@ dp_scree_plot <- function(
   nm1 <- series_names[1]
   y1 <- y_list[[nm1]]
 
+  x_ticks <- pretty(idx)
+  x_ticks <- x_ticks[x_ticks >= 1 & x_ticks <= k & x_ticks == floor(x_ticks)]
+  if (length(x_ticks) == 0) x_ticks <- idx
+
   graphics::plot(
     idx, y1,
     type = "b",
     col = unname(col_map[nm1]),
     lty = unname(lty_map[nm1]),
     pch = unname(pch_map[nm1]),
-    xlab = xlab, ylab = ylab, main = main, ylim = ylim
+    xlab = xlab, ylab = ylab, main = main, ylim = ylim,
+    xaxt = "n",
+    cex.main = 2,
+    cex.lab = 1.25,
+    cex.axis = 1.15
   )
+  graphics::axis(1, at = x_ticks, labels = x_ticks, cex.axis = 1.15)
 
   if (length(series_names) >= 2) {
     for (nm in series_names[-1]) {
@@ -506,7 +520,8 @@ dp_scree_plot <- function(
     col = unname(col_map[series_names]),
     lty = unname(lty_map[series_names]),
     pch = unname(pch_map[series_names]),
-    bty = "n"
+    bty = "n",
+    cex = 1.25
   )
 
   invisible(list(
@@ -514,3 +529,4 @@ dp_scree_plot <- function(
     results = results
   ))
 }
+

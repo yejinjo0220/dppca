@@ -181,8 +181,8 @@ dp_score <- function(
     standardize = standardize,
     g_dppca = g_dppca,
     cpp.option = cpp.option,
-    eps_dir = budget$eps_dir,
-    delta_dir = budget$delta_dir
+    eps = budget$eps_pc,
+    delta = budget$delta_pc
   )
 
   frame_out <- dp_frame(
@@ -312,19 +312,22 @@ dp_score_plot <- function(
     ggplot2::labs(x = pc_names[1], y = pc_names[2])
 
   p_scatter <- add_title_dp(p_scatter, "Original Scatter")
-  p_none <- make_hist_plot_dp(score_res$none, xlim, ylim, color, "Original Hist")
+  p_none <- make_hist_plot_dp(score_res$none, xlim, ylim, color, "Original Hist",
+                              xlab = pc_names[1], ylab = pc_names[2])
   p_add <- NULL
   p_sparse <- NULL
 
   plot_panels <- list(p_scatter, p_none)
 
   if ("add" %in% method) {
-    p_add <- make_hist_plot_dp(score_res$add, xlim, ylim, color, "Add DP Hist")
+    p_add <- make_hist_plot_dp(score_res$add, xlim, ylim, color, "Add DP Hist",
+                               xlab = pc_names[1], ylab = pc_names[2])
     plot_panels <- c(plot_panels, list(p_add))
   }
 
   if ("sparse" %in% method) {
-    p_sparse <- make_hist_plot_dp(score_res$sparse, xlim, ylim, color, "Sparse DP Hist")
+    p_sparse <- make_hist_plot_dp(score_res$sparse, xlim, ylim, color, "Sparse DP Hist",
+                                  xlab = pc_names[1], ylab = pc_names[2])
     plot_panels <- c(plot_panels, list(p_sparse))
   }
 
@@ -456,8 +459,8 @@ dp_score_group <- function(
     standardize = standardize,
     g_dppca = g_dppca,
     cpp.option = cpp.option,
-    eps_dir = budget$eps_dir,
-    delta_dir = budget$delta_dir
+    eps = budget$eps_pc,
+    delta = budget$delta_pc
   )
 
   frame_out <- dp_frame(
@@ -617,7 +620,8 @@ dp_score_plot_group <- function(
     df
   }))
 
-  p_none_all <- make_hist_all_dp(coord_none_all, xlim, ylim, col_map, "Original Hist")
+  p_none_all <- make_hist_all_dp(coord_none_all, xlim, ylim, col_map, "Original Hist",
+                                 xlab = pc_names[1], ylab = pc_names[2])
   p_add_all <- NULL
   p_sparse_all <- NULL
 
@@ -629,7 +633,8 @@ dp_score_plot_group <- function(
       df$group <- g
       df
     }))
-    p_add_all <- make_hist_all_dp(coord_add_all, xlim, ylim, col_map, "Add DP Hist")
+    p_add_all <- make_hist_all_dp(coord_add_all, xlim, ylim, col_map, "Add DP Hist",
+                                  xlab = pc_names[1], ylab = pc_names[2])
     plot_panels <- c(plot_panels, list(p_add_all))
   }
 
@@ -639,7 +644,8 @@ dp_score_plot_group <- function(
       df$group <- g
       df
     }))
-    p_sparse_all <- make_hist_all_dp(coord_sparse_all, xlim, ylim, col_map, "Sparse DP Hist")
+    p_sparse_all <- make_hist_all_dp(coord_sparse_all, xlim, ylim, col_map, "Sparse DP Hist",
+                                     xlab = pc_names[1], ylab = pc_names[2])
     plot_panels <- c(plot_panels, list(p_sparse_all))
   }
 
@@ -657,7 +663,9 @@ dp_score_plot_group <- function(
         xlim = xlim,
         ylim = ylim,
         col = col_map[[g]],
-        title = title_g
+        title = title_g,
+        xlab = pc_names[1],
+        ylab = pc_names[2]
       )
     })
     names(group_plots) <- g_levels
