@@ -169,7 +169,7 @@ score_plot <- dp_score_plot(
   bins = c(15, 15)
 )
 
-score_plot
+score_plot$plot$all
 ```
 <p align="center">
   <img src="man/figures/score_plot.png" width="100%" alt="Private score plot produced by dppca">
@@ -214,7 +214,7 @@ score_group_plot <- dp_score_plot_group(
   bins = c(15, 15),
 )
 
-score_group_plot
+score_group_plot$plot$all
 ```
 
 <p align="center">
