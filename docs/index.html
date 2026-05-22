@@ -98,6 +98,7 @@
 <span><span class="va">V</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_pc_dir.html">dp_pc_dir</a></span><span class="op">(</span></span>
 <span>  <span class="va">X</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  g_dppca <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  delta <span class="op">=</span> <span class="fl">1e-4</span></span>
 <span><span class="op">)</span></span>
@@ -112,7 +113,7 @@
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">scree_clpped</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree.html">dp_scree</a></span><span class="op">(</span></span>
+<span><span class="va">scree_clipped</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree.html">dp_scree</a></span><span class="op">(</span></span>
 <span>  <span class="va">X</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"clipped"</span>,</span>
@@ -121,7 +122,7 @@
 <span>  delta <span class="op">=</span> <span class="fl">1e-4</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">scree_clpped</span></span></code></pre></div>
+<span><span class="va">scree_clipped</span></span></code></pre></div>
 <p>The package currently supports three scree estimation methods:</p>
 <ul>
 <li>
@@ -158,7 +159,7 @@
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">scree_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
+<span><span class="va">scree_plot_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dp_scree_plot.html">dp_scree_plot</a></span><span class="op">(</span></span>
 <span>  <span class="va">X</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"clipped"</span>, <span class="st">"pmwm"</span>, <span class="st">"huber"</span><span class="op">)</span>,</span>
@@ -170,7 +171,7 @@
 <span>  eps <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  delta <span class="op">=</span> <span class="fl">1e-4</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">scree_all</span></span></code></pre></div>
+<span><span class="va">scree_plot_all</span></span></code></pre></div>
 <p align="center">
 <img src="reference/figures/scree_plot.png" width="75%" alt="Private scree plot produced by dppca"></p>
 </div>

@@ -21,7 +21,8 @@ Launches an interactive Shiny application for exploring differentially
 private PCA visualizations. The app provides a graphical interface for
 \code{dp_scree_plot()} and \code{dp_score_plot()}, including private scree
 plot methods and histogram-based private score plot methods.
-
+}
+\details{
 The app can be opened with built-in example datasets or with a user-supplied
 dataset. If \code{X} is supplied, the app starts with \code{X} as the initial
 dataset. If \code{group} is supplied, the score plot can use the group labels

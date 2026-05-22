@@ -86,7 +86,9 @@ dp_scree_plot(
 
   A logical value passed to
   [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
-  when `g_dppca = TRUE`. The default is `FALSE`.
+  when `g_dppca = TRUE`. The default is `FALSE`. When `g_dppca = TRUE`,
+  [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
+  is called with arguments `eps = eps / 2` and `delta = delta / 2`.
 
 - mono:
 

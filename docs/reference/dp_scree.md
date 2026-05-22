@@ -87,7 +87,9 @@ dp_scree(
 
   A logical value passed to
   [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
-  when `g_dppca = TRUE`. The default is `FALSE`.
+  when `g_dppca = TRUE`. The default is `FALSE`. When `g_dppca = TRUE`,
+  [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
+  is called with arguments `eps = eps / 2` and `delta = delta / 2`.
 
 - mono:
 
@@ -144,11 +146,13 @@ privacy parameters `eps` and `delta` are used for private scree value
 estimation. If `g_dppca = TRUE`, the directions are computed privately
 using
 [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md).
-In that case, the privacy parameters are split equally: `eps / 2` and
-`delta / 2` are used for private direction estimation, and the remaining
-`eps / 2` and `delta / 2` are used for private scree value estimation.
-When `mono = TRUE`, the final monotone adjustment is a post-processing
-step and does not change the privacy guarantee.
+In that case, the privacy parameters are split equally:
+[`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
+receives `eps = eps / 2` and `delta = delta / 2` for private direction
+estimation, and the remaining `eps / 2` and `delta / 2` are used for
+private scree value estimation. When `mono = TRUE`, the final monotone
+adjustment is a post-processing step and does not change the privacy
+guarantee.
 
 For a detailed procedure and mathematical formulations, refer
 <https://yejinjo0220.github.io/dppca/articles/dp_scree>.

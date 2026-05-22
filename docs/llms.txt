@@ -52,6 +52,7 @@ set.seed(123)
 V <- dp_pc_dir(
   X,
   k = 5,
+  g_dppca = TRUE,
   eps = 3,
   delta = 1e-4
 )
@@ -71,7 +72,7 @@ method is chosen by the `method` argument.
 ``` r
 set.seed(123)
 
-scree_clpped <- dp_scree(
+scree_clipped <- dp_scree(
   X,
   k = 5,
   method = "clipped",
@@ -80,7 +81,7 @@ scree_clpped <- dp_scree(
   delta = 1e-4
 )
 
-scree_clpped
+scree_clipped
 ```
 
 The package currently supports three scree estimation methods:
@@ -127,7 +128,7 @@ explained.
 ``` r
 set.seed(123)
 
-scree_all <- dp_scree_plot(
+scree_plot_all <- dp_scree_plot(
   X,
   k = 5,
   method = c("clipped", "pmwm", "huber"),
@@ -139,7 +140,7 @@ scree_all <- dp_scree_plot(
   eps = 3,
   delta = 1e-4
 )
-scree_all
+scree_plot_all
 ```
 
 ![Private scree plot produced by

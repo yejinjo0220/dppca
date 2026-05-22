@@ -6,6 +6,14 @@
 #' \code{dp_scree_plot()} and \code{dp_score_plot()}, including private scree
 #' plot methods and histogram-based private score plot methods.
 #'
+#' @param X Optional numeric matrix or data frame. If supplied, the app opens
+#'   with this data as the initial dataset.
+#' @param group Optional group labels. This can be either a vector of length
+#'   \code{nrow(X)} or a single column name in \code{X}.
+#'
+#' @return No return value. This function opens a Shiny application.
+#'
+#' @details
 #' The app can be opened with built-in example datasets or with a user-supplied
 #' dataset. If \code{X} is supplied, the app starts with \code{X} as the initial
 #' dataset. If \code{group} is supplied, the score plot can use the group labels
@@ -13,13 +21,6 @@
 #' \code{nrow(X)} or the name of a column in \code{X}. When \code{group} is a
 #' column name, that column is used as group labels and is removed from the PCA
 #' feature matrix.
-#'
-#' @param X Optional numeric matrix or data frame. If supplied, the app opens
-#'   with this data as the initial dataset.
-#' @param group Optional group labels. This can be either a vector of length
-#'   \code{nrow(X)} or a single column name in \code{X}.
-#'
-#' @return No return value. This function opens a Shiny application.
 #'
 #' @examples
 #' \dontrun{

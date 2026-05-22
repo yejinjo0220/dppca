@@ -8,14 +8,6 @@ and
 including private scree plot methods and histogram-based private score
 plot methods.
 
-The app can be opened with built-in example datasets or with a
-user-supplied dataset. If `X` is supplied, the app starts with `X` as
-the initial dataset. If `group` is supplied, the score plot can use the
-group labels for coloring. The `group` argument can be either a vector
-of length `nrow(X)` or the name of a column in `X`. When `group` is a
-column name, that column is used as group labels and is removed from the
-PCA feature matrix.
-
 ## Usage
 
 ``` r
@@ -37,6 +29,16 @@ dppca_app(X = NULL, group = NULL)
 ## Value
 
 No return value. This function opens a Shiny application.
+
+## Details
+
+The app can be opened with built-in example datasets or with a
+user-supplied dataset. If `X` is supplied, the app starts with `X` as
+the initial dataset. If `group` is supplied, the score plot can use the
+group labels for coloring. The `group` argument can be either a vector
+of length `nrow(X)` or the name of a column in `X`. When `group` is a
+column name, that column is used as group labels and is removed from the
+PCA feature matrix.
 
 ## Examples
 

@@ -17,8 +17,8 @@ dp_pc_dir(
   center = TRUE,
   standardize = FALSE,
   g_dppca = FALSE,
-  eps_dir = NULL,
-  delta_dir = NULL,
+  eps = NULL,
+  delta = NULL,
   cpp.option = FALSE
 )
 ```
@@ -53,12 +53,12 @@ dp_pc_dir(
   the usual non-private directions are computed from the sample
   covariance matrix. The default is `FALSE`.
 
-- eps_dir:
+- eps:
 
   Positive number defining the `epsilon` privacy parameter for private
   principal component directions. Required when `g_dppca = TRUE`.
 
-- delta_dir:
+- delta:
 
   Number in `(0, 1)` defining the `delta` privacy parameter for private
   principal component directions. Required when `g_dppca = TRUE`.
@@ -117,8 +117,8 @@ V_private <- dp_pc_dir(
   X,
   k = 2,
   g_dppca = TRUE,
-  eps_dir = 2,
-  delta_dir = 1e-3
+  eps = 2,
+  delta = 1e-3
 )
 head(V_private)
 #>              [,1]       [,2]
