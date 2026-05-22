@@ -193,7 +193,7 @@ score_plot <- dp_score_plot(
   bins = c(15, 15)
 )
 
-score_plot
+score_plot$plot$all
 ```
 
 ![Private score plot produced by
@@ -241,7 +241,7 @@ score_group_plot <- dp_score_plot_group(
   bins = c(15, 15),
 )
 
-score_group_plot
+score_group_plot$plot$all
 ```
 
 ![Private group score plot produced by

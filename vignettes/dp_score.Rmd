@@ -413,4 +413,4 @@ https://proceedings.neurips.cc/paper_files/paper/2011/file/f718499c1c8cef6730f9f
 Wasserman, L., & Zhou, S. (2010). "A Statistical Framework for Differential Privacy". Journal of the American Statistical Association, 105(489), 375--389. https://doi.org/10.1198/jasa.2009.tm08651
 
 <span id="ref-Karwa2017"></span>
-Vishesh Karwa and Salil Vadhan. (2017). "Finite sample differentially private confidence intervals". Proceedings of ITCS 2018, LIPIcs, 94, 44:1--44:9. http://drops.dagstuhl.de/opus/volltexte/2018/8344/
+Vishesh Karwa and Salil Vadhan. (2018). "Finite sample differentially private confidence intervals". In <em>Proceedings of ITCS 2018</em>, LIPIcs, 94, 44:1--44:9. https://doi.org/10.4230/LIPIcs.ITCS.2018.44

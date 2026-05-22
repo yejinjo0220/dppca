@@ -1,39 +1,40 @@
 Package: dppca
-Title: Differentially Private PCA Visualization
+Title: Differentially Private Principal Component Analysis Visualization
 Version: 0.1.0
 Authors@R: c(
     person("Yejin", "Jo", email = "yejinjo0220@gmail.com", role = c("aut", "cre")),
-    person("Minwoo", "Kim", email = "mwkim.stat@gmail.com", role = c("aut")))
+    person("Minwoo", "Kim", email = "mwkim.stat@gmail.com", role = c("aut"))
+    )
 Description: Provides tools for differentially private principal component
     analysis (PCA) visualization. It includes functions for estimating private
     principal component directions, constructing private scree and proportion
     of variance explained summaries, and visualizing two-dimensional PCA score
     summaries using additive and sparse histogram mechanisms. Group-wise score
     visualizations and an interactive Shiny app are also provided.
-LazyData: true
-LazyDataCompression: xz
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-Depends: 
+Depends:
     R (>= 4.3.0)
 Imports:
-    ggplot2,
-    rlang,
-    patchwork,
     dplyr,
-    VGAM,
-    rARPACK,
-    stats,
+    ggplot2,
     graphics,
     grDevices,
-    Rdpack
+    patchwork,
+    rARPACK,
+    Rdpack,
+    rlang,
+    stats,
+    VGAM
 Suggests:
     knitr,
     rmarkdown,
     shiny
 VignetteBuilder: knitr
 RdMacros: Rdpack
+LazyData: true
+LazyDataCompression: xz
 URL: https://github.com/yejinjo0220/dppca, https://yejinjo0220.github.io/dppca/
 BugReports: https://github.com/yejinjo0220/dppca/issues
