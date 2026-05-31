@@ -200,29 +200,6 @@ distribution. Fewer bins can be more stable under stronger privacy
 noise, while more bins can reveal finer structure when the sample size
 and privacy budget are sufficiently large.
 
-As practical guidelines, asymptotic bin rules often scale with the
-sample size. For example, one may consider
-
-``` math
-
-m_{\mathrm{axis}} \asymp n^{1/(2+d)}
-```
-
-as in [Wasserman and Zhou (2010)](#ref-Wasserman2010), or
-
-``` math
-
-m_{\mathrm{axis}}
-\asymp
-\left(
-\frac{n}{\log n}
-\right)^{1/(1+d)}
-```
-
-as in [Lei (2011)](#ref-Lei2011). Since the score histogram is
-two-dimensional, we take $`d=2`$. These rules should be treated as
-starting points rather than fixed prescriptions.
-
 ## 3. Two-dimensional histogram
 
 Let the private plotting frame be divided into bins $`B_1,\ldots,B_m`$.
@@ -431,6 +408,6 @@ Wasserman, L., & Zhou, S. (2010). “A Statistical Framework for
 Differential Privacy”. Journal of the American Statistical Association,
 105(489), 375–389. <https://doi.org/10.1198/jasa.2009.tm08651>
 
-Vishesh Karwa and Salil Vadhan. (2017). “Finite sample differentially
-private confidence intervals”. Proceedings of ITCS 2018, LIPIcs, 94,
-44:1–44:9. <http://drops.dagstuhl.de/opus/volltexte/2018/8344/>
+Vishesh Karwa and Salil Vadhan. (2018). “Finite sample differentially
+private confidence intervals”. In *Proceedings of ITCS 2018*, LIPIcs,
+94, 44:1–44:9. <https://doi.org/10.4230/LIPIcs.ITCS.2018.44>

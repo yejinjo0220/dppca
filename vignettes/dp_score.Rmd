@@ -200,26 +200,6 @@ privacy budget, and visible structure in the score distribution. Fewer bins can
 be more stable under stronger privacy noise, while more bins can reveal finer
 structure when the sample size and privacy budget are sufficiently large.
 
-As practical guidelines, asymptotic bin rules often scale with the sample size.
-For example, one may consider
-
-\[
-m_{\mathrm{axis}} \asymp n^{1/(2+d)}
-\]
-
-as in [Wasserman and Zhou (2010)](#ref-Wasserman2010), or
-
-\[
-m_{\mathrm{axis}}
-\asymp
-\left(
-\frac{n}{\log n}
-\right)^{1/(1+d)}
-\]
-
-as in [Lei (2011)](#ref-Lei2011). Since the score histogram is two-dimensional,
-we take \(d=2\). These rules should be treated as starting points rather than
-fixed prescriptions.
 
 ## 3. Two-dimensional histogram
 

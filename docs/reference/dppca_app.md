@@ -43,7 +43,7 @@ PCA feature matrix.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+if (interactive()) {
 # Launch the app with built-in example datasets.
 dppca_app()
 
@@ -54,5 +54,5 @@ dppca_app(gau)
 # Launch the app with group labels stored in a column.
 data(gau_g, package = "dppca")
 dppca_app(gau_g, group = "group")
-} # }
+}
 ```

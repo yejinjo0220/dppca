@@ -23,7 +23,7 @@
 #' feature matrix.
 #'
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' # Launch the app with built-in example datasets.
 #' dppca_app()
 #'

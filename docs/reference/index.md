@@ -39,9 +39,9 @@ score plots, and group-wise score visualizations.
 - [`dp_score_plot_group()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot_group.md)
   : Plot group-wise differentially private score histograms
 
-## Shiny app
+## shiny app
 
-Shiny app for exploring differentially private PCA scree and score plots
+shiny app for exploring differentially private PCA scree and score plots
 through a graphical interface.
 
 - [`dppca_app()`](https://yejinjo0220.github.io/dppca/reference/dppca_app.md)

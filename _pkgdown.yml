@@ -84,9 +84,9 @@ reference:
   - dp_score_group
   - dp_score_plot_group
 
-- title: "Shiny app"
+- title: "shiny app"
   desc: >
-    Shiny app for exploring differentially private PCA scree and score plots
+    shiny app for exploring differentially private PCA scree and score plots
     through a graphical interface.
   contents:
   - dppca_app

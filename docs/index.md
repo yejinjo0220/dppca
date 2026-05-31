@@ -3,7 +3,7 @@
 `dppca` provides tools for **differentially private principal component
 analysis (PCA) visualization** in R. It supports private PC direction
 estimation, private scree/PVE plots, private score plots, grouped score
-visualizations, and an interactive Shiny app.
+visualizations, and an interactive ‘shiny’ app.
 
 ## Installation
 

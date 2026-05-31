@@ -145,7 +145,7 @@ Two private histogram mechanisms are supported:
   settings where many bins are empty. It perturbs only nonzero empirical
   bin proportions and keeps bins whose noisy values exceed a stability
   threshold, following the stability-based private histogram idea of
-  Karwa and Vadhan (2017) .
+  Karwa and Vadhan (2018) .
 
 The privacy parameters are allocated across the privacy-consuming steps.
 If `g_dppca = FALSE`, half of `eps` and `delta` is used for private
@@ -175,8 +175,12 @@ Privacy.” *Journal of the American Statistical Association*,
 [doi:10.1198/jasa.2009.tm08651](https://doi.org/10.1198/jasa.2009.tm08651)
 .
 
-Karwa V, Vadhan SP (2017). “Finite Sample Differentially Private
-Confidence Intervals.” *CoRR*, **abs/1711.03908**. 1711.03908.
+Karwa V, Vadhan S (2018). “Finite Sample Differentially Private
+Confidence Intervals.” In *Proceedings of the 9th Innovations in
+Theoretical Computer Science Conference*, volume 94 of *Leibniz
+International Proceedings in Informatics*, 44:1–44:9.
+[doi:10.4230/LIPIcs.ITCS.2018.44](https://doi.org/10.4230/LIPIcs.ITCS.2018.44)
+.
 
 Kim M, Jung S (2025). “Robust and Differentially Private Principal
 Component Analysis.” *Statistical Analysis and Data Mining: An ASA Data

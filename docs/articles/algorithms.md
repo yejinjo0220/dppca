@@ -90,9 +90,9 @@ Durfee, D. (2023). Unbounded differentially private quantile and maximum
 estimation. In *Advances in Neural Information Processing Systems*, 36,
 77691–77712.
 
-Karwa, V. and Vadhan, S. (2018). Finite sample differentially private
-confidence intervals. *Proceedings of ITCS 2018*, LIPIcs, 94, 44:1–44:9.
-<http://drops.dagstuhl.de/opus/volltexte/2018/8344/>
+Vishesh Karwa and Salil Vadhan. (2018). “Finite sample differentially
+private confidence intervals”. In *Proceedings of ITCS 2018*, LIPIcs,
+94, 44:1–44:9. <https://doi.org/10.4230/LIPIcs.ITCS.2018.44>
 
 Wasserman, L. and Zhou, S. (2010). A statistical framework for
 differential privacy. *Journal of the American Statistical Association*,

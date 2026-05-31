@@ -32,7 +32,7 @@ column name, that column is used as group labels and is removed from the PCA
 feature matrix.
 }
 \examples{
-\dontrun{
+if (interactive()) {
 # Launch the app with built-in example datasets.
 dppca_app()
 

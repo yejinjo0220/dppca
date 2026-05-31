@@ -267,25 +267,6 @@ visible structure in the score distribution. Fewer bins can be more
 stable under stronger privacy noise, while more bins can reveal finer
 structure when the sample size and privacy budget are sufficiently
 large.</p>
-<p>As practical guidelines, asymptotic bin rules often scale with the
-sample size. For example, one may consider</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi></mrow></msub><mo>≍</mo><msup><mi>n</mi><mrow><mn>1</mn><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mo>+</mo><mi>d</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msup></mrow><annotation encoding="application/x-tex">
-m_{\mathrm{axis}} \asymp n^{1/(2+d)}
-</annotation></semantics></math></p>
-<p>as in <a href="#ref-Wasserman2010">Wasserman and Zhou (2010)</a>,
-or</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi></mrow></msub><mo>≍</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mi>n</mi><mrow><mo>log</mo><mi>n</mi></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mn>1</mn><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>d</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msup></mrow><annotation encoding="application/x-tex">
-m_{\mathrm{axis}}
-\asymp
-\left(
-\frac{n}{\log n}
-\right)^{1/(1+d)}
-</annotation></semantics></math></p>
-<p>as in <a href="#ref-Lei2011">Lei (2011)</a>. Since the score
-histogram is two-dimensional, we take
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">d=2</annotation></semantics></math>.
-These rules should be treated as starting points rather than fixed
-prescriptions.</p>
 </div>
 <div class="section level2">
 <h2 id="two-dimensional-histogram">3. Two-dimensional histogram<a class="anchor" aria-label="anchor" href="#two-dimensional-histogram"></a>
@@ -487,8 +468,8 @@ Systems, 24. Curran Associates, Inc. <a href="https://proceedings.neurips.cc/pap
 (2010). “A Statistical Framework for Differential Privacy”. Journal of
 the American Statistical Association, 105(489), 375–389. <a href="https://doi.org/10.1198/jasa.2009.tm08651" class="external-link uri">https://doi.org/10.1198/jasa.2009.tm08651</a></p>
 <p><span id="ref-Karwa2017"></span> Vishesh Karwa and Salil Vadhan.
-(2017). “Finite sample differentially private confidence intervals”.
-Proceedings of ITCS 2018, LIPIcs, 94, 44:1–44:9. <a href="http://drops.dagstuhl.de/opus/volltexte/2018/8344/" class="external-link uri">http://drops.dagstuhl.de/opus/volltexte/2018/8344/</a></p>
+(2018). “Finite sample differentially private confidence intervals”. In
+<em>Proceedings of ITCS 2018</em>, LIPIcs, 94, 44:1–44:9. <a href="https://doi.org/10.4230/LIPIcs.ITCS.2018.44" class="external-link uri">https://doi.org/10.4230/LIPIcs.ITCS.2018.44</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

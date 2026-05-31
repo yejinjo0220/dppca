@@ -6,11 +6,23 @@ Authors@R: c(
     person("Minwoo", "Kim", email = "mwkim.stat@gmail.com", role = c("aut"))
     )
 Description: Provides tools for differentially private principal component
-    analysis (PCA) visualization. It includes functions for estimating private
-    principal component directions, constructing private scree and proportion
-    of variance explained summaries, and visualizing two-dimensional PCA score
-    summaries using additive and sparse histogram mechanisms. Group-wise score
-    visualizations and an interactive Shiny app are also provided.
+    analysis (PCA) visualization. It includes functions for
+    estimating private principal component directions, constructing
+    private scree and proportion of variance explained summaries,
+    and visualizing two-dimensional PCA score summaries using
+    additive and sparse histogram mechanisms. Group-wise score
+    visualizations and an interactive 'shiny' app are also
+    provided. Private principal component directions are based on
+    Kim and Jung (2025) <doi:10.1002/sam.70053>. Private scree
+    summaries use mechanisms motivated by Dwork and Roth (2014)
+    <doi:10.1561/0400000042>, Ramsay and Spicker (2025)
+    <https://arxiv.org/abs/2501.14095>, and Yu, Ren and Zhou (2024)
+    <doi:10.3150/23-BEJ1706>. Private score plot frames use smooth-
+    sensitivity quantiles from Nissim, Raskhodnikova and Smith
+    (2007) <doi:10.1145/1250790.1250803>. Private score histograms
+    use additive and sparse histogram ideas from Wasserman and Zhou
+    (2010) <doi:10.1198/jasa.2009.tm08651> and Karwa and Vadhan
+    (2018) <doi:10.4230/LIPIcs.ITCS.2018.44>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
