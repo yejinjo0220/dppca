@@ -1,6 +1,3 @@
-# Shiny demo app for the dppca package
-# Put this file at: inst/shiny/dppca-app/app.R
-
 library(shiny)
 library(dppca)
 
@@ -18,8 +15,32 @@ library(dppca)
 }
 
 .default_delta <- function(n) {
-  # Use a valid DP delta in (0, 1). This corresponds to 10^{-ceiling(log10(n))}.
+  # Use a valid DP delta in (0, 1). This corresponds to
+  # 10^{-ceiling(log10(n))}. For example, n = 500 gives 1e-3.
+  n <- as.numeric(n)
+  if (length(n) != 1L || !is.finite(n) || n <= 1) {
+    return(1e-6)
+  }
   10^(-ceiling(log10(n)))
+}
+
+.integer_component_ticks <- function(k, n = 6L) {
+  # Base R's default axis can display half-integers, e.g. 1.5, 2.5.
+  # Component indices are discrete, so keep only integer tick labels.
+  k <- as.integer(k)
+  if (length(k) != 1L || !is.finite(k) || k < 1L) {
+    return(1L)
+  }
+
+  ticks <- pretty(seq_len(k), n = n)
+  ticks <- ticks[is.finite(ticks) & ticks >= 1 & ticks <= k]
+  ticks <- ticks[abs(ticks - round(ticks)) < sqrt(.Machine$double.eps)]
+  ticks <- unique(as.integer(round(ticks)))
+
+  if (!length(ticks)) {
+    ticks <- seq_len(k)
+  }
+  sort(ticks)
 }
 
 .group_vector <- function(group) {
@@ -296,6 +317,8 @@ library(dppca)
 
   series_names <- names(y_list)
   first <- series_names[1L]
+  x_ticks <- .integer_component_ticks(k)
+  xlim <- if (k == 1L) c(0.5, 1.5) else range(idx)
 
   graphics::plot(
     idx,
@@ -307,8 +330,12 @@ library(dppca)
     xlab = "Component",
     ylab = ylab,
     main = main,
-    ylim = ylim
+    xlim = xlim,
+    ylim = ylim,
+    xaxt = "n"
   )
+
+  graphics::axis(1, at = x_ticks, labels = x_ticks)
 
   if (length(series_names) > 1L) {
     for (nm in series_names[-1L]) {
@@ -490,13 +517,13 @@ ui <- fluidPage(
           "Scree controls",
           checkboxGroupInput(
             "scree_method", "DP scree method",
-            choices = c("Clipped mean" = "clipped", "PMWM" = "pmwm", "Huber" = "huber"),
+            choices = c("Clipped" = "clipped", "PMWM" = "pmwm", "Huber" = "huber"),
             selected = c("clipped", "pmwm", "huber"),
             inline = TRUE
           ),
           selectInput(
             "scree_type", "Plot type",
-            choices = c("PVE" = "pve", "Raw scree" = "scree"),
+            choices = c("PVE" = "pve", "eigenvalue" = "scree"),
             selected = "pve"
           ),
           checkboxInput("scree_mono", "Apply monotone post-processing", value = TRUE),
@@ -534,8 +561,8 @@ ui <- fluidPage(
               numericInput("huber_eta0", "eta0", value = 1, min = 1e-8, step = 0.1),
               numericInput("huber_T", "T", value = 50, min = 1, step = 1),
               numericInput("huber_M", "M", value = 20, min = 1, step = 1),
-              numericInput("huber_k_min_m2", "k_min_m2", value = -40, step = 1),
-              numericInput("huber_k_max_m2", "k_max_m2", value = 40, step = 1),
+              numericInput("huber_k_min_m2", "k_min_m2", value = -20, step = 1),
+              numericInput("huber_k_max_m2", "k_max_m2", value = 20, step = 1),
               numericInput("huber_m2_frac", "m2_frac", value = 0.25, min = 1e-6, max = 0.99, step = 0.05)
             )
           ),
@@ -579,7 +606,7 @@ ui <- fluidPage(
         div(
           class = "plot-card plot-card-scree",
           h4("DP Scree Plot"),
-          div(class = "plot-card-note", "PVE curves are shown in a taller, centered panel to avoid a flattened appearance."),
+          div(class = "plot-card-note"),
           plotOutput("scree_plot", height = "520px")
         ),
         div(
@@ -718,7 +745,7 @@ server <- function(input, output, session) {
     updateNumericInput(session, "axis_x", max = max_pc, value = min(input$axis_x, max_pc))
     updateNumericInput(session, "axis_y", max = max_pc, value = min(max(input$axis_y, 2L), max_pc))
     updateNumericInput(session, "delta_total", value = .default_delta(n))
-  })
+  }, ignoreInit = FALSE)
 
   scree_event <- eventReactive(input$run_scree, {
     X <- X_data()
@@ -855,5 +882,6 @@ server <- function(input, output, session) {
 }
 
 shinyApp(ui, server)
+
 
 

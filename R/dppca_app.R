@@ -1,7 +1,7 @@
 #' Launch the dppca Shiny app
 #'
 #' @description
-#' Launches an interactive Shiny application for exploring differentially
+#' Launches an interactive 'shiny' application for exploring differentially
 #' private PCA visualizations. The app provides a graphical interface for
 #' \code{dp_scree_plot()} and \code{dp_score_plot()}, including private scree
 #' plot methods and histogram-based private score plot methods.
@@ -11,7 +11,7 @@
 #' @param group Optional group labels. This can be either a vector of length
 #'   \code{nrow(X)} or a single column name in \code{X}.
 #'
-#' @return No return value. This function opens a Shiny application.
+#' @return No return value. This function opens an interactive 'shiny' application.
 #'
 #' @details
 #' The app can be opened with built-in example datasets or with a user-supplied
