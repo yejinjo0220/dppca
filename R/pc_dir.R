@@ -34,8 +34,10 @@
 #' @param cpp.option A logical value reserved for a future C++ implementation of
 #'   the spherical Kendall matrix. Currently only `FALSE` is supported.
 #'
-#' @return A numeric matrix with `ncol(X)` rows and `k` columns. The columns are
-#'   orthonormal principal component directions.
+#' @return A numeric matrix with `ncol(X)` rows and `k` columns. Rows correspond
+#'   to the original variables and columns correspond to principal components
+#'   (`PC1`, ..., `PCk`). The columns are orthonormal principal component
+#'   directions.
 #'
 #' @details
 #' The non-private option computes leading eigenvectors of the sample covariance
@@ -94,7 +96,7 @@ dp_pc_dir <- function(X,
     eps <- validate_positive_number(eps, "eps")
     delta <- validate_probability(delta, "delta")
 
-    sigma_sph <- 2 * sqrt(2 * log(1.25 / delta)) / (n * eps)
+    sigma_sph <- 4 * sqrt(2 * log(1.25 / delta)) / (n * eps)
     pca_matrix <- mech_tau_sph(
       X_proc,
       sig = sigma_sph,
@@ -105,7 +107,11 @@ dp_pc_dir <- function(X,
   }
 
   V <- leading_eigenvectors(pca_matrix, k = k)
-  orthonormalize_dir(V, k = k)
+
+  rownames(V) <- colnames(X_proc)
+  colnames(V) <- paste0("PC", seq_len(k))
+
+  V
 }
 
 # Internal helpers ------------------------------------------------------------
@@ -268,27 +274,6 @@ leading_eigenvectors <- function(A, k) {
 
   eig <- eigen(A, symmetric = TRUE)
   as.matrix(eig$vectors[, seq_len(k), drop = FALSE])
-}
-
-#' Re-orthonormalize principal component directions
-#'
-#' @param V A numeric matrix of candidate directions.
-#' @param k Number of columns to retain.
-#'
-#' @return A numeric matrix with orthonormal columns.
-#' @noRd
-orthonormalize_dir <- function(V, k) {
-  V <- as.matrix(V)
-
-  if (!is.numeric(V) || anyNA(V) || any(!is.finite(V))) {
-    stop("`V` must be a finite numeric matrix.", call. = FALSE)
-  }
-  if (ncol(V) < k || k < 1) {
-    stop("`k` must satisfy `1 <= k <= ncol(V)`.", call. = FALSE)
-  }
-
-  Q <- qr.Q(qr(V))
-  Q[, seq_len(k), drop = FALSE]
 }
 
 #' Compute the Euclidean norm

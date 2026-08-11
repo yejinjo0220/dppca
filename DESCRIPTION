@@ -41,10 +41,12 @@ Imports:
 Suggests:
     knitr,
     rmarkdown,
-    shiny
+    shiny,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 RdMacros: Rdpack
 LazyData: true
 LazyDataCompression: xz
 URL: https://github.com/yejinjo0220/dppca, https://yejinjo0220.github.io/dppca/
 BugReports: https://github.com/yejinjo0220/dppca/issues
+Config/testthat/edition: 3

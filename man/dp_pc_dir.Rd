@@ -44,8 +44,10 @@ private principal component directions. Required when \code{g_dppca = TRUE}.}
 the spherical Kendall matrix. Currently only \code{FALSE} is supported.}
 }
 \value{
-A numeric matrix with \code{ncol(X)} rows and \code{k} columns. The columns are
-orthonormal principal component directions.
+A numeric matrix with \code{ncol(X)} rows and \code{k} columns. Rows correspond
+to the original variables and columns correspond to principal components
+(\code{PC1}, ..., \code{PCk}). The columns are orthonormal principal component
+directions.
 }
 \description{
 This function returns the principal component directions used by the plotting
