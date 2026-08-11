@@ -26,7 +26,12 @@ validate_scree_inputs <- function(X, k, eps, delta) {
   n <- nrow(X); d <- ncol(X)
   if (n < 2) stop("Need n >= 2.")
   if (d < 1) stop("Need ncol(X) >= 1.")
-  if (!is.numeric(k) || length(k) != 1 || !is.finite(k) || k < 1 || k > d) stop("k must be an integer in {1, ..., ncol(X)}.")
+  if (
+    !is.numeric(k) || length(k) != 1 || !is.finite(k) ||
+    k != as.integer(k) || k < 1 || k > d
+  ) {
+    stop("`k` must be an integer in {1, ..., ncol(X)}.", call. = FALSE)
+  }
   if (!is.numeric(eps) || length(eps) != 1 || !is.finite(eps) || eps <= 0) stop("eps must be a single positive number.")
   if (!is.numeric(delta) || length(delta) != 1 || !is.finite(delta) || delta <= 0 || delta >= 1) stop("delta must be a single number in (0, 1).")
   invisible(TRUE)
@@ -110,10 +115,10 @@ winsorization <- function(x, lo, hi) {
 #' @param mono A logical value indicating whether to enforce a nonnegative and
 #'   nonincreasing scree sequence by post-processing.
 #'
-#' @return A list with components `scree`, `scree_np`, and `pve`.
+#' @return A list with components `scree` and `pve`.
 #' @noRd
 dp_scree_clipped <- function(X, k, eps, delta,
-                             center = TRUE, standardize = TRUE,
+                             center = TRUE, standardize = FALSE,
                              C_clip,
                              g_dppca = FALSE, cpp.option = FALSE,
                              mono = TRUE) {
@@ -167,7 +172,7 @@ dp_scree_clipped <- function(X, k, eps, delta,
   eps_ell <- eps_scree / k
   delta_ell <- delta_scree / k
 
-  scree_np <- numeric(k)
+  scree_base <- numeric(k)
   scree <- numeric(k)
 
   for (ell in seq_len(k)) {
@@ -178,13 +183,13 @@ dp_scree_clipped <- function(X, k, eps, delta,
     w_clip <- pmin(w, C_clip)
     mu_hat <- mean(w_clip)
 
-    scree_np[ell] <- (n / (n - 1)) * mu_hat
+    scree_base[ell] <- (n / (n - 1)) * mu_hat
 
     Delta_ell <- C_clip / (n - 1)
     sd_noise <- Delta_ell * sqrt(2 * log(1.25 / delta_ell)) / eps_ell
 
     scree[ell] <- max(
-      scree_np[ell] + stats::rnorm(1, mean = 0, sd = sd_noise),
+      scree_base[ell] + stats::rnorm(1, mean = 0, sd = sd_noise),
       0
     )
   }
@@ -195,7 +200,6 @@ dp_scree_clipped <- function(X, k, eps, delta,
 
   list(
     scree = scree,
-    scree_np = scree_np,
     pve = scree_to_pve(scree)
   )
 }
@@ -438,7 +442,7 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 #' @param mono A logical value indicating whether to enforce a nonnegative and
 #'   nonincreasing scree sequence by post-processing.
 #'
-#' @return A list with components `scree`, `scree_np`, and `pve`.
+#' @return A list with components `scree` and `pve`.
 #' @noRd
 dp_scree_huber <- function(X, k, eps, delta,
                            k_min_m2, k_max_m2, m2_frac,
@@ -519,7 +523,6 @@ dp_scree_huber <- function(X, k, eps, delta,
 
   Y <- X_proc %*% V_used
 
-  scree_np <- numeric(k)
   scree <- numeric(k)
 
   for (ell in seq_len(k)) {
@@ -555,7 +558,6 @@ dp_scree_huber <- function(X, k, eps, delta,
       eta0 = eta0
     )
 
-    scree_np[ell] <- (n / (n - 1)) * mean(w)
     scree[ell] <- (n / (n - 1)) * max(muT, 0)
   }
 
@@ -565,7 +567,6 @@ dp_scree_huber <- function(X, k, eps, delta,
 
   list(
     scree = scree,
-    scree_np = scree_np,
     pve = scree_to_pve(scree)
   )
 }
@@ -760,14 +761,14 @@ unbounded_quantile <- function(data, l, u, beta, q,
 #' @param max_extra_bins Nonnegative number of additional bins to search beyond
 #'   the largest occupied bin.
 #'
-#' @return A list with components `scree`, `scree_np`, and `pve`.
+#' @return A list with components `scree` and `pve`.
 #' @noRd
 dp_scree_pmwm <- function(X, k, eps, delta,
                           a, b, trim_const, eta,
                           beta = 1.001,
                           g_dppca = FALSE, cpp.option = FALSE,
                           split_mode = TRUE,
-                          center = TRUE, standardize = TRUE,
+                          center = TRUE, standardize = FALSE,
                           mono = TRUE, max_extra_bins = 1000) {
   validate_scree_inputs(
     X = X,
@@ -855,7 +856,7 @@ dp_scree_pmwm <- function(X, k, eps, delta,
 
   trim_param <- min(max(trim_const / n_q, eta), 0.49)
 
-  scree_np <- numeric(k)
+  scree_base <- numeric(k)
   scree <- numeric(k)
 
   for (ell in seq_len(k)) {
@@ -897,13 +898,13 @@ dp_scree_pmwm <- function(X, k, eps, delta,
     w_win <- pmin(pmax(w[idx_m], L), U)
     mu_hat <- mean(w_win)
 
-    scree_np[ell] <- (n / (n - 1)) * mu_hat
+    scree_base[ell] <- (n / (n - 1)) * mu_hat
 
     Delta_ell <- (n / (n - 1)) * (U - L) / n_m
     sd_noise <- Delta_ell * sqrt(2 * log(1.25 / delta_M)) / eps_M
 
     scree[ell] <- max(
-      scree_np[ell] + stats::rnorm(1, mean = 0, sd = sd_noise),
+      scree_base[ell] + stats::rnorm(1, mean = 0, sd = sd_noise),
       0
     )
   }
@@ -914,7 +915,6 @@ dp_scree_pmwm <- function(X, k, eps, delta,
 
   list(
     scree = scree,
-    scree_np = scree_np,
     pve = scree_to_pve(scree)
   )
 }

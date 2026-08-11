@@ -32,13 +32,19 @@ to estimate. Must be an integer between \code{1} and the number of columns in \c
 \code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}. When multiple
 methods are requested, use a named list with method names.}
 
-\item{eps}{Positive number defining the total \code{epsilon} privacy parameter.
-If \code{g_dppca = TRUE}, it is split between private direction estimation and
-private scree estimation.}
+\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
+to each requested scree method. When multiple methods are requested, the
+same value of \code{eps} is applied separately to each method for comparison; it
+is not divided across methods. If \code{g_dppca = TRUE}, each method internally
+splits its supplied \code{eps} between private direction estimation and private
+scree estimation.}
 
-\item{delta}{Number in \verb{(0, 1)} defining the total \code{delta} privacy parameter.
-If \code{g_dppca = TRUE}, it is split between private direction estimation and
-private scree estimation.}
+\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
+supplied to each requested scree method. When multiple methods are
+requested, the same value of \code{delta} is applied separately to each method
+for comparison; it is not divided across methods. If \code{g_dppca = TRUE},
+each method internally splits its supplied \code{delta} between private direction
+estimation and private scree estimation.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
 before computing principal component directions. The default is \code{TRUE}.}
@@ -52,37 +58,42 @@ component directions for scree estimation. The default is \code{FALSE}. See
 \code{\link[=dp_pc_dir]{dp_pc_dir()}} for details.}
 
 \item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
-\code{g_dppca = TRUE}. The default is \code{FALSE}.
-When \code{g_dppca = TRUE}, \code{\link[=dp_pc_dir]{dp_pc_dir()}} is called with arguments
-\code{eps = eps / 2} and \code{delta = delta / 2}.}
+\code{g_dppca = TRUE}. The default is \code{FALSE}.}
 
 \item{mono}{A logical value indicating whether to apply monotone
-post-processing to the vector of private scree values. The default is \code{TRUE}.}
+post-processing to the vector of private scree values. The default is
+\code{TRUE}.}
 }
 \value{
-If one method is requested, a list with components:
+A named list. The first component, \code{nonprivate}, contains:
 \itemize{
-\item \code{method}: scree value estimation method.
-\item \code{scree_np}: non-private scree estimates.
-\item \code{pve_np}: non-private proportions of variance explained.
-\item \code{scree}: differentially private scree value estimates.
-\item \code{pve}: differentially private proportions of variance explained.
+\item \code{scree}: the usual non-private scree estimates.
+\item \code{pve}: the corresponding non-private proportions of variance
+explained, normalized over the \code{k} returned components.
 }
-If multiple methods are requested, a named list of method-specific results is
-returned.
+Each requested private method is returned as an additional named component
+(\code{clipped}, \code{pmwm}, and/or \code{huber}), each containing:
+\itemize{
+\item \code{scree}: the differentially private scree estimates.
+\item \code{pve}: the corresponding private proportions of variance explained,
+normalized over the \code{k} returned components.
+}
+All scree and PVE vectors are named \code{PC1}, ..., \code{PCk}. The return structure is
+the same whether one or multiple private methods are requested.
 }
 \description{
-This function computes estimates of scree values, eigenvalues of covariance
-matrix, for principal component analysis,
-including both the usual non-private estimates and differentially private
+This function computes estimates of scree values, eigenvalues of the
+covariance matrix, for principal component analysis. It returns the usual
+non-private estimates once, together with one or more differentially private
 estimates.
-The private estimates are computed as the private mean of the squared
-principal component scores.
-See Details for the estimating equations and method-specific construction.
 }
 \details{
-Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the \eqn{l}th
-principal component direction. The \eqn{l}th score vector is
+The private estimates are computed as private estimates of the mean of the
+squared principal component scores. See Details for the estimating equations
+and method-specific construction.
+
+Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the
+\eqn{l}th principal component direction. The \eqn{l}th score vector is
 \eqn{z_l = X v_l}. The corresponding sample scree value can be written as
 \deqn{
   \hat{\lambda}_l
@@ -109,16 +120,27 @@ noisy gradient descent, following \insertCite{yu2024gaussian;textual}{dppca}.
 }
 
 The argument \code{g_dppca} controls how the principal component directions are
-obtained. If \code{g_dppca = FALSE}, the directions are computed non-privately as
-an eigenvector of sample covariance, and the full privacy parameters
-\code{eps} and \code{delta} are used for private scree value estimation. If \code{g_dppca = TRUE},
-the directions are computed privately using \code{\link[=dp_pc_dir]{dp_pc_dir()}}.
-In that case, the privacy parameters are split equally:
-\code{\link[=dp_pc_dir]{dp_pc_dir()}} receives \code{eps = eps / 2} and \code{delta = delta / 2} for
-private direction estimation, and the remaining \code{eps / 2} and \code{delta / 2}
-are used for private scree value estimation.
-When \code{mono = TRUE}, the final monotone adjustment is a post-processing step and
-does not change the privacy guarantee.
+obtained. If \code{g_dppca = FALSE}, the directions are computed non-privately and
+the full method-specific privacy parameters \code{eps} and \code{delta} are used for
+private scree estimation. If \code{g_dppca = TRUE}, the directions are computed
+privately using \code{\link[=dp_pc_dir]{dp_pc_dir()}}. Within each requested method, \code{eps} and \code{delta}
+are split equally: \code{\link[=dp_pc_dir]{dp_pc_dir()}} receives \code{eps / 2} and \code{delta / 2}, and the
+remaining halves are used for private scree estimation.
+
+When multiple methods are requested, \code{eps} and \code{delta} are applied separately
+to each method for method comparison. They are not divided across methods.
+Consequently, if outputs from multiple private methods are released together,
+the privacy cost of the joint release must be accounted for by composition.
+
+The \code{nonprivate} component is provided only as a non-private reference and is
+not itself differentially private.
+
+Proportions of variance explained are normalized over the \code{k} estimated
+scree values. Thus, for each returned result, the \code{k} PVE values sum to one
+whenever the corresponding scree values have a positive finite sum.
+
+When \code{mono = TRUE}, the final monotone adjustment is a post-processing step
+and does not change the privacy guarantee.
 
 For a detailed procedure and mathematical formulations,
 refer \url{https://yejinjo0220.github.io/dppca/articles/dp_scree}.
@@ -129,9 +151,9 @@ data(gau, package = "dppca")
 # Use a small subset to keep the example fast.
 X <- gau[1:100, ]
 
-# Estimate the private scree values using the clipped mean method.
+# Estimate private scree values using the clipped mean method.
 set.seed(123)
-dp_scree(
+out <- dp_scree(
   X,
   k = 2,
   method = "clipped",
@@ -140,12 +162,11 @@ dp_scree(
   delta = 1e-3
 )
 
-# Other scree methods can be used by changing `method` and `control`, e.g.,
-# method = "pmwm",
-# control = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01)
-#
-# method = "huber",
-# control = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
+out$nonprivate
+out$clipped
+
+# Multiple methods can be requested together by using a named control list.
+# Each method receives the same eps and delta values for method comparison.
 
 }
 \references{

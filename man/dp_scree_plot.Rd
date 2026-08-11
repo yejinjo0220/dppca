@@ -16,7 +16,8 @@ dp_scree_plot(
   g_dppca = FALSE,
   cpp.option = FALSE,
   mono = TRUE,
-  type = c("pve", "scree")
+  type = c("pve", "scree"),
+  plot_control = NULL
 )
 }
 \arguments{
@@ -33,13 +34,13 @@ to estimate. Must be an integer between \code{1} and the number of columns in \c
 control lists when multiple methods are requested. Use \code{\link[=clipped_control]{clipped_control()}},
 \code{\link[=pmwm_control]{pmwm_control()}}, and \code{\link[=huber_control]{huber_control()}}.}
 
-\item{eps}{Positive number defining the total \code{epsilon} privacy parameter.
-If \code{g_dppca = TRUE}, it is split between private direction estimation and
-private scree estimation.}
+\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
+separately to each requested method. When multiple methods are plotted, the
+same value is used for each method for comparison.}
 
-\item{delta}{Number in \verb{(0, 1)} defining the total \code{delta} privacy parameter.
-If \code{g_dppca = TRUE}, it is split between private direction estimation and
-private scree estimation.}
+\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
+supplied separately to each requested method. When multiple methods are
+plotted, the same value is used for each method for comparison.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
 before computing principal component directions. The default is \code{TRUE}.}
@@ -53,42 +54,37 @@ component directions for scree estimation. The default is \code{FALSE}. See
 \code{\link[=dp_pc_dir]{dp_pc_dir()}} for details.}
 
 \item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
-\code{g_dppca = TRUE}. The default is \code{FALSE}.
-When \code{g_dppca = TRUE}, \code{\link[=dp_pc_dir]{dp_pc_dir()}} is called with arguments
-\code{eps = eps / 2} and \code{delta = delta / 2}.}
+\code{g_dppca = TRUE}. The default is \code{FALSE}.}
 
 \item{mono}{A logical value indicating whether to apply monotone
 post-processing to the private scree vector. The default is \code{TRUE}.}
 
 \item{type}{Quantity to plot. Use \code{"pve"} to plot proportions of variance
 explained and \code{"scree"} to plot raw scree values. The default is \code{"pve"}.}
+
+\item{plot_control}{Optional plotting control list created by
+\code{\link[=scree_plot_control]{scree_plot_control()}}. If \code{NULL}, default plotting settings are used.}
 }
 \value{
-Invisibly returns a list with components:
-\itemize{
-\item \code{nonprivate}: non-private scree and PVE values.
-\item \code{results}: method-specific \code{\link[=dp_scree]{dp_scree()}} outputs used in the plot.
-}
+Invisibly returns the named list produced by \code{\link[=dp_scree]{dp_scree()}}.
 }
 \description{
 This function computes and visualizes scree curves for principal component
-analysis, including the usual non-private curve and one or more
-differentially private estimates. It is a plotting wrapper around
-\code{\link[=dp_scree]{dp_scree()}} and returns a \code{ggplot} object.
+analysis using base R graphics. It overlays the usual non-private curve with
+one or more differentially private estimates and acts as a plotting wrapper
+around \code{\link[=dp_scree]{dp_scree()}}.
 }
 \details{
-This function is a plotting wrapper around \code{\link[=dp_scree]{dp_scree()}}. For each requested
-method, it computes a private scree estimate and overlays it with the
-corresponding non-private curve. When \code{type = "pve"}, the plotted quantity is
-the proportion of variance explained (PVE); when \code{type = "scree"}, the raw
-scree values are shown.
+This function calls \code{\link[=dp_scree]{dp_scree()}} once and plots its returned \code{nonprivate}
+result together with each requested private method using base R graphics.
 
-To plot multiple methods, pass a character vector to \code{method}. If a method
-requires tuning parameters, pass \code{control} as a named list, for example
-\code{control = list(clipped = clipped_control(), pmwm = pmwm_control(), huber = huber_control())}.
+The default legend labels are \code{"Non-private"}, \code{"Clipped"}, \code{"PMWM"}, and
+\code{"Huber"}. Plot appearance, including the title, axis labels, legend
+position, colors, line types, point symbols, and text sizes, can be changed
+with \code{\link[=scree_plot_control]{scree_plot_control()}}.
 
-For the estimating equations, privacy-budget allocation, and method-specific
-construction, see \code{\link[=dp_scree]{dp_scree()}}.
+Because the plot includes the \code{nonprivate} reference curve, the complete plot
+is intended for comparison and is not itself a differentially private release.
 }
 \examples{
 data(gau, package = "dppca")
@@ -96,7 +92,7 @@ data(gau, package = "dppca")
 # Use a small subset to keep the example fast.
 X <- gau[1:200, ]
 
-# Draw a private scree plot using the clipped mean method.
+# Draw a private PVE plot using the clipped mean method.
 set.seed(123)
 dp_scree_plot(
   X,
@@ -107,19 +103,19 @@ dp_scree_plot(
   delta = 1e-3
 )
 
-# Multiple scree methods can be overlaid by passing a vector to `method`
-# and a named list to `control`, for example:
+# Customize the plot using a separate plotting control.
 # dp_scree_plot(
 #   X,
 #   k = 5,
-#   method = c("clipped", "pmwm", "huber"),
-#   control = list(
-#     clipped = clipped_control(C_clip = 3),
-#     pmwm = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01),
-#     huber = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
-#   ),
+#   method = "clipped",
+#   control = clipped_control(C_clip = 3),
 #   eps = 3,
-#   delta = 1e-3
+#   delta = 1e-3,
+#   plot_control = scree_plot_control(
+#     title = "PVE comparison",
+#     xlab = "Principal Component",
+#     legend_position = "topright"
+#   )
 # )
 
 }
@@ -136,6 +132,7 @@ dp_scree_plot(
 \code{\link[=dp_pc_dir]{dp_pc_dir()}} for principal component direction estimation.
 \code{\link[=dp_scree]{dp_scree()}} for computing non-private and differentially private scree
 estimates.
+\code{\link[=scree_plot_control]{scree_plot_control()}} for plot appearance.
 \code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}}, and \code{\link[=huber_control]{huber_control()}} for
 method-specific tuning parameters.
 }

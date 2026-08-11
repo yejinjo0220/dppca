@@ -5,16 +5,17 @@
 
 #' Differentially private scree values
 #'
-#' This function computes estimates of scree values, eigenvalues of covariance
-#' matrix, for principal component analysis,
-#' including both the usual non-private estimates and differentially private
+#' This function computes estimates of scree values, eigenvalues of the
+#' covariance matrix, for principal component analysis. It returns the usual
+#' non-private estimates once, together with one or more differentially private
 #' estimates.
-#' The private estimates are computed as the private mean of the squared
-#' principal component scores.
-#' See Details for the estimating equations and method-specific construction.
+#'
+#' The private estimates are computed as private estimates of the mean of the
+#' squared principal component scores. See Details for the estimating equations
+#' and method-specific construction.
 #'
 #' @param X A numeric matrix or data frame. Rows correspond to observations and
-#'  columns correspond to variables.
+#'   columns correspond to variables.
 #' @param k Positive integer defining the number of leading principal components
 #'   to estimate. Must be an integer between `1` and the number of columns in `X`.
 #' @param method Scree value estimation method or methods. One or more of
@@ -22,12 +23,18 @@
 #' @param control Optional method-specific control list created by
 #'   [clipped_control()], [pmwm_control()], or [huber_control()]. When multiple
 #'   methods are requested, use a named list with method names.
-#' @param eps Positive number defining the total `epsilon` privacy parameter.
-#'   If `g_dppca = TRUE`, it is split between private direction estimation and
-#'   private scree estimation.
-#' @param delta Number in `(0, 1)` defining the total `delta` privacy parameter.
-#'   If `g_dppca = TRUE`, it is split between private direction estimation and
-#'   private scree estimation.
+#' @param eps Positive number defining the `epsilon` privacy parameter supplied
+#'   to each requested scree method. When multiple methods are requested, the
+#'   same value of `eps` is applied separately to each method for comparison; it
+#'   is not divided across methods. If `g_dppca = TRUE`, each method internally
+#'   splits its supplied `eps` between private direction estimation and private
+#'   scree estimation.
+#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter
+#'   supplied to each requested scree method. When multiple methods are
+#'   requested, the same value of `delta` is applied separately to each method
+#'   for comparison; it is not divided across methods. If `g_dppca = TRUE`,
+#'   each method internally splits its supplied `delta` between private direction
+#'   estimation and private scree estimation.
 #' @param center A logical value indicating whether to center the columns of `X`
 #'   before computing principal component directions. The default is `TRUE`.
 #' @param standardize A logical value indicating whether to scale the columns of
@@ -38,14 +45,13 @@
 #'   [dp_pc_dir()] for details.
 #' @param cpp.option A logical value passed to [dp_pc_dir()] when
 #'   `g_dppca = TRUE`. The default is `FALSE`.
-#'   When `g_dppca = TRUE`, [dp_pc_dir()] is called with arguments
-#'   `eps = eps / 2` and `delta = delta / 2`.
 #' @param mono A logical value indicating whether to apply monotone
-#'   post-processing to the vector of private scree values. The default is `TRUE`.
+#'   post-processing to the vector of private scree values. The default is
+#'   `TRUE`.
 #'
 #' @details
-#' Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the \eqn{l}th
-#' principal component direction. The \eqn{l}th score vector is
+#' Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the
+#' \eqn{l}th principal component direction. The \eqn{l}th score vector is
 #' \eqn{z_l = X v_l}. The corresponding sample scree value can be written as
 #' \deqn{
 #'   \hat{\lambda}_l
@@ -72,30 +78,46 @@
 #' }
 #'
 #' The argument `g_dppca` controls how the principal component directions are
-#' obtained. If `g_dppca = FALSE`, the directions are computed non-privately as
-#' an eigenvector of sample covariance, and the full privacy parameters
-#' `eps` and `delta` are used for private scree value estimation. If `g_dppca = TRUE`,
-#' the directions are computed privately using [dp_pc_dir()].
-#' In that case, the privacy parameters are split equally:
-#' [dp_pc_dir()] receives `eps = eps / 2` and `delta = delta / 2` for
-#' private direction estimation, and the remaining `eps / 2` and `delta / 2`
-#' are used for private scree value estimation.
-#' When `mono = TRUE`, the final monotone adjustment is a post-processing step and
-#' does not change the privacy guarantee.
+#' obtained. If `g_dppca = FALSE`, the directions are computed non-privately and
+#' the full method-specific privacy parameters `eps` and `delta` are used for
+#' private scree estimation. If `g_dppca = TRUE`, the directions are computed
+#' privately using [dp_pc_dir()]. Within each requested method, `eps` and `delta`
+#' are split equally: [dp_pc_dir()] receives `eps / 2` and `delta / 2`, and the
+#' remaining halves are used for private scree estimation.
+#'
+#' When multiple methods are requested, `eps` and `delta` are applied separately
+#' to each method for method comparison. They are not divided across methods.
+#' Consequently, if outputs from multiple private methods are released together,
+#' the privacy cost of the joint release must be accounted for by composition.
+#'
+#' The `nonprivate` component is provided only as a non-private reference and is
+#' not itself differentially private.
+#'
+#' Proportions of variance explained are normalized over the `k` estimated
+#' scree values. Thus, for each returned result, the `k` PVE values sum to one
+#' whenever the corresponding scree values have a positive finite sum.
+#'
+#' When `mono = TRUE`, the final monotone adjustment is a post-processing step
+#' and does not change the privacy guarantee.
 #'
 #' For a detailed procedure and mathematical formulations,
 #' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_scree}.
 #'
-#' @return If one method is requested, a list with components:
+#' @return A named list. The first component, `nonprivate`, contains:
 #' \itemize{
-#'   \item `method`: scree value estimation method.
-#'   \item `scree_np`: non-private scree estimates.
-#'   \item `pve_np`: non-private proportions of variance explained.
-#'   \item `scree`: differentially private scree value estimates.
-#'   \item `pve`: differentially private proportions of variance explained.
+#'   \item `scree`: the usual non-private scree estimates.
+#'   \item `pve`: the corresponding non-private proportions of variance
+#'   explained, normalized over the `k` returned components.
 #' }
-#' If multiple methods are requested, a named list of method-specific results is
-#' returned.
+#' Each requested private method is returned as an additional named component
+#' (`clipped`, `pmwm`, and/or `huber`), each containing:
+#' \itemize{
+#'   \item `scree`: the differentially private scree estimates.
+#'   \item `pve`: the corresponding private proportions of variance explained,
+#'   normalized over the `k` returned components.
+#' }
+#' All scree and PVE vectors are named `PC1`, ..., `PCk`. The return structure is
+#' the same whether one or multiple private methods are requested.
 #'
 #' @seealso
 #' [dp_pc_dir()] for principal component direction estimation.
@@ -117,9 +139,9 @@
 #' # Use a small subset to keep the example fast.
 #' X <- gau[1:100, ]
 #'
-#' # Estimate the private scree values using the clipped mean method.
+#' # Estimate private scree values using the clipped mean method.
 #' set.seed(123)
-#' dp_scree(
+#' out <- dp_scree(
 #'   X,
 #'   k = 2,
 #'   method = "clipped",
@@ -128,20 +150,25 @@
 #'   delta = 1e-3
 #' )
 #'
-#' # Other scree methods can be used by changing `method` and `control`, e.g.,
-#' # method = "pmwm",
-#' # control = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01)
-#' #
-#' # method = "huber",
-#' # control = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
+#' out$nonprivate
+#' out$clipped
+#'
+#' # Multiple methods can be requested together by using a named control list.
+#' # Each method receives the same eps and delta values for method comparison.
 #'
 #' @export
 dp_scree <- function(
-    X, k, method = c("clipped", "pmwm", "huber"),
+    X,
+    k,
+    method = c("clipped", "pmwm", "huber"),
     control = NULL,
-    eps, delta,
-    center = TRUE, standardize = FALSE,
-    g_dppca = FALSE, cpp.option = FALSE, mono = TRUE
+    eps,
+    delta,
+    center = TRUE,
+    standardize = FALSE,
+    g_dppca = FALSE,
+    cpp.option = FALSE,
+    mono = TRUE
 ) {
   if (missing(method)) {
     method <- "clipped"
@@ -154,47 +181,8 @@ dp_scree <- function(
     method <- unique(method)
   }
 
-  if (length(method) > 1L) {
-    if (!is.null(control)) {
-      if (!is.list(control) || is.null(names(control)) || any(names(control) == "")) {
-        stop(
-          "When multiple methods are requested, `control` must be a named list, ",
-          "for example list(clipped = clipped_control(...), pmwm = pmwm_control(...)).",
-          call. = FALSE
-        )
-      }
-    }
-
-    out <- stats::setNames(vector("list", length(method)), method)
-
-    for (m in method) {
-      control_m <- if (!is.null(control) && m %in% names(control)) {
-        control[[m]]
-      } else {
-        NULL
-      }
-
-      out[[m]] <- dp_scree(
-        X = X,
-        k = k,
-        method = m,
-        control = control_m,
-        eps = eps,
-        delta = delta,
-        center = center,
-        standardize = standardize,
-        g_dppca = g_dppca,
-        cpp.option = cpp.option,
-        mono = mono
-      )
-    }
-
-    return(out)
-  }
-
-  control <- .merge_scree_control(method, control)
-
   X <- as.matrix(X)
+
   validate_scree_inputs(
     X = X,
     k = k,
@@ -202,10 +190,26 @@ dp_scree <- function(
     delta = delta
   )
 
-  if (!requireNamespace("rARPACK", quietly = TRUE)) {
-    stop("Package `rARPACK` is required.", call. = FALSE)
+  k <- as.integer(k)
+
+  # For multiple methods, controls must be supplied as a named list so that
+  # method-specific tuning parameters are unambiguous.
+  if (length(method) > 1L && !is.null(control)) {
+    if (
+      !is.list(control) ||
+      is.null(names(control)) ||
+      any(names(control) == "")
+    ) {
+      stop(
+        "When multiple methods are requested, `control` must be a named list, ",
+        "for example list(clipped = clipped_control(...), ",
+        "pmwm = pmwm_control(...), huber = huber_control(...)).",
+        call. = FALSE
+      )
+    }
   }
 
+  # Compute the ordinary non-private PCA scree values only once.
   X_proc <- prep_matrix_for_pca(
     X = X,
     center = center,
@@ -213,64 +217,113 @@ dp_scree <- function(
   )
 
   S_np <- stats::cov(X_proc)
-  eig_np <- rARPACK::eigs_sym(S_np, k = k)
+  eig_np <- eigen(S_np, symmetric = TRUE, only.values = TRUE)
 
-  scree_np <- as.numeric(eig_np$values)
+  scree_np <- as.numeric(eig_np$values[seq_len(k)])
   pve_np <- scree_to_pve(scree_np)
 
-  result <- switch(
-    method,
-    clipped = dp_scree_clipped(
-      X = X, k = k,
-      eps = eps, delta = delta,
-      center = center, standardize = standardize,
-      C_clip = control$C_clip,
-      g_dppca = g_dppca, cpp.option = cpp.option,
-      mono = mono
-    ),
-    pmwm = dp_scree_pmwm(
-      X = X, k = k,
-      eps = eps, delta = delta,
-      g_dppca = g_dppca, cpp.option = cpp.option,
-      split_mode = control$split_mode,
-      center = center, standardize = standardize,
-      beta = control$beta, a = control$a, b = control$b,
-      trim_const = control$trim_const, eta = control$eta,
-      mono = mono
-    ),
-    huber = dp_scree_huber(
-      X = X, k = k,
-      eps = eps, delta = delta,
-      g_dppca = g_dppca, cpp.option = cpp.option,
-      center = center, standardize = standardize,
-      mu0 = control$mu0, eta0 = control$eta0,
-      T = control$T, M = control$M,
-      k_min_m2 = control$k_min_m2,
-      k_max_m2 = control$k_max_m2,
-      m2_frac = control$m2_frac,
-      mono = mono
+  pc_names <- paste0("PC", seq_len(k))
+  names(scree_np) <- pc_names
+  names(pve_np) <- pc_names
+
+  out <- list(
+    nonprivate = list(
+      scree = scree_np,
+      pve = pve_np
     )
   )
 
-  list(
-    method   = method,
-    scree_np = scree_np,
-    pve_np   = pve_np,
-    scree    = result$scree,
-    pve      = result$pve
-  )
+  # Each requested method receives the same eps and delta values. These
+  # parameters are not divided across methods; this supports direct method
+  # comparison under a common privacy setting.
+  for (m in method) {
+    control_m <- if (length(method) == 1L) {
+      control
+    } else if (!is.null(control) && m %in% names(control)) {
+      control[[m]]
+    } else {
+      NULL
+    }
+
+    control_m <- .merge_scree_control(m, control_m)
+
+    result <- switch(
+      m,
+      clipped = dp_scree_clipped(
+        X = X,
+        k = k,
+        eps = eps,
+        delta = delta,
+        center = center,
+        standardize = standardize,
+        C_clip = control_m$C_clip,
+        g_dppca = g_dppca,
+        cpp.option = cpp.option,
+        mono = mono
+      ),
+      pmwm = dp_scree_pmwm(
+        X = X,
+        k = k,
+        eps = eps,
+        delta = delta,
+        g_dppca = g_dppca,
+        cpp.option = cpp.option,
+        split_mode = control_m$split_mode,
+        center = center,
+        standardize = standardize,
+        beta = control_m$beta,
+        a = control_m$a,
+        b = control_m$b,
+        trim_const = control_m$trim_const,
+        eta = control_m$eta,
+        mono = mono
+      ),
+      huber = dp_scree_huber(
+        X = X,
+        k = k,
+        eps = eps,
+        delta = delta,
+        g_dppca = g_dppca,
+        cpp.option = cpp.option,
+        center = center,
+        standardize = standardize,
+        mu0 = control_m$mu0,
+        eta0 = control_m$eta0,
+        T = control_m$T,
+        M = control_m$M,
+        k_min_m2 = control_m$k_min_m2,
+        k_max_m2 = control_m$k_max_m2,
+        m2_frac = control_m$m2_frac,
+        mono = mono
+      )
+    )
+
+    scree_m <- as.numeric(result$scree)
+    pve_m <- as.numeric(result$pve)
+
+    names(scree_m) <- pc_names
+    names(pve_m) <- pc_names
+
+    out[[m]] <- list(
+      scree = scree_m,
+      pve = pve_m
+    )
+  }
+
+  out
 }
+
 
 #' Plot differentially private scree estimates
 #'
 #' @description
 #' This function computes and visualizes scree curves for principal component
-#' analysis, including the usual non-private curve and one or more
-#' differentially private estimates. It is a plotting wrapper around
-#' [dp_scree()] and returns a `ggplot` object.
+#' analysis using base R graphics. It overlays the usual non-private curve with
+#' one or more differentially private estimates and acts as a plotting wrapper
+#' around [dp_scree()].
 #'
 #' @param X A numeric matrix or data frame. Rows correspond to observations and
-#'  columns correspond to variables.
+#'   columns correspond to variables.
 #' @param k Positive integer defining the number of leading principal components
 #'   to estimate. Must be an integer between `1` and the number of columns in `X`.
 #' @param method Scree estimation method or methods to plot. One or more of
@@ -278,12 +331,12 @@ dp_scree <- function(
 #' @param control Optional method-specific control list, or a named list of
 #'   control lists when multiple methods are requested. Use [clipped_control()],
 #'   [pmwm_control()], and [huber_control()].
-#' @param eps Positive number defining the total `epsilon` privacy parameter.
-#'   If `g_dppca = TRUE`, it is split between private direction estimation and
-#'   private scree estimation.
-#' @param delta Number in `(0, 1)` defining the total `delta` privacy parameter.
-#'   If `g_dppca = TRUE`, it is split between private direction estimation and
-#'   private scree estimation.
+#' @param eps Positive number defining the `epsilon` privacy parameter supplied
+#'   separately to each requested method. When multiple methods are plotted, the
+#'   same value is used for each method for comparison.
+#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter
+#'   supplied separately to each requested method. When multiple methods are
+#'   plotted, the same value is used for each method for comparison.
 #' @param center A logical value indicating whether to center the columns of `X`
 #'   before computing principal component directions. The default is `TRUE`.
 #' @param standardize A logical value indicating whether to scale the columns of
@@ -294,38 +347,32 @@ dp_scree <- function(
 #'   [dp_pc_dir()] for details.
 #' @param cpp.option A logical value passed to [dp_pc_dir()] when
 #'   `g_dppca = TRUE`. The default is `FALSE`.
-#'   When `g_dppca = TRUE`, [dp_pc_dir()] is called with arguments
-#'   `eps = eps / 2` and `delta = delta / 2`.
 #' @param mono A logical value indicating whether to apply monotone
 #'   post-processing to the private scree vector. The default is `TRUE`.
 #' @param type Quantity to plot. Use `"pve"` to plot proportions of variance
 #'   explained and `"scree"` to plot raw scree values. The default is `"pve"`.
+#' @param plot_control Optional plotting control list created by
+#'   [scree_plot_control()]. If `NULL`, default plotting settings are used.
 #'
 #' @details
-#' This function is a plotting wrapper around [dp_scree()]. For each requested
-#' method, it computes a private scree estimate and overlays it with the
-#' corresponding non-private curve. When `type = "pve"`, the plotted quantity is
-#' the proportion of variance explained (PVE); when `type = "scree"`, the raw
-#' scree values are shown.
+#' This function calls [dp_scree()] once and plots its returned `nonprivate`
+#' result together with each requested private method using base R graphics.
 #'
-#' To plot multiple methods, pass a character vector to `method`. If a method
-#' requires tuning parameters, pass `control` as a named list, for example
-#' `control = list(clipped = clipped_control(), pmwm = pmwm_control(),
-#' huber = huber_control())`.
+#' The default legend labels are `"Non-private"`, `"Clipped"`, `"PMWM"`, and
+#' `"Huber"`. Plot appearance, including the title, axis labels, legend
+#' position, colors, line types, point symbols, and text sizes, can be changed
+#' with [scree_plot_control()].
 #'
-#' For the estimating equations, privacy-budget allocation, and method-specific
-#' construction, see [dp_scree()].
+#' Because the plot includes the `nonprivate` reference curve, the complete plot
+#' is intended for comparison and is not itself a differentially private release.
 #'
-#' @return Invisibly returns a list with components:
-#' \itemize{
-#'   \item `nonprivate`: non-private scree and PVE values.
-#'   \item `results`: method-specific [dp_scree()] outputs used in the plot.
-#' }
+#' @return Invisibly returns the named list produced by [dp_scree()].
 #'
 #' @seealso
 #' [dp_pc_dir()] for principal component direction estimation.
 #' [dp_scree()] for computing non-private and differentially private scree
 #' estimates.
+#' [scree_plot_control()] for plot appearance.
 #' [clipped_control()], [pmwm_control()], and [huber_control()] for
 #' method-specific tuning parameters.
 #'
@@ -344,7 +391,7 @@ dp_scree <- function(
 #' # Use a small subset to keep the example fast.
 #' X <- gau[1:200, ]
 #'
-#' # Draw a private scree plot using the clipped mean method.
+#' # Draw a private PVE plot using the clipped mean method.
 #' set.seed(123)
 #' dp_scree_plot(
 #'   X,
@@ -355,19 +402,19 @@ dp_scree <- function(
 #'   delta = 1e-3
 #' )
 #'
-#' # Multiple scree methods can be overlaid by passing a vector to `method`
-#' # and a named list to `control`, for example:
+#' # Customize the plot using a separate plotting control.
 #' # dp_scree_plot(
 #' #   X,
 #' #   k = 5,
-#' #   method = c("clipped", "pmwm", "huber"),
-#' #   control = list(
-#' #     clipped = clipped_control(C_clip = 3),
-#' #     pmwm = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01),
-#' #     huber = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
-#' #   ),
+#' #   method = "clipped",
+#' #   control = clipped_control(C_clip = 3),
 #' #   eps = 3,
-#' #   delta = 1e-3
+#' #   delta = 1e-3,
+#' #   plot_control = scree_plot_control(
+#' #     title = "PVE comparison",
+#' #     xlab = "Principal Component",
+#' #     legend_position = "topright"
+#' #   )
 #' # )
 #'
 #' @export
@@ -376,10 +423,15 @@ dp_scree_plot <- function(
     k,
     method = c("clipped", "pmwm", "huber"),
     control = NULL,
-    eps, delta,
-    center = TRUE, standardize = FALSE,
-    g_dppca = FALSE, cpp.option = FALSE, mono = TRUE,
-    type = c("pve", "scree")
+    eps,
+    delta,
+    center = TRUE,
+    standardize = FALSE,
+    g_dppca = FALSE,
+    cpp.option = FALSE,
+    mono = TRUE,
+    type = c("pve", "scree"),
+    plot_control = NULL
 ) {
   if (missing(method)) {
     method <- "clipped"
@@ -391,142 +443,118 @@ dp_scree_plot <- function(
     )
     method <- unique(method)
   }
+
   type <- match.arg(type)
 
-  X <- as.matrix(X)
-  validate_scree_inputs(
+  plot_control <- .merge_scree_plot_control(
+    plot_control = plot_control,
+    type = type
+  )
+
+  results <- dp_scree(
     X = X,
     k = k,
+    method = method,
+    control = control,
     eps = eps,
-    delta = delta
+    delta = delta,
+    center = center,
+    standardize = standardize,
+    g_dppca = g_dppca,
+    cpp.option = cpp.option,
+    mono = mono
   )
 
-  need_clipped <- "clipped" %in% method
-  need_pmwm <- "pmwm" %in% method
-  need_huber <- "huber" %in% method
+  series_names <- c("nonprivate", method)
 
-  col_map <- c(
-    nonprivate = "black",
-    clipped = "red",
-    pmwm = "forestgreen",
-    huber = "blue"
-  )
-  lty_map <- c(
-    nonprivate = 1,
-    clipped = 1,
-    pmwm = 1,
-    huber = 1
-  )
-  pch_map <- c(
-    nonprivate = 16,
-    clipped = 17,
-    pmwm = 15,
-    huber = 18
-  )
-  legend_pos <- "topright"
-
-  results <- list()
-
-  if (need_clipped) {
-    results$clipped <- dp_scree(
-      X = X, k = k, method = "clipped",
-      eps = eps, delta = delta,
-      center = center, standardize = standardize,
-      g_dppca = g_dppca, cpp.option = cpp.option, mono = mono,
-      control = .extract_plot_control(control, "clipped")
-    )
-  }
-
-  if (need_pmwm) {
-    results$pmwm <- dp_scree(
-      X = X, k = k, method = "pmwm",
-      eps = eps, delta = delta,
-      center = center, standardize = standardize,
-      g_dppca = g_dppca, cpp.option = cpp.option, mono = mono,
-      control = .extract_plot_control(control, "pmwm")
-    )
-  }
-
-  if (need_huber) {
-    results$huber <- dp_scree(
-      X = X, k = k, method = "huber",
-      eps = eps, delta = delta,
-      center = center, standardize = standardize,
-      g_dppca = g_dppca, cpp.option = cpp.option, mono = mono,
-      control = .extract_plot_control(control, "huber")
-    )
-  }
-
-  ref_obj <- if (length(results) > 0) results[[1]] else NULL
-  if (is.null(ref_obj)) stop("Nothing to plot: no DP result was computed.")
-
-  y_list <- list()
-  y_list$nonprivate <- if (type == "scree") ref_obj$scree_np else ref_obj$pve_np
-  for (nm in names(results)) {
-    y_list[[nm]] <- if (type == "scree") results[[nm]]$scree else results[[nm]]$pve
-  }
-
-  ylab <- if (type == "scree") "Scree Value" else "Proportion of Variance Explained"
-  main <- if (type == "scree") "DP Scree Plot" else "DP PVE Plot"
-  xlab <- "Component"
+  y_list <- lapply(series_names, function(nm) {
+    if (type == "scree") {
+      results[[nm]]$scree
+    } else {
+      results[[nm]]$pve
+    }
+  })
+  names(y_list) <- series_names
 
   y_all <- unlist(y_list, use.names = FALSE)
   y_all <- y_all[is.finite(y_all)]
-  if (length(y_all) == 0) {
+
+  if (length(y_all) == 0L) {
     ylim <- c(0, 1)
   } else {
     ylim <- range(y_all)
-    if (diff(ylim) == 0) ylim <- ylim + c(-0.5, 0.5)
+
+    if (diff(ylim) == 0) {
+      pad <- if (ylim[1] == 0) 0.5 else 0.05 * abs(ylim[1])
+      if (!is.finite(pad) || pad <= 0) {
+        pad <- 0.5
+      }
+      ylim <- ylim + c(-pad, pad)
+    } else {
+      pad <- 0.04 * diff(ylim)
+      ylim <- ylim + c(-pad, pad)
+    }
+
+    if (type == "pve") {
+      ylim[1] <- max(0, ylim[1])
+    }
   }
 
   idx <- seq_len(k)
-  series_names <- names(y_list)
-  nm1 <- series_names[1]
-  y1 <- y_list[[nm1]]
 
-  x_ticks <- pretty(idx)
-  x_ticks <- x_ticks[x_ticks >= 1 & x_ticks <= k & x_ticks == floor(x_ticks)]
-  if (length(x_ticks) == 0) x_ticks <- idx
-
+  nm1 <- series_names[1L]
   graphics::plot(
-    idx, y1,
+    idx,
+    y_list[[nm1]],
     type = "b",
-    col = unname(col_map[nm1]),
-    lty = unname(lty_map[nm1]),
-    pch = unname(pch_map[nm1]),
-    xlab = xlab, ylab = ylab, main = main, ylim = ylim,
+    col = unname(plot_control$col[nm1]),
+    lty = unname(plot_control$lty[nm1]),
+    lwd = plot_control$lwd,
+    pch = unname(plot_control$pch[nm1]),
+    cex = plot_control$point_cex,
+    xlab = plot_control$xlab,
+    ylab = plot_control$ylab,
+    main = plot_control$title,
+    ylim = ylim,
     xaxt = "n",
-    cex.main = 2,
-    cex.lab = 1.25,
-    cex.axis = 1.15
+    cex.main = plot_control$cex_main,
+    cex.lab = plot_control$cex_lab,
+    cex.axis = plot_control$cex_axis
   )
-  graphics::axis(1, at = x_ticks, labels = x_ticks, cex.axis = 1.15)
 
-  if (length(series_names) >= 2) {
-    for (nm in series_names[-1]) {
+  graphics::axis(
+    1,
+    at = idx,
+    labels = idx,
+    cex.axis = plot_control$cex_axis
+  )
+
+  if (length(series_names) > 1L) {
+    for (nm in series_names[-1L]) {
       graphics::lines(
-        idx, y_list[[nm]],
+        idx,
+        y_list[[nm]],
         type = "b",
-        col = unname(col_map[nm]),
-        lty = unname(lty_map[nm]),
-        pch = unname(pch_map[nm])
+        col = unname(plot_control$col[nm]),
+        lty = unname(plot_control$lty[nm]),
+        lwd = plot_control$lwd,
+        pch = unname(plot_control$pch[nm]),
+        cex = plot_control$point_cex
       )
     }
   }
 
   graphics::legend(
-    legend_pos,
-    legend = series_names,
-    col = unname(col_map[series_names]),
-    lty = unname(lty_map[series_names]),
-    pch = unname(pch_map[series_names]),
-    bty = "n",
-    cex = 1.25
+    plot_control$legend_position,
+    legend = unname(plot_control$legend_labels[series_names]),
+    col = unname(plot_control$col[series_names]),
+    lty = unname(plot_control$lty[series_names]),
+    lwd = plot_control$lwd,
+    pch = unname(plot_control$pch[series_names]),
+    pt.cex = plot_control$point_cex,
+    bty = plot_control$legend_bty,
+    cex = plot_control$cex_legend
   )
 
-  invisible(list(
-    nonprivate = list(scree = ref_obj$scree_np, pve = ref_obj$pve_np),
-    results = results
-  ))
+  invisible(results)
 }
-
