@@ -2,7 +2,7 @@
 % Please edit documentation in R/score.R
 \name{dp_score_plot}
 \alias{dp_score_plot}
-\title{Plot differentially private score histograms}
+\title{Plot differentially private score histograms or sampled score points}
 \usage{
 dp_score_plot(
   X,
@@ -10,20 +10,29 @@ dp_score_plot(
   delta,
   bins,
   method = c("add", "sparse"),
+  private_plot = c("histogram", "sample"),
+  sampling_control = NULL,
   center = TRUE,
   standardize = FALSE,
   g_dppca = FALSE,
   cpp.option = FALSE,
-  axes = c(1, 2)
+  axes = c(1, 2),
+  plot_control = NULL
 )
 }
 \arguments{
 \item{X}{A numeric matrix or data frame. Rows correspond to observations and
 columns correspond to variables.}
 
-\item{eps}{Positive number defining the total \code{epsilon} privacy parameter.}
+\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
+to each requested score-histogram procedure. When multiple histogram
+methods are requested, the same value is used for each method for
+comparison; it is not divided across methods.}
 
-\item{delta}{Number in \verb{(0, 1)} defining the total \code{delta} privacy parameter.}
+\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
+supplied to each requested score-histogram procedure. When multiple
+histogram methods are requested, the same value is used for each method
+for comparison; it is not divided across methods.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -31,6 +40,17 @@ along the first and second score axes, respectively.}
 \item{method}{Character vector specifying which private histogram methods to
 compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"} for
 the sparse thresholded histogram. The default is \code{c("add", "sparse")}.}
+
+\item{private_plot}{Character vector controlling how requested histogram
+results are visualized. \code{"histogram"} displays the histogram panels,
+while \code{"sample"} displays synthetic score points sampled from the
+histograms. Both can be requested with
+\code{c("histogram", "sample")}. The default is
+\code{c("histogram", "sample")}.}
+
+\item{sampling_control}{Optional control list created by
+\code{sampling_control()}. It is used only when \code{"sample"} is included in
+\code{private_plot}. If \code{NULL}, the default sampling settings are used.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
 before computing principal component directions. The default is \code{TRUE}.}
@@ -47,29 +67,49 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 
 \item{axes}{Integer vector of length 2 specifying the principal components
 used to construct the score coordinates. The default is \code{c(1, 2)}.}
+
+\item{plot_control}{Optional control list created by \code{score_plot_control()}.
+If \code{NULL}, default score-plot settings are used.}
 }
 \value{
-A list with components:
+A named list containing:
 \describe{
 \item{score}{The output of \code{\link[=dp_score]{dp_score()}}.}
-\item{plot}{A list containing the scatter plot, histogram panels, and the
-combined patchwork plot.}
+\item{sample}{Present only when \code{"sample"} is requested. A nested list
+containing sampled coordinates for \code{nonprivate} and for each requested
+private histogram method (\code{add} and/or \code{sparse}). Each leaf is a data
+frame with columns \code{pc_x} and \code{pc_y}, indexed by sampling method
+(\code{center} and/or \code{uniform}).}
+\item{plot}{A list containing the original scatter plot, the non-private
+histogram plot, requested private histogram plots, sampled-score plots,
+and the combined patchwork layout in \code{plot$all}. Sampled-score plots are
+stored under \code{plot$sample}.}
 }
 }
 \description{
-This function computes and visualizes two-dimensional principal component
-score histograms, including the original scatter plot, the non-private
-empirical histogram, and one or more differentially private histogram
-estimates. It is a plotting wrapper around \code{\link[=dp_score]{dp_score()}} and returns both the
-computed score output and \code{ggplot} objects.
+This function computes two-dimensional principal component score histograms
+and visualizes the results. Private histogram releases can be shown directly
+as histogram panels or post-processed into synthetic scatter plots sampled
+from the released histograms.
+}
+\details{
+Histogram plots and sampled-score plots are arranged dynamically.
+When only \code{"histogram"} is requested, the original scatter plot is shown
+in the first column of the histogram row. When \code{"sample"} is requested,
+the original scatter plot is instead shown in the first column of the
+first sample row. If both plot types are requested, the histogram row uses
+a blank first panel so that the sample rows line up beneath it.
+
+Synthetic score sampling is applied not only to the private histograms,
+but also to the non-private histogram, so that non-private and private
+sampled-score visualizations can be compared side by side.
 }
 \examples{
 data(gau, package = "dppca")
 
-# Use a small subset to keep the example fast.
 X <- gau[1:300, ]
 
-# Draw a private score plot using the additive histogram method.
+# By default, both histogram and sampled panels are displayed.
 set.seed(123)
 score_plot <- dp_score_plot(
   X,
@@ -78,17 +118,22 @@ score_plot <- dp_score_plot(
   bins = c(8, 8),
   method = "add"
 )
-score_plot$plot$add
+score_plot$plot$all
 
-# Draw score plots for all available histogram methods.
+# Sample-only display with two sampling methods.
 set.seed(123)
-score_plot <- dp_score_plot(
+sample_plot <- dp_score_plot(
   X,
   eps = 3,
   delta = 1e-3,
-  bins = c(8, 8)
+  bins = c(8, 8),
+  method = "add",
+  private_plot = "sample",
+  sampling_control = sampling_control(
+    method = c("center", "uniform")
+  )
 )
-score_plot$plot$all
+sample_plot$plot$all
 
 }
 \seealso{

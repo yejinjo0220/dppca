@@ -34,7 +34,9 @@
 #'   requested, the same value of `delta` is applied separately to each method
 #'   for comparison; it is not divided across methods. If `g_dppca = TRUE`,
 #'   each method internally splits its supplied `delta` between private direction
-#'   estimation and private scree estimation.
+#'   estimation and private scree estimation. For `method = "pmwm"`, the private
+#'   quantile step is pure DP and does not consume `delta`; the scree-estimation
+#'   share of `delta` is used by the Gaussian winsorized-mean release.
 #' @param center A logical value indicating whether to center the columns of `X`
 #'   before computing principal component directions. The default is `TRUE`.
 #' @param standardize A logical value indicating whether to scale the columns of
@@ -70,9 +72,11 @@
 #'   This is the simplest option but depends directly on the clipping threshold.
 #'   \item `"pmwm"` uses the private modified winsorized mean approach of
 #'   \insertCite{ramsay2025pmw;textual}{dppca}, adapted from the accompanying
-#'   Python implementation into R. It privately estimates tail cutoffs,
-#'   winsorizes the squared scores \eqn{w_{i\ell}}, and releases a noisy
-#'   winsorized mean.
+#'   Python implementation into R. The lower and upper tail cutoffs are
+#'   estimated with the pure-DP exponential-noise unbounded quantile routine.
+#'   The squared scores \eqn{w_{i\ell}} are then winsorized to those cutoffs,
+#'   and the final winsorized mean is released with a Gaussian mechanism
+#'   calibrated to the supplied `(eps, delta)` budget.
 #'   \item `"huber"` uses a Huber-type private robust mean estimator based on
 #'   noisy gradient descent, following \insertCite{yu2024gaussian;textual}{dppca}.
 #' }
@@ -336,7 +340,10 @@ dp_scree <- function(
 #'   same value is used for each method for comparison.
 #' @param delta Number in `(0, 1)` defining the `delta` privacy parameter
 #'   supplied separately to each requested method. When multiple methods are
-#'   plotted, the same value is used for each method for comparison.
+#'   plotted, the same value is used for each method for comparison. For PMWM,
+#'   `delta` is not used by the pure-DP quantile step; it is used by the
+#'   Gaussian winsorized-mean release and, when requested, private PC direction
+#'   estimation.
 #' @param center A logical value indicating whether to center the columns of `X`
 #'   before computing principal component directions. The default is `TRUE`.
 #' @param standardize A logical value indicating whether to scale the columns of

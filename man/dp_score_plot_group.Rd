@@ -2,7 +2,7 @@
 % Please edit documentation in R/score.R
 \name{dp_score_plot_group}
 \alias{dp_score_plot_group}
-\title{Plot group-wise differentially private score histograms}
+\title{Plot group-wise differentially private score histograms or samples}
 \usage{
 dp_score_plot_group(
   X,
@@ -15,7 +15,10 @@ dp_score_plot_group(
   g_dppca = FALSE,
   cpp.option = FALSE,
   axes = c(1, 2),
-  method = c("add", "sparse")
+  method = c("add", "sparse"),
+  private_plot = c("histogram", "sample"),
+  sampling_control = NULL,
+  plot_control = NULL
 )
 }
 \arguments{
@@ -28,9 +31,15 @@ for each observation.}
 single column name in \code{X}. If a column name is supplied, that column is
 used as the group label and removed from the feature matrix.}
 
-\item{eps}{Positive number defining the total \code{epsilon} privacy parameter.}
+\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
+to each requested score-histogram procedure. When multiple histogram
+methods are requested, the same value is used for each method for
+comparison; it is not divided across methods.}
 
-\item{delta}{Number in \verb{(0, 1)} defining the total \code{delta} privacy parameter.}
+\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
+supplied to each requested score-histogram procedure. When multiple
+histogram methods are requested, the same value is used for each method
+for comparison; it is not divided across methods.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -54,31 +63,87 @@ used to construct the score coordinates. The default is \code{c(1, 2)}.}
 \item{method}{Character vector specifying which private histogram methods to
 compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"} for
 the sparse thresholded histogram. The default is \code{c("add", "sparse")}.}
+
+\item{private_plot}{Character vector controlling how requested histogram
+results are visualized. \code{"histogram"} displays the overlaid group-wise
+histogram panels, while \code{"sample"} displays grouped synthetic score points
+sampled from the group-wise histograms. Both can be requested with
+\code{c("histogram", "sample")}. The default is
+\code{c("histogram", "sample")}.}
+
+\item{sampling_control}{Optional control list created by
+\code{sampling_control()}. It is used only when \code{"sample"} is included in
+\code{private_plot}. If \code{NULL}, the default sampling settings are used.}
+
+\item{plot_control}{Optional control list created by \code{score_plot_control()}.
+If \code{NULL}, default grouped score-plot settings are used.}
 }
 \value{
 A list with components:
 \describe{
 \item{score}{The output of \code{\link[=dp_score_group]{dp_score_group()}}.}
-\item{plot}{A list containing group-wise histogram plots.}
+\item{sample}{Present only when \code{"sample"} is requested. A nested list
+containing combined grouped synthetic coordinates for \code{nonprivate} and
+each requested private histogram method. Each leaf is indexed by sampling
+method (\code{center} and/or \code{uniform}) and contains columns \code{pc_x}, \code{pc_y},
+and \code{group}.}
+\item{plot}{A list containing the grouped original scatter plot, the
+overlaid non-private histogram, requested private histogram panels,
+grouped sampled-score panels under \code{plot$sample}, and the combined
+patchwork layout in \code{plot$all}.}
 \item{group_colors}{Named vector of colors used for the groups.}
 }
 }
 \description{
-This function computes and visualizes group-wise differentially private score
-histograms. It is a plotting wrapper around \code{\link[=dp_score_group]{dp_score_group()}} and returns
-both the computed group-wise score output and \code{ggplot} objects.
+This function computes group-wise two-dimensional principal component score
+histograms and visualizes the groups together using a common color mapping.
+Private histogram releases can be displayed directly or post-processed into
+grouped synthetic scatter plots.
+}
+\details{
+All groups are shown together in each panel using group-specific colors.
+Separate per-group plot layouts are not created.
+
+For sampled-score panels, sampling is carried out separately from each
+group's histogram and the sampled coordinates are then combined with the
+corresponding group label. The same procedure is applied to the non-private
+group histograms and to each requested private histogram method.
+
+\code{sampling_control(sample_size = NULL)} uses a total synthetic sample size
+equal to the number of input observations. The total is allocated across
+groups in proportion to their observed sizes, which reproduces the original
+group sizes when the default total is used. If a positive integer
+\code{sample_size} is supplied, it is interpreted as the total synthetic sample
+size across all groups and is allocated proportionally using a
+largest-remainder rule.
+
+The combined plot follows the same dynamic layout as \code{\link[=dp_score_plot]{dp_score_plot()}}.
+When only \code{"histogram"} is requested, the original grouped scatter plot
+appears in the first column of the histogram row. When sampling is requested,
+the original grouped scatter plot appears in the first column of the first
+sample row. If histogram and sample panels are both requested, the first
+position of the histogram row is left blank to keep columns aligned.
+
+Sampling uses only the already computed histogram output and fixed
+post-processing choices, so it does not consume an additional privacy
+budget. A private histogram, especially a sparse histogram, can contain no
+positive probability mass after thresholding. In that case no synthetic
+points are generated for that group and histogram method, and a warning is
+issued.
 }
 \examples{
 data(gau_g, package = "dppca")
 
-# Draw a private grouped score plot.
 set.seed(123)
 score_plot_gau_g <- dp_score_plot_group(
   gau_g,
   group = "group",
   eps = 3,
   delta = 1e-3,
-  bins = c(8, 8)
+  bins = c(8, 8),
+  sampling_control = sampling_control(
+    method = c("center", "uniform")
+  )
 )
 
 score_plot_gau_g$plot$all
@@ -87,5 +152,5 @@ score_plot_gau_g$plot$all
 \seealso{
 \code{\link[=dp_score_group]{dp_score_group()}} for computing group-wise score histograms without
 plotting.
-\code{\link[=dp_score_plot]{dp_score_plot()}} for pooled score histogram plots.
+\code{\link[=dp_score_plot]{dp_score_plot()}} for pooled score histogram and sampled-score plots.
 }

@@ -21,9 +21,15 @@ dp_score(
 \item{X}{A numeric matrix or data frame. Rows correspond to observations and
 columns correspond to variables.}
 
-\item{eps}{Positive number defining the total \code{epsilon} privacy parameter.}
+\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
+to each requested score-histogram procedure. When multiple histogram
+methods are requested, the same value is used for each method for
+comparison; it is not divided across methods.}
 
-\item{delta}{Number in \verb{(0, 1)} defining the total \code{delta} privacy parameter.}
+\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
+supplied to each requested score-histogram procedure. When multiple
+histogram methods are requested, the same value is used for each method
+for comparison; it is not divided across methods.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -49,18 +55,11 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 used to construct the score coordinates. The default is \code{c(1, 2)}.}
 }
 \value{
-A list with components:
-\describe{
-\item{score}{An \eqn{n \times 2} matrix containing the PC scores for the
-two selected axes.}
-\item{frame}{A list with components \code{xlim} and \code{ylim}.}
-\item{none}{Data frame for the non-private empirical histogram.}
-\item{add}{Data frame for the additive Gaussian private histogram, or
-\code{NULL} if not requested.}
-\item{sparse}{Data frame for the sparse private histogram, or \code{NULL} if
-not requested.}
-\item{method}{Character vector of private histogram methods used.}
-}
+A named list with components \code{score} and \code{frame}, followed by
+histogram results. The \code{nonprivate} component contains the non-private
+empirical histogram. Each requested private method is returned as an
+additional component (\code{add} and/or \code{sparse}). Methods that are not requested
+are omitted from the returned list.
 }
 \description{
 This function computes two-dimensional principal component scores and returns
@@ -78,12 +77,13 @@ instead summarizes their empirical distribution by a two-dimensional histogram
 and releases private versions of the histogram for the visualization.
 
 The plotting frame is constructed privately from the score coordinates. The
-frame center is estimated by coordinate-wise private medians, and the frame
-radius is estimated by the private 0.99 quantile of the Euclidean distances
-from this private center. The resulting private radius is inflated by a fixed
-factor and used to form a square plotting frame. The private frame is computed
-using a smooth-sensitivity based quantile mechanism
-\insertCite{nissim2007smooth}{dppca}.
+frame center is estimated by coordinate-wise private medians using a
+smooth-sensitivity quantile mechanism
+\insertCite{nissim2007smooth}{dppca}. The Euclidean distances from this
+private center are then computed, and their private 0.99 quantile is estimated
+with the pure-DP exponential-noise unbounded quantile routine used in the
+PMWM implementation \insertCite{ramsay2025pmw}{dppca}. The resulting private
+radius is inflated by a fixed factor and used to form a square plotting frame.
 
 The private histogram is computed on the rectangular grid defined by the
 private frame and the bin counts in \code{bins}. Under
@@ -110,8 +110,21 @@ following the stability-based private histogram idea of
 The privacy parameters are allocated across the privacy-consuming steps. If
 \code{g_dppca = FALSE}, half of \code{eps} and \code{delta} is used for private frame
 construction and half for the private histogram. If \code{g_dppca = TRUE}, the
-parameters are split equally among private direction estimation, private frame
-construction, and private histogram release.
+parameters are split equally among private direction estimation, private
+frame construction, and private histogram release. Within the frame step,
+\code{eps_frame} is divided equally between the two private medians and the radius
+quantile. Because the radius quantile is pure DP, it consumes no \code{delta};
+\code{delta_frame} is divided equally between the two smooth-sensitivity medians.
+
+When multiple histogram methods are requested, the histogram privacy budget
+is not divided across \code{"add"} and \code{"sparse"}. Instead, each requested method
+receives the same histogram portion of \code{eps} and \code{delta} so that the methods
+can be compared under the same privacy setting. If outputs from multiple
+private histogram methods are released together, the privacy cost of the
+joint release must be accounted for by composition.
+
+The returned score coordinates and the \code{nonprivate} histogram are included as
+non-private references and are not themselves differentially private releases.
 
 For a detailed procedure and mathematical formulations,
 refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
@@ -140,6 +153,8 @@ head(score_gau$add)
 \insertRef{dwork2014algorithmic}{dppca}
 
 \insertRef{nissim2007smooth}{dppca}
+
+\insertRef{ramsay2025pmw}{dppca}
 
 \insertRef{wasserman2010statistical}{dppca}
 

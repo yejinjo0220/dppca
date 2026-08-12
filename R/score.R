@@ -12,8 +12,14 @@
 #'
 #' @param X A numeric matrix or data frame. Rows correspond to observations and
 #'  columns correspond to variables.
-#' @param eps Positive number defining the total `epsilon` privacy parameter.
-#' @param delta Number in `(0, 1)` defining the total `delta` privacy parameter.
+#' @param eps Positive number defining the `epsilon` privacy parameter supplied
+#'   to each requested score-histogram procedure. When multiple histogram
+#'   methods are requested, the same value is used for each method for
+#'   comparison; it is not divided across methods.
+#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter
+#'   supplied to each requested score-histogram procedure. When multiple
+#'   histogram methods are requested, the same value is used for each method
+#'   for comparison; it is not divided across methods.
 #' @param bins Integer vector of length 2 defining the number of histogram bins
 #'   along the first and second score axes, respectively.
 #' @param method Character vector specifying which private histogram methods to
@@ -41,12 +47,13 @@
 #' and releases private versions of the histogram for the visualization.
 #'
 #' The plotting frame is constructed privately from the score coordinates. The
-#' frame center is estimated by coordinate-wise private medians, and the frame
-#' radius is estimated by the private 0.99 quantile of the Euclidean distances
-#' from this private center. The resulting private radius is inflated by a fixed
-#' factor and used to form a square plotting frame. The private frame is computed
-#' using a smooth-sensitivity based quantile mechanism
-#' \insertCite{nissim2007smooth}{dppca}.
+#' frame center is estimated by coordinate-wise private medians using a
+#' smooth-sensitivity quantile mechanism
+#' \insertCite{nissim2007smooth}{dppca}. The Euclidean distances from this
+#' private center are then computed, and their private 0.99 quantile is estimated
+#' with the pure-DP exponential-noise unbounded quantile routine used in the
+#' PMWM implementation \insertCite{ramsay2025pmw}{dppca}. The resulting private
+#' radius is inflated by a fixed factor and used to form a square plotting frame.
 #'
 #' The private histogram is computed on the rectangular grid defined by the
 #' private frame and the bin counts in `bins`. Under
@@ -73,24 +80,30 @@
 #' The privacy parameters are allocated across the privacy-consuming steps. If
 #' `g_dppca = FALSE`, half of `eps` and `delta` is used for private frame
 #' construction and half for the private histogram. If `g_dppca = TRUE`, the
-#' parameters are split equally among private direction estimation, private frame
-#' construction, and private histogram release.
+#' parameters are split equally among private direction estimation, private
+#' frame construction, and private histogram release. Within the frame step,
+#' `eps_frame` is divided equally between the two private medians and the radius
+#' quantile. Because the radius quantile is pure DP, it consumes no `delta`;
+#' `delta_frame` is divided equally between the two smooth-sensitivity medians.
+#'
+#' When multiple histogram methods are requested, the histogram privacy budget
+#' is not divided across `"add"` and `"sparse"`. Instead, each requested method
+#' receives the same histogram portion of `eps` and `delta` so that the methods
+#' can be compared under the same privacy setting. If outputs from multiple
+#' private histogram methods are released together, the privacy cost of the
+#' joint release must be accounted for by composition.
+#'
+#' The returned score coordinates and the `nonprivate` histogram are included as
+#' non-private references and are not themselves differentially private releases.
 #'
 #' For a detailed procedure and mathematical formulations,
 #' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
 #'
-#' @return A list with components:
-#' \describe{
-#'   \item{score}{An \eqn{n \times 2} matrix containing the PC scores for the
-#'     two selected axes.}
-#'   \item{frame}{A list with components `xlim` and `ylim`.}
-#'   \item{none}{Data frame for the non-private empirical histogram.}
-#'   \item{add}{Data frame for the additive Gaussian private histogram, or
-#'   `NULL` if not requested.}
-#'   \item{sparse}{Data frame for the sparse private histogram, or `NULL` if
-#'   not requested.}
-#'   \item{method}{Character vector of private histogram methods used.}
-#' }
+#' @return A named list with components `score` and `frame`, followed by
+#' histogram results. The `nonprivate` component contains the non-private
+#' empirical histogram. Each requested private method is returned as an
+#' additional component (`add` and/or `sparse`). Methods that are not requested
+#' are omitted from the returned list.
 #'
 #' @seealso
 #' [dp_score_plot()] for plotting the output of this function.
@@ -102,6 +115,8 @@
 #' \insertRef{dwork2014algorithmic}{dppca}
 #'
 #' \insertRef{nissim2007smooth}{dppca}
+#'
+#' \insertRef{ramsay2025pmw}{dppca}
 #'
 #' \insertRef{wasserman2010statistical}{dppca}
 #'
@@ -157,9 +172,13 @@ dp_score <- function(
 
   axes <- as.integer(axes)
   bins <- as.integer(bins)
-  m_x <- bins[1]
-  m_y <- bins[2]
-  method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
+  method <- unique(
+    match.arg(
+      method,
+      choices = c("add", "sparse"),
+      several.ok = TRUE
+    )
+  )
 
   budget <- split_score_privacy_budget(
     eps = eps,
@@ -195,31 +214,59 @@ dp_score <- function(
     method = method
   )
 
-  list(
-    score = score_res$score,
-    frame = frame_out,
-    none = hist$none,
-    add = hist$add,
-    sparse = hist$sparse,
-    method = method
+  c(
+    list(
+      score = score_res$score,
+      frame = frame_out
+    ),
+    hist
   )
 }
 
-#' Plot differentially private score histograms
+#' Plot differentially private score histograms or sampled score points
 #'
-#' This function computes and visualizes two-dimensional principal component
-#' score histograms, including the original scatter plot, the non-private
-#' empirical histogram, and one or more differentially private histogram
-#' estimates. It is a plotting wrapper around [dp_score()] and returns both the
-#' computed score output and `ggplot` objects.
+#' This function computes two-dimensional principal component score histograms
+#' and visualizes the results. Private histogram releases can be shown directly
+#' as histogram panels or post-processed into synthetic scatter plots sampled
+#' from the released histograms.
 #'
 #' @inheritParams dp_score
+#' @param private_plot Character vector controlling how requested histogram
+#'   results are visualized. `"histogram"` displays the histogram panels,
+#'   while `"sample"` displays synthetic score points sampled from the
+#'   histograms. Both can be requested with
+#'   `c("histogram", "sample")`. The default is
+#'   `c("histogram", "sample")`.
+#' @param sampling_control Optional control list created by
+#'   `sampling_control()`. It is used only when `"sample"` is included in
+#'   `private_plot`. If `NULL`, the default sampling settings are used.
+#' @param plot_control Optional control list created by `score_plot_control()`.
+#'   If `NULL`, default score-plot settings are used.
 #'
-#' @return A list with components:
+#' @details
+#' Histogram plots and sampled-score plots are arranged dynamically.
+#' When only `"histogram"` is requested, the original scatter plot is shown
+#' in the first column of the histogram row. When `"sample"` is requested,
+#' the original scatter plot is instead shown in the first column of the
+#' first sample row. If both plot types are requested, the histogram row uses
+#' a blank first panel so that the sample rows line up beneath it.
+#'
+#' Synthetic score sampling is applied not only to the private histograms,
+#' but also to the non-private histogram, so that non-private and private
+#' sampled-score visualizations can be compared side by side.
+#'
+#' @return A named list containing:
 #' \describe{
 #'   \item{score}{The output of [dp_score()].}
-#'   \item{plot}{A list containing the scatter plot, histogram panels, and the
-#'   combined patchwork plot.}
+#'   \item{sample}{Present only when `"sample"` is requested. A nested list
+#'   containing sampled coordinates for `nonprivate` and for each requested
+#'   private histogram method (`add` and/or `sparse`). Each leaf is a data
+#'   frame with columns `pc_x` and `pc_y`, indexed by sampling method
+#'   (`center` and/or `uniform`).}
+#'   \item{plot}{A list containing the original scatter plot, the non-private
+#'   histogram plot, requested private histogram plots, sampled-score plots,
+#'   and the combined patchwork layout in `plot$all`. Sampled-score plots are
+#'   stored under `plot$sample`.}
 #' }
 #'
 #' @seealso
@@ -229,10 +276,9 @@ dp_score <- function(
 #' @examples
 #' data(gau, package = "dppca")
 #'
-#' # Use a small subset to keep the example fast.
 #' X <- gau[1:300, ]
 #'
-#' # Draw a private score plot using the additive histogram method.
+#' # By default, both histogram and sampled panels are displayed.
 #' set.seed(123)
 #' score_plot <- dp_score_plot(
 #'   X,
@@ -241,17 +287,22 @@ dp_score <- function(
 #'   bins = c(8, 8),
 #'   method = "add"
 #' )
-#' score_plot$plot$add
+#' score_plot$plot$all
 #'
-#' # Draw score plots for all available histogram methods.
+#' # Sample-only display with two sampling methods.
 #' set.seed(123)
-#' score_plot <- dp_score_plot(
+#' sample_plot <- dp_score_plot(
 #'   X,
 #'   eps = 3,
 #'   delta = 1e-3,
-#'   bins = c(8, 8)
+#'   bins = c(8, 8),
+#'   method = "add",
+#'   private_plot = "sample",
+#'   sampling_control = sampling_control(
+#'     method = c("center", "uniform")
+#'   )
 #' )
-#' score_plot$plot$all
+#' sample_plot$plot$all
 #'
 #' @export
 dp_score_plot <- function(
@@ -260,14 +311,32 @@ dp_score_plot <- function(
     delta,
     bins,
     method = c("add", "sparse"),
+    private_plot = c("histogram", "sample"),
+    sampling_control = NULL,
     center = TRUE,
     standardize = FALSE,
     g_dppca = FALSE,
     cpp.option = FALSE,
-    axes = c(1, 2)
+    axes = c(1, 2),
+    plot_control = NULL
 ) {
-  method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
-  color <- "#6A5ACD"
+  method <- unique(
+    match.arg(
+      method,
+      choices = c("add", "sparse"),
+      several.ok = TRUE
+    )
+  )
+
+  private_plot <- unique(
+    match.arg(
+      private_plot,
+      choices = c("histogram", "sample"),
+      several.ok = TRUE
+    )
+  )
+
+  pctrl <- .merge_score_plot_control(plot_control)
 
   score_res <- dp_score(
     X = X,
@@ -289,50 +358,226 @@ dp_score_plot <- function(
   ylim <- score_res$frame$ylim
   pc_names <- colnames(score_res$score)
 
+  xlab <- if (is.null(pctrl$xlab)) pc_names[1] else pctrl$xlab
+  ylab <- if (is.null(pctrl$ylab)) pc_names[2] else pctrl$ylab
+
   p_scatter <- ggplot2::ggplot(
     X_score,
     ggplot2::aes(x = .data$pc_x, y = .data$pc_y)
   ) +
-    ggplot2::geom_point(alpha = 0.6, size = 1.8, color = color) +
+    ggplot2::geom_point(
+      alpha = pctrl$scatter_alpha,
+      size = pctrl$scatter_size,
+      color = pctrl$color
+    ) +
     ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
-    ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
-    ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, n = 5)) +
-    theme_dp_base() +
-    ggplot2::labs(x = pc_names[1], y = pc_names[2])
+    ggplot2::scale_x_continuous(
+      expand = c(0, 0),
+      breaks = pretty(xlim, n = 5)
+    ) +
+    ggplot2::scale_y_continuous(
+      expand = c(0, 0),
+      breaks = pretty(ylim, n = 5)
+    ) +
+    theme_dp_base(base_size = pctrl$base_size) +
+    ggplot2::labs(x = xlab, y = ylab)
 
-  p_scatter <- add_title_dp(p_scatter, "Original Scatter")
-  p_none <- make_hist_plot_dp(score_res$none, xlim, ylim, color, "Original Hist",
-                              xlab = pc_names[1], ylab = pc_names[2])
-  p_add <- NULL
-  p_sparse <- NULL
+  p_scatter <- add_title_dp(
+    p_scatter,
+    pctrl$scatter_title,
+    title_size = pctrl$title_size
+  )
 
-  plot_panels <- list(p_scatter, p_none)
+  p_nonprivate_hist <- make_hist_plot_dp(
+    score_res$nonprivate,
+    xlim = xlim,
+    ylim = ylim,
+    color = pctrl$color,
+    title = pctrl$nonprivate_title,
+    xlab = xlab,
+    ylab = ylab,
+    alpha_range = pctrl$hist_alpha_range,
+    base_size = pctrl$base_size,
+    title_size = pctrl$title_size
+  )
+
+  plot_out <- list(
+    scatter = p_scatter,
+    nonprivate = p_nonprivate_hist
+  )
+
+  hist_plot_out <- list(nonprivate = p_nonprivate_hist)
 
   if ("add" %in% method) {
-    p_add <- make_hist_plot_dp(score_res$add, xlim, ylim, color, "Add DP Hist",
-                               xlab = pc_names[1], ylab = pc_names[2])
-    plot_panels <- c(plot_panels, list(p_add))
+    hist_plot_out$add <- make_hist_plot_dp(
+      score_res$add,
+      xlim = xlim,
+      ylim = ylim,
+      color = pctrl$color,
+      title = pctrl$add_title,
+      xlab = xlab,
+      ylab = ylab,
+      alpha_range = pctrl$hist_alpha_range,
+      base_size = pctrl$base_size,
+      title_size = pctrl$title_size
+    )
+    plot_out$add <- hist_plot_out$add
   }
 
   if ("sparse" %in% method) {
-    p_sparse <- make_hist_plot_dp(score_res$sparse, xlim, ylim, color, "Sparse DP Hist",
-                                  xlab = pc_names[1], ylab = pc_names[2])
-    plot_panels <- c(plot_panels, list(p_sparse))
+    hist_plot_out$sparse <- make_hist_plot_dp(
+      score_res$sparse,
+      xlim = xlim,
+      ylim = ylim,
+      color = pctrl$color,
+      title = pctrl$sparse_title,
+      xlab = xlab,
+      ylab = ylab,
+      alpha_range = pctrl$hist_alpha_range,
+      base_size = pctrl$base_size,
+      title_size = pctrl$title_size
+    )
+    plot_out$sparse <- hist_plot_out$sparse
   }
 
-  p_all <- patchwork::wrap_plots(plot_panels, nrow = 1)
+  sample_out <- NULL
+  sample_plot_out <- NULL
+  sctrl <- NULL
 
-  list(
-    score = score_res,
-    plot = list(
-      scatter = p_scatter,
-      none = p_none,
-      add = p_add,
-      sparse = p_sparse,
-      all = p_all
+  if ("sample" %in% private_plot) {
+    sctrl <- .resolve_sampling_control(
+      control = sampling_control,
+      n = nrow(score_res$score)
     )
+
+    sample_out <- list()
+    sample_plot_out <- list()
+
+    sampled_np <- sample_private_score_histogram(
+      hist_df = score_res$nonprivate,
+      sample_size = sctrl$sample_size,
+      sample_method = sctrl$method,
+      bandwidth_scale = sctrl$bandwidth_scale
+    )
+
+    sample_out$nonprivate <- sampled_np
+    sample_plot_out$nonprivate <- list()
+
+    for (sm in names(sampled_np)) {
+      sm_label <- if (sm == "center") "Center" else "Uniform"
+      sample_plot_out$nonprivate[[sm]] <- make_sample_plot_dp(
+        sample_df = sampled_np[[sm]],
+        xlim = xlim,
+        ylim = ylim,
+        color = pctrl$color,
+        title = paste0("Non-private Sample (", sm_label, ")"),
+        xlab = xlab,
+        ylab = ylab,
+        point_alpha = pctrl$scatter_alpha,
+        point_size = pctrl$scatter_size,
+        base_size = pctrl$base_size,
+        title_size = pctrl$title_size
+      )
+    }
+
+    for (hist_method in method) {
+      sampled <- sample_private_score_histogram(
+        hist_df = score_res[[hist_method]],
+        sample_size = sctrl$sample_size,
+        sample_method = sctrl$method,
+        bandwidth_scale = sctrl$bandwidth_scale
+      )
+
+      sample_out[[hist_method]] <- sampled
+      sample_plot_out[[hist_method]] <- list()
+
+      hist_label <- if (hist_method == "add") "Add" else "Sparse"
+
+      for (sm in names(sampled)) {
+        sm_label <- if (sm == "center") "Center" else "Uniform"
+        sample_plot_out[[hist_method]][[sm]] <- make_sample_plot_dp(
+          sample_df = sampled[[sm]],
+          xlim = xlim,
+          ylim = ylim,
+          color = pctrl$color,
+          title = paste0(hist_label, " Sample (", sm_label, ")"),
+          xlab = xlab,
+          ylab = ylab,
+          point_alpha = pctrl$scatter_alpha,
+          point_size = pctrl$scatter_size,
+          base_size = pctrl$base_size,
+          title_size = pctrl$title_size
+        )
+      }
+    }
+
+    plot_out$sample <- sample_plot_out
+  }
+
+  # Build one flat patchwork grid rather than nesting row-wise patchworks.
+  # Using a single grid is important here: nested patchworks can assign
+  # different effective widths to otherwise corresponding columns, especially
+  # when fixed-aspect plots and spacers are mixed. A single row-major grid keeps
+  # every column aligned across histogram and sample rows.
+  n_cols <- 2 + length(method)
+  layout_panels <- list()
+
+  if ("histogram" %in% private_plot) {
+    if ("sample" %in% private_plot) {
+      layout_panels[[length(layout_panels) + 1L]] <-
+        patchwork::plot_spacer()
+    } else {
+      layout_panels[[length(layout_panels) + 1L]] <- p_scatter
+    }
+
+    layout_panels[[length(layout_panels) + 1L]] <-
+      hist_plot_out$nonprivate
+
+    for (m in method) {
+      layout_panels[[length(layout_panels) + 1L]] <-
+        hist_plot_out[[m]]
+    }
+  }
+
+  if ("sample" %in% private_plot) {
+    smethods <- sctrl$method
+
+    for (i in seq_along(smethods)) {
+      sm <- smethods[i]
+
+      if (i == 1L) {
+        layout_panels[[length(layout_panels) + 1L]] <- p_scatter
+      } else {
+        layout_panels[[length(layout_panels) + 1L]] <-
+          patchwork::plot_spacer()
+      }
+
+      layout_panels[[length(layout_panels) + 1L]] <-
+        sample_plot_out$nonprivate[[sm]]
+
+      for (m in method) {
+        layout_panels[[length(layout_panels) + 1L]] <-
+          sample_plot_out[[m]][[sm]]
+      }
+    }
+  }
+
+  plot_out$all <- patchwork::wrap_plots(
+    layout_panels,
+    ncol = n_cols,
+    byrow = TRUE
   )
+
+  out <- list(score = score_res)
+
+  if (!is.null(sample_out)) {
+    out$sample <- sample_out
+  }
+
+  out$plot <- plot_out
+  out
 }
+
 
 #' Group-wise differentially private score histograms
 #'
@@ -355,17 +600,19 @@ dp_score_plot <- function(
 #' groups. For each group \eqn{g}, the group-specific count in bin \eqn{B_k} is
 #' \eqn{c_k^{(g)} = \sum_i 1\{s_i \in B_k, g_i = g\}}. Private histograms are
 #' then computed separately for each group on the common grid. Because the groups
-#' form a partition of the rows, the group-wise histograms use the same histogram
-#' privacy parameters for each group by parallel composition.
+#' form a partition of the rows, group-wise histograms for the same histogram
+#' method use the same histogram privacy parameters across groups by parallel
+#' composition.
 #'
-#' @return A list with components:
-#' \describe{
-#'   \item{score}{An \eqn{n \times 2} matrix containing the PC scores for the
-#'     two selected axes.}
-#'   \item{frame}{A list with components `xlim` and `ylim`.}
-#'   \item{groups}{A named list of group-specific histogram outputs.}
-#'   \item{method}{Character vector of private histogram methods used.}
-#' }
+#' When both `"add"` and `"sparse"` are requested, the histogram privacy budget
+#' is not divided across the two methods. Each method receives the same histogram
+#' portion of `eps` and `delta` for method comparison. Releasing outputs from
+#' multiple private histogram methods together requires composition across
+#' methods.
+#'
+#' @return A named list with components `score`, `frame`, and `groups`. Each
+#' group entry contains `n`, `nonprivate`, and the requested private histogram
+#' method components (`add` and/or `sparse`). Unrequested methods are omitted.
 #'
 #' @seealso
 #' [dp_score_plot_group()] for plotting group-wise score histograms.
@@ -402,7 +649,13 @@ dp_score_group <- function(
     cpp.option = FALSE,
     axes = c(1, 2)
 ) {
-  method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
+  method <- unique(
+    match.arg(
+      method,
+      choices = c("add", "sparse"),
+      several.ok = TRUE
+    )
+  )
 
   group_data <- split_group_input(X, group)
   X_mat <- validate_score_matrix(group_data$X)
@@ -464,8 +717,11 @@ dp_score_group <- function(
     m_y = m_y
   )
 
-  eps_hist_method <- budget$eps_hist / length(method)
-  delta_hist_method <- budget$delta_hist / length(method)
+  # The same histogram privacy budget is supplied separately to each
+  # requested method. It is not divided across add and sparse.
+  eps_hist_method <- budget$eps_hist
+  delta_hist_method <- budget$delta_hist
+
   groups_out <- list()
 
   for (g in g_levels) {
@@ -482,53 +738,103 @@ dp_score_group <- function(
       group_name = g
     )
 
-    groups_out[[g]] <- list(
-      n = n_g,
-      none = hist$none,
-      add = hist$add,
-      sparse = hist$sparse
+    groups_out[[g]] <- c(
+      list(n = n_g),
+      hist
     )
   }
 
   list(
     score = score_res$score,
     frame = frame_out,
-    groups = groups_out,
-    method = method
+    groups = groups_out
   )
 }
 
-#' Plot group-wise differentially private score histograms
+#' Plot group-wise differentially private score histograms or samples
 #'
-#' This function computes and visualizes group-wise differentially private score
-#' histograms. It is a plotting wrapper around [dp_score_group()] and returns
-#' both the computed group-wise score output and `ggplot` objects.
+#' This function computes group-wise two-dimensional principal component score
+#' histograms and visualizes the groups together using a common color mapping.
+#' Private histogram releases can be displayed directly or post-processed into
+#' grouped synthetic scatter plots.
 #'
 #' @inheritParams dp_score_group
+#' @param private_plot Character vector controlling how requested histogram
+#'   results are visualized. `"histogram"` displays the overlaid group-wise
+#'   histogram panels, while `"sample"` displays grouped synthetic score points
+#'   sampled from the group-wise histograms. Both can be requested with
+#'   `c("histogram", "sample")`. The default is
+#'   `c("histogram", "sample")`.
+#' @param sampling_control Optional control list created by
+#'   `sampling_control()`. It is used only when `"sample"` is included in
+#'   `private_plot`. If `NULL`, the default sampling settings are used.
+#' @param plot_control Optional control list created by `score_plot_control()`.
+#'   If `NULL`, default grouped score-plot settings are used.
+#'
+#' @details
+#' All groups are shown together in each panel using group-specific colors.
+#' Separate per-group plot layouts are not created.
+#'
+#' For sampled-score panels, sampling is carried out separately from each
+#' group's histogram and the sampled coordinates are then combined with the
+#' corresponding group label. The same procedure is applied to the non-private
+#' group histograms and to each requested private histogram method.
+#'
+#' `sampling_control(sample_size = NULL)` uses a total synthetic sample size
+#' equal to the number of input observations. The total is allocated across
+#' groups in proportion to their observed sizes, which reproduces the original
+#' group sizes when the default total is used. If a positive integer
+#' `sample_size` is supplied, it is interpreted as the total synthetic sample
+#' size across all groups and is allocated proportionally using a
+#' largest-remainder rule.
+#'
+#' The combined plot follows the same dynamic layout as [dp_score_plot()].
+#' When only `"histogram"` is requested, the original grouped scatter plot
+#' appears in the first column of the histogram row. When sampling is requested,
+#' the original grouped scatter plot appears in the first column of the first
+#' sample row. If histogram and sample panels are both requested, the first
+#' position of the histogram row is left blank to keep columns aligned.
+#'
+#' Sampling uses only the already computed histogram output and fixed
+#' post-processing choices, so it does not consume an additional privacy
+#' budget. A private histogram, especially a sparse histogram, can contain no
+#' positive probability mass after thresholding. In that case no synthetic
+#' points are generated for that group and histogram method, and a warning is
+#' issued.
 #'
 #' @return A list with components:
 #' \describe{
 #'   \item{score}{The output of [dp_score_group()].}
-#'   \item{plot}{A list containing group-wise histogram plots.}
+#'   \item{sample}{Present only when `"sample"` is requested. A nested list
+#'   containing combined grouped synthetic coordinates for `nonprivate` and
+#'   each requested private histogram method. Each leaf is indexed by sampling
+#'   method (`center` and/or `uniform`) and contains columns `pc_x`, `pc_y`,
+#'   and `group`.}
+#'   \item{plot}{A list containing the grouped original scatter plot, the
+#'   overlaid non-private histogram, requested private histogram panels,
+#'   grouped sampled-score panels under `plot$sample`, and the combined
+#'   patchwork layout in `plot$all`.}
 #'   \item{group_colors}{Named vector of colors used for the groups.}
 #' }
 #'
 #' @seealso
 #' [dp_score_group()] for computing group-wise score histograms without
 #' plotting.
-#' [dp_score_plot()] for pooled score histogram plots.
+#' [dp_score_plot()] for pooled score histogram and sampled-score plots.
 #'
 #' @examples
 #' data(gau_g, package = "dppca")
 #'
-#' # Draw a private grouped score plot.
 #' set.seed(123)
 #' score_plot_gau_g <- dp_score_plot_group(
 #'   gau_g,
 #'   group = "group",
 #'   eps = 3,
 #'   delta = 1e-3,
-#'   bins = c(8, 8)
+#'   bins = c(8, 8),
+#'   sampling_control = sampling_control(
+#'     method = c("center", "uniform")
+#'   )
 #' )
 #'
 #' score_plot_gau_g$plot$all
@@ -545,19 +851,49 @@ dp_score_plot_group <- function(
     g_dppca = FALSE,
     cpp.option = FALSE,
     axes = c(1, 2),
-    method = c("add", "sparse")
+    method = c("add", "sparse"),
+    private_plot = c("histogram", "sample"),
+    sampling_control = NULL,
+    plot_control = NULL
 ) {
-  method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
+  method <- unique(
+    match.arg(
+      method,
+      choices = c("add", "sparse"),
+      several.ok = TRUE
+    )
+  )
+
+  private_plot <- unique(
+    match.arg(
+      private_plot,
+      choices = c("histogram", "sample"),
+      several.ok = TRUE
+    )
+  )
+
+  pctrl <- .merge_score_plot_control(plot_control)
 
   group_data <- split_group_input(X, group)
   group_vec <- group_data$group
   X_feat <- group_data$X
   g_levels <- as.character(unique(group_vec))
 
-  if (.is_color_vec(g_levels)) {
-    col_map <- stats::setNames(as.character(g_levels), g_levels)
+  if (!is.null(pctrl$group_colors)) {
+    col_map <- complete_color_map(
+      pctrl$group_colors,
+      g_levels
+    )
+  } else if (.is_color_vec(g_levels)) {
+    col_map <- stats::setNames(
+      as.character(g_levels),
+      g_levels
+    )
   } else {
-    pal <- grDevices::hcl.colors(length(g_levels), "Dark3")
+    pal <- grDevices::hcl.colors(
+      length(g_levels),
+      "Dark3"
+    )
     col_map <- stats::setNames(pal, g_levels)
   }
 
@@ -577,101 +913,311 @@ dp_score_plot_group <- function(
 
   X_score <- as.data.frame(score_res$score)
   colnames(X_score) <- c("pc_x", "pc_y")
-  X_score$group <- as.character(group_vec)
+  X_score$group <- factor(
+    as.character(group_vec),
+    levels = g_levels
+  )
 
   xlim <- score_res$frame$xlim
   ylim <- score_res$frame$ylim
   pc_names <- colnames(score_res$score)
 
+  xlab <- if (is.null(pctrl$xlab)) pc_names[1] else pctrl$xlab
+  ylab <- if (is.null(pctrl$ylab)) pc_names[2] else pctrl$ylab
+  legend_position <- if (pctrl$show_group_legend) "right" else "none"
+
   p_scatter <- ggplot2::ggplot(
     X_score,
-    ggplot2::aes(x = .data$pc_x, y = .data$pc_y, colour = .data$group)
+    ggplot2::aes(
+      x = .data$pc_x,
+      y = .data$pc_y,
+      colour = .data$group
+    )
   ) +
-    ggplot2::geom_point(alpha = 0.6, size = 1.8) +
-    ggplot2::scale_colour_manual(values = col_map) +
+    ggplot2::geom_point(
+      alpha = pctrl$scatter_alpha,
+      size = pctrl$scatter_size
+    ) +
+    ggplot2::scale_colour_manual(
+      values = col_map,
+      drop = FALSE
+    ) +
     ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
-    ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
-    ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, n = 5)) +
-    theme_dp_base() +
-    ggplot2::labs(x = pc_names[1], y = pc_names[2])
+    ggplot2::scale_x_continuous(
+      expand = c(0, 0),
+      breaks = pretty(xlim, n = 5)
+    ) +
+    ggplot2::scale_y_continuous(
+      expand = c(0, 0),
+      breaks = pretty(ylim, n = 5)
+    ) +
+    theme_dp_base(
+      base_size = pctrl$base_size,
+      legend_position = legend_position
+    ) +
+    ggplot2::labs(
+      x = xlab,
+      y = ylab,
+      colour = "Group"
+    )
 
-  p_scatter <- add_title_dp(p_scatter, "Original Scatter")
+  p_scatter <- add_title_dp(
+    p_scatter,
+    pctrl$scatter_title,
+    title_size = pctrl$title_size
+  )
 
-  coord_none_all <- dplyr::bind_rows(lapply(names(score_res$groups), function(g) {
-    df <- score_res$groups[[g]]$none
-    df$group <- g
-    df
-  }))
-
-  p_none_all <- make_hist_all_dp(coord_none_all, xlim, ylim, col_map, "Original Hist",
-                                 xlab = pc_names[1], ylab = pc_names[2])
-  p_add_all <- NULL
-  p_sparse_all <- NULL
-
-  plot_panels <- list(p_scatter, p_none_all)
-
-  if ("add" %in% method) {
-    coord_add_all <- dplyr::bind_rows(lapply(names(score_res$groups), function(g) {
-      df <- score_res$groups[[g]]$add
-      df$group <- g
-      df
-    }))
-    p_add_all <- make_hist_all_dp(coord_add_all, xlim, ylim, col_map, "Add DP Hist",
-                                  xlab = pc_names[1], ylab = pc_names[2])
-    plot_panels <- c(plot_panels, list(p_add_all))
-  }
-
-  if ("sparse" %in% method) {
-    coord_sparse_all <- dplyr::bind_rows(lapply(names(score_res$groups), function(g) {
-      df <- score_res$groups[[g]]$sparse
-      df$group <- g
-      df
-    }))
-    p_sparse_all <- make_hist_all_dp(coord_sparse_all, xlim, ylim, col_map, "Sparse DP Hist",
-                                     xlab = pc_names[1], ylab = pc_names[2])
-    plot_panels <- c(plot_panels, list(p_sparse_all))
-  }
-
-  p_all <- patchwork::wrap_plots(plot_panels, nrow = 1)
-
-  make_group_layout <- function(which = c("none", "add", "sparse"), title_prefix) {
-    which <- match.arg(which)
-
-    group_plots <- lapply(g_levels, function(g) {
-      df_g <- score_res$groups[[g]][[which]]
-      title_g <- if (.is_color_vec(g_levels)) NULL else paste0(title_prefix, g)
-
-      make_hist_single_dp(
-        df_g,
-        xlim = xlim,
-        ylim = ylim,
-        col = col_map[[g]],
-        title = title_g,
-        xlab = pc_names[1],
-        ylab = pc_names[2]
-      )
-    })
-    names(group_plots) <- g_levels
-
-    list(
-      all = patchwork::wrap_plots(group_plots, ncol = 3),
-      groups = group_plots
+  bind_group_histograms <- function(which) {
+    dplyr::bind_rows(
+      lapply(g_levels, function(g) {
+        df <- score_res$groups[[g]][[which]]
+        df$group <- g
+        df
+      })
     )
   }
 
-  none_layout <- make_group_layout("none", "Original Hist: ")
-  add_layout <- if ("add" %in% method) make_group_layout("add", "Add DP Hist: ") else NULL
-  sparse_layout <- if ("sparse" %in% method) make_group_layout("sparse", "Sparse DP Hist: ") else NULL
+  hist_plot_out <- list()
 
-  list(
-    score = score_res,
-    plot = list(
-      scatter = p_scatter,
-      none = none_layout,
-      add = add_layout,
-      sparse = sparse_layout,
-      all = p_all
-    ),
-    group_colors = col_map
+  coord_nonprivate_all <- bind_group_histograms("nonprivate")
+  hist_plot_out$nonprivate <- make_hist_all_dp(
+    coord_nonprivate_all,
+    xlim = xlim,
+    ylim = ylim,
+    col_map = col_map,
+    title = pctrl$nonprivate_title,
+    xlab = xlab,
+    ylab = ylab,
+    alpha_range = pctrl$hist_alpha_range,
+    base_size = pctrl$base_size,
+    title_size = pctrl$title_size,
+    legend_position = legend_position
   )
+
+  if ("add" %in% method) {
+    coord_add_all <- bind_group_histograms("add")
+    hist_plot_out$add <- make_hist_all_dp(
+      coord_add_all,
+      xlim = xlim,
+      ylim = ylim,
+      col_map = col_map,
+      title = pctrl$add_title,
+      xlab = xlab,
+      ylab = ylab,
+      alpha_range = pctrl$hist_alpha_range,
+      base_size = pctrl$base_size,
+      title_size = pctrl$title_size,
+      legend_position = legend_position
+    )
+  }
+
+  if ("sparse" %in% method) {
+    coord_sparse_all <- bind_group_histograms("sparse")
+    hist_plot_out$sparse <- make_hist_all_dp(
+      coord_sparse_all,
+      xlim = xlim,
+      ylim = ylim,
+      col_map = col_map,
+      title = pctrl$sparse_title,
+      xlab = xlab,
+      ylab = ylab,
+      alpha_range = pctrl$hist_alpha_range,
+      base_size = pctrl$base_size,
+      title_size = pctrl$title_size,
+      legend_position = legend_position
+    )
+  }
+
+  plot_out <- list(
+    scatter = p_scatter,
+    nonprivate = hist_plot_out$nonprivate
+  )
+
+  if ("add" %in% method) {
+    plot_out$add <- hist_plot_out$add
+  }
+  if ("sparse" %in% method) {
+    plot_out$sparse <- hist_plot_out$sparse
+  }
+
+  sample_out <- NULL
+  sample_plot_out <- NULL
+  sctrl <- NULL
+
+  if ("sample" %in% private_plot) {
+    sctrl <- .resolve_sampling_control(
+      control = sampling_control,
+      n = nrow(score_res$score)
+    )
+
+    group_sizes <- vapply(
+      g_levels,
+      function(g) score_res$groups[[g]]$n,
+      numeric(1)
+    )
+    names(group_sizes) <- g_levels
+
+    group_sample_sizes <- allocate_group_sample_sizes(
+      group_sizes = group_sizes,
+      total_size = sctrl$sample_size
+    )
+
+    targets <- c("nonprivate", method)
+    sample_out <- list()
+    sample_plot_out <- list()
+
+    for (target in targets) {
+      pieces_by_method <- stats::setNames(
+        vector("list", length(sctrl$method)),
+        sctrl$method
+      )
+
+      for (sm in sctrl$method) {
+        pieces_by_method[[sm]] <- list()
+      }
+
+      for (g in g_levels) {
+        n_g_sample <- group_sample_sizes[[g]]
+
+        if (n_g_sample == 0L) {
+          for (sm in sctrl$method) {
+            pieces_by_method[[sm]][[g]] <- data.frame(
+              pc_x = numeric(0),
+              pc_y = numeric(0),
+              group = character(0)
+            )
+          }
+          next
+        }
+
+        sampled_g <- sample_private_score_histogram(
+          hist_df = score_res$groups[[g]][[target]],
+          sample_size = n_g_sample,
+          sample_method = sctrl$method,
+          bandwidth_scale = sctrl$bandwidth_scale
+        )
+
+        for (sm in sctrl$method) {
+          df_g <- sampled_g[[sm]]
+
+          # A sparse private histogram can legitimately contain no positive
+          # probability mass after thresholding. In that case the sampling
+          # helper returns a zero-row data frame. Use a zero-length group
+          # vector so that empty sampled results remain valid data frames
+          # instead of triggering a replacement-length error.
+          df_g$group <- rep(g, nrow(df_g))
+
+          pieces_by_method[[sm]][[g]] <- df_g
+        }
+      }
+
+      sample_out[[target]] <- list()
+      sample_plot_out[[target]] <- list()
+
+      target_label <- switch(
+        target,
+        nonprivate = "Non-private",
+        add = "Add",
+        sparse = "Sparse"
+      )
+
+      for (sm in sctrl$method) {
+        combined <- dplyr::bind_rows(
+          pieces_by_method[[sm]]
+        )
+
+        combined$group <- factor(
+          as.character(combined$group),
+          levels = g_levels
+        )
+
+        sample_out[[target]][[sm]] <- combined
+
+        sm_label <- if (sm == "center") "Center" else "Uniform"
+
+        sample_plot_out[[target]][[sm]] <-
+          make_group_sample_plot_dp(
+            sample_df = combined,
+            xlim = xlim,
+            ylim = ylim,
+            col_map = col_map,
+            title = paste0(
+              target_label,
+              " Sample (",
+              sm_label,
+              ")"
+            ),
+            xlab = xlab,
+            ylab = ylab,
+            point_alpha = pctrl$scatter_alpha,
+            point_size = pctrl$scatter_size,
+            base_size = pctrl$base_size,
+            title_size = pctrl$title_size,
+            legend_position = legend_position
+          )
+      }
+    }
+
+    plot_out$sample <- sample_plot_out
+  }
+
+  # Use one flat row-major patchwork grid so columns align across rows.
+  n_cols <- 2 + length(method)
+  layout_panels <- list()
+
+  if ("histogram" %in% private_plot) {
+    if ("sample" %in% private_plot) {
+      layout_panels[[length(layout_panels) + 1L]] <-
+        patchwork::plot_spacer()
+    } else {
+      layout_panels[[length(layout_panels) + 1L]] <- p_scatter
+    }
+
+    layout_panels[[length(layout_panels) + 1L]] <-
+      hist_plot_out$nonprivate
+
+    for (m in method) {
+      layout_panels[[length(layout_panels) + 1L]] <-
+        hist_plot_out[[m]]
+    }
+  }
+
+  if ("sample" %in% private_plot) {
+    for (i in seq_along(sctrl$method)) {
+      sm <- sctrl$method[i]
+
+      if (i == 1L) {
+        layout_panels[[length(layout_panels) + 1L]] <- p_scatter
+      } else {
+        layout_panels[[length(layout_panels) + 1L]] <-
+          patchwork::plot_spacer()
+      }
+
+      layout_panels[[length(layout_panels) + 1L]] <-
+        sample_plot_out$nonprivate[[sm]]
+
+      for (m in method) {
+        layout_panels[[length(layout_panels) + 1L]] <-
+          sample_plot_out[[m]][[sm]]
+      }
+    }
+  }
+
+  plot_out$all <- patchwork::wrap_plots(
+    layout_panels,
+    ncol = n_cols,
+    byrow = TRUE
+  )
+
+  out <- list(
+    score = score_res
+  )
+
+  if (!is.null(sample_out)) {
+    out$sample <- sample_out
+  }
+
+  out$plot <- plot_out
+  out$group_colors <- col_map
+  out
 }

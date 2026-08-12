@@ -28,9 +28,15 @@ for each observation.}
 single column name in \code{X}. If a column name is supplied, that column is
 used as the group label and removed from the feature matrix.}
 
-\item{eps}{Positive number defining the total \code{epsilon} privacy parameter.}
+\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
+to each requested score-histogram procedure. When multiple histogram
+methods are requested, the same value is used for each method for
+comparison; it is not divided across methods.}
 
-\item{delta}{Number in \verb{(0, 1)} defining the total \code{delta} privacy parameter.}
+\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
+supplied to each requested score-histogram procedure. When multiple
+histogram methods are requested, the same value is used for each method
+for comparison; it is not divided across methods.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -56,14 +62,9 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 used to construct the score coordinates. The default is \code{c(1, 2)}.}
 }
 \value{
-A list with components:
-\describe{
-\item{score}{An \eqn{n \times 2} matrix containing the PC scores for the
-two selected axes.}
-\item{frame}{A list with components \code{xlim} and \code{ylim}.}
-\item{groups}{A named list of group-specific histogram outputs.}
-\item{method}{Character vector of private histogram methods used.}
-}
+A named list with components \code{score}, \code{frame}, and \code{groups}. Each
+group entry contains \code{n}, \code{nonprivate}, and the requested private histogram
+method components (\code{add} and/or \code{sparse}). Unrequested methods are omitted.
 }
 \description{
 This function computes two-dimensional principal component scores and releases
@@ -76,8 +77,15 @@ The score directions, plotting frame, and histogram grid are shared across all
 groups. For each group \eqn{g}, the group-specific count in bin \eqn{B_k} is
 \eqn{c_k^{(g)} = \sum_i 1\{s_i \in B_k, g_i = g\}}. Private histograms are
 then computed separately for each group on the common grid. Because the groups
-form a partition of the rows, the group-wise histograms use the same histogram
-privacy parameters for each group by parallel composition.
+form a partition of the rows, group-wise histograms for the same histogram
+method use the same histogram privacy parameters across groups by parallel
+composition.
+
+When both \code{"add"} and \code{"sparse"} are requested, the histogram privacy budget
+is not divided across the two methods. Each method receives the same histogram
+portion of \code{eps} and \code{delta} for method comparison. Releasing outputs from
+multiple private histogram methods together requires composition across
+methods.
 }
 \examples{
 data(gau_g, package = "dppca")

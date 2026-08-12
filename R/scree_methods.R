@@ -572,92 +572,126 @@ dp_scree_huber <- function(X, k, eps, delta,
 }
 
 
-#' Estimate a private upper quantile by log-binning
+#' Estimate a pure-DP private upper quantile by log-binning
 #'
-#' Internal implementation of an upper-tail private quantile estimator based on
-#' a logarithmic grid, a noisy threshold, and noisy cumulative counts. It is used
-#' by the PMWM scree estimator to construct private winsorization bounds.
+#' Internal implementation of the upper-tail unbounded private quantile
+#' estimator used by the PMWM scree estimator. The implementation follows the
+#' pure-DP exponential-noise routine in the public PMWM implementation, which is
+#' based on the unbounded private quantile procedure of Durfee.
+#'
+#' The routine searches over the geometric grid
+#' `beta^i + l - 1`. A one-sided exponential perturbation is added once to the
+#' target count `q * n`, and an independent one-sided exponential perturbation
+#' is added to each cumulative count queried during the scan. The resulting
+#' upper-quantile release is `(eps_1 + eps_2)`-DP.
 #'
 #' @param data Numeric vector.
 #' @param l Finite lower anchor for the search grid.
 #' @param beta Log-binning base for the geometric grid. Must be greater than
 #'   `1`.
 #' @param q Quantile level in `(0, 1)`.
-#' @param eps_1 Positive number defining the `epsilon` privacy parameter for the
-#'   noisy threshold.
-#' @param delta_1 Number in `(0, 1)` defining the `delta` privacy parameter for
-#'   the noisy threshold.
-#' @param eps_2 Positive number defining the `epsilon` privacy parameter for the
-#'   noisy cumulative scan.
-#' @param delta_2 Number in `(0, 1)` defining the `delta` privacy parameter for
-#'   the noisy cumulative scan.
-#' @param max_extra_bins Nonnegative number of additional bins to search beyond
-#'   the largest occupied bin.
+#' @param eps_1 Positive `epsilon` privacy parameter for the noisy target count.
+#' @param eps_2 Positive `epsilon` privacy parameter for the noisy cumulative
+#'   count scan.
 #'
-#' @return Numeric scalar giving a private upper-tail quantile estimate.
+#' @return Numeric scalar giving a pure-DP private upper-tail quantile estimate.
 #' @noRd
-unbounded_quantile_upper <- function(data, l, beta, q,
-                                     eps_1, delta_1,
-                                     eps_2, delta_2,
-                                     max_extra_bins = 1000) {
+unbounded_quantile_upper <- function(
+    data,
+    l,
+    beta,
+    q,
+    eps_1,
+    eps_2
+) {
   data <- as.numeric(data)
   n <- length(data)
 
-  if (n < 1) stop("data must have length >= 1.")
-  if (!is.finite(l)) stop("l must be finite.")
-  if (!is.finite(beta) || beta <= 1) stop("beta must be > 1.")
-  if (!is.finite(q) || q <= 0 || q >= 1) stop("q must be in (0, 1).")
-  if (!is.finite(eps_1) || eps_1 <= 0) stop("eps_1 must be > 0.")
-  if (!is.finite(delta_1) || delta_1 <= 0 || delta_1 >= 1) {
-    stop("delta_1 must be in (0, 1).")
+  if (n < 1L) {
+    stop("`data` must have length >= 1.", call. = FALSE)
   }
-  if (!is.finite(eps_2) || eps_2 <= 0) stop("eps_2 must be > 0.")
-  if (!is.finite(delta_2) || delta_2 <= 0 || delta_2 >= 1) {
-    stop("delta_2 must be in (0, 1).")
+  if (anyNA(data) || any(!is.finite(data))) {
+    stop("`data` must contain only finite values.", call. = FALSE)
+  }
+  if (!is.numeric(l) || length(l) != 1L || !is.finite(l)) {
+    stop("`l` must be a finite number.", call. = FALSE)
+  }
+  if (
+    !is.numeric(beta) || length(beta) != 1L ||
+    !is.finite(beta) || beta <= 1
+  ) {
+    stop("`beta` must be a number greater than 1.", call. = FALSE)
+  }
+  if (
+    !is.numeric(q) || length(q) != 1L ||
+    !is.finite(q) || q <= 0 || q >= 1
+  ) {
+    stop("`q` must be in (0, 1).", call. = FALSE)
+  }
+  if (
+    !is.numeric(eps_1) || length(eps_1) != 1L ||
+    !is.finite(eps_1) || eps_1 <= 0
+  ) {
+    stop("`eps_1` must be a positive number.", call. = FALSE)
+  }
+  if (
+    !is.numeric(eps_2) || length(eps_2) != 1L ||
+    !is.finite(eps_2) || eps_2 <= 0
+  ) {
+    stop("`eps_2` must be a positive number.", call. = FALSE)
   }
 
-  max_extra_bins <- as.integer(max_extra_bins)
-  if (!is.finite(max_extra_bins) || max_extra_bins < 0) {
-    stop("max_extra_bins must be a nonnegative integer.")
-  }
-
-  sd1 <- sqrt(2 * log(1.25 / delta_1)) / eps_1
-  sd2 <- sqrt(2 * log(1.25 / delta_2)) / eps_2
-
+  # Match the public PMWM implementation:
+  # i = floor(log_beta(max(x - l + 1, beta))).
   z <- pmax(data - l + 1, beta)
-  idx <- as.integer(floor(log(z, base = beta)))
+  idx <- floor(log(z, base = beta))
   counts <- table(idx)
 
   get_count <- function(i) {
     key <- as.character(i)
-    if (key %in% names(counts)) as.integer(counts[[key]]) else 0L
+
+    if (key %in% names(counts)) {
+      as.numeric(counts[[key]])
+    } else {
+      0
+    }
   }
 
-  t_noisy <- q * n + stats::rnorm(1, mean = 0, sd = sd1)
+  # numpy.random.exponential(scale = 1 / eps) in the PMWM Python code
+  # corresponds to R's rexp(rate = eps).
+  t_noisy <- q * n + stats::rexp(1L, rate = eps_1)
 
-  cur <- 0L
-  i <- 0L
-  max_bin <- if (length(idx) > 0) max(idx) else 0L
-  i_max <- max_bin + max_extra_bins
+  cur <- 0
+  i <- 0
 
   repeat {
     cur <- cur + get_count(i)
-    i <- i + 1L
+    i <- i + 1
 
-    if (cur + stats::rnorm(1, mean = 0, sd = sd2) > t_noisy) break
-    if (i > i_max) break
+    noisy_count <- cur + stats::rexp(1L, rate = eps_2)
+
+    if (noisy_count > t_noisy) {
+      break
+    }
   }
 
-  val <- tryCatch(beta^i + l - 1, error = function(e) .Machine$double.xmax)
-  if (!is.finite(val)) .Machine$double.xmax else val
+  val <- beta^i + l - 1
+
+  if (!is.finite(val)) {
+    .Machine$double.xmax
+  } else {
+    val
+  }
 }
 
-#' Estimate a private quantile by log-binning
+
+#' Estimate a pure-DP private quantile by log-binning
 #'
-#' Internal wrapper around `unbounded_quantile_upper()` for both lower- and
+#' Internal wrapper around `unbounded_quantile_upper()` for lower- and
 #' upper-tail quantiles on a finite target interval `[l, u]`. Lower-tail
-#' quantiles are handled by sign-flipping the data and calling the upper-tail
-#' routine.
+#' quantiles are computed by sign-flipping the data and estimating the
+#' corresponding upper quantile. The final estimate is truncated to `[l, u]`
+#' by post-processing.
 #'
 #' @param data Numeric vector.
 #' @param l Finite lower truncation bound.
@@ -665,28 +699,42 @@ unbounded_quantile_upper <- function(data, l, beta, q,
 #' @param beta Log-binning base for the geometric grid. Must be greater than
 #'   `1`.
 #' @param q Quantile level in `(0, 1)`.
-#' @param eps_1 Positive number defining the `epsilon` privacy parameter for the
-#'   noisy threshold.
-#' @param delta_1 Number in `(0, 1)` defining the `delta` privacy parameter for
-#'   the noisy threshold.
-#' @param eps_2 Positive number defining the `epsilon` privacy parameter for the
-#'   noisy cumulative scan.
-#' @param delta_2 Number in `(0, 1)` defining the `delta` privacy parameter for
-#'   the noisy cumulative scan.
-#' @param max_extra_bins Nonnegative number of additional bins to search beyond
-#'   the largest occupied bin.
+#' @param eps_1 Positive `epsilon` privacy parameter for the noisy target count.
+#' @param eps_2 Positive `epsilon` privacy parameter for the noisy cumulative
+#'   count scan.
 #'
-#' @return Numeric scalar giving a private quantile estimate.
+#' @return Numeric scalar giving a pure-DP private quantile estimate.
 #' @noRd
-unbounded_quantile <- function(data, l, u, beta, q,
-                               eps_1, delta_1,
-                               eps_2, delta_2,
-                               max_extra_bins = 1000) {
+unbounded_quantile <- function(
+    data,
+    l,
+    u,
+    beta,
+    q,
+    eps_1,
+    eps_2
+) {
   data <- as.numeric(data)
 
-  if (!is.finite(l) || !is.finite(u) || l > u) stop("Need finite l <= u.")
-  if (!is.finite(beta) || beta <= 1) stop("beta must be > 1.")
-  if (!is.finite(q) || q <= 0 || q >= 1) stop("q must be in (0, 1).")
+  if (
+    !is.numeric(l) || length(l) != 1L || !is.finite(l) ||
+    !is.numeric(u) || length(u) != 1L || !is.finite(u) ||
+    l > u
+  ) {
+    stop("Need finite `l <= u`.", call. = FALSE)
+  }
+  if (
+    !is.numeric(beta) || length(beta) != 1L ||
+    !is.finite(beta) || beta <= 1
+  ) {
+    stop("`beta` must be a number greater than 1.", call. = FALSE)
+  }
+  if (
+    !is.numeric(q) || length(q) != 1L ||
+    !is.finite(q) || q <= 0 || q >= 1
+  ) {
+    stop("`q` must be in (0, 1).", call. = FALSE)
+  }
 
   if (q < 0.5) {
     est <- -unbounded_quantile_upper(
@@ -695,11 +743,9 @@ unbounded_quantile <- function(data, l, u, beta, q,
       beta = beta,
       q = 1 - q,
       eps_1 = eps_1,
-      delta_1 = delta_1,
-      eps_2 = eps_2,
-      delta_2 = delta_2,
-      max_extra_bins = max_extra_bins
+      eps_2 = eps_2
     )
+
     return(max(est, l))
   }
 
@@ -709,28 +755,28 @@ unbounded_quantile <- function(data, l, u, beta, q,
     beta = beta,
     q = q,
     eps_1 = eps_1,
-    delta_1 = delta_1,
-    eps_2 = eps_2,
-    delta_2 = delta_2,
-    max_extra_bins = max_extra_bins
+    eps_2 = eps_2
   )
 
   min(est, u)
 }
+
 
 #' Estimate private scree values with private modified winsorized means
 #'
 #' Internal implementation of the private modified winsorized mean (PMWM) scree
 #' estimator. The method preprocesses the data, computes non-private or private
 #' principal component directions, privately estimates lower and upper
-#' winsorization bounds for squared centered scores, and releases a noisy
+#' winsorization bounds for squared centered scores using a pure-DP
+#' exponential-noise unbounded quantile routine, and releases a Gaussian-noised
 #' winsorized mean for each component.
 #'
 #' If `split_mode = TRUE`, one subset is used for private quantile estimation
 #' and the other subset is used for the winsorized mean step. If
-#' `split_mode = FALSE`, the full sample is reused in both steps. If
-#' `mono = TRUE`, the final scree vector is post-processed to be nonnegative and
-#' nonincreasing.
+#' `split_mode = FALSE`, the full sample is reused in both steps. The private
+#' quantile releases consume only `epsilon`, while `delta` is reserved for the
+#' Gaussian winsorized-mean release. If `mono = TRUE`, the final scree vector is
+#' post-processed to be nonnegative and nonincreasing.
 #'
 #' @param X Numeric data matrix with observations in rows.
 #' @param k Number of leading principal components.
@@ -758,9 +804,6 @@ unbounded_quantile <- function(data, l, u, beta, q,
 #'   `(0, 0.5)`.
 #' @param mono A logical value indicating whether to enforce a nonnegative and
 #'   nonincreasing scree sequence by post-processing.
-#' @param max_extra_bins Nonnegative number of additional bins to search beyond
-#'   the largest occupied bin.
-#'
 #' @return A list with components `scree` and `pve`.
 #' @noRd
 dp_scree_pmwm <- function(X, k, eps, delta,
@@ -769,7 +812,7 @@ dp_scree_pmwm <- function(X, k, eps, delta,
                           g_dppca = FALSE, cpp.option = FALSE,
                           split_mode = TRUE,
                           center = TRUE, standardize = FALSE,
-                          mono = TRUE, max_extra_bins = 1000) {
+                          mono = TRUE) {
   validate_scree_inputs(
     X = X,
     k = k,
@@ -810,15 +853,17 @@ dp_scree_pmwm <- function(X, k, eps, delta,
   eps_ell <- eps_scree / k
   delta_ell <- delta_scree / k
 
+  # Each of the two private quantiles receives eps_ell / 4 in total.
+  # Within one quantile, that budget is split equally between the noisy target
+  # count and the noisy cumulative-count scan. Because these quantile releases
+  # are pure DP, they do not consume delta. The Gaussian winsorized-mean release
+  # receives the remaining eps_ell / 2 and the full delta_ell.
   eps_Q <- eps_ell / 4
-  delta_Q <- delta_ell / 4
   eps_M <- eps_ell / 2
-  delta_M <- delta_ell / 2
+  delta_M <- delta_ell
 
   eps_q1 <- eps_Q / 2
-  delta_q1 <- delta_Q / 2
   eps_q2 <- eps_Q / 2
-  delta_q2 <- delta_Q / 2
 
   X_proc <- prep_matrix_for_pca(
     X = X,
@@ -871,10 +916,7 @@ dp_scree_pmwm <- function(X, k, eps, delta,
       beta = beta,
       q = trim_param,
       eps_1 = eps_q1,
-      delta_1 = delta_q1,
-      eps_2 = eps_q2,
-      delta_2 = delta_q2,
-      max_extra_bins = max_extra_bins
+      eps_2 = eps_q2
     )
 
     U <- unbounded_quantile(
@@ -884,10 +926,7 @@ dp_scree_pmwm <- function(X, k, eps, delta,
       beta = beta,
       q = 1 - trim_param,
       eps_1 = eps_q1,
-      delta_1 = delta_q1,
-      eps_2 = eps_q2,
-      delta_2 = delta_q2,
-      max_extra_bins = max_extra_bins
+      eps_2 = eps_q2
     )
 
     if (!is.finite(L) || !is.finite(U) || U < L) {

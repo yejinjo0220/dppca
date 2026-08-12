@@ -44,7 +44,9 @@ supplied to each requested scree method. When multiple methods are
 requested, the same value of \code{delta} is applied separately to each method
 for comparison; it is not divided across methods. If \code{g_dppca = TRUE},
 each method internally splits its supplied \code{delta} between private direction
-estimation and private scree estimation.}
+estimation and private scree estimation. For \code{method = "pmwm"}, the private
+quantile step is pure DP and does not consume \code{delta}; the scree-estimation
+share of \code{delta} is used by the Gaussian winsorized-mean release.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
 before computing principal component directions. The default is \code{TRUE}.}
@@ -112,9 +114,11 @@ then applies the Gaussian mechanism \insertCite{dwork2014algorithmic}{dppca}.
 This is the simplest option but depends directly on the clipping threshold.
 \item \code{"pmwm"} uses the private modified winsorized mean approach of
 \insertCite{ramsay2025pmw;textual}{dppca}, adapted from the accompanying
-Python implementation into R. It privately estimates tail cutoffs,
-winsorizes the squared scores \eqn{w_{i\ell}}, and releases a noisy
-winsorized mean.
+Python implementation into R. The lower and upper tail cutoffs are
+estimated with the pure-DP exponential-noise unbounded quantile routine.
+The squared scores \eqn{w_{i\ell}} are then winsorized to those cutoffs,
+and the final winsorized mean is released with a Gaussian mechanism
+calibrated to the supplied \verb{(eps, delta)} budget.
 \item \code{"huber"} uses a Huber-type private robust mean estimator based on
 noisy gradient descent, following \insertCite{yu2024gaussian;textual}{dppca}.
 }

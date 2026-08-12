@@ -40,7 +40,10 @@ same value is used for each method for comparison.}
 
 \item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
 supplied separately to each requested method. When multiple methods are
-plotted, the same value is used for each method for comparison.}
+plotted, the same value is used for each method for comparison. For PMWM,
+\code{delta} is not used by the pure-DP quantile step; it is used by the
+Gaussian winsorized-mean release and, when requested, private PC direction
+estimation.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
 before computing principal component directions. The default is \code{TRUE}.}

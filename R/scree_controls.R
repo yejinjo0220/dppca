@@ -70,8 +70,10 @@ clipped_control <- function(C_clip) {
 #'
 #' The implementation used here is an R adaptation of the publicly available
 #' Python implementation accompanying \insertCite{ramsay2025pmw;textual}{dppca}.
-#' The adaptation is used for scree estimation by applying the PMWM estimator to
-#' squared principal component scores.
+#' In particular, the lower and upper private quantiles use its pure-DP
+#' exponential-noise unbounded quantile routine. For scree estimation, the
+#' resulting cutoffs are applied to squared principal component scores and the
+#' final winsorized mean is released with a Gaussian mechanism.
 #'
 #' The PMWM scree estimator uses additional control parameters for private
 #' quantile estimation and winsorization. The parameter `beta` determines the

@@ -66,9 +66,12 @@ dp_quantile_ss <- function(x, q, epsilon, delta) {
 #' Construct a private plotting frame for two-dimensional scores
 #'
 #' The plotting frame is constructed using coordinate-wise private medians as
-#' the center and the private 0.99 quantile of Euclidean distances from that
-#' center as the radius. The same radius is used on both axes, producing a
-#' square plotting frame.
+#' the center and a pure-DP private 0.99 quantile of Euclidean distances from
+#' that center as the radius. The coordinate-wise medians continue to use the
+#' smooth-sensitivity quantile helper `dp_quantile_ss()`. The radius uses the
+#' exponential-noise upper unbounded quantile helper
+#' `unbounded_quantile_upper()` shared with the PMWM scree implementation.
+#' The same radius is used on both axes, producing a square plotting frame.
 #'
 #' @param X Numeric matrix with two columns.
 #' @param eps_frame Positive `epsilon` privacy parameter for private frame
@@ -116,20 +119,47 @@ dp_frame <- function(
     stop("`inflate` must be a nonnegative number.", call. = FALSE)
   }
 
-  eps_each <- eps_frame / 3
-  delta_each <- delta_frame / 3
+  # Keep the existing epsilon split: one third for each coordinate-wise median
+  # and one third for the radius quantile.
+  eps_center_x <- eps_frame / 3
+  eps_center_y <- eps_frame / 3
+  eps_radius <- eps_frame / 3
+
+  # The radius quantile is now pure DP and therefore does not consume delta.
+  # Use the full frame delta budget across the two smooth-sensitivity medians.
+  delta_center_x <- delta_frame / 2
+  delta_center_y <- delta_frame / 2
+
   q_radius <- 0.99
 
   center_x <- dp_quantile_ss(
-    X[, 1], q = 0.5, epsilon = eps_each, delta = delta_each
+    X[, 1],
+    q = 0.5,
+    epsilon = eps_center_x,
+    delta = delta_center_x
   )
   center_y <- dp_quantile_ss(
-    X[, 2], q = 0.5, epsilon = eps_each, delta = delta_each
+    X[, 2],
+    q = 0.5,
+    epsilon = eps_center_y,
+    delta = delta_center_y
   )
 
-  radius_values <- sqrt((X[, 1] - center_x)^2 + (X[, 2] - center_y)^2)
-  radius <- dp_quantile_ss(
-    radius_values, q = q_radius, epsilon = eps_each, delta = delta_each
+  radius_values <- sqrt(
+    (X[, 1] - center_x)^2 +
+      (X[, 2] - center_y)^2
+  )
+
+  # radius_values are nonnegative, so the lower anchor is fixed at zero.
+  # Split the radius epsilon budget equally between the noisy target count and
+  # the noisy cumulative-count scan in the pure-DP unbounded quantile routine.
+  radius <- unbounded_quantile_upper(
+    data = radius_values,
+    l = 0,
+    beta = 1.001,
+    q = q_radius,
+    eps_1 = eps_radius / 2,
+    eps_2 = eps_radius / 2
   )
 
   if (!is.finite(radius) || radius <= 0) {
@@ -152,11 +182,12 @@ dp_frame <- function(
 #'
 #' @param plot A `ggplot` object.
 #' @param title_text Plot title.
+#' @param title_size Positive plot-title font size.
 #'
 #' @return A `ggplot` object.
 #'
 #' @noRd
-add_title_dp <- function(plot, title_text) {
+add_title_dp <- function(plot, title_text, title_size = 14) {
   if (is.null(plot) || is.null(title_text)) {
     return(plot)
   }
@@ -167,20 +198,24 @@ add_title_dp <- function(plot, title_text) {
       plot.title = ggplot2::element_text(
         hjust = 0.5,
         face = "bold",
-        size = 14
+        size = title_size
       )
     )
 }
 
+
 #' Base theme for score plots
+#'
+#' @param base_size Positive base font size.
+#' @param legend_position Legend position passed to `ggplot2::theme()`.
 #'
 #' @return A `ggplot2` theme object.
 #'
 #' @noRd
-theme_dp_base <- function() {
-  ggplot2::theme_minimal(base_size = 12) +
+theme_dp_base <- function(base_size = 12, legend_position = "none") {
+  ggplot2::theme_minimal(base_size = base_size) +
     ggplot2::theme(
-      legend.position = "none",
+      legend.position = legend_position,
       panel.border = ggplot2::element_rect(
         color = "black",
         fill = NA,
@@ -190,6 +225,7 @@ theme_dp_base <- function() {
     )
 }
 
+
 #' Plot a score histogram panel
 #'
 #' @param hist_df Histogram data frame with bin coordinates and probabilities.
@@ -197,12 +233,25 @@ theme_dp_base <- function() {
 #' @param color Fill color.
 #' @param title Optional plot title.
 #' @param xlab,ylab Axis labels.
+#' @param alpha_range Numeric alpha range for histogram cells.
+#' @param base_size Positive base font size.
+#' @param title_size Positive title font size.
 #'
 #' @return A `ggplot` object or `NULL`.
 #'
 #' @noRd
-make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL,
-                              xlab = "PC1", ylab = "PC2") {
+make_hist_plot_dp <- function(
+    hist_df,
+    xlim,
+    ylim,
+    color,
+    title = NULL,
+    xlab = "PC1",
+    ylab = "PC2",
+    alpha_range = c(0, 1),
+    base_size = 12,
+    title_size = 14
+) {
   if (is.null(hist_df)) {
     return(NULL)
   }
@@ -219,15 +268,84 @@ make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL,
       fill = color,
       linewidth = 0
     ) +
-    ggplot2::scale_alpha(range = c(0, 1), guide = "none") +
+    ggplot2::scale_alpha(range = alpha_range, guide = "none") +
     ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
-    ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
-    ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, n = 5)) +
-    theme_dp_base() +
+    ggplot2::scale_x_continuous(
+      expand = c(0, 0),
+      breaks = pretty(xlim, n = 5)
+    ) +
+    ggplot2::scale_y_continuous(
+      expand = c(0, 0),
+      breaks = pretty(ylim, n = 5)
+    ) +
+    theme_dp_base(base_size = base_size) +
     ggplot2::labs(x = xlab, y = ylab)
 
-  add_title_dp(p, title)
+  add_title_dp(p, title, title_size = title_size)
 }
+
+
+#' Plot synthetic score points sampled from a private histogram
+#'
+#' @param sample_df Data frame with columns `pc_x` and `pc_y`.
+#' @param xlim,ylim Plotting limits.
+#' @param color Point color.
+#' @param title Optional plot title.
+#' @param xlab,ylab Axis labels.
+#' @param point_alpha Point transparency.
+#' @param point_size Point size.
+#' @param base_size Positive base font size.
+#' @param title_size Positive title font size.
+#'
+#' @return A `ggplot` object.
+#'
+#' @noRd
+make_sample_plot_dp <- function(
+    sample_df,
+    xlim,
+    ylim,
+    color,
+    title = NULL,
+    xlab = "PC1",
+    ylab = "PC2",
+    point_alpha = 0.6,
+    point_size = 1.8,
+    base_size = 12,
+    title_size = 14
+) {
+  sample_df <- as.data.frame(sample_df)
+
+  if (!all(c("pc_x", "pc_y") %in% names(sample_df))) {
+    stop(
+      "`sample_df` must contain columns `pc_x` and `pc_y`.",
+      call. = FALSE
+    )
+  }
+
+  p <- ggplot2::ggplot(
+    sample_df,
+    ggplot2::aes(x = .data$pc_x, y = .data$pc_y)
+  ) +
+    ggplot2::geom_point(
+      alpha = point_alpha,
+      size = point_size,
+      color = color
+    ) +
+    ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
+    ggplot2::scale_x_continuous(
+      expand = c(0, 0),
+      breaks = pretty(xlim, n = 5)
+    ) +
+    ggplot2::scale_y_continuous(
+      expand = c(0, 0),
+      breaks = pretty(ylim, n = 5)
+    ) +
+    theme_dp_base(base_size = base_size) +
+    ggplot2::labs(x = xlab, y = ylab)
+
+  add_title_dp(p, title, title_size = title_size)
+}
+
 
 #' Plot a pooled group-wise histogram panel
 #'
@@ -236,12 +354,27 @@ make_hist_plot_dp <- function(hist_df, xlim, ylim, color, title = NULL,
 #' @param col_map Named color vector.
 #' @param title Optional plot title.
 #' @param xlab,ylab Axis labels.
+#' @param alpha_range Numeric alpha range for histogram cells.
+#' @param base_size Positive base font size.
+#' @param title_size Positive title font size.
+#' @param legend_position Legend position.
 #'
 #' @return A `ggplot` object or a patchwork spacer.
 #'
 #' @noRd
-make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL,
-                             xlab = "PC1", ylab = "PC2") {
+make_hist_all_dp <- function(
+    df,
+    xlim,
+    ylim,
+    col_map,
+    title = NULL,
+    xlab = "PC1",
+    ylab = "PC2",
+    alpha_range = c(0, 0.85),
+    base_size = 12,
+    title_size = 14,
+    legend_position = "none"
+) {
   if (is.null(df)) {
     return(patchwork::plot_spacer())
   }
@@ -278,7 +411,10 @@ make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL,
         linewidth = 0
       ) +
       ggplot2::scale_fill_manual(values = col_map, drop = FALSE) +
-      ggplot2::scale_alpha_continuous(range = c(0, 0.85), guide = "none")
+      ggplot2::scale_alpha_continuous(
+        range = alpha_range,
+        guide = "none"
+      )
   } else {
     p <- ggplot2::ggplot(df) +
       ggplot2::geom_rect(
@@ -296,13 +432,23 @@ make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL,
 
   p <- p +
     ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
-    ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
-    ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, n = 5)) +
-    theme_dp_base() +
+    ggplot2::scale_x_continuous(
+      expand = c(0, 0),
+      breaks = pretty(xlim, n = 5)
+    ) +
+    ggplot2::scale_y_continuous(
+      expand = c(0, 0),
+      breaks = pretty(ylim, n = 5)
+    ) +
+    theme_dp_base(
+      base_size = base_size,
+      legend_position = legend_position
+    ) +
     ggplot2::labs(x = xlab, y = ylab)
 
-  add_title_dp(p, title)
+  add_title_dp(p, title, title_size = title_size)
 }
+
 
 #' Plot a single group histogram panel
 #'
@@ -311,12 +457,25 @@ make_hist_all_dp <- function(df, xlim, ylim, col_map, title = NULL,
 #' @param col Fill color.
 #' @param title Optional plot title.
 #' @param xlab,ylab Axis labels.
+#' @param alpha_range Numeric alpha range for histogram cells.
+#' @param base_size Positive base font size.
+#' @param title_size Positive title font size.
 #'
 #' @return A `ggplot` object or a patchwork spacer.
 #'
 #' @noRd
-make_hist_single_dp <- function(df, xlim, ylim, col, title = NULL,
-                                xlab = "PC1", ylab = "PC2") {
+make_hist_single_dp <- function(
+    df,
+    xlim,
+    ylim,
+    col,
+    title = NULL,
+    xlab = "PC1",
+    ylab = "PC2",
+    alpha_range = c(0, 1),
+    base_size = 12,
+    title_size = 14
+) {
   if (is.null(df)) {
     return(patchwork::plot_spacer())
   }
@@ -333,15 +492,193 @@ make_hist_single_dp <- function(df, xlim, ylim, col, title = NULL,
       fill = col,
       linewidth = 0
     ) +
-    ggplot2::scale_alpha(range = c(0, 1), guide = "none") +
+    ggplot2::scale_alpha(range = alpha_range, guide = "none") +
     ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
-    ggplot2::scale_x_continuous(expand = c(0, 0), breaks = pretty(xlim, n = 5)) +
-    ggplot2::scale_y_continuous(expand = c(0, 0), breaks = pretty(ylim, n = 5)) +
-    theme_dp_base() +
+    ggplot2::scale_x_continuous(
+      expand = c(0, 0),
+      breaks = pretty(xlim, n = 5)
+    ) +
+    ggplot2::scale_y_continuous(
+      expand = c(0, 0),
+      breaks = pretty(ylim, n = 5)
+    ) +
+    theme_dp_base(base_size = base_size) +
     ggplot2::labs(x = xlab, y = ylab)
 
-  add_title_dp(p, title)
+  add_title_dp(p, title, title_size = title_size)
 }
+
+
+
+#' Plot grouped synthetic score points
+#'
+#' @param sample_df Data frame with columns `pc_x`, `pc_y`, and `group`.
+#' @param xlim,ylim Plotting limits.
+#' @param col_map Named vector mapping groups to colors.
+#' @param title Optional plot title.
+#' @param xlab,ylab Axis labels.
+#' @param point_alpha Point transparency.
+#' @param point_size Point size.
+#' @param base_size Positive base font size.
+#' @param title_size Positive title font size.
+#' @param legend_position Legend position passed to `ggplot2::theme()`.
+#'
+#' @return A `ggplot` object.
+#'
+#' @noRd
+make_group_sample_plot_dp <- function(
+    sample_df,
+    xlim,
+    ylim,
+    col_map,
+    title = NULL,
+    xlab = "PC1",
+    ylab = "PC2",
+    point_alpha = 0.6,
+    point_size = 1.8,
+    base_size = 12,
+    title_size = 14,
+    legend_position = "none"
+) {
+  sample_df <- as.data.frame(sample_df)
+
+  required <- c("pc_x", "pc_y", "group")
+  missing <- setdiff(required, names(sample_df))
+  if (length(missing) > 0L) {
+    stop(
+      "`sample_df` is missing required column(s): ",
+      paste(missing, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  sample_df$group <- factor(
+    as.character(sample_df$group),
+    levels = names(col_map)
+  )
+
+  p <- ggplot2::ggplot(
+    sample_df,
+    ggplot2::aes(
+      x = .data$pc_x,
+      y = .data$pc_y,
+      colour = .data$group
+    )
+  ) +
+    ggplot2::geom_point(
+      alpha = point_alpha,
+      size = point_size
+    ) +
+    ggplot2::scale_colour_manual(
+      values = col_map,
+      drop = FALSE
+    ) +
+    ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
+    ggplot2::scale_x_continuous(
+      expand = c(0, 0),
+      breaks = pretty(xlim, n = 5)
+    ) +
+    ggplot2::scale_y_continuous(
+      expand = c(0, 0),
+      breaks = pretty(ylim, n = 5)
+    ) +
+    theme_dp_base(
+      base_size = base_size,
+      legend_position = legend_position
+    ) +
+    ggplot2::labs(
+      x = xlab,
+      y = ylab,
+      colour = "Group"
+    )
+
+  add_title_dp(
+    p,
+    title,
+    title_size = title_size
+  )
+}
+
+
+#' Allocate a total synthetic sample size across groups
+#'
+#' Allocates a requested total number of synthetic observations in proportion
+#' to observed group sizes using the largest-remainder rule. The returned
+#' integer counts sum exactly to `total_size`.
+#'
+#' @param group_sizes Named numeric vector of nonnegative group sizes.
+#' @param total_size Positive integer total synthetic sample size.
+#'
+#' @return Named nonnegative integer vector with the same names as
+#'   `group_sizes`.
+#'
+#' @noRd
+allocate_group_sample_sizes <- function(group_sizes, total_size) {
+  if (
+    !is.numeric(group_sizes) ||
+    length(group_sizes) < 1L ||
+    anyNA(group_sizes) ||
+    any(!is.finite(group_sizes)) ||
+    any(group_sizes < 0)
+  ) {
+    stop(
+      "`group_sizes` must contain finite nonnegative values.",
+      call. = FALSE
+    )
+  }
+
+  if (is.null(names(group_sizes)) || any(names(group_sizes) == "")) {
+    stop("`group_sizes` must be named.", call. = FALSE)
+  }
+
+  if (sum(group_sizes) <= 0) {
+    stop("The total group size must be positive.", call. = FALSE)
+  }
+
+  if (
+    !is.numeric(total_size) ||
+    length(total_size) != 1L ||
+    !is.finite(total_size) ||
+    total_size < 1 ||
+    total_size != as.integer(total_size)
+  ) {
+    stop("`total_size` must be a positive integer.", call. = FALSE)
+  }
+
+  total_size <- as.integer(total_size)
+
+  raw <- total_size * group_sizes / sum(group_sizes)
+  out <- floor(raw)
+  remainder <- total_size - sum(out)
+
+  if (remainder > 0L) {
+    frac <- raw - out
+
+    # Stable tie-breaking by original group order.
+    ord <- order(
+      -frac,
+      seq_along(frac)
+    )
+
+    take <- ord[seq_len(remainder)]
+    out[take] <- out[take] + 1L
+  }
+
+  out <- as.integer(out)
+  names(out) <- names(group_sizes)
+
+  if (any(out == 0L)) {
+    warning(
+      "The requested total `sample_size` is small relative to the number of ",
+      "groups; at least one group receives zero synthetic observations.",
+      call. = FALSE
+    )
+  }
+
+  out
+}
+
 
 #' Complete a named color map
 #'
@@ -565,6 +902,19 @@ score_histogram_grid <- function(xlim, ylim, m_x, m_y) {
   )
 }
 
+#' Compute score histograms on a privately constructed frame
+#'
+#' Internal helper that constructs the histogram grid and computes the
+#' non-private histogram together with the requested private histogram methods.
+#'
+#' When multiple private methods are requested, the same `eps_hist` and
+#' `delta_hist` values are supplied separately to each method for comparison.
+#' The histogram privacy budget is not divided by the number of methods.
+#' Therefore, if outputs from multiple private histogram methods are released
+#' together, the privacy cost of the joint release must be handled by
+#' composition.
+#'
+#' @noRd
 score_histograms <- function(
     X_score,
     xlim,
@@ -576,14 +926,26 @@ score_histograms <- function(
 ) {
   validate_bins(bins)
   bins <- as.integer(bins)
+
+  method <- unique(
+    match.arg(
+      method,
+      choices = c("add", "sparse"),
+      several.ok = TRUE
+    )
+  )
+
   grid <- score_histogram_grid(
     xlim = xlim,
     ylim = ylim,
     m_x = bins[1],
     m_y = bins[2]
   )
-  eps_hist_method <- eps_hist / length(method)
-  delta_hist_method <- delta_hist / length(method)
+
+  # The same histogram privacy budget is supplied separately to each
+  # requested method for method comparison. It is not divided across methods.
+  eps_hist_method <- eps_hist
+  delta_hist_method <- delta_hist
 
   score_histograms_from_grid(
     X_score = X_score,
@@ -595,6 +957,16 @@ score_histograms <- function(
   )
 }
 
+#' Compute score histograms on a fixed grid
+#'
+#' Internal helper that computes the empirical non-private histogram and the
+#' requested private histogram estimates on a common grid.
+#'
+#' The values `eps_hist_method` and `delta_hist_method` are applied separately
+#' to each requested private histogram method. They are not divided across
+#' `"add"` and `"sparse"`.
+#'
+#' @noRd
 score_histograms_from_grid <- function(
     X_score,
     grid,
@@ -606,6 +978,33 @@ score_histograms_from_grid <- function(
   n <- nrow(X_score)
   if (n < 1L) {
     stop("Each histogram must contain at least one observation.", call. = FALSE)
+  }
+
+  method <- unique(
+    match.arg(
+      method,
+      choices = c("add", "sparse"),
+      several.ok = TRUE
+    )
+  )
+
+  if (
+    !is.numeric(eps_hist_method) ||
+    length(eps_hist_method) != 1L ||
+    !is.finite(eps_hist_method) ||
+    eps_hist_method <= 0
+  ) {
+    stop("`eps_hist_method` must be a positive number.", call. = FALSE)
+  }
+
+  if (
+    !is.numeric(delta_hist_method) ||
+    length(delta_hist_method) != 1L ||
+    !is.finite(delta_hist_method) ||
+    delta_hist_method <= 0 ||
+    delta_hist_method >= 1
+  ) {
+    stop("`delta_hist_method` must be a number in `(0, 1)`.", call. = FALSE)
   }
 
   bx <- cut(
@@ -623,29 +1022,52 @@ score_histograms_from_grid <- function(
 
   if (anyNA(bx)) {
     idx <- which(is.na(bx))
-    bx[idx] <- findInterval(X_score[idx, 1], grid$x_breaks, all.inside = TRUE)
+    bx[idx] <- findInterval(
+      X_score[idx, 1],
+      grid$x_breaks,
+      all.inside = TRUE
+    )
   }
+
   if (anyNA(by)) {
     idx <- which(is.na(by))
-    by[idx] <- findInterval(X_score[idx, 2], grid$y_breaks, all.inside = TRUE)
+    by[idx] <- findInterval(
+      X_score[idx, 2],
+      grid$y_breaks,
+      all.inside = TRUE
+    )
   }
 
   bidx <- (by - 1L) * grid$m_x + bx
-  counts <- as.numeric(table(factor(bidx, levels = seq_len(grid$m))))
+  counts <- as.numeric(
+    table(factor(bidx, levels = seq_len(grid$m)))
+  )
   p_hat <- counts / n
 
-  hist_none <- grid$base_coord
-  hist_none$prob <- p_hat
+  hist_nonprivate <- grid$base_coord
+  hist_nonprivate$prob <- p_hat
 
-  hist_add <- NULL
-  hist_sparse <- NULL
+  out <- list(
+    nonprivate = hist_nonprivate
+  )
 
   if ("add" %in% method) {
-    sigma <- sqrt(2) * sqrt(2 * log(1.25 / delta_hist_method)) / eps_hist_method
-    c_tilde <- pmax(counts + stats::rnorm(grid$m, mean = 0, sd = sigma), 0)
+    sigma <- sqrt(2) *
+      sqrt(2 * log(1.25 / delta_hist_method)) /
+      eps_hist_method
+
+    c_tilde <- pmax(
+      counts + stats::rnorm(grid$m, mean = 0, sd = sigma),
+      0
+    )
 
     if (sum(c_tilde) <= 0) {
-      prefix <- if (is.null(group_name)) "" else paste0("Group `", group_name, "`: ")
+      prefix <- if (is.null(group_name)) {
+        ""
+      } else {
+        paste0("Group `", group_name, "`: ")
+      }
+
       stop(
         prefix,
         "all privatized bin counts are zero after Gaussian noise and clipping. ",
@@ -656,18 +1078,25 @@ score_histograms_from_grid <- function(
 
     hist_add <- grid$base_coord
     hist_add$prob <- c_tilde / sum(c_tilde)
+    out$add <- hist_add
   }
 
   if ("sparse" %in% method) {
     q_sparse <- numeric(grid$m)
     scale_lap <- 2 / (eps_hist_method * n)
-    threshold <- (2 * log(2 / delta_hist_method)) / (eps_hist_method * n) + 1 / n
+    threshold <- (
+      2 * log(2 / delta_hist_method)
+    ) / (eps_hist_method * n) + 1 / n
 
     for (kk in seq_len(grid$m)) {
       if (p_hat[kk] == 0) {
         q_sparse[kk] <- 0
       } else {
-        z_k <- VGAM::rlaplace(1, location = 0, scale = scale_lap)
+        z_k <- VGAM::rlaplace(
+          1,
+          location = 0,
+          scale = scale_lap
+        )
         q_k <- max(p_hat[kk] + z_k, 0)
         q_sparse[kk] <- if (q_k < threshold) 0 else q_k
       }
@@ -679,14 +1108,192 @@ score_histograms_from_grid <- function(
 
     hist_sparse <- grid$base_coord
     hist_sparse$prob <- q_sparse
+    out$sparse <- hist_sparse
   }
 
-  list(
-    none = hist_none,
-    add = hist_add,
-    sparse = hist_sparse
-  )
+  out
 }
+
+#' Sample synthetic score points from a private histogram
+#'
+#' Internal post-processing helper for converting a private histogram into
+#' synthetic score coordinates.
+#'
+#' @param hist_df Private histogram data frame containing bin boundaries and
+#'   probabilities.
+#' @param sample_size Positive integer number of synthetic points.
+#' @param sample_method Character vector containing `"center"` and/or
+#'   `"uniform"`.
+#' @param bandwidth_scale Named nonnegative numeric vector with one value for
+#'   each requested sampling method.
+#'
+#' @return A named list of data frames. Each data frame has columns `pc_x` and
+#'   `pc_y`.
+#'
+#' @noRd
+sample_private_score_histogram <- function(
+    hist_df,
+    sample_size,
+    sample_method,
+    bandwidth_scale
+) {
+  hist_df <- as.data.frame(hist_df)
+
+  required <- c("xmin", "xmax", "ymin", "ymax", "prob")
+  missing <- setdiff(required, names(hist_df))
+  if (length(missing) > 0L) {
+    stop(
+      "`hist_df` is missing required column(s): ",
+      paste(missing, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  if (
+    !is.numeric(sample_size) ||
+    length(sample_size) != 1L ||
+    !is.finite(sample_size) ||
+    sample_size < 1 ||
+    sample_size != as.integer(sample_size)
+  ) {
+    stop("`sample_size` must be a positive integer.", call. = FALSE)
+  }
+  sample_size <- as.integer(sample_size)
+
+  sample_method <- unique(
+    match.arg(
+      sample_method,
+      choices = c("center", "uniform"),
+      several.ok = TRUE
+    )
+  )
+
+  if (
+    !is.numeric(bandwidth_scale) ||
+    anyNA(bandwidth_scale) ||
+    any(!is.finite(bandwidth_scale)) ||
+    any(bandwidth_scale < 0) ||
+    is.null(names(bandwidth_scale))
+  ) {
+    stop(
+      "`bandwidth_scale` must be a named vector of finite nonnegative values.",
+      call. = FALSE
+    )
+  }
+
+  missing_scale <- setdiff(sample_method, names(bandwidth_scale))
+  if (length(missing_scale) > 0L) {
+    stop(
+      "`bandwidth_scale` is missing method(s): ",
+      paste(missing_scale, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  probs <- as.numeric(hist_df$prob)
+  probs[!is.finite(probs) | probs < 0] <- 0
+
+  total_mass <- sum(probs)
+  if (total_mass <= 0) {
+    warning(
+      "The private histogram contains no positive probability mass; ",
+      "no synthetic score points were generated.",
+      call. = FALSE
+    )
+
+    empty <- data.frame(
+      pc_x = numeric(0),
+      pc_y = numeric(0)
+    )
+
+    return(
+      stats::setNames(
+        rep(list(empty), length(sample_method)),
+        sample_method
+      )
+    )
+  }
+
+  probs <- probs / total_mass
+
+  dx <- hist_df$xmax - hist_df$xmin
+  dy <- hist_df$ymax - hist_df$ymin
+
+  if (
+    any(!is.finite(dx)) ||
+    any(!is.finite(dy)) ||
+    any(dx <= 0) ||
+    any(dy <= 0)
+  ) {
+    stop(
+      "Histogram bin widths must be finite and positive.",
+      call. = FALSE
+    )
+  }
+
+  # The score histogram uses a regular rectangular grid. Median widths make
+  # this helper robust to harmless floating-point differences.
+  delta_x <- stats::median(dx)
+  delta_y <- stats::median(dy)
+
+  out <- list()
+
+  for (sm in sample_method) {
+    bin_id <- sample.int(
+      n = nrow(hist_df),
+      size = sample_size,
+      replace = TRUE,
+      prob = probs
+    )
+
+    if (sm == "center") {
+      base_x <- (
+        hist_df$xmin[bin_id] +
+          hist_df$xmax[bin_id]
+      ) / 2
+      base_y <- (
+        hist_df$ymin[bin_id] +
+          hist_df$ymax[bin_id]
+      ) / 2
+    } else {
+      base_x <- stats::runif(
+        sample_size,
+        min = hist_df$xmin[bin_id],
+        max = hist_df$xmax[bin_id]
+      )
+      base_y <- stats::runif(
+        sample_size,
+        min = hist_df$ymin[bin_id],
+        max = hist_df$ymax[bin_id]
+      )
+    }
+
+    scale <- as.numeric(bandwidth_scale[[sm]])
+    h_x <- scale * delta_x
+    h_y <- scale * delta_y
+
+    pc_x <- base_x + stats::rnorm(
+      sample_size,
+      mean = 0,
+      sd = h_x
+    )
+    pc_y <- base_y + stats::rnorm(
+      sample_size,
+      mean = 0,
+      sd = h_y
+    )
+
+    out[[sm]] <- data.frame(
+      pc_x = pc_x,
+      pc_y = pc_y
+    )
+  }
+
+  out
+}
+
 
 #' Split features and group labels
 #'
