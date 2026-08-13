@@ -1,8 +1,6 @@
-# `code/MW-score_plot_modified.R` 파일안의 dp_score_ver02 함수가 스크립트 내부에 작성된 Internel helper functions를 기준으로 잘 동작하는지 체크해줘. 간단한 시뮬레이션을 돌려도 좋아. 이 과정에서 맞거나 옳게 수정해야하는 부분이 있다면 수정해주고, 대신에 기존 버전의 파일도 log에 저장해줘. 해당 파일을 수정할 때는 너 스타일로 코드를 너무 바꾸거나 수정하지 말고, 지금 있는 스타일과 구조를 그대로 살리면서 오류가 될 부분만 수정해줘.
-
 # Ver 02 DP score implementation
 #
-# Minwoo Kim, 2026/08/10(Mon) 
+# Minwoo Kim, 2026/08/10(Mon)
 #
 # Main changes
 # - Durfee's DP quantile estimates are used instead of smooth sensitivity approach
@@ -35,20 +33,20 @@ dp_score_ver02 <- function(
     axes = axes,
     estimate_center = estimate_center
   )
-  
+
   axes <- as.integer(axes)
   bins <- as.integer(bins)
   m_x <- bins[1]
   m_y <- bins[2]
-  
+
   method <- match.arg(method)
-  
+
   budget <- split_score_privacy_budget_ver02(
     eps = eps,
     delta = delta,
     g_dppca = g_dppca
   )
-  
+
   score_res <- compute_score_coordinates(
     X = X,
     axes = axes,
@@ -59,7 +57,7 @@ dp_score_ver02 <- function(
     eps_pc = budget$eps_pc,
     delta_pc = budget$delta_pc
   )
-  
+
   frame_out <- dp_frame_ver02(
     X = score_res$score,
     eps_frame = budget$eps_frame,
@@ -67,7 +65,7 @@ dp_score_ver02 <- function(
     center = center,
     estimate_center = estimate_center
   )
-  
+
   hist <- score_histograms_ver02(
     X_score = score_res$score,
     xlim = frame_out$xlim,
@@ -77,7 +75,7 @@ dp_score_ver02 <- function(
     delta_hist = budget$delta_hist,
     method = method
   )
-  
+
   list(
     score = score_res$score,
     frame = frame_out,
@@ -105,12 +103,12 @@ dp_score_plot_ver02 <- function(
 ) {
   method <- match.arg(method, choices = c("add", "sparse"), several.ok = TRUE)
   color <- "#6A5ACD"
-  
+
   p_add <- NULL
   p_sparse <- NULL
-  p_none <- NULL 
+  p_none <- NULL
   p_scatter <- NULL
-  
+
   if("add" %in% method){
     # calculate score and private histograms
     score_res <- dp_score_ver02(
@@ -129,11 +127,11 @@ dp_score_plot_ver02 <- function(
     xlim <- score_res$frame$xlim
     ylim <- score_res$frame$ylim
     pc_names <- colnames(score_res$score)
-    
+
     p_add <- dppca:::make_hist_plot_dp(score_res$hist_dp, xlim, ylim, color, "Add DP Hist",
                                        xlab = pc_names[1], ylab = pc_names[2])
   }
-  
+
   if("sparse" %in% method){
     # calculate score and private histograms
     score_res <- dp_score_ver02(
@@ -152,11 +150,11 @@ dp_score_plot_ver02 <- function(
     xlim <- score_res$frame$xlim
     ylim <- score_res$frame$ylim
     pc_names <- colnames(score_res$score)
-    
+
     p_sparse <- dppca:::make_hist_plot_dp(score_res$hist_dp, xlim, ylim, color, "Sparse DP Hist",
                                           xlab = pc_names[1], ylab = pc_names[2])
   }
-  
+
   # get non-private scatter plot
   X_score <- as.data.frame(score_res$score)
   colnames(X_score) <- c("pc_x", "pc_y")
@@ -171,16 +169,16 @@ dp_score_plot_ver02 <- function(
     dppca:::theme_dp_base() +
     ggplot2::labs(x = pc_names[1], y = pc_names[2])
   p_scatter <- dppca:::add_title_dp(p_scatter, "Original Scatter")
-  
+
   # get non-private histogram plot
   p_none <- dppca:::make_hist_plot_dp(score_res$hist_nonpriv, xlim, ylim, color, "Original Hist",
                                       xlab = pc_names[1], ylab = pc_names[2])
-  
+
   # Aggregated plots
   plot_panels <- list(p_scatter, p_none, p_add, p_sparse)
   plot_panels <- Filter(Negate(is.null), plot_panels)
   p_all <- patchwork::wrap_plots(plot_panels, nrow = 2)
-  
+
   # Final output
   list(
     score = score_res,
@@ -235,13 +233,13 @@ compute_score_coordinates <- function(
   delta_pc
 ) {
   k_max <- max(axes)
-  
+
   X_proc <- dppca:::prep_matrix_for_pca(
     X = X,
     center = center,
     standardize = standardize
   )
-  
+
   V_all <- dppca::dp_pc_dir(
     X = X,
     k = k_max,
@@ -252,11 +250,11 @@ compute_score_coordinates <- function(
     delta = delta_pc,
     cpp.option = cpp.option
   )
-  
+
   V <- V_all[, axes, drop = FALSE]
   X_score <- as.matrix(X_proc %*% V)
   colnames(X_score) <- paste0("PC", axes)
-  
+
   list(score = X_score, directions = V)
 }
 
@@ -273,7 +271,7 @@ dp_frame_ver02 <- function(
     estimate_center = TRUE
 ) {
   X <- as.matrix(X)
-  
+
   if (!is.numeric(X) || ncol(X) != 2L) {
     stop("`X` must be a numeric matrix with exactly two columns.", call. = FALSE)
   }
@@ -303,35 +301,35 @@ dp_frame_ver02 <- function(
       call. = FALSE
     )
   }
-  
+
   if (estimate_center) {
     eps_each <- eps_frame / 4
-    
+
     center_x <- dp_quantile_durfee_signed(
       X[, 1], q = 0.5, epsilon = eps_each
     )$value
-    
+
     center_y <- dp_quantile_durfee_signed(
       X[, 2], q = 0.5, epsilon = eps_each
     )$value
-    
+
   } else {
     eps_each <- eps_frame / 2
-    
+
     center_x <- 0
     center_y <- 0
   }
-  
+
   radius_values_x <- abs(X[, 1] - center_x)
   r_x_max <- dp_quantile_durfee(
     radius_values_x, q = 0.99, epsilon = eps_each
   )$value
-  
+
   radius_values_y <- abs(X[, 2] - center_y)
   r_y_max <- dp_quantile_durfee(
     radius_values_y, q = 0.99, epsilon = eps_each
   )$value
-  
+
   if ((!is.finite(r_x_max) || r_x_max <= 0) || (!is.finite(r_y_max) || r_y_max <= 0)){
     stop(
       "The private frame radius must be positive and finite. ",
@@ -339,10 +337,10 @@ dp_frame_ver02 <- function(
       call. = FALSE
     )
   }
-  
+
   inflated_r_x_max <- (1 + inflate) * r_x_max
   inflated_r_y_max <- (1 + inflate) * r_y_max
-  
+
   list(
     xlim = c(center_x - inflated_r_x_max, center_x + inflated_r_x_max),
     ylim = c(center_y - inflated_r_y_max, center_y + inflated_r_y_max)
@@ -358,7 +356,7 @@ dp_frame_ver02_old <- function(
     estimate_center = TRUE
 ) {
   X <- as.matrix(X)
-  
+
   if (!is.numeric(X) || ncol(X) != 2L) {
     stop("`X` must be a numeric matrix with exactly two columns.", call. = FALSE)
   }
@@ -388,9 +386,9 @@ dp_frame_ver02_old <- function(
       call. = FALSE
     )
   }
-  
+
   q_radius <- 0.99
-  
+
   if (estimate_center) {
     eps_each <- eps_frame / 3
     center_x <- dp_quantile_durfee_signed(
@@ -404,13 +402,13 @@ dp_frame_ver02_old <- function(
     center_x <- 0
     center_y <- 0
   }
-  
+
   radius_values <- sqrt((X[, 1] - center_x)^2 + (X[, 2] - center_y)^2)
   radius_out <- dp_quantile_durfee(
     radius_values, q = q_radius, epsilon = eps_each
   )
   radius <- radius_out$value
-  
+
   if (!is.finite(radius) || radius <= 0) {
     stop(
       "The private frame radius is not positive. ",
@@ -418,9 +416,9 @@ dp_frame_ver02_old <- function(
       call. = FALSE
     )
   }
-  
+
   inflated_radius <- (1 + inflate) * radius
-  
+
   list(
     xlim = c(center_x - inflated_radius, center_x + inflated_radius),
     ylim = c(center_y - inflated_radius, center_y + inflated_radius)
@@ -430,7 +428,7 @@ dp_frame_ver02_old <- function(
 score_histogram_grid <- function(xlim, ylim, m_x, m_y) {
   x_breaks <- seq(xlim[1], xlim[2], length.out = m_x + 1L)
   y_breaks <- seq(ylim[1], ylim[2], length.out = m_y + 1L)
-  
+
   base_coord <- do.call(
     rbind,
     lapply(seq_len(m_y), function(j) {
@@ -442,7 +440,7 @@ score_histogram_grid <- function(xlim, ylim, m_x, m_y) {
       )
     })
   )
-  
+
   list(
     x_breaks = x_breaks,
     y_breaks = y_breaks,
@@ -466,7 +464,7 @@ score_histograms_ver02 <- function(
     method=c("add", "sparse")
 ) {
   method <- match.arg(method)
-  
+
   validate_bins(bins)
   bins <- as.integer(bins)
   grid <- score_histogram_grid(
@@ -475,7 +473,7 @@ score_histograms_ver02 <- function(
     m_x = bins[1],
     m_y = bins[2]
   )
-  
+
   score_histograms_from_grid_ver02(
     X_score = X_score,
     grid = grid,
@@ -495,12 +493,12 @@ score_histograms_from_grid_ver02 <- function(
     group_name = NULL
 ) {
   method <- match.arg(method)
-  
+
   n <- nrow(X_score)
   if (n < 1L) {
     stop("Each histogram must contain at least one observation.", call. = FALSE)
   }
-  
+
   bx <- cut(
     X_score[, 1],
     breaks = grid$x_breaks,
@@ -513,7 +511,7 @@ score_histograms_from_grid_ver02 <- function(
     include.lowest = TRUE,
     labels = FALSE
   )
-  
+
   if (anyNA(bx)) {
     idx <- which(is.na(bx))
     bx[idx] <- findInterval(X_score[idx, 1], grid$x_breaks, all.inside = TRUE)
@@ -522,20 +520,20 @@ score_histograms_from_grid_ver02 <- function(
     idx <- which(is.na(by))
     by[idx] <- findInterval(X_score[idx, 2], grid$y_breaks, all.inside = TRUE)
   }
-  
+
   bidx <- (by - 1L) * grid$m_x + bx
   counts <- as.numeric(table(factor(bidx, levels = seq_len(grid$m))))
   p_hat <- counts / n
-  
+
   hist_none <- grid$base_coord
   hist_none$prob <- p_hat
-  
+
   hist <- NULL
-  
+
   if (method == "add") {
     sigma <- sqrt(2) * sqrt(2 * log(1.25 / delta_hist)) / eps_hist
     c_tilde <- pmax(counts + stats::rnorm(grid$m, mean = 0, sd = sigma), 0)
-    
+
     if (sum(c_tilde) <= 0) {
       prefix <- if (is.null(group_name)) "" else paste0("Group `", group_name, "`: ")
       stop(
@@ -545,15 +543,15 @@ score_histograms_from_grid_ver02 <- function(
         call. = FALSE
       )
     }
-    
+
     hist <- grid$base_coord
     hist$prob <- c_tilde / sum(c_tilde)
-    
+
   } else if (method == "sparse") {
     q_sparse <- numeric(grid$m)
     scale_lap <- 2 / (eps_hist * n)
     threshold <- (2 * log(2 / delta_hist)) / (eps_hist * n) + 1 / n
-    
+
     for (kk in seq_len(grid$m)) {
       if (p_hat[kk] == 0) {
         q_sparse[kk] <- 0
@@ -563,15 +561,15 @@ score_histograms_from_grid_ver02 <- function(
         q_sparse[kk] <- if (q_k < threshold) 0 else q_k
       }
     }
-    
+
     if (sum(q_sparse) > 0) {
       q_sparse <- q_sparse / sum(q_sparse)
     }
-    
+
     hist <- grid$base_coord
     hist$prob <- q_sparse
   }
-  
+
   list(
     non_dp = hist_none,
     dp = hist
@@ -602,7 +600,7 @@ dp_quantile_durfee <- function(x, q, epsilon, lower = 0,
   if (!is.finite(max_steps) || max_steps < 1L) {
     stop("`durfee_max_steps` must be a positive integer.", call. = FALSE)
   }
-  
+
   # Monotone AboveThreshold with sensitivity one. Exponential noise and
   # epsilon_1 = epsilon_2 = epsilon / 2 give pure epsilon-DP under
   # fixed-size replacement adjacency.
@@ -612,7 +610,7 @@ dp_quantile_durfee <- function(x, q, epsilon, lower = 0,
   sorted_x <- sort(x)
   estimate <- lower
   halted <- FALSE
-  
+
   for (i in seq_len(max_steps)) {
     estimate <- beta^i + lower - 1
     if (!is.finite(estimate)) {
@@ -631,7 +629,7 @@ dp_quantile_durfee <- function(x, q, epsilon, lower = 0,
       call. = FALSE
     )
   }
-  
+
   list(value = estimate, halted = halted, steps = i)
 }
 
@@ -664,7 +662,7 @@ dp_quantile_durfee_signed <- function(x, q, epsilon,
   if (!is.finite(max_steps) || max_steps < 1L) {
     stop("`durfee_max_steps` must be a positive integer.", call. = FALSE)
   }
-  
+
   # Algorithm 4 uses two independent AboveThreshold calls. Each call
   # receives half of epsilon and splits it equally between threshold
   # and query noise.
@@ -677,7 +675,7 @@ dp_quantile_durfee_signed <- function(x, q, epsilon,
     estimate <- 0
     halted <- FALSE
     step <- 0L
-    
+
     for (i in seq.int(0L, max_steps - 1L)) {
       estimate <- beta^i - 1
       if (!is.finite(estimate)) {
@@ -693,13 +691,13 @@ dp_quantile_durfee_signed <- function(x, q, epsilon,
         break
       }
     }
-    
+
     list(value = estimate, halted = halted, steps = step)
   }
-  
+
   positive_out <- run_search(x, q)
   negative_out <- run_search(-x, 1 - q)
-  
+
   estimate <- if (positive_out$halted && positive_out$steps > 0L) {
     positive_out$value
   } else if (negative_out$halted && negative_out$steps > 0L) {
@@ -707,14 +705,14 @@ dp_quantile_durfee_signed <- function(x, q, epsilon,
   } else {
     0
   }
-  
+
   if (!positive_out$halted || !negative_out$halted) {
     warning(
       "Durfee signed quantile search reached `durfee_max_steps`; consider a smaller `durfee_beta` only with a larger step limit, or increase the step limit.",
       call. = FALSE
     )
   }
-  
+
   list(
     value = estimate,
     halted = positive_out$halted && negative_out$halted,
@@ -727,7 +725,7 @@ dp_quantile_durfee_signed <- function(x, q, epsilon,
 
 validate_score_matrix <- function(X) {
   X <- as.matrix(X)
-  
+
   if (!is.numeric(X)) {
     stop("`X` must be numeric or coercible to a numeric matrix.", call. = FALSE)
   }
@@ -740,7 +738,7 @@ validate_score_matrix <- function(X) {
   if (anyNA(X) || any(!is.finite(X))) {
     stop("`X` must contain only finite values.", call. = FALSE)
   }
-  
+
   X
 }
 
@@ -767,7 +765,7 @@ validate_score_common <- function(
       call. = FALSE
     )
   }
-  
+
   if (!is.numeric(eps) || length(eps) != 1L || !is.finite(eps) || eps <= 0) {
     stop("`eps` must be a positive number.", call. = FALSE)
   }
@@ -777,9 +775,9 @@ validate_score_common <- function(
   ) {
     stop("`delta` must be a number in `(0, 1)`.", call. = FALSE)
   }
-  
+
   validate_bins(bins)
-  
+
   if (length(axes) != 2L || !is.numeric(axes)) {
     stop("`axes` must be an integer vector of length 2.", call. = FALSE)
   }
@@ -790,7 +788,7 @@ validate_score_common <- function(
   if (max(axes) > ncol(X)) {
     stop("The largest value in `axes` must not exceed `ncol(X)`.", call. = FALSE)
   }
-  
+
   invisible(TRUE)
 }
 
@@ -798,7 +796,7 @@ validate_logical_value <- function(x, arg) {
   if (!is.logical(x) || length(x) != 1L || is.na(x)) {
     stop("`", arg, "` must be `TRUE` or `FALSE`.", call. = FALSE)
   }
-  
+
   invisible(TRUE)
 }
 
@@ -809,7 +807,7 @@ validate_positive_integer <- function(x, arg) {
   ) {
     stop("`", arg, "` must be a positive integer.", call. = FALSE)
   }
-  
+
   invisible(TRUE)
 }
 
@@ -820,6 +818,6 @@ validate_bins <- function(bins) {
   ) {
     stop("`bins` must be an integer vector of length 2 with positive values.", call. = FALSE)
   }
-  
+
   invisible(TRUE)
 }
