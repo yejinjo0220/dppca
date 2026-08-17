@@ -526,7 +526,9 @@ In practice, the implementation may use all available observations at each step 
 ### Private quantile estimation
 
 PMWM uses private quantile estimates instead of non-private empirical quantiles.
-For component \(\ell\), let the clipping proportion be
+The package computes them with the pure-DP fully unbounded mechanism of
+[Durfee (2023)](#ref-Durfee2023). For component \(\ell\), let the clipping
+proportion be
 \[
 p_\ell = \zeta_\ell.
 \]
@@ -549,7 +551,8 @@ where
 
 - \(\eta\): Contamination level,
 - \(\beta > 1\): Log-grid parameter in the private quantile estimator,
-- \(\ell, u\): Lower and upper search bounds used in private quantile estimation.
+- \(\ell, u\): Public lower and upper post-processing bounds for the private
+  winsorization cutoffs.
 - \(\delta\): Confidence parameter controlling the high-probability accuracy statement of the PMWM estimator.
 - \(n_q\): Number of observations used for quantile estimation.
 
@@ -670,41 +673,25 @@ For privacy parameters \((\epsilon_{M,\ell},\delta_{M,\ell})\), the noise scale 
 
 ### Privacy budget splitting
 
-PMWM uses privacy budget for both private quantile estimation and private mean estimation.
+PMWM uses privacy budget for both private quantile estimation and private mean
+estimation.
 
 For component \(\ell\), let the total component-level budget be $(\epsilon_\ell,\delta_\ell)$.
 
-This can be split as
-\[
-\epsilon_\ell
-=
-\epsilon_{Q,\ell}
-+
-\epsilon_{M,\ell},
-\qquad
-\delta_\ell
-=
-\delta_{Q,\ell}
-+
-\delta_{M,\ell}.
-\]
-
-The quantile budget itself is used to estimate two quantiles, so it can be split
-again.
+The implementation allocates
 
 \[
-\epsilon_{Q,\ell}
-=
-\epsilon_{q1,\ell}
-+
-\epsilon_{q2,\ell},
+\epsilon_{L,\ell}=\frac{\epsilon_\ell}{4},
 \qquad
-\delta_{Q,\ell}
-=
-\delta_{q1,\ell}
-+
-\delta_{q2,\ell}.
+\epsilon_{U,\ell}=\frac{\epsilon_\ell}{4},
+\qquad
+\epsilon_{M,\ell}=\frac{\epsilon_\ell}{2}.
 \]
+
+The lower and upper quantile mechanisms are pure DP and do not consume
+\(\delta\). The full component-level \(\delta_\ell\) is used by the Gaussian
+winsorized-mean release. Each fully unbounded quantile helper manages its own
+internal split across two one-sided searches.
 
 ### Parameters
 
@@ -715,8 +702,9 @@ estimation and winsorization.
 
    It determines the spacing of the geometric search grid and must satisfy \(\beta > 1\).
 
-- `a`, `b`: Lower and upper search bounds supplied to the private quantile. 
-   The private lower and upper clipping cutoffs are searched within this range.
+- `a`, `b`: Public lower and upper post-processing bounds for the private
+  winsorization cutoffs. The fully unbounded private estimates are truncated to
+  this range without additional privacy cost.
 
 - `trim_const`, `eta`: Parameters used to set the practical clipping proportion
   \[
@@ -737,16 +725,13 @@ estimation and winsorization.
   other part is used for the winsorized mean step. If `FALSE`, all observations
   are used in both steps.
 
-- `max_extra_bins`: Maximum number of additional log-grid bins searched beyond the largest occupied bin in the private quantile.
-
-  
 ### Example usage
 
 In `dppca`, the PMWM-specific parameters can be specified through
 
 \[
-\text{scree_pmw_control(
-beta = beta,a = a,b = b, trim_const = C, eta = eta split_mode = split)}
+\text{pmwm_control(
+beta = beta, a = a, b = b, trim_const = C, eta = eta, split_mode = split)}
 \]
 
 
@@ -755,8 +740,8 @@ dp_scree(
   X,
   k = 3,
   method = "pmwm",
-  eps_total = 1,
-  delta_total = 1e-6,
+  eps = 1,
+  delta = 1e-6,
   center = TRUE,
   standardize = FALSE,
   control = pmwm_control(
@@ -871,6 +856,11 @@ Myeonghun Yu. Zhao Ren. Wen-Xin Zhou. "Gaussian differentially private robust me
 
 <span id="ref-Ramsay2025"></span>
 Kelly Ramsay and Dylan Spicker. (2025). "Improved subsample-and-aggregate via the private modified winsorized mean". arXiv preprint. https://arxiv.org/abs/2501.14095
+
+<span id="ref-Durfee2023"></span>
+Durfee, D. (2023). "Unbounded differentially private quantile and maximum
+estimation". In *Advances in Neural Information Processing Systems*, 36,
+77691--77712. https://doi.org/10.52202/075280-3394
 
 
 <span id="ref-Lugosi2021"></span>

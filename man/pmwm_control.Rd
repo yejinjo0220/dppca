@@ -7,10 +7,9 @@
 pmwm_control(a, b, trim_const, eta, beta = 1.001, split_mode = TRUE)
 }
 \arguments{
-\item{a, b}{Finite lower and upper search bounds supplied to the private
-quantile routine. The private lower and upper clipping cutoffs are searched
-within this range. These values have no defaults because they should be
-chosen on the scale of squared principal component scores.}
+\item{a, b}{Finite public lower and upper post-processing bounds for the
+private winsorization cutoffs. These values have no defaults because they
+should be chosen on the scale of squared principal component scores.}
 
 \item{trim_const}{Positive number controlling the baseline clipping level in
 the practical clipping proportion. This value has no default.}
@@ -39,10 +38,11 @@ mean. It is based on the private modified winsorized mean of
 
 The implementation used here is an R adaptation of the publicly available
 Python implementation accompanying \insertCite{ramsay2025pmw;textual}{dppca}.
-In particular, the lower and upper private quantiles use its pure-DP
-exponential-noise unbounded quantile routine. For scree estimation, the
-resulting cutoffs are applied to squared principal component scores and the
-final winsorized mean is released with a Gaussian mechanism.
+The lower and upper private quantiles use the pure-DP fully unbounded
+quantile mechanism of \insertCite{durfee2023unbounded;textual}{dppca}. For
+scree estimation, the resulting cutoffs are applied to squared principal
+component scores and the final winsorized mean is released with a Gaussian
+mechanism.
 
 The PMWM scree estimator uses additional control parameters for private
 quantile estimation and winsorization. The parameter \code{beta} determines the
@@ -50,10 +50,11 @@ spacing of the geometric search grid used by the private quantile estimator
 and must satisfy \eqn{\beta > 1}. Smaller values of \code{beta} give a finer grid
 but may increase computation.
 
-The bounds \code{a} and \code{b} define the lower and upper search range supplied to the
-private quantile routine. The private lower and upper winsorization cutoffs
-are searched within this range. These bounds should be chosen on the scale of
-the squared principal component scores.
+The bounds \code{a} and \code{b} are public post-processing bounds for the private
+winsorization cutoffs. After the fully unbounded private quantiles are
+estimated, both cutoffs are truncated to \verb{[a, b]}. This preserves the public
+control interface and bounds the sensitivity of the winsorized mean without
+additional privacy cost.
 
 The parameters \code{trim_const} and \code{eta} determine the practical clipping
 proportion used by the modified winsorized mean. If \eqn{n_q} denotes the
@@ -82,6 +83,8 @@ pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01)
 }
 \references{
 \insertRef{ramsay2025pmw}{dppca}
+
+\insertRef{durfee2023unbounded}{dppca}
 }
 \seealso{
 \code{\link[=dp_scree]{dp_scree()}} for computing differentially private scree estimates using these

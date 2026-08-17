@@ -91,11 +91,10 @@ region is called the plotting frame. If the frame is too narrow, many points are
 excluded. If it is too wide, the histogram may become sparse and visually
 uninformative.
 
-The current implementation uses a **private center-radius frame**. This approach
-constructs a square frame by privately estimating a center and then privately
-estimating a radius around that center. The private quantiles appearing in this
-step are computed using a smooth-sensitivity-based DP quantile estimator, as in
-[Nissim, Raskhodnikova, and Smith (2007)](#ref-Nissim2007).
+The current implementation uses a **private coordinate-wise frame**. It
+constructs a rectangular frame by privately estimating a center and a separate
+radius for each score coordinate. The private quantiles use the pure-DP fully
+unbounded and one-sided mechanisms of [Durfee (2023)](#ref-Durfee2023).
 
 ### Private center
 
@@ -122,37 +121,34 @@ The private center is
 (\widetilde c_1,\widetilde c_2)^\top.
 \]
 
-### Private radius
+### Private radii
 
-After obtaining the private center, compute the Euclidean distance from each
-score point to the private center:
+After obtaining the private center, compute the absolute deviation along each
+score coordinate:
 
 \[
-r_i
-=
-\|s_i-\widetilde c\|_2
-=
-\sqrt{(z_{i,a}-\widetilde c_1)^2
-+
-(z_{i,b}-\widetilde c_2)^2},
+d_{i1}=|z_{i,a}-\widetilde c_1|,
+\qquad
+d_{i2}=|z_{i,b}-\widetilde c_2|,
 \qquad i=1,\ldots,n.
 \]
 
-The radius is then estimated by the private 0.99 quantile of these distances:
+The two radii are estimated by private 0.995 quantiles of these deviations:
 
 \[
-\widetilde R
-=
-\widetilde Q_{0.99}(r_1,\ldots,r_n).
+\widetilde R_1=\widetilde Q_{0.995}(d_{11},\ldots,d_{n1}),
+\qquad
+\widetilde R_2=\widetilde Q_{0.995}(d_{12},\ldots,d_{n2}).
 \]
 
-To add a visual margin and reduce boundary effects, introduce a fixed inflation 
-factor $\alpha > 0$.
+To add a visual margin and reduce boundary effects, introduce a fixed inflation
+factor $\alpha \geq 0$.
 
 \[
-\widetilde R_{\mathrm{infl}}
+\widetilde R_{j,\mathrm{infl}}
 =
-(1+\alpha)\widetilde R,
+(1+\alpha)\widetilde R_j,
+\qquad j=1,2,
 \]
 
 where the current implementation uses a fixed inflation factor \(\alpha = 0.20\).
@@ -162,25 +158,26 @@ The final plotting frame is
 \[
 F
 =
-[\widetilde c_1-\widetilde R_{\mathrm{infl}},
- \widetilde c_1+\widetilde R_{\mathrm{infl}}]
+[\widetilde c_1-\widetilde R_{1,\mathrm{infl}},
+ \widetilde c_1+\widetilde R_{1,\mathrm{infl}}]
 \times
-[\widetilde c_2-\widetilde R_{\mathrm{infl}},
- \widetilde c_2+\widetilde R_{\mathrm{infl}}].
+[\widetilde c_2-\widetilde R_{2,\mathrm{infl}},
+ \widetilde c_2+\widetilde R_{2,\mathrm{infl}}].
 \]
 
-This produces a square frame centered at the private center.
+This produces a rectangular frame centered at the private coordinate-wise
+median estimates.
 
-### Numerical safeguard for the private radius
+### Numerical safeguard for the private radii
 
-The distances \(r_i\) are nonnegative, but the private quantile estimator adds
-random noise. Therefore, the private radius estimate can occasionally become
+The deviations \(d_{ij}\) are nonnegative, but each private quantile estimator
+adds random noise. Therefore, a private radius estimate can occasionally become
 non-finite or nonpositive, especially when the privacy budget is very small, the
 sample size is small, or the score points are nearly identical.
 
-The implementation checks the private radius before forming the frame. If the
-private radius is not finite or is nonpositive, the score plotting routine stops
-with an informative error.
+The implementation checks both private radii before forming the frame. If either
+radius is not finite or is nonpositive, the score plotting routine stops with an
+informative error.
 
 ## 2. Choosing the number of bins
 
@@ -253,22 +250,19 @@ The DP score histogram procedure has two main privacy-consuming steps when
 1. private quantile estimation for constructing the plotting frame,
 2. private histogram release.
 
-If the total privacy budget is \((\epsilon,\delta)\), the implementation splits
-the budget as
+If the total privacy budget is \((\epsilon,\delta)\), the implementation uses
 
 \[
-(\epsilon_{\mathrm{frame}},\delta_{\mathrm{frame}})
-=
-(\epsilon/2,\delta/2),
+\epsilon_{\mathrm{frame}}=0.2\epsilon,
 \qquad
-(\epsilon_{\mathrm{hist}},\delta_{\mathrm{hist}})
-=
-(\epsilon/2,\delta/2).
+\epsilon_{\mathrm{hist}}=0.8\epsilon,
+\qquad
+\delta_{\mathrm{hist}}=\delta.
 \]
 
-The frame construction itself uses three private quantile estimates: two private
-medians for the center and one private 0.99 quantile for the radius. These share
-the frame budget by basic composition.
+The frame is pure DP and does not consume \(\delta\). Its two private medians and
+two private 0.995 radius estimates each receive
+\(\epsilon_{\mathrm{frame}}/4\).
 
 When `g_dppca = TRUE`, private PC direction estimation also consumes privacy
 budget. In that case, the total budget is split across
@@ -277,16 +271,19 @@ budget. In that case, the total budget is split across
 2. private plotting frame construction,
 3. private histogram release.
 
-The implementation uses an equal split:
+The implementation uses
 
 \[
-(\epsilon_{\mathrm{pc}},\delta_{\mathrm{pc}})
-=
-(\epsilon_{\mathrm{frame}},\delta_{\mathrm{frame}})
-=
-(\epsilon_{\mathrm{hist}},\delta_{\mathrm{hist}})
-=
-(\epsilon/3,\delta/3).
+\epsilon_{\mathrm{pc}}=0.2\epsilon,
+\qquad
+\epsilon_{\mathrm{frame}}=0.2\epsilon,
+\qquad
+\epsilon_{\mathrm{hist}}=0.6\epsilon,
+\]
+\[
+\delta_{\mathrm{pc}}=0.2\delta,
+\qquad
+\delta_{\mathrm{hist}}=0.8\delta.
 \]
 
 By basic composition, the overall procedure satisfies the requested
@@ -382,8 +379,10 @@ score_plot_group$plot$all
 
 ## References
 
-<span id="ref-Nissim2007"></span>
-Kobbi Nissim, Sofya Raskhodnikova, and Adam Smith. (2007). "Smooth sensitivity and sampling in private data analysis". In Proceedings of the thirty-ninth annual ACM symposium on Theory of computing (STOC '07). Association for Computing Machinery, New York, NY, USA, 75--84. https://doi.org/10.1145/1250790.1250803
+<span id="ref-Durfee2023"></span>
+Durfee, D. (2023). "Unbounded differentially private quantile and maximum
+estimation". In *Advances in Neural Information Processing Systems*, 36,
+77691--77712. https://doi.org/10.52202/075280-3394
 
 <span id="ref-Lei2011"></span>
 Lei, Jing (2011). "Differentially private M-estimators". Advances in Neural Information Processing Systems, 24. Curran Associates, Inc.

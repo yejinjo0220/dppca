@@ -73,7 +73,9 @@
 #'   \item `"pmwm"` uses the private modified winsorized mean approach of
 #'   \insertCite{ramsay2025pmw;textual}{dppca}, adapted from the accompanying
 #'   Python implementation into R. The lower and upper tail cutoffs are
-#'   estimated with the pure-DP exponential-noise unbounded quantile routine.
+#'   estimated with the pure-DP fully unbounded quantile mechanism of
+#'   \insertCite{durfee2023unbounded;textual}{dppca} and truncated to the public
+#'   bounds supplied through [pmwm_control()].
 #'   The squared scores \eqn{w_{i\ell}} are then winsorized to those cutoffs,
 #'   and the final winsorized mean is released with a Gaussian mechanism
 #'   calibrated to the supplied `(eps, delta)` budget.
@@ -132,6 +134,8 @@
 #' \insertRef{dwork2014algorithmic}{dppca}
 #'
 #' \insertRef{ramsay2025pmw}{dppca}
+#'
+#' \insertRef{durfee2023unbounded}{dppca}
 #'
 #' \insertRef{yu2024gaussian}{dppca}
 #'
@@ -387,6 +391,8 @@ dp_scree <- function(
 #' \insertRef{dwork2014algorithmic}{dppca}
 #'
 #' \insertRef{ramsay2025pmw}{dppca}
+#'
+#' \insertRef{durfee2023unbounded}{dppca}
 #'
 #' \insertRef{yu2024gaussian}{dppca}
 #'

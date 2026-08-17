@@ -49,10 +49,9 @@ clipped_control <- function(C_clip) {
 #' Creates a control list for the private modified winsorized mean scree
 #' estimator used by [dp_scree()] and [dp_scree_plot()] when `method = "pmwm"`.
 #'
-#' @param a,b Finite lower and upper search bounds supplied to the private
-#'   quantile routine. The private lower and upper clipping cutoffs are searched
-#'   within this range. These values have no defaults because they should be
-#'   chosen on the scale of squared principal component scores.
+#' @param a,b Finite public lower and upper post-processing bounds for the
+#'   private winsorization cutoffs. These values have no defaults because they
+#'   should be chosen on the scale of squared principal component scores.
 #' @param trim_const Positive number controlling the baseline clipping level in
 #'   the practical clipping proportion. This value has no default.
 #' @param eta Nonnegative number controlling the expected contamination level in
@@ -70,10 +69,11 @@ clipped_control <- function(C_clip) {
 #'
 #' The implementation used here is an R adaptation of the publicly available
 #' Python implementation accompanying \insertCite{ramsay2025pmw;textual}{dppca}.
-#' In particular, the lower and upper private quantiles use its pure-DP
-#' exponential-noise unbounded quantile routine. For scree estimation, the
-#' resulting cutoffs are applied to squared principal component scores and the
-#' final winsorized mean is released with a Gaussian mechanism.
+#' The lower and upper private quantiles use the pure-DP fully unbounded
+#' quantile mechanism of \insertCite{durfee2023unbounded;textual}{dppca}. For
+#' scree estimation, the resulting cutoffs are applied to squared principal
+#' component scores and the final winsorized mean is released with a Gaussian
+#' mechanism.
 #'
 #' The PMWM scree estimator uses additional control parameters for private
 #' quantile estimation and winsorization. The parameter `beta` determines the
@@ -81,10 +81,11 @@ clipped_control <- function(C_clip) {
 #' and must satisfy \eqn{\beta > 1}. Smaller values of `beta` give a finer grid
 #' but may increase computation.
 #'
-#' The bounds `a` and `b` define the lower and upper search range supplied to the
-#' private quantile routine. The private lower and upper winsorization cutoffs
-#' are searched within this range. These bounds should be chosen on the scale of
-#' the squared principal component scores.
+#' The bounds `a` and `b` are public post-processing bounds for the private
+#' winsorization cutoffs. After the fully unbounded private quantiles are
+#' estimated, both cutoffs are truncated to `[a, b]`. This preserves the public
+#' control interface and bounds the sensitivity of the winsorized mean without
+#' additional privacy cost.
 #'
 #' The parameters `trim_const` and `eta` determine the practical clipping
 #' proportion used by the modified winsorized mean. If \eqn{n_q} denotes the
@@ -117,13 +118,15 @@ clipped_control <- function(C_clip) {
 #' @references
 #' \insertRef{ramsay2025pmw}{dppca}
 #'
+#' \insertRef{durfee2023unbounded}{dppca}
+#'
 #' @examples
 #' pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01)
 #'
 #' @export
 pmwm_control <- function(
     a, b, trim_const, eta,
-    beta = 1.001,
+    beta = 1.01,
     split_mode = TRUE
 ) {
   if (missing(a) || missing(b) || missing(trim_const) || missing(eta)) {

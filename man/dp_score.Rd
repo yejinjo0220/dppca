@@ -76,14 +76,13 @@ plot would display the points \eqn{s_1, \ldots, s_n} directly. This function
 instead summarizes their empirical distribution by a two-dimensional histogram
 and releases private versions of the histogram for the visualization.
 
-The plotting frame is constructed privately from the score coordinates. The
-frame center is estimated by coordinate-wise private medians using a
-smooth-sensitivity quantile mechanism
-\insertCite{nissim2007smooth}{dppca}. The Euclidean distances from this
-private center are then computed, and their private 0.99 quantile is estimated
-with the pure-DP exponential-noise unbounded quantile routine used in the
-PMWM implementation \insertCite{ramsay2025pmw}{dppca}. The resulting private
-radius is inflated by a fixed factor and used to form a square plotting frame.
+The plotting frame is constructed privately from the score coordinates using
+the pure-DP unbounded quantile mechanisms of
+\insertCite{durfee2023unbounded;textual}{dppca}. Its center is estimated by
+coordinate-wise private medians. For each coordinate, the private 0.995
+quantile of the absolute deviations from its private median is then estimated
+and inflated by a fixed factor. The two independently estimated radii form a
+rectangular plotting frame.
 
 The private histogram is computed on the rectangular grid defined by the
 private frame and the bin counts in \code{bins}. Under
@@ -108,13 +107,14 @@ following the stability-based private histogram idea of
 }
 
 The privacy parameters are allocated across the privacy-consuming steps. If
-\code{g_dppca = FALSE}, half of \code{eps} and \code{delta} is used for private frame
-construction and half for the private histogram. If \code{g_dppca = TRUE}, the
-parameters are split equally among private direction estimation, private
-frame construction, and private histogram release. Within the frame step,
-\code{eps_frame} is divided equally between the two private medians and the radius
-quantile. Because the radius quantile is pure DP, it consumes no \code{delta};
-\code{delta_frame} is divided equally between the two smooth-sensitivity medians.
+\code{g_dppca = FALSE}, 20 percent of \code{eps} is used for the private frame and 80
+percent for the private histogram; all of \code{delta} is used by the histogram.
+If \code{g_dppca = TRUE}, \code{eps} is allocated in proportions 0.2, 0.2, and 0.6 to
+private direction estimation, private frame construction, and private
+histogram release, respectively. The corresponding \code{delta} proportions are
+0.2 for private directions and 0.8 for the histogram. Frame construction is
+pure DP and divides \code{eps_frame} equally among its two private medians and two
+private radius estimates.
 
 When multiple histogram methods are requested, the histogram privacy budget
 is not divided across \code{"add"} and \code{"sparse"}. Instead, each requested method
@@ -152,9 +152,7 @@ head(score_gau$add)
 \references{
 \insertRef{dwork2014algorithmic}{dppca}
 
-\insertRef{nissim2007smooth}{dppca}
-
-\insertRef{ramsay2025pmw}{dppca}
+\insertRef{durfee2023unbounded}{dppca}
 
 \insertRef{wasserman2010statistical}{dppca}
 

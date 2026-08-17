@@ -46,14 +46,13 @@
 #' instead summarizes their empirical distribution by a two-dimensional histogram
 #' and releases private versions of the histogram for the visualization.
 #'
-#' The plotting frame is constructed privately from the score coordinates. The
-#' frame center is estimated by coordinate-wise private medians using a
-#' smooth-sensitivity quantile mechanism
-#' \insertCite{nissim2007smooth}{dppca}. The Euclidean distances from this
-#' private center are then computed, and their private 0.99 quantile is estimated
-#' with the pure-DP exponential-noise unbounded quantile routine used in the
-#' PMWM implementation \insertCite{ramsay2025pmw}{dppca}. The resulting private
-#' radius is inflated by a fixed factor and used to form a square plotting frame.
+#' The plotting frame is constructed privately from the score coordinates using
+#' the pure-DP unbounded quantile mechanisms of
+#' \insertCite{durfee2023unbounded;textual}{dppca}. Its center is estimated by
+#' coordinate-wise private medians. For each coordinate, the private 0.995
+#' quantile of the absolute deviations from its private median is then estimated
+#' and inflated by a fixed factor. The two independently estimated radii form a
+#' rectangular plotting frame.
 #'
 #' The private histogram is computed on the rectangular grid defined by the
 #' private frame and the bin counts in `bins`. Under
@@ -78,13 +77,14 @@
 #' }
 #'
 #' The privacy parameters are allocated across the privacy-consuming steps. If
-#' `g_dppca = FALSE`, half of `eps` and `delta` is used for private frame
-#' construction and half for the private histogram. If `g_dppca = TRUE`, the
-#' parameters are split equally among private direction estimation, private
-#' frame construction, and private histogram release. Within the frame step,
-#' `eps_frame` is divided equally between the two private medians and the radius
-#' quantile. Because the radius quantile is pure DP, it consumes no `delta`;
-#' `delta_frame` is divided equally between the two smooth-sensitivity medians.
+#' `g_dppca = FALSE`, 20 percent of `eps` is used for the private frame and 80
+#' percent for the private histogram; all of `delta` is used by the histogram.
+#' If `g_dppca = TRUE`, `eps` is allocated in proportions 0.2, 0.2, and 0.6 to
+#' private direction estimation, private frame construction, and private
+#' histogram release, respectively. The corresponding `delta` proportions are
+#' 0.2 for private directions and 0.8 for the histogram. Frame construction is
+#' pure DP and divides `eps_frame` equally among its two private medians and two
+#' private radius estimates.
 #'
 #' When multiple histogram methods are requested, the histogram privacy budget
 #' is not divided across `"add"` and `"sparse"`. Instead, each requested method
@@ -114,9 +114,7 @@
 #' @references
 #' \insertRef{dwork2014algorithmic}{dppca}
 #'
-#' \insertRef{nissim2007smooth}{dppca}
-#'
-#' \insertRef{ramsay2025pmw}{dppca}
+#' \insertRef{durfee2023unbounded}{dppca}
 #'
 #' \insertRef{wasserman2010statistical}{dppca}
 #'
@@ -200,7 +198,6 @@ dp_score <- function(
   frame_out <- dp_frame(
     X = score_res$score,
     eps_frame = budget$eps_frame,
-    delta_frame = budget$delta_frame,
     inflate = 0.20
   )
 
@@ -706,7 +703,6 @@ dp_score_group <- function(
   frame_out <- dp_frame(
     X = score_res$score,
     eps_frame = budget$eps_frame,
-    delta_frame = budget$delta_frame,
     inflate = 0.20
   )
 

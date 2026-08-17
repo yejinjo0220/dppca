@@ -127,6 +127,8 @@ dp_scree_plot(
 
 \insertRef{ramsay2025pmw}{dppca}
 
+\insertRef{durfee2023unbounded}{dppca}
+
 \insertRef{yu2024gaussian}{dppca}
 
 \insertRef{kim2025robustdppca}{dppca}

@@ -15,9 +15,9 @@ Description: Provides tools for differentially private principal component
     <doi:10.1002/sam.70053>. Private scree summaries use mechanisms motivated
     by Dwork and Roth (2014) <doi:10.1561/0400000042>, Ramsay and Spicker
     (2025) <doi:10.48550/arXiv.2501.14095>, and Yu, Ren and Zhou (2024)
-    <doi:10.3150/23-BEJ1706>. Private score plot frames use smooth sensitivity
-    quantiles from Nissim, Raskhodnikova and Smith (2007)
-    <doi:10.1145/1250790.1250803>. Private score histograms use additive and
+    <doi:10.3150/23-BEJ1706>. Private score plot frames use pure-DP unbounded
+    quantiles from Durfee (2023) <doi:10.52202/075280-3394>. Private score
+    histograms use additive and
     sparse histogram ideas from Wasserman and Zhou (2010)
     <doi:10.1198/jasa.2009.tm08651> and Karwa and Vadhan (2018)
     <doi:10.4230/LIPIcs.ITCS.2018.44>.

@@ -63,30 +63,34 @@ dp_quantile_ss <- function(x, q, epsilon, delta) {
   xs[r] + VGAM::rlaplace(1, location = 0, scale = scale)
 }
 
-#' Construct a private plotting frame for two-dimensional scores
+
+#' Construct a pure-DP plotting frame for two-dimensional scores
 #'
-#' The plotting frame is constructed using coordinate-wise private medians as
-#' the center and a pure-DP private 0.99 quantile of Euclidean distances from
-#' that center as the radius. The coordinate-wise medians continue to use the
-#' smooth-sensitivity quantile helper `dp_quantile_ss()`. The radius uses the
-#' exponential-noise upper unbounded quantile helper
-#' `unbounded_quantile_upper()` shared with the PMWM scree implementation.
-#' The same radius is used on both axes, producing a square plotting frame.
+#' The frame uses coordinate-wise pure-DP median estimates from
+#' `unbounded_quantile()` as its center. For each coordinate separately,
+#' `unbounded_quantile_upper()` estimates the 0.995 quantile of absolute
+#' deviations from the corresponding private center. Each center and radius
+#' mechanism receives `eps_frame / 4`, so the four mechanisms compose to a pure
+#' `eps_frame`-DP frame under fixed-size replacement adjacency.
 #'
-#' @param X Numeric matrix with two columns.
-#' @param eps_frame Positive `epsilon` privacy parameter for private frame
-#'   construction.
-#' @param delta_frame Number in `(0, 1)` defining the `delta` privacy
-#'   parameter for private frame construction.
-#' @param inflate Nonnegative inflation factor applied to the private radius.
+#' Each private radius is multiplied by `1 + inflate`. Separate horizontal and
+#' vertical radii produce a rectangular frame centered at the two private
+#' median estimates.
 #'
-#' @return A list with components `xlim` and `ylim`.
+#' @param X Numeric matrix with exactly two columns and at least two rows. All
+#'   entries must be finite.
+#' @param eps_frame Positive total `epsilon` privacy parameter for the four
+#'   private mechanisms used to construct the frame.
+#' @param inflate Nonnegative inflation factor. Each private radius is
+#'   multiplied by `1 + inflate`.
+#'
+#' @return A list with components `xlim` and `ylim`, each a length-two numeric
+#'   vector giving the corresponding plotting limits.
 #'
 #' @noRd
 dp_frame <- function(
     X,
     eps_frame,
-    delta_frame,
     inflate = 0.20
 ) {
   X <- as.matrix(X)
@@ -107,74 +111,54 @@ dp_frame <- function(
     stop("`eps_frame` must be a positive number.", call. = FALSE)
   }
   if (
-    !is.numeric(delta_frame) || length(delta_frame) != 1L ||
-    !is.finite(delta_frame) || delta_frame <= 0 || delta_frame >= 1
-  ) {
-    stop("`delta_frame` must be a number in `(0, 1)`.", call. = FALSE)
-  }
-  if (
     !is.numeric(inflate) || length(inflate) != 1L ||
     !is.finite(inflate) || inflate < 0
   ) {
     stop("`inflate` must be a nonnegative number.", call. = FALSE)
   }
 
-  # Keep the existing epsilon split: one third for each coordinate-wise median
-  # and one third for the radius quantile.
-  eps_center_x <- eps_frame / 3
-  eps_center_y <- eps_frame / 3
-  eps_radius <- eps_frame / 3
+  eps_each <- eps_frame / 4
 
-  # The radius quantile is now pure DP and therefore does not consume delta.
-  # Use the full frame delta budget across the two smooth-sensitivity medians.
-  delta_center_x <- delta_frame / 2
-  delta_center_y <- delta_frame / 2
-
-  q_radius <- 0.99
-
-  center_x <- dp_quantile_ss(
-    X[, 1],
-    q = 0.5,
-    epsilon = eps_center_x,
-    delta = delta_center_x
+  center_x <- unbounded_quantile(
+    x = X[, 1], q = 0.5, epsilon = eps_each
   )
-  center_y <- dp_quantile_ss(
-    X[, 2],
-    q = 0.5,
-    epsilon = eps_center_y,
-    delta = delta_center_y
+  center_y <- unbounded_quantile(
+    x = X[, 2], q = 0.5, epsilon = eps_each
   )
 
-  radius_values <- sqrt(
-    (X[, 1] - center_x)^2 +
-      (X[, 2] - center_y)^2
+  q_radius <- 0.995
+
+  r_x_values <- abs( X[, 1] - center_x )
+  r_x_max <- unbounded_quantile_upper(
+    x = r_x_values, q = q_radius, epsilon = eps_each
   )
 
-  # radius_values are nonnegative, so the lower anchor is fixed at zero.
-  # Split the radius epsilon budget equally between the noisy target count and
-  # the noisy cumulative-count scan in the pure-DP unbounded quantile routine.
-  radius <- unbounded_quantile_upper(
-    data = radius_values,
-    l = 0,
-    beta = 1.001,
-    q = q_radius,
-    eps_1 = eps_radius / 2,
-    eps_2 = eps_radius / 2
+  r_y_values <- abs( X[, 2] - center_y )
+  r_y_max <- unbounded_quantile_upper(
+    x = r_y_values, q = q_radius, epsilon = eps_each
   )
 
-  if (!is.finite(radius) || radius <= 0) {
+  if (!is.finite(r_x_max) || r_x_max <= 0) {
     stop(
-      "The private frame radius is not positive. ",
+      "The private frame radius for x-axis is not positive. ",
+      "Try a larger privacy budget.",
+      call. = FALSE
+    )
+  }
+  if (!is.finite(r_y_max) || r_y_max <= 0) {
+    stop(
+      "The private frame radius for y-axis is not positive. ",
       "Try a larger privacy budget.",
       call. = FALSE
     )
   }
 
-  inflated_radius <- (1 + inflate) * radius
+  r_x_max <- (1 + inflate) * r_x_max
+  r_y_max <- (1 + inflate) * r_y_max
 
   list(
-    xlim = c(center_x - inflated_radius, center_x + inflated_radius),
-    ylim = c(center_y - inflated_radius, center_y + inflated_radius)
+    xlim = c(center_x - r_x_max, center_x + r_x_max),
+    ylim = c(center_y - r_y_max, center_y + r_y_max)
   )
 }
 
@@ -730,21 +714,19 @@ NULL
 split_score_privacy_budget <- function(eps, delta, g_dppca) {
   if (isTRUE(g_dppca)) {
     list(
-      eps_pc = eps / 3,
-      eps_frame = eps / 3,
-      eps_hist = eps / 3,
-      delta_pc = delta / 3,
-      delta_frame = delta / 3,
-      delta_hist = delta / 3
+      eps_pc = 0.2 * eps,
+      eps_frame = 0.2 * eps,
+      eps_hist = 0.6 * eps,
+      delta_pc = 0.2 * delta,
+      delta_hist = 0.8 * delta
     )
   } else {
     list(
       eps_pc = NULL,
-      eps_frame = eps / 2,
-      eps_hist = eps / 2,
+      eps_frame = 0.2 * eps,
+      eps_hist = 0.8 * eps,
       delta_pc = NULL,
-      delta_frame = delta / 2,
-      delta_hist = delta / 2
+      delta_hist = delta
     )
   }
 }

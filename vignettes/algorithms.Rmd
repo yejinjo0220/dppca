@@ -37,10 +37,11 @@ learner above to select a dyadic scale level.
 
 ## Algorithm 3: Unbounded DP upper-quantile estimator {#alg-unbounded-quantile}
 
-This algorithm is used in the PMWM scree estimator to estimate lower and upper
-tail quantiles privately. It follows the unbounded private quantile idea of
-[Durfee (2023)](#ref-Durfee2023), using a geometric search grid and noisy
-comparisons against the empirical CDF.
+This one-sided algorithm is the building block for the score-frame and PMWM
+quantile estimates. Following [Durfee (2023)](#ref-Durfee2023), it searches a
+geometric grid using noisy comparisons against the empirical CDF. The fully
+unbounded mechanism invokes the one-sided search in both the positive and
+sign-flipped directions.
 
 ![Algorithm 3: Unbounded DP upper-quantile estimator](figures/alg3-Unbounded_DP_Quantile.png){width=95%}
 

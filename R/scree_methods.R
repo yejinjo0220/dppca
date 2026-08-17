@@ -572,193 +572,254 @@ dp_scree_huber <- function(X, k, eps, delta,
 }
 
 
-#' Estimate a pure-DP private upper quantile by log-binning
+#' Estimate a pure-DP upper quantile with a public lower bound
 #'
-#' Internal implementation of the upper-tail unbounded private quantile
-#' estimator used by the PMWM scree estimator. The implementation follows the
-#' pure-DP exponential-noise routine in the public PMWM implementation, which is
-#' based on the unbounded private quantile procedure of Durfee.
+#' Implements the one-sided unbounded quantile mechanism of Durfee (2023). For
+#' data bounded below by the public value `lower`, the routine searches the
+#' geometric grid `beta^i + lower - 1`, for `i = 1, ..., max_steps`, until a
+#' noisy strict-below count reaches a noisy target count `q * length(x)`.
 #'
-#' The routine searches over the geometric grid
-#' `beta^i + l - 1`. A one-sided exponential perturbation is added once to the
-#' target count `q * n`, and an independent one-sided exponential perturbation
-#' is added to each cumulative count queried during the scan. The resulting
-#' upper-quantile release is `(eps_1 + eps_2)`-DP.
+#' The noisy target and every noisy query independently use one-sided
+#' exponential noise with privacy parameter `epsilon / 2`. Because the count
+#' queries are monotone and have sensitivity one, one call is pure
+#' `epsilon`-DP under fixed-size replacement adjacency.
 #'
-#' @param data Numeric vector.
-#' @param l Finite lower anchor for the search grid.
-#' @param beta Log-binning base for the geometric grid. Must be greater than
-#'   `1`.
+#'
+#' @param x Nonempty numeric vector containing only finite values.
 #' @param q Quantile level in `(0, 1)`.
-#' @param eps_1 Positive `epsilon` privacy parameter for the noisy target count.
-#' @param eps_2 Positive `epsilon` privacy parameter for the noisy cumulative
-#'   count scan.
+#' @param epsilon Positive total privacy parameter for one quantile release.
+#' @param lower Finite public lower bound satisfying `x >= lower`. The default
+#'   is `0`.
+#' @param beta Geometric-grid base greater than `1`. The default is `1.01`.
+#' @param max_steps Positive integer limiting the number of grid queries. The
+#'   default is `5000L`.
 #'
-#' @return Numeric scalar giving a pure-DP private upper-tail quantile estimate.
+#' @return A numeric scalar giving the private quantile estimate. If no query
+#'   crosses the noisy target within `max_steps`, the function warns and returns
+#'   the final grid value.
 #' @noRd
-unbounded_quantile_upper <- function(
-    data,
-    l,
-    beta,
-    q,
-    eps_1,
-    eps_2
-) {
-  data <- as.numeric(data)
-  n <- length(data)
-
-  if (n < 1L) {
-    stop("`data` must have length >= 1.", call. = FALSE)
-  }
-  if (anyNA(data) || any(!is.finite(data))) {
-    stop("`data` must contain only finite values.", call. = FALSE)
-  }
-  if (!is.numeric(l) || length(l) != 1L || !is.finite(l)) {
-    stop("`l` must be a finite number.", call. = FALSE)
+unbounded_quantile_upper <- function(x, q, epsilon, lower = 0,
+                                     beta = 1.01, max_steps = 5000L) {
+  x <- as.numeric(x)
+  if (length(x) < 1L || anyNA(x) || any(!is.finite(x))) {
+    stop("Durfee quantile input must contain finite values.", call. = FALSE)
   }
   if (
-    !is.numeric(beta) || length(beta) != 1L ||
-    !is.finite(beta) || beta <= 1
+    !is.numeric(lower) || length(lower) != 1L || !is.finite(lower)
   ) {
-    stop("`beta` must be a number greater than 1.", call. = FALSE)
+    stop("`lower` must be a finite number.", call. = FALSE)
+  }
+  if (any(x < lower)) {
+    stop("Durfee's one-sided estimator requires a valid public lower bound.",
+         call. = FALSE)
   }
   if (
     !is.numeric(q) || length(q) != 1L ||
     !is.finite(q) || q <= 0 || q >= 1
   ) {
-    stop("`q` must be in (0, 1).", call. = FALSE)
+    stop("`q` must lie in (0, 1).", call. = FALSE)
   }
   if (
-    !is.numeric(eps_1) || length(eps_1) != 1L ||
-    !is.finite(eps_1) || eps_1 <= 0
+    !is.numeric(epsilon) || length(epsilon) != 1L ||
+    !is.finite(epsilon) || epsilon <= 0
   ) {
-    stop("`eps_1` must be a positive number.", call. = FALSE)
+    stop("Durfee quantile epsilon must be positive.", call. = FALSE)
   }
   if (
-    !is.numeric(eps_2) || length(eps_2) != 1L ||
-    !is.finite(eps_2) || eps_2 <= 0
+    !is.numeric(beta) || length(beta) != 1L ||
+    !is.finite(beta) || beta <= 1
   ) {
-    stop("`eps_2` must be a positive number.", call. = FALSE)
+    stop("`beta` must be greater than 1.", call. = FALSE)
   }
+  if (
+    !is.numeric(max_steps) || length(max_steps) != 1L ||
+    !is.finite(max_steps) || max_steps < 1 ||
+    max_steps > .Machine$integer.max || max_steps != floor(max_steps)
+  ) {
+    stop("`max_steps` must be a positive integer.", call. = FALSE)
+  }
+  max_steps <- as.integer(max_steps)
 
-  # Match the public PMWM implementation:
-  # i = floor(log_beta(max(x - l + 1, beta))).
-  z <- pmax(data - l + 1, beta)
-  idx <- floor(log(z, base = beta))
-  counts <- table(idx)
+  # Monotone AboveThreshold with sensitivity one. Exponential noise and
+  # epsilon_1 = epsilon_2 = epsilon / 2 give pure epsilon-DP under
+  # fixed-size replacement adjacency.
+  eps_threshold <- epsilon / 2
+  eps_query <- epsilon / 2
+  noisy_threshold <- q * length(x) + stats::rexp(1L, rate = eps_threshold)
+  sorted_x <- sort(x)
+  estimate <- lower
+  halted <- FALSE
 
-  get_count <- function(i) {
-    key <- as.character(i)
-
-    if (key %in% names(counts)) {
-      as.numeric(counts[[key]])
-    } else {
-      0
+  for (i in seq_len(max_steps)) {
+    estimate <- beta^i + lower - 1
+    if (!is.finite(estimate)) {
+      estimate <- .Machine$double.xmax
     }
-  }
-
-  # numpy.random.exponential(scale = 1 / eps) in the PMWM Python code
-  # corresponds to R's rexp(rate = eps).
-  t_noisy <- q * n + stats::rexp(1L, rate = eps_1)
-
-  cur <- 0
-  i <- 0
-
-  repeat {
-    cur <- cur + get_count(i)
-    i <- i + 1
-
-    noisy_count <- cur + stats::rexp(1L, rate = eps_2)
-
-    if (noisy_count > t_noisy) {
+    count_below <- findInterval(estimate, sorted_x, left.open = TRUE)
+    noisy_count <- count_below + stats::rexp(1L, rate = eps_query)
+    if (noisy_count >= noisy_threshold) {
+      halted <- TRUE
       break
     }
   }
-
-  val <- beta^i + l - 1
-
-  if (!is.finite(val)) {
-    .Machine$double.xmax
-  } else {
-    val
+  if (!halted) {
+    warning(
+      "Durfee quantile search reached `max_steps`; consider a smaller `beta` only with a larger step limit, or increase the step limit.",
+      call. = FALSE
+    )
   }
+
+  return(estimate)
 }
 
 
-#' Estimate a pure-DP private quantile by log-binning
+#' Estimate a fully unbounded pure-DP quantile
 #'
-#' Internal wrapper around `unbounded_quantile_upper()` for lower- and
-#' upper-tail quantiles on a finite target interval `[l, u]`. Lower-tail
-#' quantiles are computed by sign-flipping the data and estimating the
-#' corresponding upper quantile. The final estimate is truncated to `[l, u]`
-#' by post-processing.
+#' Implements the fully unbounded quantile mechanism in Algorithm 4 of Durfee
+#' (2023). The routine applies `unbounded_quantile_upper()` once in the positive
+#' direction at quantile `q` and once to the sign-flipped data at quantile
+#' `1 - q`. A public zero-anchored transformation maps Algorithm 4 search step
+#' `k` to step `k + 1` of the one-sided helper, so no public lower or upper data
+#' bound is required.
 #'
-#' @param data Numeric vector.
-#' @param l Finite lower truncation bound.
-#' @param u Finite upper truncation bound.
-#' @param beta Log-binning base for the geometric grid. Must be greater than
-#'   `1`.
+#' Each one-sided call receives `epsilon / 2` and internally divides that budget
+#' equally between its noisy target and query counts. Sequential composition of
+#' the two calls therefore gives pure `epsilon`-DP under fixed-size replacement
+#' adjacency.
+#'
+#' @param x Nonempty numeric vector containing only finite values.
 #' @param q Quantile level in `(0, 1)`.
-#' @param eps_1 Positive `epsilon` privacy parameter for the noisy target count.
-#' @param eps_2 Positive `epsilon` privacy parameter for the noisy cumulative
-#'   count scan.
+#' @param epsilon Positive total privacy parameter for the two-sided release.
+#' @param beta Geometric-grid base greater than `1`. The default is `1.01`.
+#' @param max_steps Positive integer limiting each one-sided search. The default
+#'   is `5000L`.
 #'
-#' @return Numeric scalar giving a pure-DP private quantile estimate.
+#' @return A numeric scalar giving the private quantile estimate. If either
+#'   one-sided search reaches `max_steps`, the function warns and does not select
+#'   the capped result from that side.
 #' @noRd
-unbounded_quantile <- function(
-    data,
-    l,
-    u,
-    beta,
-    q,
-    eps_1,
-    eps_2
-) {
-  data <- as.numeric(data)
-
-  if (
-    !is.numeric(l) || length(l) != 1L || !is.finite(l) ||
-    !is.numeric(u) || length(u) != 1L || !is.finite(u) ||
-    l > u
-  ) {
-    stop("Need finite `l <= u`.", call. = FALSE)
-  }
-  if (
-    !is.numeric(beta) || length(beta) != 1L ||
-    !is.finite(beta) || beta <= 1
-  ) {
-    stop("`beta` must be a number greater than 1.", call. = FALSE)
+unbounded_quantile <- function(x, q, epsilon,
+                               beta = 1.01, max_steps = 5000L) {
+  x <- as.numeric(x)
+  if (length(x) < 1L || anyNA(x) || any(!is.finite(x))) {
+    stop("Durfee quantile input must contain finite values.", call. = FALSE)
   }
   if (
     !is.numeric(q) || length(q) != 1L ||
     !is.finite(q) || q <= 0 || q >= 1
   ) {
-    stop("`q` must be in (0, 1).", call. = FALSE)
+    stop("`q` must lie in (0, 1).", call. = FALSE)
   }
-
-  if (q < 0.5) {
-    est <- -unbounded_quantile_upper(
-      data = -data,
-      l = -u,
-      beta = beta,
-      q = 1 - q,
-      eps_1 = eps_1,
-      eps_2 = eps_2
-    )
-
-    return(max(est, l))
+  if (
+    !is.numeric(epsilon) || length(epsilon) != 1L ||
+    !is.finite(epsilon) || epsilon <= 0
+  ) {
+    stop("Durfee quantile epsilon must be positive.", call. = FALSE)
   }
+  if (
+    !is.numeric(beta) || length(beta) != 1L ||
+    !is.finite(beta) || beta <= 1
+  ) {
+    stop("`beta` must be greater than 1.", call. = FALSE)
+  }
+  if (
+    !is.numeric(max_steps) || length(max_steps) != 1L ||
+    !is.finite(max_steps) || max_steps < 1 ||
+    max_steps > .Machine$integer.max || max_steps != floor(max_steps)
+  ) {
+    stop("`max_steps` must be a positive integer.", call. = FALSE)
+  }
+  max_steps <- as.integer(max_steps)
 
-  est <- unbounded_quantile_upper(
-    data = data,
-    l = l,
-    beta = beta,
-    q = q,
-    eps_1 = eps_1,
-    eps_2 = eps_2
+  # Map the zero-anchored Algorithm 4 query at step k to the one-sided
+  # helper's query at step k + 1 while satisfying its public lower bound.
+  positive_search_values <- pmin(
+    pmax(beta * x + beta - 1, 0),
+    .Machine$double.xmax
+  )
+  negative_search_values <- pmin(
+    pmax(-beta * x + beta - 1, 0),
+    .Machine$double.xmax
   )
 
-  min(est, u)
+  positive_hit_step_limit <- FALSE
+  positive_raw_estimate <- withCallingHandlers(
+    unbounded_quantile_upper(
+      x = positive_search_values,
+      q = q,
+      epsilon = epsilon / 2,
+      lower = 0,
+      beta = beta,
+      max_steps = max_steps
+    ),
+    warning = function(w) {
+      if (grepl(
+        "Durfee quantile search reached `max_steps`",
+        conditionMessage(w),
+        fixed = TRUE
+      )) {
+        positive_hit_step_limit <<- TRUE
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+
+  negative_hit_step_limit <- FALSE
+  negative_raw_estimate <- withCallingHandlers(
+    unbounded_quantile_upper(
+      x = negative_search_values,
+      q = 1 - q,
+      epsilon = epsilon / 2,
+      lower = 0,
+      beta = beta,
+      max_steps = max_steps
+    ),
+    warning = function(w) {
+      if (grepl(
+        "Durfee quantile search reached `max_steps`",
+        conditionMessage(w),
+        fixed = TRUE
+      )) {
+        negative_hit_step_limit <<- TRUE
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+
+  positive_step <- max(
+    0,
+    round(log1p(positive_raw_estimate) / log(beta)) - 1
+  )
+  negative_step <- max(
+    0,
+    round(log1p(negative_raw_estimate) / log(beta)) - 1
+  )
+
+  positive_estimate <- beta^positive_step - 1
+  negative_estimate <- beta^negative_step - 1
+  if (!is.finite(positive_estimate)) {
+    positive_estimate <- .Machine$double.xmax
+  }
+  if (!is.finite(negative_estimate)) {
+    negative_estimate <- .Machine$double.xmax
+  }
+
+  estimate <- if (!positive_hit_step_limit && positive_step > 0) {
+    positive_estimate
+  } else if (!negative_hit_step_limit && negative_step > 0) {
+    -negative_estimate
+  } else {
+    0
+  }
+
+  if (positive_hit_step_limit || negative_hit_step_limit) {
+    warning(
+      "Durfee signed quantile search reached `max_steps`; consider a smaller `beta` only with a larger step limit, or increase the step limit.",
+      call. = FALSE
+    )
+  }
+
+  estimate
 }
 
 
@@ -796,12 +857,14 @@ unbounded_quantile <- function(
 #'   `X` by their sample standard deviations after optional centering.
 #' @param beta Log-binning base used by the private quantile estimator. Must be
 #'   greater than `1`. The default is `1.001`.
-#' @param a Finite lower support bound supplied to the private quantile routine.
-#' @param b Finite upper support bound supplied to the private quantile routine.
+#' @param a Finite public lower post-processing bound for the private
+#'   winsorization cutoffs.
+#' @param b Finite public upper post-processing bound for the private
+#'   winsorization cutoffs.
 #' @param trim_const Positive constant controlling the practical clipping
 #'   proportion `max(trim_const / n_q, eta)`.
 #' @param eta Lower bound in the practical clipping proportion. Must lie in
-#'   `(0, 0.5)`.
+#'   `[0, 0.5)`.
 #' @param mono A logical value indicating whether to enforce a nonnegative and
 #'   nonincreasing scree sequence by post-processing.
 #' @return A list with components `scree` and `pve`.
@@ -834,8 +897,8 @@ dp_scree_pmwm <- function(X, k, eps, delta,
     stop("trim_const must be a single positive number.")
   }
   if (!is.numeric(eta) || length(eta) != 1 ||
-      !is.finite(eta) || eta <= 0 || eta >= 0.5) {
-    stop("eta must be in (0, 0.5).")
+      !is.finite(eta) || eta < 0 || eta >= 0.5) {
+    stop("eta must be in [0, 0.5).")
   }
 
   if (isTRUE(g_dppca)) {
@@ -853,17 +916,13 @@ dp_scree_pmwm <- function(X, k, eps, delta,
   eps_ell <- eps_scree / k
   delta_ell <- delta_scree / k
 
-  # Each of the two private quantiles receives eps_ell / 4 in total.
-  # Within one quantile, that budget is split equally between the noisy target
-  # count and the noisy cumulative-count scan. Because these quantile releases
-  # are pure DP, they do not consume delta. The Gaussian winsorized-mean release
-  # receives the remaining eps_ell / 2 and the full delta_ell.
+  # Each fully unbounded private quantile receives eps_ell / 4. The helper
+  # manages its internal split across the two one-sided searches. Because the
+  # quantile releases are pure DP, they do not consume delta. The Gaussian
+  # winsorized-mean release receives the remaining eps_ell / 2 and delta_ell.
   eps_Q <- eps_ell / 4
   eps_M <- eps_ell / 2
   delta_M <- delta_ell
-
-  eps_q1 <- eps_Q / 2
-  eps_q2 <- eps_Q / 2
 
   X_proc <- prep_matrix_for_pca(
     X = X,
@@ -910,24 +969,21 @@ dp_scree_pmwm <- function(X, k, eps, delta,
     w <- (y - ybar)^2
 
     L <- unbounded_quantile(
-      data = w[idx_q],
-      l = a,
-      u = b,
-      beta = beta,
+      x = w[idx_q],
       q = trim_param,
-      eps_1 = eps_q1,
-      eps_2 = eps_q2
+      epsilon = eps_Q,
+      beta = beta
     )
 
     U <- unbounded_quantile(
-      data = w[idx_q],
-      l = a,
-      u = b,
-      beta = beta,
+      x = w[idx_q],
       q = 1 - trim_param,
-      eps_1 = eps_q1,
-      eps_2 = eps_q2
+      epsilon = eps_Q,
+      beta = beta
     )
+
+    L <- min(max(L, a), b)
+    U <- min(max(U, a), b)
 
     if (!is.finite(L) || !is.finite(U) || U < L) {
       L <- a

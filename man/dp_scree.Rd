@@ -115,7 +115,9 @@ This is the simplest option but depends directly on the clipping threshold.
 \item \code{"pmwm"} uses the private modified winsorized mean approach of
 \insertCite{ramsay2025pmw;textual}{dppca}, adapted from the accompanying
 Python implementation into R. The lower and upper tail cutoffs are
-estimated with the pure-DP exponential-noise unbounded quantile routine.
+estimated with the pure-DP fully unbounded quantile mechanism of
+\insertCite{durfee2023unbounded;textual}{dppca} and truncated to the public
+bounds supplied through \code{\link[=pmwm_control]{pmwm_control()}}.
 The squared scores \eqn{w_{i\ell}} are then winsorized to those cutoffs,
 and the final winsorized mean is released with a Gaussian mechanism
 calibrated to the supplied \verb{(eps, delta)} budget.
@@ -177,6 +179,8 @@ out$clipped
 \insertRef{dwork2014algorithmic}{dppca}
 
 \insertRef{ramsay2025pmw}{dppca}
+
+\insertRef{durfee2023unbounded}{dppca}
 
 \insertRef{yu2024gaussian}{dppca}
 
