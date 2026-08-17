@@ -4,5 +4,7 @@
 #' differentially private scree estimates and score-based visualizations.
 #'
 #' @keywords internal
+#' @useDynLib dppca, .registration = TRUE
+#' @importFrom Rcpp evalCpp
 #' @importFrom Rdpack reprompt
 "_PACKAGE"

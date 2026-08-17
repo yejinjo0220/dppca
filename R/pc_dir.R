@@ -31,8 +31,8 @@
 #'   private principal component directions. Required when `g_dppca = TRUE`.
 #' @param delta Number in `(0, 1)` defining the `delta` privacy parameter for
 #'   private principal component directions. Required when `g_dppca = TRUE`.
-#' @param cpp.option A logical value reserved for a future C++ implementation of
-#'   the spherical Kendall matrix. Currently only `FALSE` is supported.
+#' @param cpp.option A logical value indicating whether to compute the spherical
+#'   Kendall matrix with an Rcpp implementation. The default is `FALSE`.
 #'
 #' @return A numeric matrix with `ncol(X)` rows and `k` columns. Rows correspond
 #'   to the original variables and columns correspond to principal components
@@ -308,6 +308,7 @@ normalize <- function(x) {
   x / nx
 }
 
+
 #' Convert a packed symmetric vector into a symmetric matrix
 #'
 #' @param v A numeric vector of length `p * (p + 1) / 2`.
@@ -342,7 +343,7 @@ vec2mat <- function(v, p) {
 #' Compute the spherical Kendall matrix
 #'
 #' @param X A numeric matrix.
-#' @param cpp.option A logical value. Currently only `FALSE` is supported.
+#' @param cpp.option Whether to use the Rcpp implementation.
 #'
 #' @return A symmetric matrix.
 #' @noRd
@@ -364,11 +365,7 @@ tau_sph <- function(X, cpp.option = FALSE) {
   }
 
   if (cpp.option) {
-    stop(
-      "`cpp.option = TRUE` is not yet supported. ",
-      "Please use `cpp.option = FALSE`.",
-      call. = FALSE
-    )
+    return(tau_sph_cpp(X))
   }
 
   hK <- matrix(0, d, d)
@@ -388,7 +385,7 @@ tau_sph <- function(X, cpp.option = FALSE) {
 #'
 #' @param X A numeric matrix.
 #' @param sig Noise standard deviation.
-#' @param cpp.option A logical value. Currently only `FALSE` is supported.
+#' @param cpp.option Whether to use the Rcpp implementation.
 #'
 #' @return A noisy symmetric matrix.
 #' @noRd

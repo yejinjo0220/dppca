@@ -40,8 +40,8 @@ private principal component directions. Required when \code{g_dppca = TRUE}.}
 \item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter for
 private principal component directions. Required when \code{g_dppca = TRUE}.}
 
-\item{cpp.option}{A logical value reserved for a future C++ implementation of
-the spherical Kendall matrix. Currently only \code{FALSE} is supported.}
+\item{cpp.option}{A logical value indicating whether to compute the spherical
+Kendall matrix with an Rcpp implementation. The default is \code{FALSE}.}
 }
 \value{
 A numeric matrix with \code{ncol(X)} rows and \code{k} columns. Rows correspond

@@ -4,7 +4,7 @@
 \alias{pmwm_control}
 \title{Control options for private modified winsorized scree estimation}
 \usage{
-pmwm_control(a, b, trim_const, eta, beta = 1.001, split_mode = TRUE)
+pmwm_control(a, b, trim_const, eta, beta = 1.01, split_mode = TRUE)
 }
 \arguments{
 \item{a, b}{Finite public lower and upper post-processing bounds for the
