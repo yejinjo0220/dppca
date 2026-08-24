@@ -16,8 +16,3 @@
 ^\.claude$
 ^\.git$
 ^\.github$
-^\.DS_Store$
-^src/.*\.(o|so|dll|dylib|a|d)$
-^src/.*\.dSYM$
-^src/symbols\.rds$
-^log$
