@@ -258,7 +258,7 @@ dp_hist_m2 <- function(u, eps_m2, k_min_m2, k_max_m2) {
     counts[[as.character(kk)]] <- counts[[as.character(kk)]] + 1L
   }
 
-  noisy <- as.numeric(counts) + VGAM::rlaplace(length(counts), scale = 1 / eps_m2)
+  noisy <- as.numeric(counts) + VGAM::rlaplace(length(counts), scale = 2 / eps_m2)
   noisy <- pmax(noisy, 0)
 
   2^as.integer(names(counts)[which.max(noisy)])
@@ -284,6 +284,7 @@ dp_hist_m2 <- function(u, eps_m2, k_min_m2, k_max_m2) {
 dp_m2 <- function(w, eps_m2, k_min_m2, k_max_m2, M = NULL) {
   w <- as.numeric(w)
   n <- length(w)
+  w <- w[sample.int(n)]  # permute the sample
 
   if (n < 4) stop("Need length(w) >= 4.")
   if (!is.finite(eps_m2) || eps_m2 <= 0) stop("eps_m2 must be > 0.")
@@ -348,6 +349,37 @@ tau_from_m2 <- function(m2_hat, eps_tau, n_tau) {
   sqrt(m2_hat) * sqrt((eps_tau * n_tau) / denom)
 }
 
+
+gdp_delta <- function(mu, eps) {
+  z1 <- -eps / mu + mu / 2
+  z2 <- -eps / mu - mu / 2
+
+  p1 <- stats::pnorm(z1)
+  p2 <- exp(eps + stats::pnorm(z2, log.p = TRUE))
+
+  max(p1 - p2, 0)
+}
+
+mu_from_eps_delta <- function(eps, delta, tol = 1e-12) {
+  if (!is.finite(eps) || eps <= 0) {
+    stop("eps must be > 0.")
+  }
+  if (!is.finite(delta) || delta <= 0 || delta >= 1) {
+    stop("delta must be in (0, 1).")
+  }
+
+  log_mu <- stats::uniroot(
+    function(log_mu) {
+      gdp_delta(exp(log_mu), eps) - delta
+    },
+    interval = c(log(1e-12), log(1e3)),
+    tol = tol
+  )$root
+
+  exp(log_mu)
+}
+
+
 #' Estimate a private scalar mean by Huber noisy gradient descent
 #'
 #' Internal implementation of a scalar Huber-type private mean estimator. At
@@ -369,6 +401,7 @@ tau_from_m2 <- function(m2_hat, eps_tau, n_tau) {
 dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
   w <- as.numeric(w)
   n <- length(w)
+  w <- w[sample.int(n)]  # permute the sample
 
   if (n < 2) stop("Need length(w) >= 2.")
   if (!is.finite(eps_gd) || eps_gd <= 0) stop("eps_gd must be > 0.")
@@ -382,8 +415,11 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
   T <- as.integer(T)
   mu <- as.numeric(mu0)
 
-  eps_step <- eps_gd / T
-  del_step <- delta_gd / T
+  # privacy budget allocation based on GDP <-> (eps, delta)-DP transformation
+  gdp_mu <- mu_from_eps_delta(eps_gd, delta_gd)
+  # eps_step <- eps_gd / iter_tot
+  # del_step <- delta_gd / iter_tot
+  gdp_mu_step <- gdp_mu / sqrt(T)
 
   for (t in 0:(T - 1L)) {
     r <- w - mu
@@ -391,7 +427,8 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
     g <- mean(psi)
 
     Delta_step <- (2 * eta0 * tau) / n
-    sd_noise <- Delta_step * sqrt(2 * log(1.25 / del_step)) / eps_step
+    # sd_noise <- Delta_step * sqrt(2 * log(1.25 / del_step)) / eps_step
+    sd_noise <- Delta_step  / gdp_mu_step
 
     mu <- mu + eta0 * g + stats::rnorm(1, mean = 0, sd = sd_noise)
   }
@@ -948,8 +985,14 @@ dp_scree_pmwm <- function(X, k, eps, delta,
     if (m < 1 || (n - m) < 1) {
       stop("split_mode = TRUE requires at least 2 observations.")
     }
-    idx_q <- seq_len(m)
-    idx_m <- seq.int(m + 1, n)
+    # Previous version
+    # idx_q <- seq_len(m)
+    # idx_m <- seq.int(m + 1, n)
+
+    # Sample with random ordering
+    idx <- sample.int(n)
+    idx_q <- idx[seq_len(m)]
+    idx_m <- idx[-seq_len(m)]
   } else {
     idx_q <- seq_len(n)
     idx_m <- seq_len(n)
@@ -968,14 +1011,14 @@ dp_scree_pmwm <- function(X, k, eps, delta,
     ybar <- mean(y)
     w <- (y - ybar)^2
 
-    L <- unbounded_quantile(
+    L <- unbounded_quantile_upper(
       x = w[idx_q],
       q = trim_param,
       epsilon = eps_Q,
       beta = beta
     )
 
-    U <- unbounded_quantile(
+    U <- unbounded_quantile_upper(
       x = w[idx_q],
       q = 1 - trim_param,
       epsilon = eps_Q,
