@@ -8,17 +8,19 @@ pmwm_control(a, b, trim_const, eta, beta = 1.01, split_mode = TRUE)
 }
 \arguments{
 \item{a, b}{Finite public lower and upper post-processing bounds for the
-private winsorization cutoffs. These values have no defaults because they
-should be chosen on the scale of squared principal component scores.}
+private winsorization cutoffs, with \code{a < b}. These values have no defaults
+because they should be chosen on the scale of squared principal component
+scores.}
 
 \item{trim_const}{Positive number controlling the baseline clipping level in
 the practical clipping proportion. This value has no default.}
 
 \item{eta}{Nonnegative number controlling the expected contamination level in
-the practical clipping proportion. This value has no default.}
+the practical clipping proportion. The PMWM estimator requires a value in
+\verb{[0, 0.5)}. This value has no default.}
 
 \item{beta}{Positive number greater than \code{1} defining the log-binning base
-used by the private quantile routine. The default is \code{1.001}.}
+used by the private quantile routine. The default is \code{1.01}.}
 
 \item{split_mode}{A logical value indicating whether to split the sample into
 quantile-estimation and mean-estimation subsets. The default is \code{TRUE}.}

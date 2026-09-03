@@ -16,3 +16,4 @@ inst/doc
 /src/*.d
 /src/*.dSYM/
 /src/symbols.rds
+/log/*

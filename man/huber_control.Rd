@@ -15,14 +15,14 @@ huber_control(
 )
 }
 \arguments{
-\item{k_min_m2, k_max_m2}{Integers defining the lower and upper dyadic bin
-indices used in the private second-moment scale step. The histogram searches
-over scale levels \eqn{2^k} for \eqn{k_{\min} \le k \le k_{\max}}. These
-values have no defaults because they should be chosen according to the scale
-of the data.}
+\item{k_min_m2, k_max_m2}{Finite integers defining the lower and upper dyadic
+bin indices used in the private second-moment scale step, with
+\code{k_min_m2 < k_max_m2}. The histogram searches over scale levels \eqn{2^k}
+for \eqn{k_{\min} \le k \le k_{\max}}. These values have no defaults because
+they should be chosen according to the scale of the data.}
 
 \item{m2_frac}{Number in \verb{(0, 1)} defining the fraction of the Huber scree
-privacy parameters allocated to the private second-moment scale step. This
+\code{epsilon} parameter allocated to the pure-DP second-moment scale step. This
 value has no default.}
 
 \item{mu0}{Numeric initial value for Huber noisy gradient descent. The default
@@ -65,14 +65,15 @@ candidate scale levels \eqn{2^k} satisfying
 \eqn{k_{\min} \le k \le k_{\max}}. Because this range depends on the scale of
 the squared scores, these arguments are intentionally not given defaults.
 
-The argument \code{m2_frac} determines how the Huber scree privacy parameters are
-split between the private scale-proxy step and the noisy gradient descent
-step. If \eqn{(\epsilon_{\mathrm{scree}}, \delta_{\mathrm{scree}})} denotes
-the privacy parameters available for Huber scree estimation, then
-\eqn{m2_frac \cdot (\epsilon_{\mathrm{scree}},
-\delta_{\mathrm{scree}})} is used to privately estimate \eqn{m_2}, while
-\eqn{(1 - m2_frac) \cdot (\epsilon_{\mathrm{scree}},
-\delta_{\mathrm{scree}})} is used for Huber noisy gradient descent.
+The argument \code{m2_frac} determines how the Huber scree \code{epsilon} parameter is
+split between the private scale-proxy step and noisy gradient descent. If
+\eqn{(\epsilon_{\mathrm{scree}}, \delta_{\mathrm{scree}})} denotes the privacy
+parameters available for Huber scree estimation, then
+\eqn{m2_frac \cdot \epsilon_{\mathrm{scree}}} is used by the pure-DP scale
+step. Noisy gradient descent uses
+\eqn{(1 - m2_frac) \cdot \epsilon_{\mathrm{scree}}} and
+\eqn{(1 - m2_frac) \cdot \delta_{\mathrm{scree}}}. The scale step consumes no
+\code{delta}; the remaining \code{m2_frac} share of \code{delta} is not used.
 
 The remaining parameters have default values. The default \code{mu0 = 0} is the
 initial value for noisy gradient descent, and the default \code{eta0 = 1} is the

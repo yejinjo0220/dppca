@@ -67,21 +67,21 @@ dp_quantile_ss <- function(x, q, epsilon, delta) {
 #' Construct a pure-DP plotting frame for two-dimensional scores
 #'
 #' The frame uses coordinate-wise pure-DP median estimates from
-#' `unbounded_quantile()` as its center. For each coordinate separately,
-#' `unbounded_quantile_upper()` estimates the 0.995 quantile of absolute
-#' deviations from the corresponding private center. Each center and radius
-#' mechanism receives `eps_frame / 4`, so the four mechanisms compose to a pure
+#' `unbounded_quantile()` as its center. `unbounded_quantile_upper()` then
+#' estimates the 0.99 quantile of the Euclidean distances from that private
+#' center. Each of the two center mechanisms and the radial-quantile mechanism
+#' receives `eps_frame / 3`, so the three mechanisms compose to a pure
 #' `eps_frame`-DP frame under fixed-size replacement adjacency.
 #'
-#' Each private radius is multiplied by `1 + inflate`. Separate horizontal and
-#' vertical radii produce a rectangular frame centered at the two private
+#' The common private radius is multiplied by `1 + inflate` and applied to both
+#' coordinates. This produces an axis-aligned square centered at the two private
 #' median estimates.
 #'
 #' @param X Numeric matrix with exactly two columns and at least two rows. All
 #'   entries must be finite.
-#' @param eps_frame Positive total `epsilon` privacy parameter for the four
+#' @param eps_frame Positive total `epsilon` privacy parameter for the three
 #'   private mechanisms used to construct the frame.
-#' @param inflate Nonnegative inflation factor. Each private radius is
+#' @param inflate Nonnegative inflation factor. The common private radius is
 #'   multiplied by `1 + inflate`.
 #'
 #' @return A list with components `xlim` and `ylim`, each a length-two numeric
@@ -117,58 +117,87 @@ dp_frame <- function(
     stop("`inflate` must be a nonnegative number.", call. = FALSE)
   }
 
-  eps_each <- eps_frame / 4
+  eps_center_x <- eps_frame / 3
+  eps_center_y <- eps_frame / 3
+  eps_radius <- eps_frame / 3
 
   center_x <- unbounded_quantile(
-    x = X[, 1], q = 0.5, epsilon = eps_each
+    x = X[, 1], q = 0.5, epsilon = eps_center_x
   )
   center_y <- unbounded_quantile(
-    x = X[, 2], q = 0.5, epsilon = eps_each
+    x = X[, 2], q = 0.5, epsilon = eps_center_y
   )
 
-  q_radius <- 0.995
+  q_radius <- 0.99
 
-  r_x_values <- abs( X[, 1] - center_x )
-  r_x_max <- unbounded_quantile_upper(
-    x = r_x_values, q = q_radius, epsilon = eps_each
+  radius_values <- sqrt(
+    (X[, 1] - center_x)^2 + (X[, 2] - center_y)^2
   )
 
-  r_y_values <- abs( X[, 2] - center_y )
-  r_y_max <- unbounded_quantile_upper(
-    x = r_y_values, q = q_radius, epsilon = eps_each
+  radius <- unbounded_quantile_upper(
+    x = radius_values,
+    q = q_radius,
+    epsilon = eps_radius
   )
 
-  if (!is.finite(r_x_max) || r_x_max <= 0) {
+  if (!is.finite(radius) || radius <= 0) {
     stop(
-      "The private frame radius for x-axis is not positive. ",
-      "Try a larger privacy budget.",
-      call. = FALSE
-    )
-  }
-  if (!is.finite(r_y_max) || r_y_max <= 0) {
-    stop(
-      "The private frame radius for y-axis is not positive. ",
+      "The private frame radius is not positive. ",
       "Try a larger privacy budget.",
       call. = FALSE
     )
   }
 
-  r_x_max <- (1 + inflate) * r_x_max
-  r_y_max <- (1 + inflate) * r_y_max
+  inflated_radius <- (1 + inflate) * radius
 
   list(
-    xlim = c(center_x - r_x_max, center_x + r_x_max),
-    ylim = c(center_y - r_y_max, center_y + r_y_max)
+    xlim = c(center_x - inflated_radius, center_x + inflated_radius),
+    ylim = c(center_y - inflated_radius, center_y + inflated_radius)
   )
+
+  # r_x_values <- abs( X[, 1] - center_x )
+  # r_x_max <- unbounded_quantile_upper(
+  #   x = r_x_values, q = q_radius, epsilon = eps_radius_x, beta = 1.05
+  # )
+  #
+  # r_y_values <- abs( X[, 2] - center_y )
+  # r_y_max <- unbounded_quantile_upper(
+  #   x = r_y_values, q = q_radius, epsilon = eps_radius_y, beta = 1.05
+  # )
+  #
+  # if (!is.finite(r_x_max) || r_x_max <= 0) {
+  #   stop(
+  #     "The private frame radius for x-axis is not positive. ",
+  #     "Try a larger privacy budget.",
+  #     call. = FALSE
+  #   )
+  # }
+  # if (!is.finite(r_y_max) || r_y_max <= 0) {
+  #   stop(
+  #     "The private frame radius for y-axis is not positive. ",
+  #     "Try a larger privacy budget.",
+  #     call. = FALSE
+  #   )
+  # }
+  #
+  # r_x_max <- (1 + inflate) * r_x_max
+  # r_y_max <- (1 + inflate) * r_y_max
+  #
+  # list(
+  #   xlim = c(center_x - r_x_max, center_x + r_x_max),
+  #   ylim = c(center_y - r_y_max, center_y + r_y_max)
+  # )
 }
 
 #' Add a centered title to a ggplot object
 #'
-#' @param plot A `ggplot` object.
-#' @param title_text Plot title.
+#' @param plot A `ggplot` object or `NULL`.
+#' @param title_text Optional plot title. If `NULL`, `plot` is returned
+#'   unchanged.
 #' @param title_size Positive plot-title font size.
 #'
-#' @return A `ggplot` object.
+#' @return The titled `ggplot` object, or the original `plot` when either
+#'   `plot` or `title_text` is `NULL`.
 #'
 #' @noRd
 add_title_dp <- function(plot, title_text, title_size = 14) {
@@ -333,7 +362,8 @@ make_sample_plot_dp <- function(
 
 #' Plot a pooled group-wise histogram panel
 #'
-#' @param df Histogram data frame containing a `group` column.
+#' @param df Histogram data frame with bin coordinates and probabilities. An
+#'   optional `group` column enables group-specific fills.
 #' @param xlim,ylim Plotting limits.
 #' @param col_map Named color vector.
 #' @param title Optional plot title.
@@ -711,6 +741,21 @@ NULL
 
 # Internal helpers ------------------------------------------------------------
 
+#' Split privacy parameters across score-estimation steps
+#'
+#' When private principal component directions are requested, `eps` is split
+#' 0.2/0.2/0.6 across direction, frame, and histogram estimation, while `delta`
+#' is split 0.2/0.8 across direction and histogram estimation. Otherwise,
+#' `eps` is split 0.35/0.65 across frame and histogram estimation and all of
+#' `delta` is assigned to the histogram. Frame construction is pure DP.
+#'
+#' @param eps Positive total `epsilon` privacy parameter.
+#' @param delta Number in `(0, 1)` defining the total `delta` privacy parameter.
+#' @param g_dppca Whether private principal component directions are requested.
+#'
+#' @return A list with components `eps_pc`, `eps_frame`, `eps_hist`, `delta_pc`,
+#'   and `delta_hist`. The PC components are `NULL` when `g_dppca = FALSE`.
+#' @noRd
 split_score_privacy_budget <- function(eps, delta, g_dppca) {
   if (isTRUE(g_dppca)) {
     list(
@@ -723,14 +768,21 @@ split_score_privacy_budget <- function(eps, delta, g_dppca) {
   } else {
     list(
       eps_pc = NULL,
-      eps_frame = 0.2 * eps,
-      eps_hist = 0.8 * eps,
+      eps_frame = 0.35 * eps,
+      eps_hist = 0.65 * eps,
       delta_pc = NULL,
       delta_hist = delta
     )
   }
 }
 
+#' Validate and coerce a score input matrix
+#'
+#' @param X Matrix-like object with observations in rows and variables in
+#'   columns.
+#'
+#' @return A finite numeric matrix with at least two rows and two columns.
+#' @noRd
 validate_score_matrix <- function(X) {
   X <- as.matrix(X)
 
@@ -750,6 +802,18 @@ validate_score_matrix <- function(X) {
   X
 }
 
+#' Validate common score-estimation arguments
+#'
+#' @param X Numeric matrix used to check the available component indices.
+#' @param eps Positive `epsilon` privacy parameter.
+#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter.
+#' @param bins Positive integer vector of length 2.
+#' @param center,standardize,g_dppca,cpp.option Logical scalar options.
+#' @param axes Positive integer vector of length 2 whose largest value does not
+#'   exceed `ncol(X)`.
+#'
+#' @return Invisibly returns `TRUE`.
+#' @noRd
 validate_score_common <- function(
     X,
     eps,
@@ -792,6 +856,13 @@ validate_score_common <- function(
   invisible(TRUE)
 }
 
+#' Validate a logical scalar
+#'
+#' @param x Object to validate.
+#' @param arg Argument name used in an error message.
+#'
+#' @return Invisibly returns `TRUE`.
+#' @noRd
 validate_logical_value <- function(x, arg) {
   if (!is.logical(x) || length(x) != 1L || is.na(x)) {
     stop("`", arg, "` must be `TRUE` or `FALSE`.", call. = FALSE)
@@ -800,6 +871,13 @@ validate_logical_value <- function(x, arg) {
   invisible(TRUE)
 }
 
+#' Validate a positive integer scalar
+#'
+#' @param x Object to validate.
+#' @param arg Argument name used in an error message.
+#'
+#' @return Invisibly returns `TRUE`.
+#' @noRd
 validate_positive_integer <- function(x, arg) {
   if (
     !is.numeric(x) || length(x) != 1L || !is.finite(x) ||
@@ -811,6 +889,12 @@ validate_positive_integer <- function(x, arg) {
   invisible(TRUE)
 }
 
+#' Validate two-dimensional histogram bin counts
+#'
+#' @param bins Object to validate as a positive integer vector of length 2.
+#'
+#' @return Invisibly returns `TRUE`.
+#' @noRd
 validate_bins <- function(bins) {
   if (
     !is.numeric(bins) || length(bins) != 2L || anyNA(bins) ||
@@ -822,6 +906,19 @@ validate_bins <- function(bins) {
   invisible(TRUE)
 }
 
+#' Compute selected principal component score coordinates
+#'
+#' @param X Numeric data matrix with observations in rows.
+#' @param axes Positive integer vector of length 2 selecting score axes.
+#' @param center,standardize Logical preprocessing options.
+#' @param g_dppca Whether to use private principal component directions.
+#' @param cpp.option Whether to use the Rcpp spherical-Kendall implementation.
+#' @param eps_pc,delta_pc Privacy parameters for private direction estimation,
+#'   or `NULL` when `g_dppca = FALSE`.
+#'
+#' @return A list containing the selected `score` matrix and `directions`
+#'   matrix.
+#' @noRd
 compute_score_coordinates <- function(
     X,
     axes,
@@ -858,6 +955,15 @@ compute_score_coordinates <- function(
   list(score = X_score, directions = V)
 }
 
+#' Construct a regular two-dimensional histogram grid
+#'
+#' @param xlim,ylim Length-two numeric vectors giving grid limits.
+#' @param m_x,m_y Positive integers giving the numbers of horizontal and
+#'   vertical bins.
+#'
+#' @return A list containing `x_breaks`, `y_breaks`, the bin-boundary data frame
+#'   `base_coord`, bin counts `m_x` and `m_y`, and total bin count `m`.
+#' @noRd
 score_histogram_grid <- function(xlim, ylim, m_x, m_y) {
   x_breaks <- seq(xlim[1], xlim[2], length.out = m_x + 1L)
   y_breaks <- seq(ylim[1], ylim[2], length.out = m_y + 1L)
@@ -896,6 +1002,16 @@ score_histogram_grid <- function(xlim, ylim, m_x, m_y) {
 #' together, the privacy cost of the joint release must be handled by
 #' composition.
 #'
+#' @param X_score Numeric matrix with two score columns.
+#' @param xlim,ylim Length-two numeric vectors defining the histogram frame.
+#' @param bins Positive integer vector of length 2 giving bin counts.
+#' @param eps_hist Positive histogram `epsilon` privacy parameter.
+#' @param delta_hist Number in `(0, 1)` defining the histogram `delta` privacy
+#'   parameter.
+#' @param method Character vector containing `"add"` and/or `"sparse"`.
+#'
+#' @return A named list containing the `nonprivate` histogram data frame and the
+#'   requested `add` and/or `sparse` histogram data frames.
 #' @noRd
 score_histograms <- function(
     X_score,
@@ -948,6 +1064,17 @@ score_histograms <- function(
 #' to each requested private histogram method. They are not divided across
 #' `"add"` and `"sparse"`.
 #'
+#' @param X_score Numeric matrix with two score columns.
+#' @param grid Histogram-grid list produced by `score_histogram_grid()`.
+#' @param eps_hist_method Positive `epsilon` privacy parameter supplied to each
+#'   requested histogram method.
+#' @param delta_hist_method Number in `(0, 1)` defining the `delta` privacy
+#'   parameter supplied to each requested histogram method.
+#' @param method Character vector containing `"add"` and/or `"sparse"`.
+#' @param group_name Optional group label used to prefix an error message.
+#'
+#' @return A named list containing the `nonprivate` histogram data frame and the
+#'   requested `add` and/or `sparse` histogram data frames.
 #' @noRd
 score_histograms_from_grid <- function(
     X_score,

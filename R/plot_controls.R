@@ -268,8 +268,10 @@ scree_plot_control <- function(
 #'   The default is `"Sparse DP Histogram"`.
 #' @param xlab Optional x-axis label. If `NULL`, the selected PC name is used.
 #' @param ylab Optional y-axis label. If `NULL`, the selected PC name is used.
-#' @param group_colors Optional named character vector of colors for grouped
-#'   score plots. If `NULL`, group colors are determined automatically.
+#' @param group_colors Optional nonempty character vector of colors for grouped
+#'   score plots. A named vector maps names to group labels; missing groups are
+#'   assigned additional colors automatically. An unnamed vector is recycled in
+#'   group order. If `NULL`, group colors are determined automatically.
 #' @param group_ncol Positive integer retained for backward compatibility.
 #'   Grouped score plots are currently overlaid by group color rather than
 #'   arranged as separate group-specific panels, so this option is not used by

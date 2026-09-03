@@ -34,12 +34,15 @@
 #'   component directions. The default is `FALSE`. See [dp_pc_dir()] for details.
 #' @param cpp.option A logical value passed to [dp_pc_dir()] when
 #'   `g_dppca = TRUE`. The default is `FALSE`.
-#' @param axes Integer vector of length 2 specifying the principal components
-#'   used to construct the score coordinates. The default is `c(1, 2)`.
+#' @param axes Positive integer vector of length 2 specifying the principal
+#'   components used as the horizontal and vertical score axes, in that order.
+#'   Each value must not exceed `ncol(X)`. Repeated or decreasing indices are
+#'   accepted. The default is `c(1, 2)`.
 #'
 #' @details
 #' Let \eqn{v_a} and \eqn{v_b} be the principal component directions selected
-#' by `axes = c(a, b)` for some \eqn{1 \le a < b \le ncol(X)}.
+#' by `axes = c(a, b)` for some
+#' \eqn{1 \le a, b \le ncol(X)}.
 #' After preprocessing, the score point for \eqn{i}th observation
 #' is \eqn{s_i = (x_i^\top v_a, x_i^\top v_b)}. A non-private score
 #' plot would display the points \eqn{s_1, \ldots, s_n} directly. This function
@@ -49,17 +52,18 @@
 #' The plotting frame is constructed privately from the score coordinates using
 #' the pure-DP unbounded quantile mechanisms of
 #' \insertCite{durfee2023unbounded;textual}{dppca}. Its center is estimated by
-#' coordinate-wise private medians. For each coordinate, the private 0.995
-#' quantile of the absolute deviations from its private median is then estimated
-#' and inflated by a fixed factor. The two independently estimated radii form a
-#' rectangular plotting frame.
+#' coordinate-wise private medians. A single private 0.99 quantile of the
+#' Euclidean distances from this private center is then estimated and inflated
+#' by 20 percent. The resulting common radius defines an axis-aligned square
+#' plotting frame.
 #'
 #' The private histogram is computed on the rectangular grid defined by the
 #' private frame and the bin counts in `bins`. Under
 #' row-level adjacency, changing one observation can increase one bin count by
 #' one and decrease another by one, giving \eqn{\ell_1} sensitivity at most
 #' \eqn{2} and \eqn{\ell_2} sensitivity at most \eqn{\sqrt{2}} for the count
-#' vector.
+#' vector. Scores outside the private frame are assigned to the nearest boundary
+#' bin along each out-of-range coordinate.
 #'
 #' Two private histogram mechanisms are supported:
 #' \itemize{
@@ -77,14 +81,14 @@
 #' }
 #'
 #' The privacy parameters are allocated across the privacy-consuming steps. If
-#' `g_dppca = FALSE`, 20 percent of `eps` is used for the private frame and 80
+#' `g_dppca = FALSE`, 35 percent of `eps` is used for the private frame and 65
 #' percent for the private histogram; all of `delta` is used by the histogram.
 #' If `g_dppca = TRUE`, `eps` is allocated in proportions 0.2, 0.2, and 0.6 to
 #' private direction estimation, private frame construction, and private
 #' histogram release, respectively. The corresponding `delta` proportions are
 #' 0.2 for private directions and 0.8 for the histogram. Frame construction is
-#' pure DP and divides `eps_frame` equally among its two private medians and two
-#' private radius estimates.
+#' pure DP and divides `eps_frame` equally among its two private medians and one
+#' private radial-quantile estimate.
 #'
 #' When multiple histogram methods are requested, the histogram privacy budget
 #' is not divided across `"add"` and `"sparse"`. Instead, each requested method
@@ -241,25 +245,31 @@ dp_score <- function(
 #'   If `NULL`, default score-plot settings are used.
 #'
 #' @details
-#' Histogram plots and sampled-score plots are arranged dynamically.
-#' When only `"histogram"` is requested, the original scatter plot is shown
-#' in the first column of the histogram row. When `"sample"` is requested,
-#' the original scatter plot is instead shown in the first column of the
-#' first sample row. If both plot types are requested, the histogram row uses
-#' a blank first panel so that the sample rows line up beneath it.
+#' Histogram plots and sampled-score plots are arranged dynamically. When only
+#' `"histogram"` is requested, the original scatter plot is shown first,
+#' followed by the non-private and requested private histograms. When
+#' `"sample"` is requested, the layout uses one reference column followed by
+#' one column for each requested private method. The original scatter plot
+#' starts the first sample row, and later sample rows use a blank reference
+#' panel. If both plot types are requested, the non-private histogram starts
+#' the histogram row.
 #'
-#' Synthetic score sampling is applied not only to the private histograms,
-#' but also to the non-private histogram, so that non-private and private
-#' sampled-score visualizations can be compared side by side.
+#' Synthetic score sampling is applied only to the requested private
+#' histograms. The original scatter plot and non-private histogram are retained
+#' as references, but no synthetic samples are drawn from the non-private
+#' histogram.
+#'
+#' The original scatter plot and non-private histogram panel are non-private
+#' references. They should not be included in a release that is required to
+#' contain only differentially private output.
 #'
 #' @return A named list containing:
 #' \describe{
 #'   \item{score}{The output of [dp_score()].}
 #'   \item{sample}{Present only when `"sample"` is requested. A nested list
-#'   containing sampled coordinates for `nonprivate` and for each requested
-#'   private histogram method (`add` and/or `sparse`). Each leaf is a data
-#'   frame with columns `pc_x` and `pc_y`, indexed by sampling method
-#'   (`center` and/or `uniform`).}
+#'   containing sampled coordinates for each requested private histogram
+#'   method (`add` and/or `sparse`). Each leaf is a data frame with columns
+#'   `pc_x` and `pc_y`, indexed by sampling method (`center` and/or `uniform`).}
 #'   \item{plot}{A list containing the original scatter plot, the non-private
 #'   histogram plot, requested private histogram plots, sampled-score plots,
 #'   and the combined patchwork layout in `plot$all`. Sampled-score plots are
@@ -450,33 +460,6 @@ dp_score_plot <- function(
     sample_out <- list()
     sample_plot_out <- list()
 
-    sampled_np <- sample_private_score_histogram(
-      hist_df = score_res$nonprivate,
-      sample_size = sctrl$sample_size,
-      sample_method = sctrl$method,
-      bandwidth_scale = sctrl$bandwidth_scale
-    )
-
-    sample_out$nonprivate <- sampled_np
-    sample_plot_out$nonprivate <- list()
-
-    for (sm in names(sampled_np)) {
-      sm_label <- if (sm == "center") "Center" else "Uniform"
-      sample_plot_out$nonprivate[[sm]] <- make_sample_plot_dp(
-        sample_df = sampled_np[[sm]],
-        xlim = xlim,
-        ylim = ylim,
-        color = pctrl$color,
-        title = paste0("Non-private Sample (", sm_label, ")"),
-        xlab = xlab,
-        ylab = ylab,
-        point_alpha = pctrl$scatter_alpha,
-        point_size = pctrl$scatter_size,
-        base_size = pctrl$base_size,
-        title_size = pctrl$title_size
-      )
-    }
-
     for (hist_method in method) {
       sampled <- sample_private_score_histogram(
         hist_df = score_res[[hist_method]],
@@ -516,14 +499,15 @@ dp_score_plot <- function(
   # different effective widths to otherwise corresponding columns, especially
   # when fixed-aspect plots and spacers are mixed. A single row-major grid keeps
   # every column aligned across histogram and sample rows.
-  n_cols <- 2 + length(method)
+  n_cols <- if ("sample" %in% private_plot) {
+    1L + length(method)
+  } else {
+    2L + length(method)
+  }
   layout_panels <- list()
 
   if ("histogram" %in% private_plot) {
-    if ("sample" %in% private_plot) {
-      layout_panels[[length(layout_panels) + 1L]] <-
-        patchwork::plot_spacer()
-    } else {
+    if (!("sample" %in% private_plot)) {
       layout_panels[[length(layout_panels) + 1L]] <- p_scatter
     }
 
@@ -548,9 +532,6 @@ dp_score_plot <- function(
         layout_panels[[length(layout_panels) + 1L]] <-
           patchwork::plot_spacer()
       }
-
-      layout_panels[[length(layout_panels) + 1L]] <-
-        sample_plot_out$nonprivate[[sm]]
 
       for (m in method) {
         layout_panels[[length(layout_panels) + 1L]] <-
@@ -596,16 +577,23 @@ dp_score_plot <- function(
 #' The score directions, plotting frame, and histogram grid are shared across all
 #' groups. For each group \eqn{g}, the group-specific count in bin \eqn{B_k} is
 #' \eqn{c_k^{(g)} = \sum_i 1\{s_i \in B_k, g_i = g\}}. Private histograms are
-#' then computed separately for each group on the common grid. Because the groups
-#' form a partition of the rows, group-wise histograms for the same histogram
-#' method use the same histogram privacy parameters across groups by parallel
-#' composition.
+#' then computed separately for each group on the common grid. When group
+#' membership is treated as public and fixed, the groups form a disjoint
+#' partition of the rows, so group-wise histograms for the same histogram method
+#' use the same histogram privacy parameters across groups by parallel
+#' composition. Direction, frame, and histogram budgets otherwise follow the
+#' allocation described in [dp_score()].
 #'
 #' When both `"add"` and `"sparse"` are requested, the histogram privacy budget
 #' is not divided across the two methods. Each method receives the same histogram
 #' portion of `eps` and `delta` for method comparison. Releasing outputs from
 #' multiple private histogram methods together requires composition across
 #' methods.
+#'
+#' The returned score coordinates, per-group sample sizes, and `nonprivate`
+#' histograms are included as non-private references; they must not be treated as
+#' differentially private releases. Group membership itself is also assumed to
+#' be public for the parallel-composition statement above.
 #'
 #' @return A named list with components `score`, `frame`, and `groups`. Each
 #' group entry contains `n`, `nonprivate`, and the requested private histogram
@@ -772,9 +760,9 @@ dp_score_group <- function(
 #' Separate per-group plot layouts are not created.
 #'
 #' For sampled-score panels, sampling is carried out separately from each
-#' group's histogram and the sampled coordinates are then combined with the
-#' corresponding group label. The same procedure is applied to the non-private
-#' group histograms and to each requested private histogram method.
+#' group's requested private histogram and the sampled coordinates are then
+#' combined with the corresponding group label. No synthetic samples are drawn
+#' from the non-private group histograms.
 #'
 #' `sampling_control(sample_size = NULL)` uses a total synthetic sample size
 #' equal to the number of input observations. The total is allocated across
@@ -784,12 +772,13 @@ dp_score_group <- function(
 #' size across all groups and is allocated proportionally using a
 #' largest-remainder rule.
 #'
-#' The combined plot follows the same dynamic layout as [dp_score_plot()].
-#' When only `"histogram"` is requested, the original grouped scatter plot
-#' appears in the first column of the histogram row. When sampling is requested,
-#' the original grouped scatter plot appears in the first column of the first
-#' sample row. If histogram and sample panels are both requested, the first
-#' position of the histogram row is left blank to keep columns aligned.
+#' The combined plot follows the same dynamic layout as [dp_score_plot()]. When
+#' only `"histogram"` is requested, the original grouped scatter plot is shown
+#' first, followed by the non-private and requested private histograms. When
+#' sampling is requested, the original grouped scatter plot starts the first
+#' sample row. Each remaining column corresponds to a requested private
+#' histogram method. If both plot types are requested, the non-private
+#' histogram starts the histogram row.
 #'
 #' Sampling uses only the already computed histogram output and fixed
 #' post-processing choices, so it does not consume an additional privacy
@@ -798,14 +787,17 @@ dp_score_group <- function(
 #' points are generated for that group and histogram method, and a warning is
 #' issued.
 #'
+#' The original grouped scatter plot and non-private histogram panels are
+#' non-private references. They should not be included in a release that is
+#' required to contain only differentially private output.
+#'
 #' @return A list with components:
 #' \describe{
 #'   \item{score}{The output of [dp_score_group()].}
 #'   \item{sample}{Present only when `"sample"` is requested. A nested list
-#'   containing combined grouped synthetic coordinates for `nonprivate` and
-#'   each requested private histogram method. Each leaf is indexed by sampling
-#'   method (`center` and/or `uniform`) and contains columns `pc_x`, `pc_y`,
-#'   and `group`.}
+#'   containing combined grouped synthetic coordinates for each requested
+#'   private histogram method. Each leaf is indexed by sampling method (`center`
+#'   and/or `uniform`) and contains columns `pc_x`, `pc_y`, and `group`.}
 #'   \item{plot}{A list containing the grouped original scatter plot, the
 #'   overlaid non-private histogram, requested private histogram panels,
 #'   grouped sampled-score panels under `plot$sample`, and the combined
@@ -1058,7 +1050,7 @@ dp_score_plot_group <- function(
       total_size = sctrl$sample_size
     )
 
-    targets <- c("nonprivate", method)
+    targets <- method
     sample_out <- list()
     sample_plot_out <- list()
 
@@ -1112,7 +1104,6 @@ dp_score_plot_group <- function(
 
       target_label <- switch(
         target,
-        nonprivate = "Non-private",
         add = "Add",
         sparse = "Sparse"
       )
@@ -1158,14 +1149,15 @@ dp_score_plot_group <- function(
   }
 
   # Use one flat row-major patchwork grid so columns align across rows.
-  n_cols <- 2 + length(method)
+  n_cols <- if ("sample" %in% private_plot) {
+    1L + length(method)
+  } else {
+    2L + length(method)
+  }
   layout_panels <- list()
 
   if ("histogram" %in% private_plot) {
-    if ("sample" %in% private_plot) {
-      layout_panels[[length(layout_panels) + 1L]] <-
-        patchwork::plot_spacer()
-    } else {
+    if (!("sample" %in% private_plot)) {
       layout_panels[[length(layout_panels) + 1L]] <- p_scatter
     }
 
@@ -1188,9 +1180,6 @@ dp_score_plot_group <- function(
         layout_panels[[length(layout_panels) + 1L]] <-
           patchwork::plot_spacer()
       }
-
-      layout_panels[[length(layout_panels) + 1L]] <-
-        sample_plot_out$nonprivate[[sm]]
 
       for (m in method) {
         layout_panels[[length(layout_panels) + 1L]] <-

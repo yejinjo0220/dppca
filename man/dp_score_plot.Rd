@@ -65,8 +65,10 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 \item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
 \code{g_dppca = TRUE}. The default is \code{FALSE}.}
 
-\item{axes}{Integer vector of length 2 specifying the principal components
-used to construct the score coordinates. The default is \code{c(1, 2)}.}
+\item{axes}{Positive integer vector of length 2 specifying the principal
+components used as the horizontal and vertical score axes, in that order.
+Each value must not exceed \code{ncol(X)}. Repeated or decreasing indices are
+accepted. The default is \code{c(1, 2)}.}
 
 \item{plot_control}{Optional control list created by \code{score_plot_control()}.
 If \code{NULL}, default score-plot settings are used.}
@@ -76,10 +78,9 @@ A named list containing:
 \describe{
 \item{score}{The output of \code{\link[=dp_score]{dp_score()}}.}
 \item{sample}{Present only when \code{"sample"} is requested. A nested list
-containing sampled coordinates for \code{nonprivate} and for each requested
-private histogram method (\code{add} and/or \code{sparse}). Each leaf is a data
-frame with columns \code{pc_x} and \code{pc_y}, indexed by sampling method
-(\code{center} and/or \code{uniform}).}
+containing sampled coordinates for each requested private histogram
+method (\code{add} and/or \code{sparse}). Each leaf is a data frame with columns
+\code{pc_x} and \code{pc_y}, indexed by sampling method (\code{center} and/or \code{uniform}).}
 \item{plot}{A list containing the original scatter plot, the non-private
 histogram plot, requested private histogram plots, sampled-score plots,
 and the combined patchwork layout in \code{plot$all}. Sampled-score plots are
@@ -93,16 +94,23 @@ as histogram panels or post-processed into synthetic scatter plots sampled
 from the released histograms.
 }
 \details{
-Histogram plots and sampled-score plots are arranged dynamically.
-When only \code{"histogram"} is requested, the original scatter plot is shown
-in the first column of the histogram row. When \code{"sample"} is requested,
-the original scatter plot is instead shown in the first column of the
-first sample row. If both plot types are requested, the histogram row uses
-a blank first panel so that the sample rows line up beneath it.
+Histogram plots and sampled-score plots are arranged dynamically. When only
+\code{"histogram"} is requested, the original scatter plot is shown first,
+followed by the non-private and requested private histograms. When
+\code{"sample"} is requested, the layout uses one reference column followed by
+one column for each requested private method. The original scatter plot
+starts the first sample row, and later sample rows use a blank reference
+panel. If both plot types are requested, the non-private histogram starts
+the histogram row.
 
-Synthetic score sampling is applied not only to the private histograms,
-but also to the non-private histogram, so that non-private and private
-sampled-score visualizations can be compared side by side.
+Synthetic score sampling is applied only to the requested private
+histograms. The original scatter plot and non-private histogram are retained
+as references, but no synthetic samples are drawn from the non-private
+histogram.
+
+The original scatter plot and non-private histogram panel are non-private
+references. They should not be included in a release that is required to
+contain only differentially private output.
 }
 \examples{
 data(gau, package = "dppca")

@@ -266,9 +266,9 @@ dp_hist_m2 <- function(u, eps_m2, k_min_m2, k_max_m2) {
 
 #' Estimate a private scalar scale proxy
 #'
-#' Internal helper for the Huber scree estimator. The input is paired into
-#' adjacent differences, converted to squared paired differences, summarized by
-#' block medians, and passed to `dp_hist_m2()`.
+#' Internal helper for the Huber scree estimator. The input is randomly permuted,
+#' paired into adjacent differences, converted to squared paired differences,
+#' summarized by block medians, and passed to `dp_hist_m2()`.
 #'
 #' @param w Numeric vector, typically squared centered projected scores for one
 #'   principal component.
@@ -331,7 +331,7 @@ dp_m2 <- function(w, eps_m2, k_min_m2, k_max_m2, M = NULL) {
 #'   the Huber noisy-gradient-descent step for one component.
 #' @param n_tau Effective sample size used in the threshold calculation.
 #'
-#' @return Positive numeric scalar Huber threshold.
+#' @return Nonnegative numeric scalar Huber threshold.
 #' @noRd
 tau_from_m2 <- function(m2_hat, eps_tau, n_tau) {
   m2_hat <- max(as.numeric(m2_hat), 0)
@@ -350,6 +350,17 @@ tau_from_m2 <- function(m2_hat, eps_tau, n_tau) {
 }
 
 
+#' Convert a Gaussian-DP parameter to delta
+#'
+#' Evaluates the trade-off conversion from a positive Gaussian-DP parameter
+#' `mu` and a positive `epsilon` value to the corresponding nonnegative
+#' `delta` value.
+#'
+#' @param mu Positive Gaussian-DP parameter.
+#' @param eps Positive `epsilon` privacy parameter.
+#'
+#' @return A nonnegative numeric scalar giving the corresponding `delta` value.
+#' @noRd
 gdp_delta <- function(mu, eps) {
   z1 <- -eps / mu + mu / 2
   z2 <- -eps / mu - mu / 2
@@ -360,6 +371,17 @@ gdp_delta <- function(mu, eps) {
   max(p1 - p2, 0)
 }
 
+#' Recover a Gaussian-DP parameter from epsilon and delta
+#'
+#' Numerically inverts `gdp_delta()` on a log scale.
+#'
+#' @param eps Positive `epsilon` privacy parameter.
+#' @param delta Number in `(0, 1)` defining the target `delta` privacy
+#'   parameter.
+#' @param tol Positive root-finding tolerance passed to [stats::uniroot()].
+#'
+#' @return A positive numeric scalar giving the Gaussian-DP parameter `mu`.
+#' @noRd
 mu_from_eps_delta <- function(eps, delta, tol = 1e-12) {
   if (!is.finite(eps) || eps <= 0) {
     stop("eps must be > 0.")
@@ -469,13 +491,13 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 #' @param T Optional number of gradient-descent iterations. If `NULL`, a default
 #'   based on `ceiling(log(n))` is used.
 #' @param M Optional number of blocks used in `dp_m2()`. If `NULL`, a default
-#'   based on `floor(sqrt(n / 2))` is used.
+#'   based on `floor(sqrt(n) / 2)` is used.
 #' @param k_min_m2 Integer lower bound for dyadic histogram bins used in
 #'   `dp_hist_m2()`. This value must be supplied by the user.
 #' @param k_max_m2 Integer upper bound for dyadic histogram bins used in
 #'   `dp_hist_m2()`. This value must be supplied by the user.
-#' @param m2_frac Fraction of the scree privacy parameter allocated to the
-#'   private scale-proxy step. This value must be supplied by the user.
+#' @param m2_frac Fraction of the scree `epsilon` parameter allocated to the
+#'   pure-DP scale-proxy step. This value must be supplied by the user.
 #' @param mono A logical value indicating whether to enforce a nonnegative and
 #'   nonincreasing scree sequence by post-processing.
 #'

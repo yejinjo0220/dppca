@@ -9,9 +9,9 @@
 #' Creates a control list for the clipped-mean scree estimator used by
 #' [dp_scree()] and [dp_scree_plot()] when `method = "clipped"`.
 #'
-#' @param C_clip Positive clipping threshold for squared principal component
-#'   scores. This value has no default because it should be chosen according to
-#'   the scale of the data.
+#' @param C_clip Positive clipping threshold for squared centered principal
+#'   component scores. This value has no default because it should be chosen
+#'   according to the scale of the data.
 #'
 #' @details
 #' The clipped method estimates each scree value by clipping the squared scores
@@ -50,14 +50,16 @@ clipped_control <- function(C_clip) {
 #' estimator used by [dp_scree()] and [dp_scree_plot()] when `method = "pmwm"`.
 #'
 #' @param a,b Finite public lower and upper post-processing bounds for the
-#'   private winsorization cutoffs. These values have no defaults because they
-#'   should be chosen on the scale of squared principal component scores.
+#'   private winsorization cutoffs, with `a < b`. These values have no defaults
+#'   because they should be chosen on the scale of squared principal component
+#'   scores.
 #' @param trim_const Positive number controlling the baseline clipping level in
 #'   the practical clipping proportion. This value has no default.
 #' @param eta Nonnegative number controlling the expected contamination level in
-#'   the practical clipping proportion. This value has no default.
+#'   the practical clipping proportion. The PMWM estimator requires a value in
+#'   `[0, 0.5)`. This value has no default.
 #' @param beta Positive number greater than `1` defining the log-binning base
-#'   used by the private quantile routine. The default is `1.001`.
+#'   used by the private quantile routine. The default is `1.01`.
 #' @param split_mode A logical value indicating whether to split the sample into
 #'   quantile-estimation and mean-estimation subsets. The default is `TRUE`.
 #'
@@ -173,13 +175,13 @@ pmwm_control <- function(
 #' Creates a control list for the Huber-type private scree estimator used by
 #' [dp_scree()] and [dp_scree_plot()] when `method = "huber"`.
 #'
-#' @param k_min_m2,k_max_m2 Integers defining the lower and upper dyadic bin
-#'   indices used in the private second-moment scale step. The histogram searches
-#'   over scale levels \eqn{2^k} for \eqn{k_{\min} \le k \le k_{\max}}. These
-#'   values have no defaults because they should be chosen according to the scale
-#'   of the data.
+#' @param k_min_m2,k_max_m2 Finite integers defining the lower and upper dyadic
+#'   bin indices used in the private second-moment scale step, with
+#'   `k_min_m2 < k_max_m2`. The histogram searches over scale levels \eqn{2^k}
+#'   for \eqn{k_{\min} \le k \le k_{\max}}. These values have no defaults because
+#'   they should be chosen according to the scale of the data.
 #' @param m2_frac Number in `(0, 1)` defining the fraction of the Huber scree
-#'   privacy parameters allocated to the private second-moment scale step. This
+#'   `epsilon` parameter allocated to the pure-DP second-moment scale step. This
 #'   value has no default.
 #' @param mu0 Numeric initial value for Huber noisy gradient descent. The default
 #'   is `0`.
@@ -211,14 +213,15 @@ pmwm_control <- function(
 #' \eqn{k_{\min} \le k \le k_{\max}}. Because this range depends on the scale of
 #' the squared scores, these arguments are intentionally not given defaults.
 #'
-#' The argument `m2_frac` determines how the Huber scree privacy parameters are
-#' split between the private scale-proxy step and the noisy gradient descent
-#' step. If \eqn{(\epsilon_{\mathrm{scree}}, \delta_{\mathrm{scree}})} denotes
-#' the privacy parameters available for Huber scree estimation, then
-#' \eqn{m2_frac \cdot (\epsilon_{\mathrm{scree}},
-#' \delta_{\mathrm{scree}})} is used to privately estimate \eqn{m_2}, while
-#' \eqn{(1 - m2_frac) \cdot (\epsilon_{\mathrm{scree}},
-#' \delta_{\mathrm{scree}})} is used for Huber noisy gradient descent.
+#' The argument `m2_frac` determines how the Huber scree `epsilon` parameter is
+#' split between the private scale-proxy step and noisy gradient descent. If
+#' \eqn{(\epsilon_{\mathrm{scree}}, \delta_{\mathrm{scree}})} denotes the privacy
+#' parameters available for Huber scree estimation, then
+#' \eqn{m2_frac \cdot \epsilon_{\mathrm{scree}}} is used by the pure-DP scale
+#' step. Noisy gradient descent uses
+#' \eqn{(1 - m2_frac) \cdot \epsilon_{\mathrm{scree}}} and
+#' \eqn{(1 - m2_frac) \cdot \delta_{\mathrm{scree}}}. The scale step consumes no
+#' `delta`; the remaining `m2_frac` share of `delta` is not used.
 #'
 #' The remaining parameters have default values. The default `mu0 = 0` is the
 #' initial value for noisy gradient descent, and the default `eta0 = 1` is the

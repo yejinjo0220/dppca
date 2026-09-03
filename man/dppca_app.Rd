@@ -11,10 +11,12 @@ dppca_app(X = NULL, group = NULL)
 with this data as the initial dataset.}
 
 \item{group}{Optional group labels. This can be either a vector of length
-\code{nrow(X)} or a single column name in \code{X}.}
+\code{nrow(X)} or, when \code{X} is a data frame, a single column name in
+\code{X}.}
 }
 \value{
-No return value. This function opens an interactive 'shiny' application.
+Invisibly returns the value produced by \code{shiny::runApp()} after
+the application exits.
 }
 \description{
 Launches an interactive 'shiny' application for exploring differentially
@@ -27,9 +29,10 @@ The app can be opened with built-in example datasets or with a user-supplied
 dataset. If \code{X} is supplied, the app starts with \code{X} as the initial
 dataset. If \code{group} is supplied, the score plot can use the group labels
 for coloring. The \code{group} argument can be either a vector of length
-\code{nrow(X)} or the name of a column in \code{X}. When \code{group} is a
-column name, that column is used as group labels and is removed from the PCA
-feature matrix.
+\code{nrow(X)} or, for a data-frame \code{X}, the name of a column in
+\code{X}. When \code{group} is a column name, that column is used as group
+labels and is removed from the PCA feature matrix. For a matrix \code{X},
+supply group labels as a vector rather than a column name.
 }
 \examples{
 if (interactive()) {

@@ -51,8 +51,10 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 \item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
 \code{g_dppca = TRUE}. The default is \code{FALSE}.}
 
-\item{axes}{Integer vector of length 2 specifying the principal components
-used to construct the score coordinates. The default is \code{c(1, 2)}.}
+\item{axes}{Positive integer vector of length 2 specifying the principal
+components used as the horizontal and vertical score axes, in that order.
+Each value must not exceed \code{ncol(X)}. Repeated or decreasing indices are
+accepted. The default is \code{c(1, 2)}.}
 }
 \value{
 A named list with components \code{score} and \code{frame}, followed by
@@ -69,7 +71,8 @@ requested private histogram estimates.
 }
 \details{
 Let \eqn{v_a} and \eqn{v_b} be the principal component directions selected
-by \code{axes = c(a, b)} for some \eqn{1 \le a < b \le ncol(X)}.
+by \code{axes = c(a, b)} for some
+\eqn{1 \le a, b \le ncol(X)}.
 After preprocessing, the score point for \eqn{i}th observation
 is \eqn{s_i = (x_i^\top v_a, x_i^\top v_b)}. A non-private score
 plot would display the points \eqn{s_1, \ldots, s_n} directly. This function
@@ -79,17 +82,18 @@ and releases private versions of the histogram for the visualization.
 The plotting frame is constructed privately from the score coordinates using
 the pure-DP unbounded quantile mechanisms of
 \insertCite{durfee2023unbounded;textual}{dppca}. Its center is estimated by
-coordinate-wise private medians. For each coordinate, the private 0.995
-quantile of the absolute deviations from its private median is then estimated
-and inflated by a fixed factor. The two independently estimated radii form a
-rectangular plotting frame.
+coordinate-wise private medians. A single private 0.99 quantile of the
+Euclidean distances from this private center is then estimated and inflated
+by 20 percent. The resulting common radius defines an axis-aligned square
+plotting frame.
 
 The private histogram is computed on the rectangular grid defined by the
 private frame and the bin counts in \code{bins}. Under
 row-level adjacency, changing one observation can increase one bin count by
 one and decrease another by one, giving \eqn{\ell_1} sensitivity at most
 \eqn{2} and \eqn{\ell_2} sensitivity at most \eqn{\sqrt{2}} for the count
-vector.
+vector. Scores outside the private frame are assigned to the nearest boundary
+bin along each out-of-range coordinate.
 
 Two private histogram mechanisms are supported:
 \itemize{
@@ -107,14 +111,14 @@ following the stability-based private histogram idea of
 }
 
 The privacy parameters are allocated across the privacy-consuming steps. If
-\code{g_dppca = FALSE}, 20 percent of \code{eps} is used for the private frame and 80
+\code{g_dppca = FALSE}, 35 percent of \code{eps} is used for the private frame and 65
 percent for the private histogram; all of \code{delta} is used by the histogram.
 If \code{g_dppca = TRUE}, \code{eps} is allocated in proportions 0.2, 0.2, and 0.6 to
 private direction estimation, private frame construction, and private
 histogram release, respectively. The corresponding \code{delta} proportions are
 0.2 for private directions and 0.8 for the histogram. Frame construction is
-pure DP and divides \code{eps_frame} equally among its two private medians and two
-private radius estimates.
+pure DP and divides \code{eps_frame} equally among its two private medians and one
+private radial-quantile estimate.
 
 When multiple histogram methods are requested, the histogram privacy budget
 is not divided across \code{"add"} and \code{"sparse"}. Instead, each requested method

@@ -7,9 +7,9 @@
 clipped_control(C_clip)
 }
 \arguments{
-\item{C_clip}{Positive clipping threshold for squared principal component
-scores. This value has no default because it should be chosen according to
-the scale of the data.}
+\item{C_clip}{Positive clipping threshold for squared centered principal
+component scores. This value has no default because it should be chosen
+according to the scale of the data.}
 }
 \value{
 A list of control options for \code{method = "clipped"}.

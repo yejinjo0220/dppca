@@ -58,8 +58,10 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 \item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
 \code{g_dppca = TRUE}. The default is \code{FALSE}.}
 
-\item{axes}{Integer vector of length 2 specifying the principal components
-used to construct the score coordinates. The default is \code{c(1, 2)}.}
+\item{axes}{Positive integer vector of length 2 specifying the principal
+components used as the horizontal and vertical score axes, in that order.
+Each value must not exceed \code{ncol(X)}. Repeated or decreasing indices are
+accepted. The default is \code{c(1, 2)}.}
 }
 \value{
 A named list with components \code{score}, \code{frame}, and \code{groups}. Each
@@ -76,16 +78,23 @@ distribution should be compared across groups.
 The score directions, plotting frame, and histogram grid are shared across all
 groups. For each group \eqn{g}, the group-specific count in bin \eqn{B_k} is
 \eqn{c_k^{(g)} = \sum_i 1\{s_i \in B_k, g_i = g\}}. Private histograms are
-then computed separately for each group on the common grid. Because the groups
-form a partition of the rows, group-wise histograms for the same histogram
-method use the same histogram privacy parameters across groups by parallel
-composition.
+then computed separately for each group on the common grid. When group
+membership is treated as public and fixed, the groups form a disjoint
+partition of the rows, so group-wise histograms for the same histogram method
+use the same histogram privacy parameters across groups by parallel
+composition. Direction, frame, and histogram budgets otherwise follow the
+allocation described in \code{\link[=dp_score]{dp_score()}}.
 
 When both \code{"add"} and \code{"sparse"} are requested, the histogram privacy budget
 is not divided across the two methods. Each method receives the same histogram
 portion of \code{eps} and \code{delta} for method comparison. Releasing outputs from
 multiple private histogram methods together requires composition across
 methods.
+
+The returned score coordinates, per-group sample sizes, and \code{nonprivate}
+histograms are included as non-private references; they must not be treated as
+differentially private releases. Group membership itself is also assumed to
+be public for the parallel-composition statement above.
 }
 \examples{
 data(gau_g, package = "dppca")

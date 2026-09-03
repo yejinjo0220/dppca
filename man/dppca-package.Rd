@@ -4,10 +4,15 @@
 \name{dppca-package}
 \alias{dppca}
 \alias{dppca-package}
-\title{dppca: Differentially Private PCA Scree and Score Visualization}
+\title{dppca: Differentially Private Principal Component Analysis Visualization}
 \description{
-Tools for performing principal component analysis and constructing
-differentially private scree estimates and score-based visualizations.
+Tools for estimating principal component directions and constructing
+differentially private PCA visualizations. The package provides private
+principal component directions; clipped, modified-winsorized, and Huber
+scree and proportion-of-variance-explained summaries; additive and sparse
+two-dimensional score histograms; group-wise score visualizations; synthetic
+score sampling from released private histograms; and an interactive Shiny
+application.
 }
 \seealso{
 Useful links:

@@ -37,6 +37,9 @@
 #'   estimation and private scree estimation. For `method = "pmwm"`, the private
 #'   quantile step is pure DP and does not consume `delta`; the scree-estimation
 #'   share of `delta` is used by the Gaussian winsorized-mean release.
+#'   For `method = "huber"`, the private scale-proxy step is pure DP. Noisy
+#'   gradient descent receives the `(1 - m2_frac)` share of the scree-estimation
+#'   `delta`; the remaining `m2_frac` share is not used.
 #' @param center A logical value indicating whether to center the columns of `X`
 #'   before computing principal component directions. The default is `TRUE`.
 #' @param standardize A logical value indicating whether to scale the columns of
@@ -54,13 +57,14 @@
 #' @details
 #' Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the
 #' \eqn{l}th principal component direction. The \eqn{l}th score vector is
-#' \eqn{z_l = X v_l}. The corresponding sample scree value can be written as
+#' \eqn{z_l = X v_l}, with sample mean \eqn{\bar z_l}. The corresponding sample
+#' scree value can be written as
 #' \deqn{
 #'   \hat{\lambda}_l
 #'   = v_l^\top \widehat{\Sigma} v_l
-#'   = \frac{1}{n - 1}\sum_{i = 1}^n z_{il}^2
+#'   = \frac{1}{n - 1}\sum_{i = 1}^n (z_{il} - \bar z_l)^2
 #'   = \frac{n}{n - 1}\left(\frac{1}{n}\sum_{i = 1}^n w_{il}\right),
-#'   \qquad w_{il} = z_{il}^2.
+#'   \qquad w_{il} = (z_{il} - \bar z_l)^2.
 #' }
 #' Therefore, each scree value is estimated by privately estimating the mean of
 #' \eqn{w_{1l}, \ldots, w_{nl}} and multiplying by \eqn{n/(n - 1)}.

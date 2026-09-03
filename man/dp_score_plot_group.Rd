@@ -57,8 +57,10 @@ component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{d
 \item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
 \code{g_dppca = TRUE}. The default is \code{FALSE}.}
 
-\item{axes}{Integer vector of length 2 specifying the principal components
-used to construct the score coordinates. The default is \code{c(1, 2)}.}
+\item{axes}{Positive integer vector of length 2 specifying the principal
+components used as the horizontal and vertical score axes, in that order.
+Each value must not exceed \code{ncol(X)}. Repeated or decreasing indices are
+accepted. The default is \code{c(1, 2)}.}
 
 \item{method}{Character vector specifying which private histogram methods to
 compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"} for
@@ -83,10 +85,9 @@ A list with components:
 \describe{
 \item{score}{The output of \code{\link[=dp_score_group]{dp_score_group()}}.}
 \item{sample}{Present only when \code{"sample"} is requested. A nested list
-containing combined grouped synthetic coordinates for \code{nonprivate} and
-each requested private histogram method. Each leaf is indexed by sampling
-method (\code{center} and/or \code{uniform}) and contains columns \code{pc_x}, \code{pc_y},
-and \code{group}.}
+containing combined grouped synthetic coordinates for each requested
+private histogram method. Each leaf is indexed by sampling method (\code{center}
+and/or \code{uniform}) and contains columns \code{pc_x}, \code{pc_y}, and \code{group}.}
 \item{plot}{A list containing the grouped original scatter plot, the
 overlaid non-private histogram, requested private histogram panels,
 grouped sampled-score panels under \code{plot$sample}, and the combined
@@ -105,9 +106,9 @@ All groups are shown together in each panel using group-specific colors.
 Separate per-group plot layouts are not created.
 
 For sampled-score panels, sampling is carried out separately from each
-group's histogram and the sampled coordinates are then combined with the
-corresponding group label. The same procedure is applied to the non-private
-group histograms and to each requested private histogram method.
+group's requested private histogram and the sampled coordinates are then
+combined with the corresponding group label. No synthetic samples are drawn
+from the non-private group histograms.
 
 \code{sampling_control(sample_size = NULL)} uses a total synthetic sample size
 equal to the number of input observations. The total is allocated across
@@ -117,12 +118,13 @@ group sizes when the default total is used. If a positive integer
 size across all groups and is allocated proportionally using a
 largest-remainder rule.
 
-The combined plot follows the same dynamic layout as \code{\link[=dp_score_plot]{dp_score_plot()}}.
-When only \code{"histogram"} is requested, the original grouped scatter plot
-appears in the first column of the histogram row. When sampling is requested,
-the original grouped scatter plot appears in the first column of the first
-sample row. If histogram and sample panels are both requested, the first
-position of the histogram row is left blank to keep columns aligned.
+The combined plot follows the same dynamic layout as \code{\link[=dp_score_plot]{dp_score_plot()}}. When
+only \code{"histogram"} is requested, the original grouped scatter plot is shown
+first, followed by the non-private and requested private histograms. When
+sampling is requested, the original grouped scatter plot starts the first
+sample row. Each remaining column corresponds to a requested private
+histogram method. If both plot types are requested, the non-private
+histogram starts the histogram row.
 
 Sampling uses only the already computed histogram output and fixed
 post-processing choices, so it does not consume an additional privacy
@@ -130,6 +132,10 @@ budget. A private histogram, especially a sparse histogram, can contain no
 positive probability mass after thresholding. In that case no synthetic
 points are generated for that group and histogram method, and a warning is
 issued.
+
+The original grouped scatter plot and non-private histogram panels are
+non-private references. They should not be included in a release that is
+required to contain only differentially private output.
 }
 \examples{
 data(gau_g, package = "dppca")
