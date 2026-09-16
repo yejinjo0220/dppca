@@ -87,87 +87,40 @@ winsorization <- function(x, lo, hi) {
 
 #' Estimate private scree values with clipped means
 #'
-#' Internal implementation of the clipped-mean scree estimator. The method first
-#' preprocesses the data, computes non-private or private principal component
-#' directions, projects the data onto those directions, and then estimates the
-#' variance of each score vector using a clipped mean with Gaussian noise.
+#' Internal implementation of the clipped-mean scree estimator. The method
+#' consumes the shared projected score matrix and estimates each score
+#' variance using a clipped mean with Gaussian noise.
 #'
 #' For component `ell`, the squared centered scores are clipped at `C_clip` and
 #' the noisy clipped mean is rescaled by `n / (n - 1)` to match the usual sample
 #' variance convention. If `mono = TRUE`, the final scree vector is
 #' post-processed to be nonnegative and nonincreasing.
 #'
-#' @param X Numeric data matrix with observations in rows.
-#' @param k Number of leading principal components.
-#' @param eps Positive number defining the total `epsilon` privacy
-#'   parameter for the scree routine.
-#' @param delta Number in `(0, 1)` defining the total `delta` privacy
-#'   parameter for the scree routine.
-#' @param center A logical value indicating whether to center the columns of `X`
-#'   before computing principal component directions.
-#' @param standardize A logical value indicating whether to scale the columns of
-#'   `X` by their sample standard deviations after optional centering.
+#' @param Y Projected score matrix with observations in rows and the selected
+#'   private principal components in columns.
+#' @param eps Positive epsilon budget remaining for this scree method after
+#'   the shared loading allocation. It is divided across columns of `Y`.
+#' @param delta Delta budget in `(0, 1)` remaining for this scree method after
+#'   the shared loading allocation. It is divided across columns of `Y`.
 #' @param C_clip Positive clipping threshold applied to squared centered scores.
-#' @param g_dppca A logical value indicating whether to compute private
-#'   principal component directions.
-#' @param cpp.option A logical value passed to `dp_pc_dir()` when private
-#'   directions are computed.
 #' @param mono A logical value indicating whether to enforce a nonnegative and
 #'   nonincreasing scree sequence by post-processing.
 #'
 #' @return A list with components `scree` and `pve`.
 #' @noRd
-dp_scree_clipped <- function(X, k, eps, delta,
-                             center = TRUE, standardize = FALSE,
-                             C_clip,
-                             g_dppca = FALSE, cpp.option = FALSE,
-                             mono = TRUE) {
-  validate_scree_inputs(
-    X = X,
-    k = k,
-    eps = eps,
-    delta = delta
-  )
-
-  X <- as.matrix(X)
-  n <- nrow(X)
-  k <- as.integer(k)
+dp_scree_clipped <- function(Y, eps, delta, C_clip, mono = TRUE) {
+  Y <- as.matrix(Y)
+  n <- nrow(Y)
+  k <- ncol(Y)
+  validate_scree_inputs(X = Y, k = k, eps = eps, delta = delta)
 
   if (!is.numeric(C_clip) || length(C_clip) != 1 ||
       !is.finite(C_clip) || C_clip <= 0) {
     stop("C_clip must be a single positive number.")
   }
 
-  if (isTRUE(g_dppca)) {
-    eps_pc <- eps / 2
-    delta_pc <- delta / 2
-    eps_scree <- eps / 2
-    delta_scree <- delta / 2
-  } else {
-    eps_pc <- NULL
-    delta_pc <- NULL
-    eps_scree <- eps
-    delta_scree <- delta
-  }
-
-  X_proc <- prep_matrix_for_pca(
-    X = X,
-    center = center,
-    standardize = standardize
-  )
-
-  V_used <- dp_pc_dir(
-    X = X,
-    k = k,
-    g_dppca = g_dppca,
-    eps = eps_pc,
-    delta = delta_pc,
-    center = center,
-    standardize = standardize,
-    cpp.option = cpp.option
-  )
-
-  Y <- X_proc %*% V_used
+  eps_scree <- eps
+  delta_scree <- delta
 
   eps_ell <- eps_scree / k
   delta_ell <- delta_scree / k
@@ -461,10 +414,9 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 
 #' Estimate private scree values with Huber-type private means
 #'
-#' Internal implementation of the Huber scree estimator. The method preprocesses
-#' the data, computes non-private or private principal component directions, and
-#' estimates the variance of each score vector using a private Huber-type scalar
-#' mean estimator with noisy gradient descent.
+#' Internal implementation of the Huber scree estimator. The method consumes
+#' the shared projected score matrix and estimates each score variance using
+#' a private Huber-type scalar mean estimator with noisy gradient descent.
 #'
 #' For each component, a private scale proxy is first obtained with `dp_m2()`,
 #' converted to a Huber threshold with `tau_from_m2()`, and then used in
@@ -472,20 +424,12 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 #' `mono = TRUE`, the final scree vector is post-processed to be nonnegative and
 #' nonincreasing.
 #'
-#' @param X Numeric data matrix with observations in rows.
-#' @param k Number of leading principal components.
-#' @param eps Positive number defining the total `epsilon` privacy
-#'   parameter for the scree routine.
-#' @param delta Number in `(0, 1)` defining the total `delta` privacy
-#'   parameter for the scree routine.
-#' @param g_dppca A logical value indicating whether to compute private
-#'   principal component directions.
-#' @param cpp.option A logical value passed to `dp_pc_dir()` when private
-#'   directions are computed.
-#' @param center A logical value indicating whether to center the columns of `X`
-#'   before computing principal component directions.
-#' @param standardize A logical value indicating whether to scale the columns of
-#'   `X` by their sample standard deviations after optional centering.
+#' @param Y Projected score matrix with observations in rows and the selected
+#'   private principal components in columns.
+#' @param eps Positive epsilon budget remaining for this scree method after
+#'   the shared loading allocation. It is divided across columns of `Y`.
+#' @param delta Delta budget in `(0, 1)` remaining for this scree method after
+#'   the shared loading allocation. It is divided across columns of `Y`.
 #' @param mu0 Initial value for noisy gradient descent.
 #' @param eta0 Positive step size for noisy gradient descent.
 #' @param T Optional number of gradient-descent iterations. If `NULL`, a default
@@ -503,17 +447,14 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 #'
 #' @return A list with components `scree` and `pve`.
 #' @noRd
-dp_scree_huber <- function(X, k, eps, delta,
+dp_scree_huber <- function(Y, eps, delta,
                            k_min_m2, k_max_m2, m2_frac,
-                           g_dppca = FALSE, cpp.option = FALSE,
-                           center = TRUE, standardize = FALSE,
                            mu0 = 0, eta0 = 1, T = NULL, M = NULL,
                            mono = TRUE) {
-  validate_scree_inputs(X = X, k = k, eps = eps, delta = delta)
-
-  X <- as.matrix(X)
-  n <- nrow(X)
-  k <- as.integer(k)
+  Y <- as.matrix(Y)
+  n <- nrow(Y)
+  k <- ncol(Y)
+  validate_scree_inputs(X = Y, k = k, eps = eps, delta = delta)
 
   if (missing(k_min_m2) || missing(k_max_m2) || missing(m2_frac)) {
     stop("k_min_m2, k_max_m2, and m2_frac must be supplied.")
@@ -543,17 +484,8 @@ dp_scree_huber <- function(X, k, eps, delta,
   if (is.null(M)) M <- floor(sqrt(n) / 2)
   M <- max(1L, as.integer(M))
 
-  if (isTRUE(g_dppca)) {
-    eps_pc <- eps / 2
-    delta_pc <- delta / 2
-    eps_scree <- eps / 2
-    delta_scree <- delta / 2
-  } else {
-    eps_pc <- NULL
-    delta_pc <- NULL
-    eps_scree <- eps
-    delta_scree <- delta
-  }
+  eps_scree <- eps
+  delta_scree <- delta
 
   eps_m2 <- eps_scree * m2_frac
   delta_m2 <- delta_scree * m2_frac
@@ -566,21 +498,6 @@ dp_scree_huber <- function(X, k, eps, delta,
 
   eps_gd_ell <- eps_gd / k
   delta_gd_ell <- delta_gd / k
-
-  X_proc <- prep_matrix_for_pca(X = X, center = center, standardize = standardize)
-
-  V_used <- dp_pc_dir(
-    X = X,
-    k = k,
-    g_dppca = g_dppca,
-    eps = eps_pc,
-    delta = delta_pc,
-    center = center,
-    standardize = standardize,
-    cpp.option = cpp.option
-  )
-
-  Y <- X_proc %*% V_used
 
   scree <- numeric(k)
 
@@ -885,9 +802,9 @@ unbounded_quantile <- function(x, q, epsilon,
 #' Estimate private scree values with private modified winsorized means
 #'
 #' Internal implementation of the private modified winsorized mean (PMWM) scree
-#' estimator. The method preprocesses the data, computes non-private or private
-#' principal component directions, privately estimates lower and upper
-#' winsorization bounds for squared centered scores using a pure-DP
+#' estimator. The method consumes the shared projected score matrix and
+#' privately estimates lower and upper winsorization bounds for squared
+#' centered scores using a pure-DP
 #' exponential-noise unbounded quantile routine, and releases a Gaussian-noised
 #' winsorized mean for each component.
 #'
@@ -898,22 +815,14 @@ unbounded_quantile <- function(x, q, epsilon,
 #' Gaussian winsorized-mean release. If `mono = TRUE`, the final scree vector is
 #' post-processed to be nonnegative and nonincreasing.
 #'
-#' @param X Numeric data matrix with observations in rows.
-#' @param k Number of leading principal components.
-#' @param eps Positive number defining the total `epsilon` privacy
-#'   parameter for the scree routine.
-#' @param delta Number in `(0, 1)` defining the total `delta` privacy
-#'   parameter for the scree routine.
-#' @param g_dppca A logical value indicating whether to compute private
-#'   principal component directions.
-#' @param cpp.option A logical value passed to `dp_pc_dir()` when private
-#'   directions are computed.
+#' @param Y Projected score matrix with observations in rows and the selected
+#'   private principal components in columns.
+#' @param eps Positive epsilon budget remaining for this scree method after
+#'   the shared loading allocation. It is divided across columns of `Y`.
+#' @param delta Delta budget in `(0, 1)` remaining for this scree method after
+#'   the shared loading allocation. It is divided across columns of `Y`.
 #' @param split_mode A logical value indicating whether to split the sample into
 #'   quantile and mean subsets.
-#' @param center A logical value indicating whether to center the columns of `X`
-#'   before computing principal component directions.
-#' @param standardize A logical value indicating whether to scale the columns of
-#'   `X` by their sample standard deviations after optional centering.
 #' @param beta Log-binning base used by the private quantile estimator. Must be
 #'   greater than `1`. The default is `1.001`.
 #' @param a Finite public lower post-processing bound for the private
@@ -928,23 +837,14 @@ unbounded_quantile <- function(x, q, epsilon,
 #'   nonincreasing scree sequence by post-processing.
 #' @return A list with components `scree` and `pve`.
 #' @noRd
-dp_scree_pmwm <- function(X, k, eps, delta,
+dp_scree_pmwm <- function(Y, eps, delta,
                           a, b, trim_const, eta,
-                          beta = 1.001,
-                          g_dppca = FALSE, cpp.option = FALSE,
-                          split_mode = TRUE,
-                          center = TRUE, standardize = FALSE,
+                          beta = 1.001, split_mode = TRUE,
                           mono = TRUE) {
-  validate_scree_inputs(
-    X = X,
-    k = k,
-    eps = eps,
-    delta = delta
-  )
-
-  X <- as.matrix(X)
-  n <- nrow(X)
-  k <- as.integer(k)
+  Y <- as.matrix(Y)
+  n <- nrow(Y)
+  k <- ncol(Y)
+  validate_scree_inputs(X = Y, k = k, eps = eps, delta = delta)
 
   if (missing(a) || missing(b) || missing(trim_const) || missing(eta)) {
     stop("a, b, trim_const, and eta must be supplied.")
@@ -960,17 +860,8 @@ dp_scree_pmwm <- function(X, k, eps, delta,
     stop("eta must be in [0, 0.5).")
   }
 
-  if (isTRUE(g_dppca)) {
-    eps_pc <- eps / 2
-    delta_pc <- delta / 2
-    eps_scree <- eps / 2
-    delta_scree <- delta / 2
-  } else {
-    eps_pc <- NULL
-    delta_pc <- NULL
-    eps_scree <- eps
-    delta_scree <- delta
-  }
+  eps_scree <- eps
+  delta_scree <- delta
 
   eps_ell <- eps_scree / k
   delta_ell <- delta_scree / k
@@ -982,25 +873,6 @@ dp_scree_pmwm <- function(X, k, eps, delta,
   eps_Q <- eps_ell / 4
   eps_M <- eps_ell / 2
   delta_M <- delta_ell
-
-  X_proc <- prep_matrix_for_pca(
-    X = X,
-    center = center,
-    standardize = standardize
-  )
-
-  V_used <- dp_pc_dir(
-    X = X,
-    k = k,
-    g_dppca = g_dppca,
-    eps = eps_pc,
-    delta = delta_pc,
-    center = center,
-    standardize = standardize,
-    cpp.option = cpp.option
-  )
-
-  Y <- X_proc %*% V_used
 
   if (isTRUE(split_mode)) {
     m <- floor(n / 2)

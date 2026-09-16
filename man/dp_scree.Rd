@@ -7,13 +7,11 @@
 dp_scree(
   X,
   k,
+  privacy,
   method = c("clipped", "pmwm", "huber"),
   control = NULL,
-  eps,
-  delta,
   center = TRUE,
   standardize = FALSE,
-  g_dppca = FALSE,
   cpp.option = FALSE,
   mono = TRUE
 )
@@ -25,31 +23,18 @@ columns correspond to variables.}
 \item{k}{Positive integer defining the number of leading principal components
 to estimate. Must be an integer between \code{1} and the number of columns in \code{X}.}
 
+\item{privacy}{A \code{\link[=privacy_control]{privacy_control()}} object with exactly the \code{loading} and
+\code{scree} components. For example, use
+\code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, scree = 0.5))}.
+The loading budget is used once; each requested scree method receives
+the full \code{scree} component budget, without division across methods.}
+
 \item{method}{Scree value estimation method or methods. One or more of
 \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}. If omitted, \code{"clipped"} is used.}
 
 \item{control}{Optional method-specific control list created by
 \code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}. When multiple
 methods are requested, use a named list with method names.}
-
-\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
-to each requested scree method. When multiple methods are requested, the
-same value of \code{eps} is applied separately to each method for comparison; it
-is not divided across methods. If \code{g_dppca = TRUE}, each method internally
-splits its supplied \code{eps} between private direction estimation and private
-scree estimation.}
-
-\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
-supplied to each requested scree method. When multiple methods are
-requested, the same value of \code{delta} is applied separately to each method
-for comparison; it is not divided across methods. If \code{g_dppca = TRUE},
-each method internally splits its supplied \code{delta} between private direction
-estimation and private scree estimation. For \code{method = "pmwm"}, the private
-quantile step is pure DP and does not consume \code{delta}; the scree-estimation
-share of \code{delta} is used by the Gaussian winsorized-mean release.
-For \code{method = "huber"}, the private scale-proxy step is pure DP. Noisy
-gradient descent receives the \code{(1 - m2_frac)} share of the scree-estimation
-\code{delta}; the remaining \code{m2_frac} share is not used.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
 before computing principal component directions. The default is \code{TRUE}.}
@@ -58,12 +43,8 @@ before computing principal component directions. The default is \code{TRUE}.}
 \code{X} by their sample standard deviations after optional centering. The
 default is \code{FALSE}.}
 
-\item{g_dppca}{A logical value indicating whether to use private principal
-component directions for scree estimation. The default is \code{FALSE}. See
-\code{\link[=dp_pc_dir]{dp_pc_dir()}} for details.}
-
-\item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
-\code{g_dppca = TRUE}. The default is \code{FALSE}.}
+\item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} for private
+loading estimation. The default is \code{FALSE}.}
 
 \item{mono}{A logical value indicating whether to apply monotone
 post-processing to the vector of private scree values. The default is
@@ -124,23 +105,30 @@ estimated with the pure-DP fully unbounded quantile mechanism of
 bounds supplied through \code{\link[=pmwm_control]{pmwm_control()}}.
 The squared scores \eqn{w_{i\ell}} are then winsorized to those cutoffs,
 and the final winsorized mean is released with a Gaussian mechanism
-calibrated to the supplied \verb{(eps, delta)} budget.
+calibrated to its share of the \code{scree} component budget.
 \item \code{"huber"} uses a Huber-type private robust mean estimator based on
 noisy gradient descent, following \insertCite{yu2024gaussian;textual}{dppca}.
 }
 
-The argument \code{g_dppca} controls how the principal component directions are
-obtained. If \code{g_dppca = FALSE}, the directions are computed non-privately and
-the full method-specific privacy parameters \code{eps} and \code{delta} are used for
-private scree estimation. If \code{g_dppca = TRUE}, the directions are computed
-privately using \code{\link[=dp_pc_dir]{dp_pc_dir()}}. Within each requested method, \code{eps} and \code{delta}
-are split equally: \code{\link[=dp_pc_dir]{dp_pc_dir()}} receives \code{eps / 2} and \code{delta / 2}, and the
-remaining halves are used for private scree estimation.
+Principal component directions are always estimated privately using
+\code{\link[=dp_loading]{dp_loading()}}. The data are preprocessed once, and one loading estimate
+is computed using the \code{loading} component of \code{privacy}. The first \code{k}
+columns of its \code{private} matrix produce one score matrix shared by all
+requested methods. Each method uses the \code{scree} component directly; there
+is no additional loading allocation within a scree method.
 
-When multiple methods are requested, \code{eps} and \code{delta} are applied separately
-to each method for method comparison. They are not divided across methods.
-Consequently, if outputs from multiple private methods are released together,
-the privacy cost of the joint release must be accounted for by composition.
+When multiple methods are requested, each receives the same full \code{scree}
+epsilon and delta budgets for method comparison. These budgets are not
+divided across methods. For a joint release, composition counts the shared
+loading allocation once, plus the privacy costs of all requested methods.
+The total recorded in \code{privacy} covers loading plus one scree method, not
+a joint release of several scree methods.
+
+For \code{method = "pmwm"}, the private quantile step is pure DP and does not
+consume \code{delta}; the scree component's delta budget is used by the Gaussian
+winsorized-mean release. For \code{method = "huber"}, the private scale-proxy step
+is pure DP. Noisy gradient descent receives the \code{(1 - m2_frac)} share of
+the scree component's delta budget; the remaining \code{m2_frac} share is unused.
 
 The \code{nonprivate} component is provided only as a non-private reference and is
 not itself differentially private.
@@ -160,23 +148,28 @@ data(gau, package = "dppca")
 
 # Use a small subset to keep the example fast.
 X <- gau[1:100, ]
+privacy <- privacy_control(
+  eps = 3,
+  delta = 1e-4,
+  split = c(loading = 0.5, scree = 0.5)
+)
 
 # Estimate private scree values using the clipped mean method.
 set.seed(123)
 out <- dp_scree(
   X,
   k = 2,
+  privacy = privacy,
   method = "clipped",
-  control = clipped_control(C_clip = 3),
-  eps = 2,
-  delta = 1e-3
+  control = clipped_control(C_clip = 3)
 )
 
 out$nonprivate
 out$clipped
 
 # Multiple methods can be requested together by using a named control list.
-# Each method receives the same eps and delta values for method comparison.
+# Loading is estimated once; each method receives the full scree budget.
+# Change the split in privacy_control() to choose a different allocation.
 
 }
 \references{
@@ -191,7 +184,7 @@ out$clipped
 \insertRef{kim2025robustdppca}{dppca}
 }
 \seealso{
-\code{\link[=dp_pc_dir]{dp_pc_dir()}} for principal component direction estimation.
+\code{\link[=dp_loading]{dp_loading()}} for private principal component direction estimation.
 \code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}}, and \code{\link[=huber_control]{huber_control()}} for
 method-specific tuning parameters.
 }

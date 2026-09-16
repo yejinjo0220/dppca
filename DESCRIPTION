@@ -7,11 +7,12 @@ Authors@R: c(
     )
 Description: Provides tools for differentially private principal component
     analysis (PCA) visualization. It includes functions for estimating private
-    principal component directions, constructing private scree and proportion
-    of variance explained summaries, and visualizing two-dimensional PCA score
+    principal component loadings, comparing non-private and private loading
+    plots, constructing private scree and proportion of variance explained
+    summaries, and visualizing two-dimensional PCA score
     summaries using additive and sparse histogram mechanisms. Group-wise score
     visualizations and an interactive 'shiny' app are also provided. Private
-    principal component directions are based on Kim and Jung (2025)
+    principal component loadings are based on Kim and Jung (2025)
     <doi:10.1002/sam.70053>. Private scree summaries use mechanisms motivated
     by Dwork and Roth (2014) <doi:10.1561/0400000042>, Ramsay and Spicker
     (2025) <doi:10.48550/arXiv.2501.14095>, and Yu, Ren and Zhou (2024)
@@ -30,10 +31,11 @@ Depends:
 Imports:
     dplyr,
     ggplot2,
+    ggrepel,
     graphics,
     grDevices,
+    grid,
     patchwork,
-    rARPACK,
     Rcpp,
     Rdpack,
     rlang,
