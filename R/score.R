@@ -5,21 +5,19 @@
 
 #' Differentially private score histograms
 #'
-#' This function computes two-dimensional principal component scores and returns
-#' differentially private histogram estimates on the score space. It returns the
+#' This function computes two-dimensional principal component scores using
+#' private directions from [dp_loading()] and returns differentially private
+#' histogram estimates on the score space. It returns the
 #' score coordinates, the plotting frame, the non-private histogram, and the
 #' requested private histogram estimates.
 #'
 #' @param X A numeric matrix or data frame. Rows correspond to observations and
 #'  columns correspond to variables.
-#' @param eps Positive number defining the `epsilon` privacy parameter supplied
-#'   to each requested score-histogram procedure. When multiple histogram
-#'   methods are requested, the same value is used for each method for
-#'   comparison; it is not divided across methods.
-#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter
-#'   supplied to each requested score-histogram procedure. When multiple
-#'   histogram methods are requested, the same value is used for each method
-#'   for comparison; it is not divided across methods.
+#' @param privacy Output of [privacy_control()] with exactly `loading` and
+#'   `score` components. For example, use `privacy_control(eps = 3,
+#'   delta = 1e-4, split = c(loading = 0.5, score = 0.5))`. The loading
+#'   allocation is used once; the histogram portion of the score allocation
+#'   is reused for each requested histogram method; see Details.
 #' @param bins Integer vector of length 2 defining the number of histogram bins
 #'   along the first and second score axes, respectively.
 #' @param method Character vector specifying which private histogram methods to
@@ -30,10 +28,8 @@
 #' @param standardize A logical value indicating whether to scale the columns of
 #'   `X` by their sample standard deviations after optional centering. The
 #'   default is `FALSE`.
-#' @param g_dppca A logical value indicating whether to use private principal
-#'   component directions. The default is `FALSE`. See [dp_pc_dir()] for details.
-#' @param cpp.option A logical value passed to [dp_pc_dir()] when
-#'   `g_dppca = TRUE`. The default is `FALSE`.
+#' @param cpp.option A logical value passed to [dp_loading()] to select the
+#'   Rcpp spherical-Kendall implementation. The default is `FALSE`.
 #' @param axes Positive integer vector of length 2 specifying the principal
 #'   components used as the horizontal and vertical score axes, in that order.
 #'   Each value must not exceed `ncol(X)`. Repeated or decreasing indices are
@@ -80,19 +76,18 @@
 #'   \insertCite{karwa2017finite;textual}{dppca}.
 #' }
 #'
-#' The privacy parameters are allocated across the privacy-consuming steps. If
-#' `g_dppca = FALSE`, 35 percent of `eps` is used for the private frame and 65
-#' percent for the private histogram; all of `delta` is used by the histogram.
-#' If `g_dppca = TRUE`, `eps` is allocated in proportions 0.2, 0.2, and 0.6 to
-#' private direction estimation, private frame construction, and private
-#' histogram release, respectively. The corresponding `delta` proportions are
-#' 0.2 for private directions and 0.8 for the histogram. Frame construction is
-#' pure DP and divides `eps_frame` equally among its two private medians and one
-#' private radial-quantile estimate.
+#' Private directions use the `loading` component of `privacy`. Within the
+#' `score` component, 35 percent of `eps` is used for the private frame and
+#' 65 percent for the histogram; all score `delta` is assigned to the histogram.
+#' With `split = c(loading = 0.5, score = 0.5)`, the direction, frame and
+#' histogram proportions of total `eps` are 0.5, 0.175 and 0.325. Directions
+#' and the frame are estimated once and shared across histogram methods. Frame
+#' construction is pure DP and divides `eps_frame` equally among its two
+#' private medians and one private radial-quantile estimate.
 #'
 #' When multiple histogram methods are requested, the histogram privacy budget
 #' is not divided across `"add"` and `"sparse"`. Instead, each requested method
-#' receives the same histogram portion of `eps` and `delta` so that the methods
+#' receives the same histogram allocation from `privacy` so that the methods
 #' can be compared under the same privacy setting. If outputs from multiple
 #' private histogram methods are released together, the privacy cost of the
 #' joint release must be accounted for by composition.
@@ -113,7 +108,7 @@
 #' [dp_score_plot()] for plotting the output of this function.
 #' [dp_score_group()] and [dp_score_plot_group()] for group-wise score
 #' histograms.
-#' [dp_pc_dir()] for private principal component direction estimation.
+#' [dp_loading()] for private principal component direction estimation.
 #'
 #' @references
 #' \insertRef{dwork2014algorithmic}{dppca}
@@ -136,8 +131,10 @@
 #' set.seed(123)
 #' score_gau <- dp_score(
 #'   X,
-#'   eps = 2,
-#'   delta = 1e-3,
+#'   privacy = privacy_control(
+#'     eps = 2, delta = 1e-3,
+#'     split = c(loading = 0.5, score = 0.5)
+#'   ),
 #'   method = "add",
 #'   bins = c(10, 10)
 #' )
@@ -149,25 +146,21 @@
 #' @export
 dp_score <- function(
     X,
-    eps,
-    delta,
+    privacy,
     bins,
     method = c("add", "sparse"),
     center = TRUE,
     standardize = FALSE,
-    g_dppca = FALSE,
     cpp.option = FALSE,
     axes = c(1, 2)
 ) {
+  privacy <- .validate_privacy_control(privacy, c("loading", "score"))
   X <- validate_score_matrix(X)
   validate_score_common(
     X = X,
-    eps = eps,
-    delta = delta,
     bins = bins,
     center = center,
     standardize = standardize,
-    g_dppca = g_dppca,
     cpp.option = cpp.option,
     axes = axes
   )
@@ -182,18 +175,13 @@ dp_score <- function(
     )
   )
 
-  budget <- split_score_privacy_budget(
-    eps = eps,
-    delta = delta,
-    g_dppca = g_dppca
-  )
+  budget <- split_score_privacy_budget(privacy)
 
   score_res <- compute_score_coordinates(
     X = X,
     axes = axes,
     center = center,
     standardize = standardize,
-    g_dppca = g_dppca,
     cpp.option = cpp.option,
     eps_pc = budget$eps_pc,
     delta_pc = budget$delta_pc
@@ -289,8 +277,10 @@ dp_score <- function(
 #' set.seed(123)
 #' score_plot <- dp_score_plot(
 #'   X,
-#'   eps = 3,
-#'   delta = 1e-3,
+#'   privacy = privacy_control(
+#'     eps = 3, delta = 1e-3,
+#'     split = c(loading = 0.5, score = 0.5)
+#'   ),
 #'   bins = c(8, 8),
 #'   method = "add"
 #' )
@@ -300,8 +290,10 @@ dp_score <- function(
 #' set.seed(123)
 #' sample_plot <- dp_score_plot(
 #'   X,
-#'   eps = 3,
-#'   delta = 1e-3,
+#'   privacy = privacy_control(
+#'     eps = 3, delta = 1e-3,
+#'     split = c(loading = 0.5, score = 0.5)
+#'   ),
 #'   bins = c(8, 8),
 #'   method = "add",
 #'   private_plot = "sample",
@@ -314,19 +306,18 @@ dp_score <- function(
 #' @export
 dp_score_plot <- function(
     X,
-    eps,
-    delta,
+    privacy,
     bins,
     method = c("add", "sparse"),
     private_plot = c("histogram", "sample"),
     sampling_control = NULL,
     center = TRUE,
     standardize = FALSE,
-    g_dppca = FALSE,
     cpp.option = FALSE,
     axes = c(1, 2),
     plot_control = NULL
 ) {
+  privacy <- .validate_privacy_control(privacy, c("loading", "score"))
   method <- unique(
     match.arg(
       method,
@@ -347,12 +338,10 @@ dp_score_plot <- function(
 
   score_res <- dp_score(
     X = X,
-    eps = eps,
-    delta = delta,
+    privacy = privacy,
     bins = bins,
     center = center,
     standardize = standardize,
-    g_dppca = g_dppca,
     cpp.option = cpp.option,
     axes = axes,
     method = method
@@ -586,7 +575,7 @@ dp_score_plot <- function(
 #'
 #' When both `"add"` and `"sparse"` are requested, the histogram privacy budget
 #' is not divided across the two methods. Each method receives the same histogram
-#' portion of `eps` and `delta` for method comparison. Releasing outputs from
+#' allocation from `privacy` for method comparison. Releasing outputs from
 #' multiple private histogram methods together requires composition across
 #' methods.
 #'
@@ -611,8 +600,10 @@ dp_score_plot <- function(
 #' score_gau_g <- dp_score_group(
 #'   gau_g,
 #'   group = "group",
-#'   eps = 3,
-#'   delta = 1e-3,
+#'   privacy = privacy_control(
+#'     eps = 3, delta = 1e-3,
+#'     split = c(loading = 0.5, score = 0.5)
+#'   ),
 #'   bins = c(8, 8)
 #' )
 #'
@@ -624,16 +615,15 @@ dp_score_plot <- function(
 dp_score_group <- function(
     X,
     group,
-    eps,
-    delta,
+    privacy,
     bins,
     method = c("add", "sparse"),
     center = TRUE,
     standardize = FALSE,
-    g_dppca = FALSE,
     cpp.option = FALSE,
     axes = c(1, 2)
 ) {
+  privacy <- .validate_privacy_control(privacy, c("loading", "score"))
   method <- unique(
     match.arg(
       method,
@@ -655,12 +645,9 @@ dp_score_group <- function(
 
   validate_score_common(
     X = X_mat,
-    eps = eps,
-    delta = delta,
     bins = bins,
     center = center,
     standardize = standardize,
-    g_dppca = g_dppca,
     cpp.option = cpp.option,
     axes = axes
   )
@@ -671,18 +658,13 @@ dp_score_group <- function(
   m_y <- bins[2]
   g_levels <- as.character(unique(group_vec))
 
-  budget <- split_score_privacy_budget(
-    eps = eps,
-    delta = delta,
-    g_dppca = g_dppca
-  )
+  budget <- split_score_privacy_budget(privacy)
 
   score_res <- compute_score_coordinates(
     X = X_mat,
     axes = axes,
     center = center,
     standardize = standardize,
-    g_dppca = g_dppca,
     cpp.option = cpp.option,
     eps_pc = budget$eps_pc,
     delta_pc = budget$delta_pc
@@ -817,8 +799,10 @@ dp_score_group <- function(
 #' score_plot_gau_g <- dp_score_plot_group(
 #'   gau_g,
 #'   group = "group",
-#'   eps = 3,
-#'   delta = 1e-3,
+#'   privacy = privacy_control(
+#'     eps = 3, delta = 1e-3,
+#'     split = c(loading = 0.5, score = 0.5)
+#'   ),
 #'   bins = c(8, 8),
 #'   sampling_control = sampling_control(
 #'     method = c("center", "uniform")
@@ -831,12 +815,10 @@ dp_score_group <- function(
 dp_score_plot_group <- function(
     X,
     group,
-    eps,
-    delta,
+    privacy,
     bins,
     center = TRUE,
     standardize = FALSE,
-    g_dppca = FALSE,
     cpp.option = FALSE,
     axes = c(1, 2),
     method = c("add", "sparse"),
@@ -844,6 +826,7 @@ dp_score_plot_group <- function(
     sampling_control = NULL,
     plot_control = NULL
 ) {
+  privacy <- .validate_privacy_control(privacy, c("loading", "score"))
   method <- unique(
     match.arg(
       method,
@@ -888,12 +871,10 @@ dp_score_plot_group <- function(
   score_res <- dp_score_group(
     X = X_feat,
     group = group_vec,
-    eps = eps,
-    delta = delta,
+    privacy = privacy,
     bins = bins,
     center = center,
     standardize = standardize,
-    g_dppca = g_dppca,
     cpp.option = cpp.option,
     axes = axes,
     method = method

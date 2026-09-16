@@ -7,13 +7,11 @@
 dp_scree_plot(
   X,
   k,
+  privacy,
   method = c("clipped", "pmwm", "huber"),
   control = NULL,
-  eps,
-  delta,
   center = TRUE,
   standardize = FALSE,
-  g_dppca = FALSE,
   cpp.option = FALSE,
   mono = TRUE,
   type = c("pve", "scree"),
@@ -27,23 +25,18 @@ columns correspond to variables.}
 \item{k}{Positive integer defining the number of leading principal components
 to estimate. Must be an integer between \code{1} and the number of columns in \code{X}.}
 
+\item{privacy}{A \code{\link[=privacy_control]{privacy_control()}} object with exactly the \code{loading} and
+\code{scree} components. For example, use
+\code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, scree = 0.5))}.
+The loading budget is used once; each requested scree method receives
+the full \code{scree} component budget, without division across methods.}
+
 \item{method}{Scree estimation method or methods to plot. One or more of
 \code{"clipped"}, \code{"pmwm"}, or \code{"huber"}. If omitted, \code{"clipped"} is used.}
 
 \item{control}{Optional method-specific control list, or a named list of
 control lists when multiple methods are requested. Use \code{\link[=clipped_control]{clipped_control()}},
 \code{\link[=pmwm_control]{pmwm_control()}}, and \code{\link[=huber_control]{huber_control()}}.}
-
-\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
-separately to each requested method. When multiple methods are plotted, the
-same value is used for each method for comparison.}
-
-\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
-supplied separately to each requested method. When multiple methods are
-plotted, the same value is used for each method for comparison. For PMWM,
-\code{delta} is not used by the pure-DP quantile step; it is used by the
-Gaussian winsorized-mean release and, when requested, private PC direction
-estimation.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
 before computing principal component directions. The default is \code{TRUE}.}
@@ -52,12 +45,8 @@ before computing principal component directions. The default is \code{TRUE}.}
 \code{X} by their sample standard deviations after optional centering. The
 default is \code{FALSE}.}
 
-\item{g_dppca}{A logical value indicating whether to use private principal
-component directions for scree estimation. The default is \code{FALSE}. See
-\code{\link[=dp_pc_dir]{dp_pc_dir()}} for details.}
-
-\item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
-\code{g_dppca = TRUE}. The default is \code{FALSE}.}
+\item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} for private
+loading estimation. The default is \code{FALSE}.}
 
 \item{mono}{A logical value indicating whether to apply monotone
 post-processing to the private scree vector. The default is \code{TRUE}.}
@@ -80,6 +69,10 @@ around \code{\link[=dp_scree]{dp_scree()}}.
 \details{
 This function calls \code{\link[=dp_scree]{dp_scree()}} once and plots its returned \code{nonprivate}
 result together with each requested private method using base R graphics.
+All private methods share the same estimated loadings and projected scores.
+The \code{loading} component of \code{privacy} is used once; each method receives the
+full \code{scree} component budget. Releasing several methods together requires
+composition; the recorded total covers loading plus one scree method.
 
 The default legend labels are \code{"Non-private"}, \code{"Clipped"}, \code{"PMWM"}, and
 \code{"Huber"}. Plot appearance, including the title, axis labels, legend
@@ -94,26 +87,29 @@ data(gau, package = "dppca")
 
 # Use a small subset to keep the example fast.
 X <- gau[1:200, ]
+privacy <- privacy_control(
+  eps = 3,
+  delta = 1e-4,
+  split = c(loading = 0.5, scree = 0.5)
+)
 
 # Draw a private PVE plot using the clipped mean method.
 set.seed(123)
 dp_scree_plot(
   X,
   k = 5,
+  privacy = privacy,
   method = "clipped",
-  control = clipped_control(C_clip = 3),
-  eps = 3,
-  delta = 1e-3
+  control = clipped_control(C_clip = 3)
 )
 
 # Customize the plot using a separate plotting control.
 # dp_scree_plot(
 #   X,
 #   k = 5,
+#   privacy = privacy,
 #   method = "clipped",
 #   control = clipped_control(C_clip = 3),
-#   eps = 3,
-#   delta = 1e-3,
 #   plot_control = scree_plot_control(
 #     title = "PVE comparison",
 #     xlab = "Principal Component",
@@ -134,7 +130,7 @@ dp_scree_plot(
 \insertRef{kim2025robustdppca}{dppca}
 }
 \seealso{
-\code{\link[=dp_pc_dir]{dp_pc_dir()}} for principal component direction estimation.
+\code{\link[=dp_loading]{dp_loading()}} for private principal component direction estimation.
 \code{\link[=dp_scree]{dp_scree()}} for computing non-private and differentially private scree
 estimates.
 \code{\link[=scree_plot_control]{scree_plot_control()}} for plot appearance.

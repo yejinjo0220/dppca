@@ -7,12 +7,10 @@
 dp_score_plot_group(
   X,
   group,
-  eps,
-  delta,
+  privacy,
   bins,
   center = TRUE,
   standardize = FALSE,
-  g_dppca = FALSE,
   cpp.option = FALSE,
   axes = c(1, 2),
   method = c("add", "sparse"),
@@ -31,15 +29,10 @@ for each observation.}
 single column name in \code{X}. If a column name is supplied, that column is
 used as the group label and removed from the feature matrix.}
 
-\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
-to each requested score-histogram procedure. When multiple histogram
-methods are requested, the same value is used for each method for
-comparison; it is not divided across methods.}
-
-\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
-supplied to each requested score-histogram procedure. When multiple
-histogram methods are requested, the same value is used for each method
-for comparison; it is not divided across methods.}
+\item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
+\code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
+allocation is used once; the histogram portion of the score allocation
+is reused for each requested histogram method; see Details.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -51,11 +44,8 @@ before computing principal component directions. The default is \code{TRUE}.}
 \code{X} by their sample standard deviations after optional centering. The
 default is \code{FALSE}.}
 
-\item{g_dppca}{A logical value indicating whether to use private principal
-component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{dp_pc_dir()}} for details.}
-
-\item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
-\code{g_dppca = TRUE}. The default is \code{FALSE}.}
+\item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} to select the
+Rcpp spherical-Kendall implementation. The default is \code{FALSE}.}
 
 \item{axes}{Positive integer vector of length 2 specifying the principal
 components used as the horizontal and vertical score axes, in that order.
@@ -144,8 +134,10 @@ set.seed(123)
 score_plot_gau_g <- dp_score_plot_group(
   gau_g,
   group = "group",
-  eps = 3,
-  delta = 1e-3,
+  privacy = privacy_control(
+    eps = 3, delta = 1e-3,
+    split = c(loading = 0.5, score = 0.5)
+  ),
   bins = c(8, 8),
   sampling_control = sampling_control(
     method = c("center", "uniform")

@@ -6,13 +6,11 @@
 \usage{
 dp_score(
   X,
-  eps,
-  delta,
+  privacy,
   bins,
   method = c("add", "sparse"),
   center = TRUE,
   standardize = FALSE,
-  g_dppca = FALSE,
   cpp.option = FALSE,
   axes = c(1, 2)
 )
@@ -21,15 +19,10 @@ dp_score(
 \item{X}{A numeric matrix or data frame. Rows correspond to observations and
 columns correspond to variables.}
 
-\item{eps}{Positive number defining the \code{epsilon} privacy parameter supplied
-to each requested score-histogram procedure. When multiple histogram
-methods are requested, the same value is used for each method for
-comparison; it is not divided across methods.}
-
-\item{delta}{Number in \verb{(0, 1)} defining the \code{delta} privacy parameter
-supplied to each requested score-histogram procedure. When multiple
-histogram methods are requested, the same value is used for each method
-for comparison; it is not divided across methods.}
+\item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
+\code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
+allocation is used once; the histogram portion of the score allocation
+is reused for each requested histogram method; see Details.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -45,11 +38,8 @@ before computing principal component directions. The default is \code{TRUE}.}
 \code{X} by their sample standard deviations after optional centering. The
 default is \code{FALSE}.}
 
-\item{g_dppca}{A logical value indicating whether to use private principal
-component directions. The default is \code{FALSE}. See \code{\link[=dp_pc_dir]{dp_pc_dir()}} for details.}
-
-\item{cpp.option}{A logical value passed to \code{\link[=dp_pc_dir]{dp_pc_dir()}} when
-\code{g_dppca = TRUE}. The default is \code{FALSE}.}
+\item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} to select the
+Rcpp spherical-Kendall implementation. The default is \code{FALSE}.}
 
 \item{axes}{Positive integer vector of length 2 specifying the principal
 components used as the horizontal and vertical score axes, in that order.
@@ -64,8 +54,9 @@ additional component (\code{add} and/or \code{sparse}). Methods that are not req
 are omitted from the returned list.
 }
 \description{
-This function computes two-dimensional principal component scores and returns
-differentially private histogram estimates on the score space. It returns the
+This function computes two-dimensional principal component scores using
+private directions from \code{\link[=dp_loading]{dp_loading()}} and returns differentially private
+histogram estimates on the score space. It returns the
 score coordinates, the plotting frame, the non-private histogram, and the
 requested private histogram estimates.
 }
@@ -110,19 +101,18 @@ following the stability-based private histogram idea of
 \insertCite{karwa2017finite;textual}{dppca}.
 }
 
-The privacy parameters are allocated across the privacy-consuming steps. If
-\code{g_dppca = FALSE}, 35 percent of \code{eps} is used for the private frame and 65
-percent for the private histogram; all of \code{delta} is used by the histogram.
-If \code{g_dppca = TRUE}, \code{eps} is allocated in proportions 0.2, 0.2, and 0.6 to
-private direction estimation, private frame construction, and private
-histogram release, respectively. The corresponding \code{delta} proportions are
-0.2 for private directions and 0.8 for the histogram. Frame construction is
-pure DP and divides \code{eps_frame} equally among its two private medians and one
-private radial-quantile estimate.
+Private directions use the \code{loading} component of \code{privacy}. Within the
+\code{score} component, 35 percent of \code{eps} is used for the private frame and
+65 percent for the histogram; all score \code{delta} is assigned to the histogram.
+With \code{split = c(loading = 0.5, score = 0.5)}, the direction, frame and
+histogram proportions of total \code{eps} are 0.5, 0.175 and 0.325. Directions
+and the frame are estimated once and shared across histogram methods. Frame
+construction is pure DP and divides \code{eps_frame} equally among its two
+private medians and one private radial-quantile estimate.
 
 When multiple histogram methods are requested, the histogram privacy budget
 is not divided across \code{"add"} and \code{"sparse"}. Instead, each requested method
-receives the same histogram portion of \code{eps} and \code{delta} so that the methods
+receives the same histogram allocation from \code{privacy} so that the methods
 can be compared under the same privacy setting. If outputs from multiple
 private histogram methods are released together, the privacy cost of the
 joint release must be accounted for by composition.
@@ -143,8 +133,10 @@ X <- gau[1:300, ]
 set.seed(123)
 score_gau <- dp_score(
   X,
-  eps = 2,
-  delta = 1e-3,
+  privacy = privacy_control(
+    eps = 2, delta = 1e-3,
+    split = c(loading = 0.5, score = 0.5)
+  ),
   method = "add",
   bins = c(10, 10)
 )
@@ -168,5 +160,5 @@ head(score_gau$add)
 \code{\link[=dp_score_plot]{dp_score_plot()}} for plotting the output of this function.
 \code{\link[=dp_score_group]{dp_score_group()}} and \code{\link[=dp_score_plot_group]{dp_score_plot_group()}} for group-wise score
 histograms.
-\code{\link[=dp_pc_dir]{dp_pc_dir()}} for private principal component direction estimation.
+\code{\link[=dp_loading]{dp_loading()}} for private principal component direction estimation.
 }

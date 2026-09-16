@@ -91,7 +91,7 @@ dp_quantile_ss <- function(x, q, epsilon, delta) {
 dp_frame <- function(
     X,
     eps_frame,
-    inflate = 0.20
+    inflate = 0
 ) {
   X <- as.matrix(X)
 
@@ -741,39 +741,34 @@ NULL
 
 # Internal helpers ------------------------------------------------------------
 
-#' Split privacy parameters across score-estimation steps
+#' Extract loading and score-estimation budgets
 #'
-#' When private principal component directions are requested, `eps` is split
-#' 0.2/0.2/0.6 across direction, frame, and histogram estimation, while `delta`
-#' is split 0.2/0.8 across direction and histogram estimation. Otherwise,
-#' `eps` is split 0.35/0.65 across frame and histogram estimation and all of
-#' `delta` is assigned to the histogram. Frame construction is pure DP.
+#' Use the loading allocation for directions, then split the score `eps`
+#' 0.35/0.65 across frame and histogram estimation. All score `delta` is
+#' assigned to the histogram. Frame construction is pure DP. Each requested
+#' histogram method receives the full histogram portion.
 #'
-#' @param eps Positive total `epsilon` privacy parameter.
-#' @param delta Number in `(0, 1)` defining the total `delta` privacy parameter.
-#' @param g_dppca Whether private principal component directions are requested.
+#' @param privacy Output of [privacy_control()] with `loading` and `score`
+#'   components, plus an optional `scree` component for integrated PCA.
 #'
 #' @return A list with components `eps_pc`, `eps_frame`, `eps_hist`, `delta_pc`,
-#'   and `delta_hist`. The PC components are `NULL` when `g_dppca = FALSE`.
+#'   and `delta_hist`.
 #' @noRd
-split_score_privacy_budget <- function(eps, delta, g_dppca) {
-  if (isTRUE(g_dppca)) {
-    list(
-      eps_pc = 0.2 * eps,
-      eps_frame = 0.2 * eps,
-      eps_hist = 0.6 * eps,
-      delta_pc = 0.2 * delta,
-      delta_hist = 0.8 * delta
-    )
-  } else {
-    list(
-      eps_pc = NULL,
-      eps_frame = 0.35 * eps,
-      eps_hist = 0.65 * eps,
-      delta_pc = NULL,
-      delta_hist = delta
-    )
+split_score_privacy_budget <- function(privacy) {
+  components <- c("loading", "score")
+  if (is.list(privacy) && "scree" %in% names(privacy$components)) {
+    components <- c("loading", "scree", "score")
   }
+  privacy <- .validate_privacy_control(privacy, components)
+  budget <- privacy$components
+
+  list(
+    eps_pc = budget$loading[["eps"]],
+    eps_frame = 0.35 * budget$score[["eps"]],
+    eps_hist = 0.65 * budget$score[["eps"]],
+    delta_pc = budget$loading[["delta"]],
+    delta_hist = budget$score[["delta"]]
+  )
 }
 
 #' Validate and coerce a score input matrix
@@ -805,10 +800,8 @@ validate_score_matrix <- function(X) {
 #' Validate common score-estimation arguments
 #'
 #' @param X Numeric matrix used to check the available component indices.
-#' @param eps Positive `epsilon` privacy parameter.
-#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter.
 #' @param bins Positive integer vector of length 2.
-#' @param center,standardize,g_dppca,cpp.option Logical scalar options.
+#' @param center,standardize,cpp.option Logical scalar options.
 #' @param axes Positive integer vector of length 2 whose largest value does not
 #'   exceed `ncol(X)`.
 #'
@@ -816,29 +809,15 @@ validate_score_matrix <- function(X) {
 #' @noRd
 validate_score_common <- function(
     X,
-    eps,
-    delta,
     bins,
     center,
     standardize,
-    g_dppca,
     cpp.option,
     axes
 ) {
   validate_logical_value(center, "center")
   validate_logical_value(standardize, "standardize")
-  validate_logical_value(g_dppca, "g_dppca")
   validate_logical_value(cpp.option, "cpp.option")
-
-  if (!is.numeric(eps) || length(eps) != 1L || !is.finite(eps) || eps <= 0) {
-    stop("`eps` must be a positive number.", call. = FALSE)
-  }
-  if (
-    !is.numeric(delta) || length(delta) != 1L ||
-    !is.finite(delta) || delta <= 0 || delta >= 1
-  ) {
-    stop("`delta` must be a number in `(0, 1)`.", call. = FALSE)
-  }
 
   validate_bins(bins)
 
@@ -911,10 +890,8 @@ validate_bins <- function(bins) {
 #' @param X Numeric data matrix with observations in rows.
 #' @param axes Positive integer vector of length 2 selecting score axes.
 #' @param center,standardize Logical preprocessing options.
-#' @param g_dppca Whether to use private principal component directions.
 #' @param cpp.option Whether to use the Rcpp spherical-Kendall implementation.
-#' @param eps_pc,delta_pc Privacy parameters for private direction estimation,
-#'   or `NULL` when `g_dppca = FALSE`.
+#' @param eps_pc,delta_pc Privacy parameters for private direction estimation.
 #'
 #' @return A list containing the selected `score` matrix and `directions`
 #'   matrix.
@@ -924,29 +901,24 @@ compute_score_coordinates <- function(
     axes,
     center,
     standardize,
-    g_dppca,
     cpp.option,
     eps_pc,
     delta_pc
 ) {
-  k_max <- max(axes)
-
   X_proc <- prep_matrix_for_pca(
     X = X,
     center = center,
     standardize = standardize
   )
 
-  V_all <- dp_pc_dir(
-    X = X,
-    k = k_max,
-    center = center,
-    standardize = standardize,
-    g_dppca = g_dppca,
+  V_all <- dp_loading(
+    X = X_proc,
+    center = FALSE,
+    standardize = FALSE,
     eps = eps_pc,
     delta = delta_pc,
     cpp.option = cpp.option
-  )
+  )$private
 
   V <- V_all[, axes, drop = FALSE]
   X_score <- as.matrix(X_proc %*% V)

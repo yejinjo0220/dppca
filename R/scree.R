@@ -18,38 +18,23 @@
 #'   columns correspond to variables.
 #' @param k Positive integer defining the number of leading principal components
 #'   to estimate. Must be an integer between `1` and the number of columns in `X`.
+#' @param privacy A [privacy_control()] object with exactly the `loading` and
+#'   `scree` components. For example, use
+#'   `privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, scree = 0.5))`.
+#'   The loading budget is used once; each requested scree method receives
+#'   the full `scree` component budget, without division across methods.
 #' @param method Scree value estimation method or methods. One or more of
 #'   `"clipped"`, `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
 #' @param control Optional method-specific control list created by
 #'   [clipped_control()], [pmwm_control()], or [huber_control()]. When multiple
 #'   methods are requested, use a named list with method names.
-#' @param eps Positive number defining the `epsilon` privacy parameter supplied
-#'   to each requested scree method. When multiple methods are requested, the
-#'   same value of `eps` is applied separately to each method for comparison; it
-#'   is not divided across methods. If `g_dppca = TRUE`, each method internally
-#'   splits its supplied `eps` between private direction estimation and private
-#'   scree estimation.
-#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter
-#'   supplied to each requested scree method. When multiple methods are
-#'   requested, the same value of `delta` is applied separately to each method
-#'   for comparison; it is not divided across methods. If `g_dppca = TRUE`,
-#'   each method internally splits its supplied `delta` between private direction
-#'   estimation and private scree estimation. For `method = "pmwm"`, the private
-#'   quantile step is pure DP and does not consume `delta`; the scree-estimation
-#'   share of `delta` is used by the Gaussian winsorized-mean release.
-#'   For `method = "huber"`, the private scale-proxy step is pure DP. Noisy
-#'   gradient descent receives the `(1 - m2_frac)` share of the scree-estimation
-#'   `delta`; the remaining `m2_frac` share is not used.
 #' @param center A logical value indicating whether to center the columns of `X`
 #'   before computing principal component directions. The default is `TRUE`.
 #' @param standardize A logical value indicating whether to scale the columns of
 #'   `X` by their sample standard deviations after optional centering. The
 #'   default is `FALSE`.
-#' @param g_dppca A logical value indicating whether to use private principal
-#'   component directions for scree estimation. The default is `FALSE`. See
-#'   [dp_pc_dir()] for details.
-#' @param cpp.option A logical value passed to [dp_pc_dir()] when
-#'   `g_dppca = TRUE`. The default is `FALSE`.
+#' @param cpp.option A logical value passed to [dp_loading()] for private
+#'   loading estimation. The default is `FALSE`.
 #' @param mono A logical value indicating whether to apply monotone
 #'   post-processing to the vector of private scree values. The default is
 #'   `TRUE`.
@@ -82,23 +67,30 @@
 #'   bounds supplied through [pmwm_control()].
 #'   The squared scores \eqn{w_{i\ell}} are then winsorized to those cutoffs,
 #'   and the final winsorized mean is released with a Gaussian mechanism
-#'   calibrated to the supplied `(eps, delta)` budget.
+#'   calibrated to its share of the `scree` component budget.
 #'   \item `"huber"` uses a Huber-type private robust mean estimator based on
 #'   noisy gradient descent, following \insertCite{yu2024gaussian;textual}{dppca}.
 #' }
 #'
-#' The argument `g_dppca` controls how the principal component directions are
-#' obtained. If `g_dppca = FALSE`, the directions are computed non-privately and
-#' the full method-specific privacy parameters `eps` and `delta` are used for
-#' private scree estimation. If `g_dppca = TRUE`, the directions are computed
-#' privately using [dp_pc_dir()]. Within each requested method, `eps` and `delta`
-#' are split equally: [dp_pc_dir()] receives `eps / 2` and `delta / 2`, and the
-#' remaining halves are used for private scree estimation.
+#' Principal component directions are always estimated privately using
+#' [dp_loading()]. The data are preprocessed once, and one loading estimate
+#' is computed using the `loading` component of `privacy`. The first `k`
+#' columns of its `private` matrix produce one score matrix shared by all
+#' requested methods. Each method uses the `scree` component directly; there
+#' is no additional loading allocation within a scree method.
 #'
-#' When multiple methods are requested, `eps` and `delta` are applied separately
-#' to each method for method comparison. They are not divided across methods.
-#' Consequently, if outputs from multiple private methods are released together,
-#' the privacy cost of the joint release must be accounted for by composition.
+#' When multiple methods are requested, each receives the same full `scree`
+#' epsilon and delta budgets for method comparison. These budgets are not
+#' divided across methods. For a joint release, composition counts the shared
+#' loading allocation once, plus the privacy costs of all requested methods.
+#' The total recorded in `privacy` covers loading plus one scree method, not
+#' a joint release of several scree methods.
+#'
+#' For `method = "pmwm"`, the private quantile step is pure DP and does not
+#' consume `delta`; the scree component's delta budget is used by the Gaussian
+#' winsorized-mean release. For `method = "huber"`, the private scale-proxy step
+#' is pure DP. Noisy gradient descent receives the `(1 - m2_frac)` share of
+#' the scree component's delta budget; the remaining `m2_frac` share is unused.
 #'
 #' The `nonprivate` component is provided only as a non-private reference and is
 #' not itself differentially private.
@@ -130,7 +122,7 @@
 #' the same whether one or multiple private methods are requested.
 #'
 #' @seealso
-#' [dp_pc_dir()] for principal component direction estimation.
+#' [dp_loading()] for private principal component direction estimation.
 #' [clipped_control()], [pmwm_control()], and [huber_control()] for
 #' method-specific tuning parameters.
 #'
@@ -150,35 +142,38 @@
 #'
 #' # Use a small subset to keep the example fast.
 #' X <- gau[1:100, ]
+#' privacy <- privacy_control(
+#'   eps = 3,
+#'   delta = 1e-4,
+#'   split = c(loading = 0.5, scree = 0.5)
+#' )
 #'
 #' # Estimate private scree values using the clipped mean method.
 #' set.seed(123)
 #' out <- dp_scree(
 #'   X,
 #'   k = 2,
+#'   privacy = privacy,
 #'   method = "clipped",
-#'   control = clipped_control(C_clip = 3),
-#'   eps = 2,
-#'   delta = 1e-3
+#'   control = clipped_control(C_clip = 3)
 #' )
 #'
 #' out$nonprivate
 #' out$clipped
 #'
 #' # Multiple methods can be requested together by using a named control list.
-#' # Each method receives the same eps and delta values for method comparison.
+#' # Loading is estimated once; each method receives the full scree budget.
+#' # Change the split in privacy_control() to choose a different allocation.
 #'
 #' @export
 dp_scree <- function(
     X,
     k,
+    privacy,
     method = c("clipped", "pmwm", "huber"),
     control = NULL,
-    eps,
-    delta,
     center = TRUE,
     standardize = FALSE,
-    g_dppca = FALSE,
     cpp.option = FALSE,
     mono = TRUE
 ) {
@@ -193,13 +188,15 @@ dp_scree <- function(
     method <- unique(method)
   }
 
+  privacy <- .validate_privacy_control(privacy, c("loading", "scree"))
+  b <- privacy$components
   X <- as.matrix(X)
 
   validate_scree_inputs(
     X = X,
     k = k,
-    eps = eps,
-    delta = delta
+    eps = privacy$total[["eps"]],
+    delta = privacy$total[["delta"]]
   )
 
   k <- as.integer(k)
@@ -221,13 +218,23 @@ dp_scree <- function(
     }
   }
 
-  # Compute the ordinary non-private PCA scree values only once.
+  # Preprocess once, then share one private loading and score matrix.
   X_proc <- prep_matrix_for_pca(
     X = X,
     center = center,
     standardize = standardize
   )
+  V_used <- dp_loading(
+    X = X_proc,
+    eps = b$loading[["eps"]],
+    delta = b$loading[["delta"]],
+    center = FALSE,
+    standardize = FALSE,
+    cpp.option = cpp.option
+  )$private[, seq_len(k), drop = FALSE]
+  Y <- X_proc %*% V_used
 
+  # Compute the ordinary non-private PCA scree values only once.
   S_np <- stats::cov(X_proc)
   eig_np <- eigen(S_np, symmetric = TRUE, only.values = TRUE)
 
@@ -245,9 +252,8 @@ dp_scree <- function(
     )
   )
 
-  # Each requested method receives the same eps and delta values. These
-  # parameters are not divided across methods; this supports direct method
-  # comparison under a common privacy setting.
+  # All methods use the same scores and the full scree component budget.
+  # The budget is not divided across methods, supporting method comparison.
   for (m in method) {
     control_m <- if (length(method) == 1L) {
       control
@@ -262,27 +268,17 @@ dp_scree <- function(
     result <- switch(
       m,
       clipped = dp_scree_clipped(
-        X = X,
-        k = k,
-        eps = eps,
-        delta = delta,
-        center = center,
-        standardize = standardize,
+        Y = Y,
+        eps = b$scree[["eps"]],
+        delta = b$scree[["delta"]],
         C_clip = control_m$C_clip,
-        g_dppca = g_dppca,
-        cpp.option = cpp.option,
         mono = mono
       ),
       pmwm = dp_scree_pmwm(
-        X = X,
-        k = k,
-        eps = eps,
-        delta = delta,
-        g_dppca = g_dppca,
-        cpp.option = cpp.option,
+        Y = Y,
+        eps = b$scree[["eps"]],
+        delta = b$scree[["delta"]],
         split_mode = control_m$split_mode,
-        center = center,
-        standardize = standardize,
         beta = control_m$beta,
         a = control_m$a,
         b = control_m$b,
@@ -291,14 +287,9 @@ dp_scree <- function(
         mono = mono
       ),
       huber = dp_scree_huber(
-        X = X,
-        k = k,
-        eps = eps,
-        delta = delta,
-        g_dppca = g_dppca,
-        cpp.option = cpp.option,
-        center = center,
-        standardize = standardize,
+        Y = Y,
+        eps = b$scree[["eps"]],
+        delta = b$scree[["delta"]],
         mu0 = control_m$mu0,
         eta0 = control_m$eta0,
         T = control_m$T,
@@ -338,30 +329,23 @@ dp_scree <- function(
 #'   columns correspond to variables.
 #' @param k Positive integer defining the number of leading principal components
 #'   to estimate. Must be an integer between `1` and the number of columns in `X`.
+#' @param privacy A [privacy_control()] object with exactly the `loading` and
+#'   `scree` components. For example, use
+#'   `privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, scree = 0.5))`.
+#'   The loading budget is used once; each requested scree method receives
+#'   the full `scree` component budget, without division across methods.
 #' @param method Scree estimation method or methods to plot. One or more of
 #'   `"clipped"`, `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
 #' @param control Optional method-specific control list, or a named list of
 #'   control lists when multiple methods are requested. Use [clipped_control()],
 #'   [pmwm_control()], and [huber_control()].
-#' @param eps Positive number defining the `epsilon` privacy parameter supplied
-#'   separately to each requested method. When multiple methods are plotted, the
-#'   same value is used for each method for comparison.
-#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter
-#'   supplied separately to each requested method. When multiple methods are
-#'   plotted, the same value is used for each method for comparison. For PMWM,
-#'   `delta` is not used by the pure-DP quantile step; it is used by the
-#'   Gaussian winsorized-mean release and, when requested, private PC direction
-#'   estimation.
 #' @param center A logical value indicating whether to center the columns of `X`
 #'   before computing principal component directions. The default is `TRUE`.
 #' @param standardize A logical value indicating whether to scale the columns of
 #'   `X` by their sample standard deviations after optional centering. The
 #'   default is `FALSE`.
-#' @param g_dppca A logical value indicating whether to use private principal
-#'   component directions for scree estimation. The default is `FALSE`. See
-#'   [dp_pc_dir()] for details.
-#' @param cpp.option A logical value passed to [dp_pc_dir()] when
-#'   `g_dppca = TRUE`. The default is `FALSE`.
+#' @param cpp.option A logical value passed to [dp_loading()] for private
+#'   loading estimation. The default is `FALSE`.
 #' @param mono A logical value indicating whether to apply monotone
 #'   post-processing to the private scree vector. The default is `TRUE`.
 #' @param type Quantity to plot. Use `"pve"` to plot proportions of variance
@@ -372,6 +356,10 @@ dp_scree <- function(
 #' @details
 #' This function calls [dp_scree()] once and plots its returned `nonprivate`
 #' result together with each requested private method using base R graphics.
+#' All private methods share the same estimated loadings and projected scores.
+#' The `loading` component of `privacy` is used once; each method receives the
+#' full `scree` component budget. Releasing several methods together requires
+#' composition; the recorded total covers loading plus one scree method.
 #'
 #' The default legend labels are `"Non-private"`, `"Clipped"`, `"PMWM"`, and
 #' `"Huber"`. Plot appearance, including the title, axis labels, legend
@@ -384,7 +372,7 @@ dp_scree <- function(
 #' @return Invisibly returns the named list produced by [dp_scree()].
 #'
 #' @seealso
-#' [dp_pc_dir()] for principal component direction estimation.
+#' [dp_loading()] for private principal component direction estimation.
 #' [dp_scree()] for computing non-private and differentially private scree
 #' estimates.
 #' [scree_plot_control()] for plot appearance.
@@ -407,26 +395,29 @@ dp_scree <- function(
 #'
 #' # Use a small subset to keep the example fast.
 #' X <- gau[1:200, ]
+#' privacy <- privacy_control(
+#'   eps = 3,
+#'   delta = 1e-4,
+#'   split = c(loading = 0.5, scree = 0.5)
+#' )
 #'
 #' # Draw a private PVE plot using the clipped mean method.
 #' set.seed(123)
 #' dp_scree_plot(
 #'   X,
 #'   k = 5,
+#'   privacy = privacy,
 #'   method = "clipped",
-#'   control = clipped_control(C_clip = 3),
-#'   eps = 3,
-#'   delta = 1e-3
+#'   control = clipped_control(C_clip = 3)
 #' )
 #'
 #' # Customize the plot using a separate plotting control.
 #' # dp_scree_plot(
 #' #   X,
 #' #   k = 5,
+#' #   privacy = privacy,
 #' #   method = "clipped",
 #' #   control = clipped_control(C_clip = 3),
-#' #   eps = 3,
-#' #   delta = 1e-3,
 #' #   plot_control = scree_plot_control(
 #' #     title = "PVE comparison",
 #' #     xlab = "Principal Component",
@@ -438,13 +429,11 @@ dp_scree <- function(
 dp_scree_plot <- function(
     X,
     k,
+    privacy,
     method = c("clipped", "pmwm", "huber"),
     control = NULL,
-    eps,
-    delta,
     center = TRUE,
     standardize = FALSE,
-    g_dppca = FALSE,
     cpp.option = FALSE,
     mono = TRUE,
     type = c("pve", "scree"),
@@ -471,13 +460,11 @@ dp_scree_plot <- function(
   results <- dp_scree(
     X = X,
     k = k,
+    privacy = privacy,
     method = method,
     control = control,
-    eps = eps,
-    delta = delta,
     center = center,
     standardize = standardize,
-    g_dppca = g_dppca,
     cpp.option = cpp.option,
     mono = mono
   )
