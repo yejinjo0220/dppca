@@ -16,7 +16,8 @@ dp_score_plot_group(
   method = c("add", "sparse"),
   private_plot = c("histogram", "sample"),
   sampling_control = NULL,
-  plot_control = NULL
+  plot_control = NULL,
+  V_dp = NULL
 )
 }
 \arguments{
@@ -31,14 +32,16 @@ used as the group label and removed from the feature matrix.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
 \code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
-allocation is used once; the histogram portion of the score allocation
-is reused for each requested histogram method; see Details.}
+allocation is used once when \code{V_dp = NULL}. With supplied directions,
+it records the budget already used to obtain them and is not spent again
+or reassigned. The histogram allocation is supplied separately to each
+requested histogram method; see Details.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
-before computing principal component directions. The default is \code{TRUE}.}
+before projection and any direction estimation. The default is \code{TRUE}.}
 
 \item{standardize}{A logical value indicating whether to scale the columns of
 \code{X} by their sample standard deviations after optional centering. The
@@ -69,6 +72,11 @@ sampled from the group-wise histograms. Both can be requested with
 
 \item{plot_control}{Optional control list created by \code{score_plot_control()}.
 If \code{NULL}, default grouped score-plot settings are used.}
+
+\item{V_dp}{Optional full private direction matrix as described in
+\code{\link[=dp_score]{dp_score()}}. Its dimension and row order refer to the feature columns
+after removal of any group-label column. The same preprocessing, prior
+loading budget and caller responsibility apply.}
 }
 \value{
 A list with components:
@@ -116,16 +124,21 @@ sample row. Each remaining column corresponds to a requested private
 histogram method. If both plot types are requested, the non-private
 histogram starts the histogram row.
 
-Sampling uses only the already computed histogram output and fixed
-post-processing choices, so it does not consume an additional privacy
-budget. A private histogram, especially a sparse histogram, can contain no
+Sampling from an already released histogram with fixed public choices does
+not consume an additional privacy budget. Here the sample-size allocation
+uses observed group sizes, so that allocation also requires public group
+sizes or separate privacy accounting. A private histogram, especially a
+sparse histogram, can contain no
 positive probability mass after thresholding. In that case no synthetic
 points are generated for that group and histogram method, and a warning is
 issued.
 
-The original grouped scatter plot and non-private histogram panels are
-non-private references. They should not be included in a release that is
-required to contain only differentially private output.
+This comparison wrapper calls \code{\link[=dp_score_group]{dp_score_group()}} with \code{non_private = TRUE}
+and has no \code{non_private} argument. Its original grouped scatter, empirical
+histograms and observed group sizes are non-private references on the shared
+private directions. Each call computes a new frame and new histograms,
+including when \code{V_dp} is reused. Displaying an already returned plot object
+does not repeat those estimates.
 }
 \examples{
 data(gau_g, package = "dppca")

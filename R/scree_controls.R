@@ -6,22 +6,21 @@
 
 #' Control options for clipped scree estimation
 #'
-#' Creates a control list for the clipped-mean scree estimator used by
-#' [dp_scree()] and [dp_scree_plot()] when `method = "clipped"`.
+#' Creates a control list for `method = "clipped"` in [dp_scree()],
+#' [dp_scree_plot()], or the scree configuration of [dp_pca()].
 #'
-#' @param C_clip Positive clipping threshold for squared centered principal
-#'   component scores. This value has no default because it should be chosen
-#'   according to the scale of the data.
+#' @param C_clip Positive public clipping threshold for squared pair differences
+#'   \eqn{(Y_{b_j,l} - Y_{a_j,l})^2/2}. It has no default and should be chosen
+#'   for this scale without an unaccounted use of private data.
 #'
 #' @details
-#' The clipped method estimates each scree value by clipping the squared scores
-#' at `C_clip` and then applying a sensitivity-calibrated Gaussian mechanism
-#' \insertCite{dwork2014algorithmic}{dppca}. Larger values of `C_clip` reduce
-#' clipping bias but increase the sensitivity, and therefore the scale of
-#' the privacy noise.
+#' The method clips the paired quantities at `C_clip` and adds Gaussian
+#' noise to their vector of column means. For \eqn{m=\lfloor n/2\rfloor}
+#' pairs and \eqn{k} components, the calibration uses vector sensitivity
+#' \eqn{\sqrt{k}\,C_{clip}/m} under the conditions in [dp_scree()]. Larger
+#' thresholds reduce clipping bias but increase the noise scale.
 #'
-#' @return A list of control options for `method = "clipped"`.
-#'
+#' @return A control list for `method = "clipped"`.
 #' @seealso
 #' [dp_scree()] for using clipped scree estimation.
 #' [dp_scree_plot()] for plotting private scree estimates.
@@ -46,72 +45,48 @@ clipped_control <- function(C_clip) {
 
 #' Control options for private modified winsorized scree estimation
 #'
-#' Creates a control list for the private modified winsorized mean scree
-#' estimator used by [dp_scree()] and [dp_scree_plot()] when `method = "pmwm"`.
+#' Creates a control list for `method = "pmwm"` in [dp_scree()],
+#' [dp_scree_plot()], or the scree configuration of [dp_pca()].
 #'
-#' @param a,b Finite public lower and upper post-processing bounds for the
-#'   private winsorization cutoffs, with `a < b`. These values have no defaults
-#'   because they should be chosen on the scale of squared principal component
-#'   scores.
-#' @param trim_const Positive number controlling the baseline clipping level in
-#'   the practical clipping proportion. This value has no default.
-#' @param eta Nonnegative number controlling the expected contamination level in
-#'   the practical clipping proportion. The PMWM estimator requires a value in
-#'   `[0, 0.5)`. This value has no default.
-#' @param beta Positive number greater than `1` defining the log-binning base
-#'   used by the private quantile routine. The default is `1.01`.
-#' @param split_mode A logical value indicating whether to split the sample into
-#'   quantile-estimation and mean-estimation subsets. The default is `TRUE`.
+#' @param a,b Finite public post-processing bounds for the private cutoffs,
+#'   with `a < b`. They have no defaults and refer to the scale of the squared
+#'   pair differences used in [dp_scree()].
+#' @param trim_const Positive public constant controlling the baseline trimming
+#'   proportion. It has no default.
+#' @param eta Public lower bound on the practical trimming proportion, in
+#'   `[0, 0.5)`. It has no default.
+#' @param beta Geometric search-grid base greater than `1` for private quantile
+#'   estimation. The default is `1.001`.
+#' @param split_mode Whether to split the pair rows into quantile and mean
+#'   subsets. The default is `FALSE`, which reuses all pairs in both steps.
 #'
 #' @details
-#' The PMWM method privately estimates lower and upper tail cutoffs, winsorizes
-#' the squared scores to those cutoffs, and then releases a noisy winsorized
-#' mean. It is based on the private modified winsorized mean of
-#' \insertCite{ramsay2025pmw;textual}{dppca}.
+#' The PMWM construction follows
+#' \insertCite{ramsay2025pmw;textual}{dppca}. It estimates lower and upper
+#' quantiles of the squared pair differences using the one-sided unbounded
+#' routine of \insertCite{durfee2023unbounded;textual}{dppca}, with public
+#' lower bound zero. Both private cutoffs are truncated to `[a, b]`; the
+#' paired quantities are then winsorized and their mean vector is perturbed
+#' with Gaussian noise.
 #'
-#' The implementation used here is an R adaptation of the publicly available
-#' Python implementation accompanying \insertCite{ramsay2025pmw;textual}{dppca}.
-#' The lower and upper private quantiles use the pure-DP fully unbounded
-#' quantile mechanism of \insertCite{durfee2023unbounded;textual}{dppca}. For
-#' scree estimation, the resulting cutoffs are applied to squared principal
-#' component scores and the final winsorized mean is released with a Gaussian
-#' mechanism.
+#' For \eqn{k} components, each of the \eqn{2k} pure-DP quantile calls receives
+#' \eqn{\epsilon/(4k)}. The vector mean step receives \eqn{\epsilon/2} and
+#' all of the method's delta budget. Gaussian noise is calibrated jointly
+#' across components, using the private cutoff widths. See [dp_scree()] for
+#' preprocessing and release-accounting conditions.
 #'
-#' The PMWM scree estimator uses additional control parameters for private
-#' quantile estimation and winsorization. The parameter `beta` determines the
-#' spacing of the geometric search grid used by the private quantile estimator
-#' and must satisfy \eqn{\beta > 1}. Smaller values of `beta` give a finer grid
-#' but may increase computation.
+#' Let \eqn{n_q} be the number of pair rows used for quantile estimation.
+#' The trimming proportion is
+#' \deqn{p=\min\{\max(\mathrm{trim\_const}/n_q,\eta),0.49\}.}
+#' With `split_mode = TRUE`, the \eqn{\lfloor n/2\rfloor} pair rows are
+#' randomly split between quantile and mean estimation, requiring at least
+#' four observations. With `FALSE`, all pair rows are reused in both steps.
 #'
-#' The bounds `a` and `b` are public post-processing bounds for the private
-#' winsorization cutoffs. After the fully unbounded private quantiles are
-#' estimated, both cutoffs are truncated to `[a, b]`. This preserves the public
-#' control interface and bounds the sensitivity of the winsorized mean without
-#' additional privacy cost.
+#' Smaller `beta` gives a finer grid but may require more search steps. The
+#' parameters without defaults should be chosen as public tuning inputs;
+#' choosing them from private data requires separate privacy accounting.
 #'
-#' The parameters `trim_const` and `eta` determine the practical clipping
-#' proportion used by the modified winsorized mean. If \eqn{n_q} denotes the
-#' number of observations used for private quantile estimation, the clipping
-#' proportion is
-#' \deqn{
-#'   p = \min\left\{
-#'     \max\left(\frac{\mathrm{trim\_const}}{n_q}, \eta\right),
-#'     0.49
-#'   \right\}.
-#' }
-#' Here, `trim_const / n_q` controls the baseline clipping level, while `eta`
-#' gives a lower bound reflecting the expected contamination level.
-#'
-#' If `split_mode = TRUE`, the sample is split into two parts: one part is used
-#' for private quantile estimation and the other part is used for the winsorized
-#' mean step. If `split_mode = FALSE`, all observations are used in both steps.
-#'
-#' The parameters `a`, `b`, `trim_const`, and `eta` are intentionally not given
-#' defaults. They are data- and robustness-dependent choices and should be set
-#' deliberately by the user.
-#'
-#' @return A list of control options for `method = "pmwm"`.
-#'
+#' @return A control list for `method = "pmwm"`.
 #' @seealso
 #' [dp_scree()] for computing differentially private scree estimates using these
 #' control options.
@@ -128,8 +103,8 @@ clipped_control <- function(C_clip) {
 #' @export
 pmwm_control <- function(
     a, b, trim_const, eta,
-    beta = 1.01,
-    split_mode = TRUE
+    beta = 1.001,
+    split_mode = FALSE
 ) {
   if (missing(a) || missing(b) || missing(trim_const) || missing(eta)) {
     stop(
@@ -152,8 +127,12 @@ pmwm_control <- function(
   ) {
     stop("`trim_const` must be a positive number.", call. = FALSE)
   }
-  if (!is.numeric(eta) || length(eta) != 1L || !is.finite(eta) || eta < 0) {
-    stop("`eta` must be a nonnegative number.", call. = FALSE)
+  if (!is.numeric(eta) || length(eta) != 1L ||
+      !is.finite(eta) || eta < 0 || eta >= 0.5) {
+    stop(
+      "`eta` must be a number in `[0, 0.5)`.",
+      call. = FALSE
+    )
   }
   if (!is.numeric(beta) || length(beta) != 1L || !is.finite(beta) || beta <= 1) {
     stop("`beta` must be a number greater than 1.", call. = FALSE)
@@ -172,66 +151,46 @@ pmwm_control <- function(
 
 #' Control options for Huber scree estimation
 #'
-#' Creates a control list for the Huber-type private scree estimator used by
-#' [dp_scree()] and [dp_scree_plot()] when `method = "huber"`.
+#' Creates a control list for `method = "huber"` in [dp_scree()],
+#' [dp_scree_plot()], or the scree configuration of [dp_pca()].
 #'
-#' @param k_min_m2,k_max_m2 Finite integers defining the lower and upper dyadic
-#'   bin indices used in the private second-moment scale step, with
-#'   `k_min_m2 < k_max_m2`. The histogram searches over scale levels \eqn{2^k}
-#'   for \eqn{k_{\min} \le k \le k_{\max}}. These values have no defaults because
-#'   they should be chosen according to the scale of the data.
-#' @param m2_frac Number in `(0, 1)` defining the fraction of the Huber scree
-#'   `epsilon` parameter allocated to the pure-DP second-moment scale step. This
-#'   value has no default.
-#' @param mu0 Numeric initial value for Huber noisy gradient descent. The default
-#'   is `0`.
-#' @param eta0 Positive number defining the fixed step size for Huber noisy
-#'   gradient descent. The default is `1`.
-#' @param T Optional positive integer defining the number of noisy gradient
-#'   descent iterations. If `NULL`, the implementation uses
-#'   \eqn{\lceil \log n \rceil}, where \eqn{n} is the number of observations.
-#' @param M Optional positive integer defining the number of blocks used in the
-#'   private second-moment scale step. If `NULL`, the implementation uses
-#'   \eqn{\lfloor \sqrt{n} / 2 \rfloor}, where \eqn{n} is the number of
-#'   observations.
+#' @param k_min_m2,k_max_m2 Public integer bounds for the dyadic scale histogram,
+#'   with `k_min_m2 < k_max_m2`. The candidate scales are \eqn{2^r} for
+#'   \eqn{k_{min}\le r\le k_{max}}. Both bounds must be supplied.
+#' @param m2_frac Fraction in `(0, 1)` of the method's epsilon budget assigned
+#'   to the pure-DP scale step. It must be supplied.
+#' @param mu0 Finite public initial value for noisy gradient descent.
+#'   The default is `0`.
+#' @param eta0 Positive public fixed step size. The default is `1`.
+#' @param T Optional positive integer number of iterations. If `NULL`, uses
+#'   \eqn{\lceil\log m\rceil}, where \eqn{m=\lfloor n/2\rfloor} is the
+#'   number of disjoint score pairs.
+#' @param M Optional positive integer number of scale-estimation blocks. If
+#'   `NULL`, uses \eqn{\lfloor\sqrt{m/2}\rfloor}. The scale helper caps this
+#'   value at the number of available pairs of its input values.
 #'
 #' @details
-#' The Huber method estimates the mean of squared principal component scores by
-#' noisy gradient descent on the Huber loss. It follows the Huber-type private
-#' robust mean approach of \insertCite{yu2024gaussian;textual}{dppca}.
+#' The method applies a Huber-type robust mean procedure to squared pair
+#' score differences, following the approach of
+#' \insertCite{yu2024gaussian;textual}{dppca}. It requires at least four score
+#' pairs, or eight observations. For each component, a private scale proxy
+#' is computed by pairing the squared score differences again, forming
+#' block medians, and selecting a dyadic scale with a noisy histogram.
+#' The scale proxy determines a Huber clipping threshold.
 #'
-#' The method first privately estimates a scale proxy for the squared scores,
-#' denoted by \eqn{m_2}. This scale proxy is then used to choose the Huber
-#' robustification level for noisy gradient descent. The parameters
-#' `k_min_m2`, `k_max_m2`, and `m2_frac` control this private scale-proxy step,
-#' while `mu0`, `eta0`, `T`, and `M` control the subsequent noisy gradient
-#' descent routine.
+#' The scale step uses `m2_frac * epsilon / k` for each of the `k` components
+#' and consumes no delta. Joint noisy gradient descent uses
+#' `(1 - m2_frac) * epsilon` and all of the method's delta. Its Gaussian
+#' calibration accounts for all components and iterations. Every iterate is
+#' projected to the nonnegative orthant; optional monotone adjustment is
+#' applied after the last iteration.
 #'
-#' The dyadic indices `k_min_m2` and `k_max_m2` define the search range for the
-#' private histogram used to estimate \eqn{m_2}. The histogram searches over
-#' candidate scale levels \eqn{2^k} satisfying
-#' \eqn{k_{\min} \le k \le k_{\max}}. Because this range depends on the scale of
-#' the squared scores, these arguments are intentionally not given defaults.
+#' `k_min_m2`, `k_max_m2`, and `M` control scale estimation, while `mu0`,
+#' `eta0`, and `T` control gradient descent. Tuning choices should be public
+#' or have their privacy costs accounted for separately. See [dp_scree()]
+#' for the preprocessing and release-accounting conditions.
 #'
-#' The argument `m2_frac` determines how the Huber scree `epsilon` parameter is
-#' split between the private scale-proxy step and noisy gradient descent. If
-#' \eqn{(\epsilon_{\mathrm{scree}}, \delta_{\mathrm{scree}})} denotes the privacy
-#' parameters available for Huber scree estimation, then
-#' \eqn{m2_frac \cdot \epsilon_{\mathrm{scree}}} is used by the pure-DP scale
-#' step. Noisy gradient descent uses
-#' \eqn{(1 - m2_frac) \cdot \epsilon_{\mathrm{scree}}} and
-#' \eqn{(1 - m2_frac) \cdot \delta_{\mathrm{scree}}}. The scale step consumes no
-#' `delta`; the remaining `m2_frac` share of `delta` is not used.
-#'
-#' The remaining parameters have default values. The default `mu0 = 0` is the
-#' initial value for noisy gradient descent, and the default `eta0 = 1` is the
-#' fixed step size. If `T = NULL`, the number of noisy gradient descent
-#' iterations is chosen as \eqn{\lceil \log n \rceil}. If `M = NULL`, the number
-#' of blocks used in the private estimator of \eqn{m_2} is chosen as
-#' \eqn{\lfloor \sqrt{n} / 2 \rfloor}.
-#'
-#' @return A list of control options for `method = "huber"`.
-#'
+#' @return A control list for `method = "huber"`.
 #' @seealso
 #' [dp_scree()] for computing differentially private scree estimates using these
 #' control options.
@@ -314,7 +273,7 @@ huber_control <- function(
   switch(
     method,
     clipped = list(),
-    pmwm = list(beta = 1.001, split_mode = TRUE),
+    pmwm = list(beta = 1.001, split_mode = FALSE),
     huber = list(mu0 = 0, eta0 = 1, T = NULL, M = NULL)
   )
 }

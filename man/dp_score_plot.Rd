@@ -15,7 +15,8 @@ dp_score_plot(
   standardize = FALSE,
   cpp.option = FALSE,
   axes = c(1, 2),
-  plot_control = NULL
+  plot_control = NULL,
+  V_dp = NULL
 )
 }
 \arguments{
@@ -24,8 +25,10 @@ columns correspond to variables.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
 \code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
-allocation is used once; the histogram portion of the score allocation
-is reused for each requested histogram method; see Details.}
+allocation is used once when \code{V_dp = NULL}. With supplied directions,
+it records the budget already used to obtain them and is not spent again
+or reassigned. The histogram allocation is supplied separately to each
+requested histogram method; see Details.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -46,7 +49,7 @@ histograms. Both can be requested with
 \code{private_plot}. If \code{NULL}, the default sampling settings are used.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
-before computing principal component directions. The default is \code{TRUE}.}
+before projection and any direction estimation. The default is \code{TRUE}.}
 
 \item{standardize}{A logical value indicating whether to scale the columns of
 \code{X} by their sample standard deviations after optional centering. The
@@ -62,6 +65,14 @@ accepted. The default is \code{c(1, 2)}.}
 
 \item{plot_control}{Optional control list created by \code{score_plot_control()}.
 If \code{NULL}, default score-plot settings are used.}
+
+\item{V_dp}{Optional finite real \code{p} by \code{p} private direction matrix, where
+\code{p} is the number of feature columns. Columns must be orthonormal and rows
+must follow the feature order in \code{X}; supplied row names must match its
+column names when both are present. Directions must use the same
+preprocessing as this call. If supplied, direction estimation is skipped.
+The caller is responsible for the matrix's DP provenance and prior budget;
+matrix validation does not establish either.}
 }
 \value{
 A named list containing:
@@ -98,9 +109,14 @@ histograms. The original scatter plot and non-private histogram are retained
 as references, but no synthetic samples are drawn from the non-private
 histogram.
 
-The original scatter plot and non-private histogram panel are non-private
-references. They should not be included in a release that is required to
-contain only differentially private output.
+This comparison wrapper calls \code{\link[=dp_score]{dp_score()}} with \code{non_private = TRUE} and
+has no \code{non_private} argument. Its observed scatter and empirical histogram
+use the supplied or estimated private directions, not ordinary PCA directions;
+these panels and their returned data are non-private references.
+
+Each wrapper call computes a new frame and new histograms, even with supplied
+\code{V_dp}. To redraw stored estimates without repeating those releases, use
+\code{\link[=dp_pca]{dp_pca()}} with \code{non_private = FALSE} and \code{\link[=plot.dp_pca]{plot.dp_pca()}}.
 }
 \examples{
 data(gau, package = "dppca")

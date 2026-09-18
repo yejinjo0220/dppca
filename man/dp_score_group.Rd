@@ -13,7 +13,9 @@ dp_score_group(
   center = TRUE,
   standardize = FALSE,
   cpp.option = FALSE,
-  axes = c(1, 2)
+  axes = c(1, 2),
+  V_dp = NULL,
+  non_private = TRUE
 )
 }
 \arguments{
@@ -28,8 +30,10 @@ used as the group label and removed from the feature matrix.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
 \code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
-allocation is used once; the histogram portion of the score allocation
-is reused for each requested histogram method; see Details.}
+allocation is used once when \code{V_dp = NULL}. With supplied directions,
+it records the budget already used to obtain them and is not spent again
+or reassigned. The histogram allocation is supplied separately to each
+requested histogram method; see Details.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -39,7 +43,7 @@ compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"
 the sparse thresholded histogram. The default is \code{c("add", "sparse")}.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
-before computing principal component directions. The default is \code{TRUE}.}
+before projection and any direction estimation. The default is \code{TRUE}.}
 
 \item{standardize}{A logical value indicating whether to scale the columns of
 \code{X} by their sample standard deviations after optional centering. The
@@ -52,11 +56,22 @@ Rcpp spherical-Kendall implementation. The default is \code{FALSE}.}
 components used as the horizontal and vertical score axes, in that order.
 Each value must not exceed \code{ncol(X)}. Repeated or decreasing indices are
 accepted. The default is \code{c(1, 2)}.}
+
+\item{V_dp}{Optional full private direction matrix as described in
+\code{\link[=dp_score]{dp_score()}}. Its dimension and row order refer to the feature columns
+after removal of any group-label column. The same preprocessing, prior
+loading budget and caller responsibility apply.}
+
+\item{non_private}{Whether to return observed projected coordinates,
+per-group sample sizes and empirical histograms. The default is \code{TRUE};
+\code{FALSE} omits these references. Internal counts are still computed.}
 }
 \value{
-A named list with components \code{score}, \code{frame}, and \code{groups}. Each
-group entry contains \code{n}, \code{nonprivate}, and the requested private histogram
-method components (\code{add} and/or \code{sparse}). Unrequested methods are omitted.
+A named list containing \code{frame} and \code{groups}. Each group entry
+contains the requested histogram methods (\code{add} and/or \code{sparse}). When
+\code{non_private = TRUE}, the top-level \code{score} contains observed coordinates
+and each group additionally contains \code{n} and \code{nonprivate}. These reference
+components are omitted when \code{FALSE}. Unrequested methods are omitted.
 }
 \description{
 This function computes two-dimensional principal component scores and releases
@@ -81,10 +96,14 @@ allocation from \code{privacy} for method comparison. Releasing outputs from
 multiple private histogram methods together requires composition across
 methods.
 
-The returned score coordinates, per-group sample sizes, and \code{nonprivate}
-histograms are included as non-private references; they must not be treated as
-differentially private releases. Group membership itself is also assumed to
-be public for the parallel-composition statement above.
+When \code{non_private = TRUE}, observed score coordinates, per-group sample
+sizes and empirical histograms are returned as non-private references. They
+use the shared private directions, not ordinary PCA directions. \code{FALSE}
+omits those references but does not privatize group labels or membership.
+The parallel-composition statement assumes group membership is public and
+fixed. The fixed-frame and preprocessing conditions in \code{\link[=dp_score]{dp_score()}} also
+apply. Reusing \code{V_dp} skips direction estimation, while each call still
+computes a new frame and new group histograms.
 }
 \examples{
 data(gau_g, package = "dppca")

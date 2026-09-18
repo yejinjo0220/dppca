@@ -2,7 +2,7 @@
 % Please edit documentation in R/loading.R
 \name{dp_loading}
 \alias{dp_loading}
-\title{Estimate non-private and differentially private loadings}
+\title{Estimate private loadings with an optional ordinary PCA reference}
 \usage{
 dp_loading(
   X,
@@ -10,7 +10,8 @@ dp_loading(
   delta,
   center = TRUE,
   standardize = FALSE,
-  cpp.option = TRUE
+  cpp.option = TRUE,
+  non_private = TRUE
 )
 }
 \arguments{
@@ -27,25 +28,25 @@ deviations. Default: \code{FALSE}.}
 
 \item{cpp.option}{Use the compiled spherical Kendall implementation from
 dppca. Default: \code{TRUE}. Use \code{FALSE} for the R implementation in this file.}
+
+\item{non_private}{Whether to compute the ordinary PCA reference.
+Default: \code{TRUE}; \code{FALSE} returns \code{NULL} in \code{nonprivate}.}
 }
 \value{
-A list with two numeric \code{p} by \code{p} matrices:
-\itemize{
-\item \code{nonprivate}: ordinary PCA directions from the sample covariance.
-\item \code{private}: DP directions from the noisy spherical Kendall matrix.
-}
-Rows are variables; columns are \code{PC1}, ..., \code{PCp}. Both matrices contain
-orthonormal directions, without eigenvalue or correlation scaling.
+A list with \code{private}, a numeric \code{p} by \code{p} matrix of directions
+from the noisy spherical Kendall matrix, and \code{nonprivate}, the ordinary
+sample-covariance PCA directions when requested (otherwise \code{NULL}).
+Rows are variables; columns are \code{PC1}, ..., \code{PCp}. Both direction
+matrices are orthonormal, without eigenvalue or correlation scaling.
 }
 \description{
-Estimate non-private and differentially private loadings
+Estimate private loadings with an optional ordinary PCA reference
 }
 \details{
-Both estimates use the same preprocessed data. All private
-directions come from one noisy spherical Kendall matrix; there is no \code{k}
-or direction-estimation toggle. The full result includes a non-private
-reference. Sample standardization uses data-dependent scales and requires
-separate privacy analysis.
+All private directions come from one noisy spherical Kendall
+matrix. The optional ordinary reference uses the same preprocessed data
+and is not a private release. Sample standardization uses data-dependent
+scales and requires separate privacy analysis.
 }
 \examples{
 set.seed(123)

@@ -5,122 +5,100 @@
 
 #' Differentially private scree values
 #'
-#' This function computes estimates of scree values, eigenvalues of the
-#' covariance matrix, for principal component analysis. It returns the usual
-#' non-private estimates once, together with one or more differentially private
-#' estimates.
+#' Estimates scree values along private principal component directions using
+#' means of squared differences from disjoint score pairs. An ordinary PCA
+#' reference is computed only when `non_private = TRUE`.
 #'
-#' The private estimates are computed as private estimates of the mean of the
-#' squared principal component scores. See Details for the estimating equations
-#' and method-specific construction.
-#'
-#' @param X A numeric matrix or data frame. Rows correspond to observations and
-#'   columns correspond to variables.
-#' @param k Positive integer defining the number of leading principal components
-#'   to estimate. Must be an integer between `1` and the number of columns in `X`.
-#' @param privacy A [privacy_control()] object with exactly the `loading` and
-#'   `scree` components. For example, use
-#'   `privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, scree = 0.5))`.
-#'   The loading budget is used once; each requested scree method receives
-#'   the full `scree` component budget, without division across methods.
-#' @param method Scree value estimation method or methods. One or more of
-#'   `"clipped"`, `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
-#' @param control Optional method-specific control list created by
-#'   [clipped_control()], [pmwm_control()], or [huber_control()]. When multiple
-#'   methods are requested, use a named list with method names.
-#' @param center A logical value indicating whether to center the columns of `X`
-#'   before computing principal component directions. The default is `TRUE`.
-#' @param standardize A logical value indicating whether to scale the columns of
-#'   `X` by their sample standard deviations after optional centering. The
-#'   default is `FALSE`.
-#' @param cpp.option A logical value passed to [dp_loading()] for private
-#'   loading estimation. The default is `FALSE`.
-#' @param mono A logical value indicating whether to apply monotone
-#'   post-processing to the vector of private scree values. The default is
-#'   `TRUE`.
+#' @param X A numeric matrix or data frame with observations in rows and
+#'   variables in columns.
+#' @param k Number of leading components, an integer from `1` to `ncol(X)`.
+#' @param privacy A [privacy_control()] object with exactly `loading` and
+#'   `scree` components. Without `V_dp`, the loading allocation is used once
+#'   to estimate directions. With `V_dp`, it records the budget already used
+#'   to obtain those directions and is not spent again or redistributed.
+#'   Each requested method receives the full `scree` allocation.
+#' @param method One or more of `"clipped"`, `"pmwm"`, and `"huber"`.
+#'   If omitted, `"clipped"` is used.
+#' @param control Method-specific list created by [clipped_control()],
+#'   [pmwm_control()], or [huber_control()]. For several methods, supply a
+#'   named list of these controls.
+#' @param center Whether to center columns of `X` before projection.
+#'   The default is `TRUE`.
+#' @param standardize Whether to divide columns by their sample standard
+#'   deviations after optional centering. The default is `FALSE`; see Details
+#'   for the preprocessing assumptions of the scree calibration.
+#' @param cpp.option Logical option passed to [dp_loading()] when directions
+#'   must be estimated. The default is `FALSE`; ignored when `V_dp` is supplied.
+#' @param mono Whether to enforce a nonnegative, nonincreasing private scree
+#'   sequence by post-processing. The default is `TRUE`.
+#' @param V_dp Optional full `p` by `p` private direction matrix, where
+#'   `p = ncol(X)`. Its columns must be orthonormal and its rows must match
+#'   the variables of `X` in order. If both row and variable names are present,
+#'   they must match. Directions must correspond to the same preprocessing.
+#'   Supplying this matrix skips direction estimation; its privacy provenance
+#'   and previously used loading budget remain the caller's responsibility.
+#' @param non_private Whether to compute and return the ordinary PCA reference.
+#'   The default is `TRUE`. With `FALSE`, ordinary PCA is not computed and the
+#'   `nonprivate` result is omitted.
 #'
 #' @details
-#' Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the
-#' \eqn{l}th principal component direction. The \eqn{l}th score vector is
-#' \eqn{z_l = X v_l}, with sample mean \eqn{\bar z_l}. The corresponding sample
-#' scree value can be written as
-#' \deqn{
-#'   \hat{\lambda}_l
-#'   = v_l^\top \widehat{\Sigma} v_l
-#'   = \frac{1}{n - 1}\sum_{i = 1}^n (z_{il} - \bar z_l)^2
-#'   = \frac{n}{n - 1}\left(\frac{1}{n}\sum_{i = 1}^n w_{il}\right),
-#'   \qquad w_{il} = (z_{il} - \bar z_l)^2.
-#' }
-#' Therefore, each scree value is estimated by privately estimating the mean of
-#' \eqn{w_{1l}, \ldots, w_{nl}} and multiplying by \eqn{n/(n - 1)}.
+#' Let \eqn{Y = X V} denote the shared projected score matrix after preprocessing.
+#' Each method independently permutes its rows and forms
+#' \eqn{m = \lfloor n/2 \rfloor} disjoint pairs, using
+#' \deqn{W_{jl} = (Y_{b_j,l} - Y_{a_j,l})^2/2.}
+#' One randomly selected row is unused when \eqn{n} is odd. The methods estimate
+#' means of the columns of \eqn{W}, without an additional sample-size rescaling.
+#' For fixed scores, the unclipped pair mean has the usual sample variance as
+#' its expectation over random pairing; an individual pairing need not equal
+#' that variance.
 #'
-#' The supported methods differ in how this private mean is estimated:
+#' The supported methods differ in their treatment of \eqn{W}:
 #' \itemize{
-#'   \item `"clipped"` clips the squared scores \eqn{w_{i\ell}} at `C_clip` and
-#'   then applies the Gaussian mechanism \insertCite{dwork2014algorithmic}{dppca}.
-#'   This is the simplest option but depends directly on the clipping threshold.
-#'   \item `"pmwm"` uses the private modified winsorized mean approach of
-#'   \insertCite{ramsay2025pmw;textual}{dppca}, adapted from the accompanying
-#'   Python implementation into R. The lower and upper tail cutoffs are
-#'   estimated with the pure-DP fully unbounded quantile mechanism of
-#'   \insertCite{durfee2023unbounded;textual}{dppca} and truncated to the public
-#'   bounds supplied through [pmwm_control()].
-#'   The squared scores \eqn{w_{i\ell}} are then winsorized to those cutoffs,
-#'   and the final winsorized mean is released with a Gaussian mechanism
-#'   calibrated to its share of the `scree` component budget.
-#'   \item `"huber"` uses a Huber-type private robust mean estimator based on
-#'   noisy gradient descent, following \insertCite{yu2024gaussian;textual}{dppca}.
+#'   \item `"clipped"` clips entries at `C_clip` and releases the vector of
+#'   column means with Gaussian noise calibrated jointly across components.
+#'   \item `"pmwm"` estimates two cutoffs per component using the one-sided
+#'   unbounded quantile routine of
+#'   \insertCite{durfee2023unbounded;textual}{dppca}, with public lower bound
+#'   zero. The cutoffs are truncated to the public bounds from
+#'   [pmwm_control()]. Each of the \eqn{2k} quantiles receives
+#'   \eqn{\epsilon/(4k)}; the vector of winsorized means receives
+#'   \eqn{\epsilon/2} and all of the method's \eqn{\delta}.
+#'   \item `"huber"` first estimates a scale for each component using
+#'   `m2_frac * epsilon / k`. This scale step uses only epsilon. The vector
+#'   noisy-gradient procedure uses the remaining epsilon and all delta,
+#'   with Gaussian calibration across components and iterations. At least
+#'   eight observations are required; see [huber_control()].
 #' }
 #'
-#' Principal component directions are always estimated privately using
-#' [dp_loading()]. The data are preprocessed once, and one loading estimate
-#' is computed using the `loading` component of `privacy`. The first `k`
-#' columns of its `private` matrix produce one score matrix shared by all
-#' requested methods. Each method uses the `scree` component directly; there
-#' is no additional loading allocation within a scree method.
+#' The data are preprocessed once. Directions are estimated once with
+#' [dp_loading()] unless `V_dp` is supplied, and the first `k` directions
+#' produce the score matrix shared by the requested methods. Loading is not
+#' re-estimated within a scree method.
 #'
-#' When multiple methods are requested, each receives the same full `scree`
-#' epsilon and delta budgets for method comparison. These budgets are not
-#' divided across methods. For a joint release, composition counts the shared
-#' loading allocation once, plus the privacy costs of all requested methods.
-#' The total recorded in `privacy` covers loading plus one scree method, not
-#' a joint release of several scree methods.
+#' The paired-score sensitivity calculations condition on the directions
+#' and use fixed-size replacement adjacency. Common centering cancels in
+#' the pair differences. Variable scaling must be fixed or public, or have
+#' its privacy cost accounted for separately; sample standard deviations
+#' computed from the input are not covered by these sensitivity calculations.
+#' Supplying `V_dp` does not by itself establish its privacy guarantee.
 #'
-#' For `method = "pmwm"`, the private quantile step is pure DP and does not
-#' consume `delta`; the scree component's delta budget is used by the Gaussian
-#' winsorized-mean release. For `method = "huber"`, the private scale-proxy step
-#' is pure DP. Noisy gradient descent receives the `(1 - m2_frac)` share of
-#' the scree component's delta budget; the remaining `m2_frac` share is unused.
+#' Multiple methods receive the same full scree allocation for comparison.
+#' Releasing their results together requires composition across all methods,
+#' counting loading once. The total recorded in `privacy` covers loading plus
+#' one scree method, not a joint release of several methods. Repeated calls
+#' likewise require separate accounting for newly released estimates.
 #'
-#' The `nonprivate` component is provided only as a non-private reference and is
-#' not itself differentially private.
+#' The optional `nonprivate` result uses ordinary PCA eigenvalues, rather than
+#' variances along the DP directions. It is a comparison reference and is not
+#' a private release. PVE is normalized over the `k` returned components and
+#' sums to one when their scree values have a positive finite sum. Monotone
+#' adjustment accesses only the estimated scree values.
 #'
-#' Proportions of variance explained are normalized over the `k` estimated
-#' scree values. Thus, for each returned result, the `k` PVE values sum to one
-#' whenever the corresponding scree values have a positive finite sum.
-#'
-#' When `mono = TRUE`, the final monotone adjustment is a post-processing step
-#' and does not change the privacy guarantee.
-#'
-#' For a detailed procedure and mathematical formulations,
-#' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_scree}.
-#'
-#' @return A named list. The first component, `nonprivate`, contains:
-#' \itemize{
-#'   \item `scree`: the usual non-private scree estimates.
-#'   \item `pve`: the corresponding non-private proportions of variance
-#'   explained, normalized over the `k` returned components.
-#' }
-#' Each requested private method is returned as an additional named component
-#' (`clipped`, `pmwm`, and/or `huber`), each containing:
-#' \itemize{
-#'   \item `scree`: the differentially private scree estimates.
-#'   \item `pve`: the corresponding private proportions of variance explained,
-#'   normalized over the `k` returned components.
-#' }
-#' All scree and PVE vectors are named `PC1`, ..., `PCk`. The return structure is
-#' the same whether one or multiple private methods are requested.
-#'
+#' @return A named list containing one entry per requested method (`clipped`,
+#'   `pmwm`, and/or `huber`). Each entry has `scree` and `pve` vectors named
+#'   `PC1`, ..., `PCk`. If `non_private = TRUE`, the first entry, `nonprivate`,
+#'   contains the corresponding ordinary PCA `scree` and `pve` reference.
+#'   PVE is normalized over the `k` returned components in every entry.
 #' @seealso
 #' [dp_loading()] for private principal component direction estimation.
 #' [clipped_control()], [pmwm_control()], and [huber_control()] for
@@ -175,7 +153,9 @@ dp_scree <- function(
     center = TRUE,
     standardize = FALSE,
     cpp.option = FALSE,
-    mono = TRUE
+    mono = TRUE,
+    V_dp = NULL,
+    non_private = TRUE
 ) {
   if (missing(method)) {
     method <- "clipped"
@@ -200,6 +180,7 @@ dp_scree <- function(
   )
 
   k <- as.integer(k)
+  validate_logical_value(non_private, "non_private")
 
   # For multiple methods, controls must be supplied as a named list so that
   # method-specific tuning parameters are unambiguous.
@@ -224,33 +205,41 @@ dp_scree <- function(
     center = center,
     standardize = standardize
   )
-  V_used <- dp_loading(
-    X = X_proc,
-    eps = b$loading[["eps"]],
-    delta = b$loading[["delta"]],
-    center = FALSE,
-    standardize = FALSE,
-    cpp.option = cpp.option
-  )$private[, seq_len(k), drop = FALSE]
+  # V_used <- dp_loading(
+  #   X = X_proc,
+  #   eps = b$loading[["eps"]],
+  #   delta = b$loading[["delta"]],
+  #   center = FALSE,
+  #   standardize = FALSE,
+  #   cpp.option = cpp.option
+  # )$private[, seq_len(k), drop = FALSE]
+  V_used <- .get_dp_directions(
+    X_proc,
+    b$loading,
+    cpp.option,
+    V_dp
+  )[, seq_len(k), drop = FALSE]
   Y <- X_proc %*% V_used
 
-  # Compute the ordinary non-private PCA scree values only once.
-  S_np <- stats::cov(X_proc)
-  eig_np <- eigen(S_np, symmetric = TRUE, only.values = TRUE)
-
-  scree_np <- as.numeric(eig_np$values[seq_len(k)])
-  pve_np <- scree_to_pve(scree_np)
-
   pc_names <- paste0("PC", seq_len(k))
-  names(scree_np) <- pc_names
-  names(pve_np) <- pc_names
+  out <- list()
 
-  out <- list(
-    nonprivate = list(
-      scree = scree_np,
-      pve = pve_np
+  if (non_private) {
+    scree_np <- .nonprivate_pca(
+      X_proc
+    )$eigenvalues[seq_len(k)]
+
+    out$nonprivate <- list(
+      scree = stats::setNames(
+        scree_np,
+        pc_names
+      ),
+      pve = stats::setNames(
+        scree_to_pve(scree_np),
+        pc_names
+      )
     )
-  )
+  }
 
   # All methods use the same scores and the full scree component budget.
   # The budget is not divided across methods, supporting method comparison.
@@ -319,58 +308,30 @@ dp_scree <- function(
 
 #' Plot differentially private scree estimates
 #'
-#' @description
-#' This function computes and visualizes scree curves for principal component
-#' analysis using base R graphics. It overlays the usual non-private curve with
-#' one or more differentially private estimates and acts as a plotting wrapper
-#' around [dp_scree()].
+#' Computes and plots one or more scree estimates using base R graphics.
+#' The ordinary PCA curve is included only when `non_private = TRUE`.
 #'
-#' @param X A numeric matrix or data frame. Rows correspond to observations and
-#'   columns correspond to variables.
-#' @param k Positive integer defining the number of leading principal components
-#'   to estimate. Must be an integer between `1` and the number of columns in `X`.
-#' @param privacy A [privacy_control()] object with exactly the `loading` and
-#'   `scree` components. For example, use
-#'   `privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, scree = 0.5))`.
-#'   The loading budget is used once; each requested scree method receives
-#'   the full `scree` component budget, without division across methods.
-#' @param method Scree estimation method or methods to plot. One or more of
-#'   `"clipped"`, `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
-#' @param control Optional method-specific control list, or a named list of
-#'   control lists when multiple methods are requested. Use [clipped_control()],
-#'   [pmwm_control()], and [huber_control()].
-#' @param center A logical value indicating whether to center the columns of `X`
-#'   before computing principal component directions. The default is `TRUE`.
-#' @param standardize A logical value indicating whether to scale the columns of
-#'   `X` by their sample standard deviations after optional centering. The
-#'   default is `FALSE`.
-#' @param cpp.option A logical value passed to [dp_loading()] for private
-#'   loading estimation. The default is `FALSE`.
-#' @param mono A logical value indicating whether to apply monotone
-#'   post-processing to the private scree vector. The default is `TRUE`.
-#' @param type Quantity to plot. Use `"pve"` to plot proportions of variance
-#'   explained and `"scree"` to plot raw scree values. The default is `"pve"`.
-#' @param plot_control Optional plotting control list created by
-#'   [scree_plot_control()]. If `NULL`, default plotting settings are used.
+#' @inheritParams dp_scree
+#' @param type Quantity to plot: `"pve"` for proportions of variance explained
+#'   or `"scree"` for scree values. The default is `"pve"`.
+#' @param plot_control Optional list from [scree_plot_control()]. If `NULL`,
+#'   default plotting settings are used.
 #'
 #' @details
-#' This function calls [dp_scree()] once and plots its returned `nonprivate`
-#' result together with each requested private method using base R graphics.
-#' All private methods share the same estimated loadings and projected scores.
-#' The `loading` component of `privacy` is used once; each method receives the
-#' full `scree` component budget. Releasing several methods together requires
-#' composition; the recorded total covers loading plus one scree method.
+#' Calls [dp_scree()] once and plots the requested method results, together
+#' with the optional `nonprivate` reference. All methods share one estimated
+#' or supplied direction matrix and one projected score matrix. Each method
+#' receives the full scree allocation; the composition and preprocessing
+#' conditions described in [dp_scree()] also apply here.
 #'
-#' The default legend labels are `"Non-private"`, `"Clipped"`, `"PMWM"`, and
-#' `"Huber"`. Plot appearance, including the title, axis labels, legend
-#' position, colors, line types, point symbols, and text sizes, can be changed
-#' with [scree_plot_control()].
+#' Use [scree_plot_control()] to change titles, axes, colors, line types,
+#' point symbols, legend position, and text sizes. The usual labels are
+#' `"Non-private"`, `"Clipped"`, `"PMWM"`, and `"Huber"` for included curves.
+#' A plot with the non-private reference is intended for comparison and is
+#' not itself a differentially private release.
 #'
-#' Because the plot includes the `nonprivate` reference curve, the complete plot
-#' is intended for comparison and is not itself a differentially private release.
-#'
-#' @return Invisibly returns the named list produced by [dp_scree()].
-#'
+#' @return Invisibly returns the list produced by [dp_scree()]. The
+#'   `nonprivate` component is present only when `non_private = TRUE`.
 #' @seealso
 #' [dp_loading()] for private principal component direction estimation.
 #' [dp_scree()] for computing non-private and differentially private scree
@@ -437,7 +398,9 @@ dp_scree_plot <- function(
     cpp.option = FALSE,
     mono = TRUE,
     type = c("pve", "scree"),
-    plot_control = NULL
+    plot_control = NULL,
+    V_dp = NULL,
+    non_private = TRUE
 ) {
   if (missing(method)) {
     method <- "clipped"
@@ -466,10 +429,15 @@ dp_scree_plot <- function(
     center = center,
     standardize = standardize,
     cpp.option = cpp.option,
-    mono = mono
+    mono = mono,
+    V_dp = V_dp,
+    non_private = non_private
   )
 
-  series_names <- c("nonprivate", method)
+  series_names <- c(
+    if (non_private) "nonprivate",
+    method
+  )
 
   y_list <- lapply(series_names, function(nm) {
     if (type == "scree") {

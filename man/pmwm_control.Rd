@@ -4,80 +4,57 @@
 \alias{pmwm_control}
 \title{Control options for private modified winsorized scree estimation}
 \usage{
-pmwm_control(a, b, trim_const, eta, beta = 1.01, split_mode = TRUE)
+pmwm_control(a, b, trim_const, eta, beta = 1.001, split_mode = FALSE)
 }
 \arguments{
-\item{a, b}{Finite public lower and upper post-processing bounds for the
-private winsorization cutoffs, with \code{a < b}. These values have no defaults
-because they should be chosen on the scale of squared principal component
-scores.}
+\item{a, b}{Finite public post-processing bounds for the private cutoffs,
+with \code{a < b}. They have no defaults and refer to the scale of the squared
+pair differences used in \code{\link[=dp_scree]{dp_scree()}}.}
 
-\item{trim_const}{Positive number controlling the baseline clipping level in
-the practical clipping proportion. This value has no default.}
+\item{trim_const}{Positive public constant controlling the baseline trimming
+proportion. It has no default.}
 
-\item{eta}{Nonnegative number controlling the expected contamination level in
-the practical clipping proportion. The PMWM estimator requires a value in
-\verb{[0, 0.5)}. This value has no default.}
+\item{eta}{Public lower bound on the practical trimming proportion, in
+\verb{[0, 0.5)}. It has no default.}
 
-\item{beta}{Positive number greater than \code{1} defining the log-binning base
-used by the private quantile routine. The default is \code{1.01}.}
+\item{beta}{Geometric search-grid base greater than \code{1} for private quantile
+estimation. The default is \code{1.001}.}
 
-\item{split_mode}{A logical value indicating whether to split the sample into
-quantile-estimation and mean-estimation subsets. The default is \code{TRUE}.}
+\item{split_mode}{Whether to split the pair rows into quantile and mean
+subsets. The default is \code{FALSE}, which reuses all pairs in both steps.}
 }
 \value{
-A list of control options for \code{method = "pmwm"}.
+A control list for \code{method = "pmwm"}.
 }
 \description{
-Creates a control list for the private modified winsorized mean scree
-estimator used by \code{\link[=dp_scree]{dp_scree()}} and \code{\link[=dp_scree_plot]{dp_scree_plot()}} when \code{method = "pmwm"}.
+Creates a control list for \code{method = "pmwm"} in \code{\link[=dp_scree]{dp_scree()}},
+\code{\link[=dp_scree_plot]{dp_scree_plot()}}, or the scree configuration of \code{\link[=dp_pca]{dp_pca()}}.
 }
 \details{
-The PMWM method privately estimates lower and upper tail cutoffs, winsorizes
-the squared scores to those cutoffs, and then releases a noisy winsorized
-mean. It is based on the private modified winsorized mean of
-\insertCite{ramsay2025pmw;textual}{dppca}.
+The PMWM construction follows
+\insertCite{ramsay2025pmw;textual}{dppca}. It estimates lower and upper
+quantiles of the squared pair differences using the one-sided unbounded
+routine of \insertCite{durfee2023unbounded;textual}{dppca}, with public
+lower bound zero. Both private cutoffs are truncated to \verb{[a, b]}; the
+paired quantities are then winsorized and their mean vector is perturbed
+with Gaussian noise.
 
-The implementation used here is an R adaptation of the publicly available
-Python implementation accompanying \insertCite{ramsay2025pmw;textual}{dppca}.
-The lower and upper private quantiles use the pure-DP fully unbounded
-quantile mechanism of \insertCite{durfee2023unbounded;textual}{dppca}. For
-scree estimation, the resulting cutoffs are applied to squared principal
-component scores and the final winsorized mean is released with a Gaussian
-mechanism.
+For \eqn{k} components, each of the \eqn{2k} pure-DP quantile calls receives
+\eqn{\epsilon/(4k)}. The vector mean step receives \eqn{\epsilon/2} and
+all of the method's delta budget. Gaussian noise is calibrated jointly
+across components, using the private cutoff widths. See \code{\link[=dp_scree]{dp_scree()}} for
+preprocessing and release-accounting conditions.
 
-The PMWM scree estimator uses additional control parameters for private
-quantile estimation and winsorization. The parameter \code{beta} determines the
-spacing of the geometric search grid used by the private quantile estimator
-and must satisfy \eqn{\beta > 1}. Smaller values of \code{beta} give a finer grid
-but may increase computation.
+Let \eqn{n_q} be the number of pair rows used for quantile estimation.
+The trimming proportion is
+\deqn{p=\min\{\max(\mathrm{trim\_const}/n_q,\eta),0.49\}.}
+With \code{split_mode = TRUE}, the \eqn{\lfloor n/2\rfloor} pair rows are
+randomly split between quantile and mean estimation, requiring at least
+four observations. With \code{FALSE}, all pair rows are reused in both steps.
 
-The bounds \code{a} and \code{b} are public post-processing bounds for the private
-winsorization cutoffs. After the fully unbounded private quantiles are
-estimated, both cutoffs are truncated to \verb{[a, b]}. This preserves the public
-control interface and bounds the sensitivity of the winsorized mean without
-additional privacy cost.
-
-The parameters \code{trim_const} and \code{eta} determine the practical clipping
-proportion used by the modified winsorized mean. If \eqn{n_q} denotes the
-number of observations used for private quantile estimation, the clipping
-proportion is
-\deqn{
-  p = \min\left\{
-    \max\left(\frac{\mathrm{trim\_const}}{n_q}, \eta\right),
-    0.49
-  \right\}.
-}
-Here, \code{trim_const / n_q} controls the baseline clipping level, while \code{eta}
-gives a lower bound reflecting the expected contamination level.
-
-If \code{split_mode = TRUE}, the sample is split into two parts: one part is used
-for private quantile estimation and the other part is used for the winsorized
-mean step. If \code{split_mode = FALSE}, all observations are used in both steps.
-
-The parameters \code{a}, \code{b}, \code{trim_const}, and \code{eta} are intentionally not given
-defaults. They are data- and robustness-dependent choices and should be set
-deliberately by the user.
+Smaller \code{beta} gives a finer grid but may require more search steps. The
+parameters without defaults should be chosen as public tuning inputs;
+choosing them from private data requires separate privacy accounting.
 }
 \examples{
 pmwm_control(a = 0, b = 20, trim_const = 10, eta = 0.01)

@@ -23,6 +23,13 @@
 #' @noRd
 validate_scree_inputs <- function(X, k, eps, delta) {
   X <- as.matrix(X)
+  if (!is.numeric(X) || is.complex(X) ||
+      any(!is.finite(X))) {
+    stop(
+      "X must contain finite real numeric values.",
+      call. = FALSE
+    )
+  }
   n <- nrow(X); d <- ncol(X)
   if (n < 2) stop("Need n >= 2.")
   if (d < 1) stop("Need ncol(X) >= 1.")
@@ -84,35 +91,64 @@ winsorization <- function(x, lo, hi) {
   pmin(pmax(x, lo), hi)
 }
 
+#' Squared differences of disjoint score pairs
+#'
+#' Randomly permutes the rows of `Y` and returns
+#' \eqn{W_{jl}=(Y_{b_j,l}-Y_{a_j,l})^2/2} for
+#' \eqn{m=\lfloor n/2\rfloor} disjoint pairs. One row is unused when `n`
+#' is odd. The permutation is independent of the score values.
+#'
+#' @param Y Projected score matrix with observations in rows.
+#' @return An `m` by `ncol(Y)` matrix of squared pair differences.
+#' @noRd
+paired_score_squares <- function(Y) {
+  Y <- as.matrix(Y)
+
+  m <- nrow(Y) %/% 2L
+  idx <- sample.int(nrow(Y))
+
+  a <- idx[2L * seq_len(m) - 1L]
+  b <- idx[2L * seq_len(m)]
+
+  ( (Y[b, , drop = FALSE] - Y[a, , drop = FALSE]) / sqrt(2) )^2
+}
+
 
 #' Estimate private scree values with clipped means
 #'
-#' Internal implementation of the clipped-mean scree estimator. The method
-#' consumes the shared projected score matrix and estimates each score
-#' variance using a clipped mean with Gaussian noise.
+#' Uses `paired_score_squares()` to form squared differences from disjoint
+#' score pairs, clips them at `C_clip`, and perturbs the vector of means.
+#' For `m = floor(nrow(Y) / 2)` and `k = ncol(Y)`, Gaussian noise has standard
+#' deviation `sqrt(k) * C_clip / (m * gamma)`, where `gamma` is obtained from
+#' the method's epsilon and delta by `mu_from_eps_delta()`. There is no
+#' additional sample-size rescaling. See [dp_scree()] for the assumptions
+#' underlying the sensitivity calculation.
 #'
-#' For component `ell`, the squared centered scores are clipped at `C_clip` and
-#' the noisy clipped mean is rescaled by `n / (n - 1)` to match the usual sample
-#' variance convention. If `mono = TRUE`, the final scree vector is
-#' post-processed to be nonnegative and nonincreasing.
+#' @param Y Projected score matrix with at least two observations in rows and
+#'   selected private principal components in columns.
+#' @param eps Positive epsilon budget for the joint scree-vector release,
+#'   after the shared loading allocation.
+#' @param delta Delta budget in `(0, 1)` for the joint scree-vector release.
+#' @param C_clip Positive public clipping threshold for squared pair differences.
+#' @param mono Whether to enforce a nonnegative, nonincreasing final sequence.
 #'
-#' @param Y Projected score matrix with observations in rows and the selected
-#'   private principal components in columns.
-#' @param eps Positive epsilon budget remaining for this scree method after
-#'   the shared loading allocation. It is divided across columns of `Y`.
-#' @param delta Delta budget in `(0, 1)` remaining for this scree method after
-#'   the shared loading allocation. It is divided across columns of `Y`.
-#' @param C_clip Positive clipping threshold applied to squared centered scores.
-#' @param mono A logical value indicating whether to enforce a nonnegative and
-#'   nonincreasing scree sequence by post-processing.
-#'
-#' @return A list with components `scree` and `pve`.
+#' @return A list with `scree` and `pve` vectors.
 #' @noRd
-dp_scree_clipped <- function(Y, eps, delta, C_clip, mono = TRUE) {
+dp_scree_clipped <- function(
+    Y, eps, delta, C_clip, mono = TRUE
+) {
   Y <- as.matrix(Y)
   n <- nrow(Y)
   k <- ncol(Y)
-  validate_scree_inputs(X = Y, k = k, eps = eps, delta = delta)
+
+  validate_scree_inputs(
+    X = Y,
+    k = k,
+    eps = eps,
+    delta = delta
+  )
+
+  n_pairs <- n %/% 2L
 
   if (!is.numeric(C_clip) || length(C_clip) != 1 ||
       !is.finite(C_clip) || C_clip <= 0) {
@@ -122,30 +158,17 @@ dp_scree_clipped <- function(Y, eps, delta, C_clip, mono = TRUE) {
   eps_scree <- eps
   delta_scree <- delta
 
-  eps_ell <- eps_scree / k
-  delta_ell <- delta_scree / k
+  W <- paired_score_squares(Y)
 
-  scree_base <- numeric(k)
-  scree <- numeric(k)
+  scree_base <- colMeans(pmin(W, C_clip))
 
-  for (ell in seq_len(k)) {
-    y <- Y[, ell]
-    ybar <- mean(y)
-    w <- (y - ybar)^2
+  gamma_C <- mu_from_eps_delta(eps_scree, delta_scree)
+  sd_noise <- sqrt(k) * C_clip / (n_pairs * gamma_C)
 
-    w_clip <- pmin(w, C_clip)
-    mu_hat <- mean(w_clip)
-
-    scree_base[ell] <- (n / (n - 1)) * mu_hat
-
-    Delta_ell <- C_clip / (n - 1)
-    sd_noise <- Delta_ell * sqrt(2 * log(1.25 / delta_ell)) / eps_ell
-
-    scree[ell] <- max(
-      scree_base[ell] + stats::rnorm(1, mean = 0, sd = sd_noise),
-      0
-    )
-  }
+  scree <- pmax(
+    scree_base + stats::rnorm(k, mean = 0, sd = sd_noise),
+    0
+  )
 
   if (isTRUE(mono)) {
     scree <- scree_post_processing(scree)
@@ -219,20 +242,21 @@ dp_hist_m2 <- function(u, eps_m2, k_min_m2, k_max_m2) {
 
 #' Estimate a private scalar scale proxy
 #'
-#' Internal helper for the Huber scree estimator. The input is randomly permuted,
-#' paired into adjacent differences, converted to squared paired differences,
-#' summarized by block medians, and passed to `dp_hist_m2()`.
+#' Randomly permutes `w`, forms squared differences from disjoint pairs of
+#' its entries, summarizes them by block medians, and calls `dp_hist_m2()`.
+#' For Huber scree estimation, `w` already contains squared score-pair
+#' differences; this helper performs an additional pairing for scale estimation.
 #'
-#' @param w Numeric vector, typically squared centered projected scores for one
-#'   principal component.
-#' @param eps_m2 Positive number defining the `epsilon` privacy parameter for
-#'   the scale-proxy step.
-#' @param k_min_m2 Integer lower bound for the dyadic bin index.
-#' @param k_max_m2 Integer upper bound for the dyadic bin index.
-#' @param M Optional number of blocks for the block-median step. If `NULL`, a
-#'   default based on `sqrt(n / 2)` is used.
+#' @param w Numeric vector of length at least four; in scree estimation, a
+#'   column returned by `paired_score_squares()`.
+#' @param eps_m2 Positive epsilon budget for the pure-DP scale-proxy step.
+#' @param k_min_m2 Integer lower dyadic-bin index.
+#' @param k_max_m2 Integer upper dyadic-bin index.
+#' @param M Optional number of blocks. If `NULL`, uses
+#'   `floor(sqrt(length(w) / 2))`; values above the number of available
+#'   input pairs are reduced to that number.
 #'
-#' @return Positive numeric scalar giving a private scale proxy.
+#' @return A positive scalar giving the private scale proxy.
 #' @noRd
 dp_m2 <- function(w, eps_m2, k_min_m2, k_max_m2, M = NULL) {
   w <- as.numeric(w)
@@ -280,9 +304,10 @@ dp_m2 <- function(w, eps_m2, k_min_m2, k_max_m2, M = NULL) {
 #' Huber mean step.
 #'
 #' @param m2_hat Nonnegative private scale proxy.
-#' @param eps_tau Positive number defining the `epsilon` privacy parameter for
-#'   the Huber noisy-gradient-descent step for one component.
-#' @param n_tau Effective sample size used in the threshold calculation.
+#' @param eps_tau Positive threshold-tuning parameter. Huber scree estimation
+#'   passes the joint gradient-descent epsilon budget divided by `k`; this
+#'   calculation does not itself release data or spend an additional budget.
+#' @param n_tau Effective sample size; the number of score pairs for scree.
 #'
 #' @return Nonnegative numeric scalar Huber threshold.
 #' @noRd
@@ -414,48 +439,57 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 
 #' Estimate private scree values with Huber-type private means
 #'
-#' Internal implementation of the Huber scree estimator. The method consumes
-#' the shared projected score matrix and estimates each score variance using
-#' a private Huber-type scalar mean estimator with noisy gradient descent.
+#' Forms `m = floor(nrow(Y) / 2)` squared score-pair differences per component.
+#' A private scale from `dp_m2()` is converted to a threshold by
+#' `tau_from_m2()`. All components are then updated together by the noisy
+#' Huber-gradient loop in this function; `dp_huber_noisy_gd()` is not called.
+#' At least four pairs, or eight observations, are required.
 #'
-#' For each component, a private scale proxy is first obtained with `dp_m2()`,
-#' converted to a Huber threshold with `tau_from_m2()`, and then used in
-#' `dp_huber_noisy_gd()`. The result is rescaled by `n / (n - 1)`. If
-#' `mono = TRUE`, the final scree vector is post-processed to be nonnegative and
-#' nonincreasing.
+#' The pure-DP scale step uses `m2_frac * eps / k` per component. The gradient
+#' step uses `(1 - m2_frac) * eps` and all delta. Component `l` receives
+#' Gaussian noise with standard deviation
+#' `2 * eta0 * tau[l] * sqrt(k * T) / (m * gamma_gd)` at each iteration.
+#' Each iterate is projected to nonnegative values. There is no additional
+#' sample-size rescaling; optional monotone adjustment is applied last.
+#' See [dp_scree()] for preprocessing and accounting conditions.
 #'
-#' @param Y Projected score matrix with observations in rows and the selected
+#' @param Y Projected score matrix with observations in rows and selected
 #'   private principal components in columns.
-#' @param eps Positive epsilon budget remaining for this scree method after
-#'   the shared loading allocation. It is divided across columns of `Y`.
-#' @param delta Delta budget in `(0, 1)` remaining for this scree method after
-#'   the shared loading allocation. It is divided across columns of `Y`.
-#' @param mu0 Initial value for noisy gradient descent.
-#' @param eta0 Positive step size for noisy gradient descent.
-#' @param T Optional number of gradient-descent iterations. If `NULL`, a default
-#'   based on `ceiling(log(n))` is used.
-#' @param M Optional number of blocks used in `dp_m2()`. If `NULL`, a default
-#'   based on `floor(sqrt(n) / 2)` is used.
-#' @param k_min_m2 Integer lower bound for dyadic histogram bins used in
-#'   `dp_hist_m2()`. This value must be supplied by the user.
-#' @param k_max_m2 Integer upper bound for dyadic histogram bins used in
-#'   `dp_hist_m2()`. This value must be supplied by the user.
-#' @param m2_frac Fraction of the scree `epsilon` parameter allocated to the
-#'   pure-DP scale-proxy step. This value must be supplied by the user.
-#' @param mono A logical value indicating whether to enforce a nonnegative and
-#'   nonincreasing scree sequence by post-processing.
+#' @param eps Positive total epsilon budget for this scree method after
+#'   the shared loading allocation.
+#' @param delta Delta budget in `(0, 1)`, used entirely by gradient descent.
+#' @param k_min_m2,k_max_m2 Public dyadic-bin bounds used by `dp_hist_m2()`.
+#' @param m2_frac Fraction in `(0, 1)` of epsilon used for scale estimation.
+#' @param mu0 Finite public initial value for noisy gradient descent.
+#' @param eta0 Positive fixed step size.
+#' @param T Optional iteration count; defaults to `ceiling(log(m))`.
+#' @param M Optional scale block count; defaults to `floor(sqrt(m / 2))`.
+#' @param mono Whether to enforce a nonnegative, nonincreasing final sequence.
 #'
-#' @return A list with components `scree` and `pve`.
+#' @return A list with `scree` and `pve` vectors.
 #' @noRd
-dp_scree_huber <- function(Y, eps, delta,
-                           k_min_m2, k_max_m2, m2_frac,
-                           mu0 = 0, eta0 = 1, T = NULL, M = NULL,
-                           mono = TRUE) {
+dp_scree_huber <- function(
+    Y, eps, delta,
+    k_min_m2, k_max_m2, m2_frac,
+    mu0 = 0, eta0 = 1, T = NULL, M = NULL,
+    mono = TRUE
+) {
   Y <- as.matrix(Y)
   n <- nrow(Y)
   k <- ncol(Y)
-  validate_scree_inputs(X = Y, k = k, eps = eps, delta = delta)
 
+  validate_scree_inputs(
+    X = Y,
+    k = k,
+    eps = eps,
+    delta = delta
+  )
+
+  n_pairs <- n %/% 2L
+
+  if (n_pairs < 4L) {
+    stop("Huber scale estimation requires at least 4 pairs (n >= 8).")
+  }
   if (missing(k_min_m2) || missing(k_max_m2) || missing(m2_frac)) {
     stop("k_min_m2, k_max_m2, and m2_frac must be supplied.")
   }
@@ -478,64 +512,79 @@ dp_scree_huber <- function(Y, eps, delta,
     stop("m2_frac must be a single number in (0, 1).")
   }
 
-  if (is.null(T)) T <- ceiling(log(n))
+  if (is.null(T)) T <- ceiling(log(n_pairs))
   T <- max(1L, as.integer(T))
 
-  if (is.null(M)) M <- floor(sqrt(n) / 2)
+  if (is.null(M)) M <- floor(sqrt(n_pairs / 2))
   M <- max(1L, as.integer(M))
 
   eps_scree <- eps
   delta_scree <- delta
 
-  eps_m2 <- eps_scree * m2_frac
-  delta_m2 <- delta_scree * m2_frac
+  eps_m2_ell <- m2_frac * eps_scree / k
 
-  eps_gd <- eps_scree * (1 - m2_frac)
-  delta_gd <- delta_scree * (1 - m2_frac)
+  eps_gd <- (1 - m2_frac) * eps_scree
+  delta_gd <- delta_scree
 
-  eps_m2_ell <- eps_m2 / k
-  delta_m2_ell <- delta_m2 / k
+  eps_tau_tune <- eps_gd / k
 
-  eps_gd_ell <- eps_gd / k
-  delta_gd_ell <- delta_gd / k
+  W <- paired_score_squares(Y)
 
-  scree <- numeric(k)
+  if (length(T) != 1L || !is.finite(T) || T < 1L) {
+    stop("T must be one positive integer.")
+  }
+  if (length(mu0) != 1L || !is.finite(mu0)) {
+    stop("mu0 must be one finite public value.")
+  }
+  if (length(eta0) != 1L || !is.finite(eta0) || eta0 <= 0) {
+    stop("eta0 must be one finite positive value.")
+  }
 
+  tau <- numeric(k)
   for (ell in seq_len(k)) {
-    y <- Y[, ell]
-    ybar <- mean(y)
-    w <- (y - ybar)^2
-
     m2_hat <- dp_m2(
-      w = w,
+      w = W[, ell],
       eps_m2 = eps_m2_ell,
       k_min_m2 = k_min_m2,
       k_max_m2 = k_max_m2,
       M = M
     )
 
-    tau_ell <- tau_from_m2(
+    tau[ell] <- tau_from_m2(
       m2_hat = m2_hat,
-      eps_tau = eps_gd_ell,
-      n_tau = n
+      eps_tau = eps_tau_tune,
+      n_tau = n_pairs
     )
-
-    if (!is.finite(tau_ell) || tau_ell <= 0) {
-      tau_ell <- 1
-    }
-
-    muT <- dp_huber_noisy_gd(
-      w = w,
-      eps_gd = eps_gd_ell,
-      delta_gd = delta_gd_ell,
-      tau = tau_ell,
-      T = T,
-      mu0 = mu0,
-      eta0 = eta0
-    )
-
-    scree[ell] <- (n / (n - 1)) * max(muT, 0)
   }
+
+  if (any(!is.finite(tau)) || any(tau <= 0)) {
+    stop("Huber thresholds must be finite and positive.")
+  }
+
+  gamma_gd <- mu_from_eps_delta(eps_gd, delta_gd)
+
+  sd_noise <- 2 * eta0 * tau * sqrt(k * T) / (n_pairs * gamma_gd)
+
+  if (any(!is.finite(sd_noise))) {
+    stop("Non-finite Gaussian noise scale.")
+  }
+
+  theta <- rep(mu0, k)
+
+  for (t in seq_len(T)) {
+    g <- vapply(seq_len(k), function(ell) {
+      r <- W[, ell] - theta[ell]
+      mean(pmin(pmax(r, -tau[ell]), tau[ell]))
+    }, numeric(1))
+
+    theta <- pmax(
+      theta + eta0 * g +
+        stats::rnorm(k, mean = 0, sd = sd_noise),
+      0
+    )
+  }
+
+  scree <- theta
 
   if (isTRUE(mono)) {
     scree <- scree_post_processing(scree)
@@ -801,50 +850,58 @@ unbounded_quantile <- function(x, q, epsilon,
 
 #' Estimate private scree values with private modified winsorized means
 #'
-#' Internal implementation of the private modified winsorized mean (PMWM) scree
-#' estimator. The method consumes the shared projected score matrix and
-#' privately estimates lower and upper winsorization bounds for squared
-#' centered scores using a pure-DP
-#' exponential-noise unbounded quantile routine, and releases a Gaussian-noised
-#' winsorized mean for each component.
+#' Forms squared differences from `m = floor(nrow(Y) / 2)` disjoint score
+#' pairs. For each component, lower and upper cutoffs are estimated with
+#' `unbounded_quantile_upper()`, using public lower bound zero, then
+#' truncated to `[a, b]`. The pair values are winsorized to those cutoffs.
 #'
-#' If `split_mode = TRUE`, one subset is used for private quantile estimation
-#' and the other subset is used for the winsorized mean step. If
-#' `split_mode = FALSE`, the full sample is reused in both steps. The private
-#' quantile releases consume only `epsilon`, while `delta` is reserved for the
-#' Gaussian winsorized-mean release. If `mono = TRUE`, the final scree vector is
-#' post-processed to be nonnegative and nonincreasing.
+#' Each of the `2 * k` pure-DP quantiles receives `eps / (4 * k)`. The joint
+#' winsorized-mean release uses `eps / 2` and all delta. Gaussian noise for
+#' component `l` has standard deviation
+#' `sqrt(k) * (U[l] - L[l]) / (n_m * gamma_M)`, where `n_m` is the number of
+#' pair rows used for the mean. There is no additional sample-size rescaling.
+#' See [dp_scree()] for preprocessing and accounting conditions.
 #'
-#' @param Y Projected score matrix with observations in rows and the selected
-#'   private principal components in columns.
-#' @param eps Positive epsilon budget remaining for this scree method after
-#'   the shared loading allocation. It is divided across columns of `Y`.
-#' @param delta Delta budget in `(0, 1)` remaining for this scree method after
-#'   the shared loading allocation. It is divided across columns of `Y`.
-#' @param split_mode A logical value indicating whether to split the sample into
-#'   quantile and mean subsets.
-#' @param beta Log-binning base used by the private quantile estimator. Must be
-#'   greater than `1`. The default is `1.001`.
-#' @param a Finite public lower post-processing bound for the private
-#'   winsorization cutoffs.
-#' @param b Finite public upper post-processing bound for the private
-#'   winsorization cutoffs.
-#' @param trim_const Positive constant controlling the practical clipping
-#'   proportion `max(trim_const / n_q, eta)`.
-#' @param eta Lower bound in the practical clipping proportion. Must lie in
-#'   `[0, 0.5)`.
-#' @param mono A logical value indicating whether to enforce a nonnegative and
-#'   nonincreasing scree sequence by post-processing.
-#' @return A list with components `scree` and `pve`.
+#' With `split_mode = TRUE`, pair rows are randomly split between quantile
+#' and mean estimation, requiring at least two pairs or four observations.
+#' The default `FALSE` reuses all pair rows in both steps. Negative final
+#' estimates are truncated at zero, with optional monotone adjustment.
+#'
+#' @param Y Projected score matrix with at least two observations in rows and
+#'   selected private principal components in columns.
+#' @param eps Positive epsilon budget for this method after the shared
+#'   loading allocation; divided between quantiles and the joint mean release.
+#' @param delta Delta budget in `(0, 1)`, used entirely by the joint mean release.
+#' @param a,b Finite public post-processing bounds for private cutoffs.
+#' @param trim_const Positive public constant in the trimming proportion
+#'   `min(max(trim_const / n_q, eta), 0.49)`, where `n_q` counts quantile pairs.
+#' @param eta Public lower bound on the trimming proportion, in `[0, 0.5)`.
+#' @param beta Geometric search-grid base greater than one. Default `1.001`.
+#' @param split_mode Whether to split pair rows into quantile and mean subsets.
+#'   Default `FALSE`.
+#' @param mono Whether to enforce a nonnegative, nonincreasing final sequence.
+#'
+#' @return A list with `scree` and `pve` vectors.
 #' @noRd
-dp_scree_pmwm <- function(Y, eps, delta,
-                          a, b, trim_const, eta,
-                          beta = 1.001, split_mode = TRUE,
-                          mono = TRUE) {
+dp_scree_pmwm <- function(
+    Y, eps, delta,
+    a, b, trim_const, eta,
+    beta = 1.001,
+    split_mode = FALSE,
+    mono = TRUE
+) {
   Y <- as.matrix(Y)
   n <- nrow(Y)
   k <- ncol(Y)
-  validate_scree_inputs(X = Y, k = k, eps = eps, delta = delta)
+
+  validate_scree_inputs(
+    X = Y,
+    k = k,
+    eps = eps,
+    delta = delta
+  )
+
+  n_pairs <- n %/% 2L
 
   if (missing(a) || missing(b) || missing(trim_const) || missing(eta)) {
     stop("a, b, trim_const, and eta must be supplied.")
@@ -863,33 +920,28 @@ dp_scree_pmwm <- function(Y, eps, delta,
   eps_scree <- eps
   delta_scree <- delta
 
-  eps_ell <- eps_scree / k
-  delta_ell <- delta_scree / k
+  # for 2k quantile estimates
+  eps_Q <- eps_scree / (4 * k)
 
-  # Each fully unbounded private quantile receives eps_ell / 4. The helper
-  # manages its internal split across the two one-sided searches. Because the
-  # quantile releases are pure DP, they do not consume delta. The Gaussian
-  # winsorized-mean release receives the remaining eps_ell / 2 and delta_ell.
-  eps_Q <- eps_ell / 4
-  eps_M <- eps_ell / 2
-  delta_M <- delta_ell
+  # for mean estimate
+  eps_M <- eps_scree / 2
+  delta_M <- delta_scree
+
+  W <- paired_score_squares(Y)
 
   if (isTRUE(split_mode)) {
-    m <- floor(n / 2)
-    if (m < 1 || (n - m) < 1) {
-      stop("split_mode = TRUE requires at least 2 observations.")
+    if (n_pairs < 2L) {
+      stop("split_mode = TRUE requires at least 2 pairs (n >= 4).")
     }
-    # Previous version
-    # idx_q <- seq_len(m)
-    # idx_m <- seq.int(m + 1, n)
 
-    # Sample with random ordering
-    idx <- sample.int(n)
-    idx_q <- idx[seq_len(m)]
-    idx_m <- idx[-seq_len(m)]
+    n_q <- n_pairs %/% 2L
+    idx <- sample.int(n_pairs)
+
+    idx_q <- idx[seq_len(n_q)]
+    idx_m <- idx[-seq_len(n_q)]
   } else {
-    idx_q <- seq_len(n)
-    idx_m <- seq_len(n)
+    idx_q <- seq_len(n_pairs)
+    idx_m <- seq_len(n_pairs)
   }
 
   n_q <- length(idx_q)
@@ -898,12 +950,10 @@ dp_scree_pmwm <- function(Y, eps, delta,
   trim_param <- min(max(trim_const / n_q, eta), 0.49)
 
   scree_base <- numeric(k)
-  scree <- numeric(k)
+  cutoff_width <- numeric(k)
 
   for (ell in seq_len(k)) {
-    y <- Y[, ell]
-    ybar <- mean(y)
-    w <- (y - ybar)^2
+    w <- W[, ell]
 
     L <- unbounded_quantile_upper(
       x = w[idx_q],
@@ -928,18 +978,18 @@ dp_scree_pmwm <- function(Y, eps, delta,
     }
 
     w_win <- pmin(pmax(w[idx_m], L), U)
-    mu_hat <- mean(w_win)
 
-    scree_base[ell] <- (n / (n - 1)) * mu_hat
-
-    Delta_ell <- (n / (n - 1)) * (U - L) / n_m
-    sd_noise <- Delta_ell * sqrt(2 * log(1.25 / delta_M)) / eps_M
-
-    scree[ell] <- max(
-      scree_base[ell] + stats::rnorm(1, mean = 0, sd = sd_noise),
-      0
-    )
+    scree_base[ell] <- mean(w_win)
+    cutoff_width[ell] <- U - L
   }
+
+  gamma_M <- mu_from_eps_delta(eps_M, delta_M)
+  sd_noise <- sqrt(k) * cutoff_width / (n_m * gamma_M)
+
+  scree <- pmax(
+    scree_base + stats::rnorm(k, mean = 0, sd = sd_noise),
+    0
+  )
 
   if (isTRUE(mono)) {
     scree <- scree_post_processing(scree)

@@ -61,7 +61,9 @@ A list with \code{loading} (the result of \code{\link[=dp_loading]{dp_loading()}
 Build loading plots directly from data
 }
 \details{
-One display has non-private left and private right. Multiple
+This comparison wrapper always computes both references and has
+no \code{non_private} argument. One display has non-private left and private
+right. Multiple
 displays have non-private above private, ordered vector, point, heatmap.
 Non-private panels and comparison-based plot ranges are reference output;
 the combined result is not a private-only release.

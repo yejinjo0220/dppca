@@ -13,8 +13,17 @@
 #'   The other supported histogram method is `"add"`.
 #' @param axes Two distinct histogram component indices between `1` and `k`.
 #' @param center,standardize Whether to center or standardize the columns.
-#' @param cpp.option Whether to use the compiled loading implementation.
-#' @param non_private Whether to store ordinary PCA comparison results.
+#' @param cpp.option Whether to use the compiled loading implementation when
+#'   `V_dp = NULL`.
+#' @param non_private Whether to compute and store ordinary PCA comparison
+#'   results, including observed scores. Default: `TRUE`.
+#' @param V_dp Optional full `p` by `p` private direction matrix, with
+#'   `p = ncol(X)` and orthonormal columns. Rows must follow the variable
+#'   order in `X`; row names, when present, must match the variable names.
+#'   Use the same variable scales and preprocessing as when obtaining these
+#'   directions. When supplied, loading estimation is skipped; the loading
+#'   allocation records the budget already used to obtain `V_dp`. The caller
+#'   is responsible for its privacy provenance. Default: `NULL`.
 #'
 #' @return A `dp_pca` object containing all `directions`, the first `k`
 #'   `eigenvalues` and their `pve`, `score_histogram`, `frame`, `privacy`,
@@ -23,14 +32,26 @@
 #'   including observed scores; it is `NULL` when `non_private = FALSE`.
 #'
 #' @details
-#' One private loading estimate is shared by scree and score estimation.
-#' The selected scree method receives the full scree allocation and divides
-#' it across the first `k` components. Within the score allocation, 35 percent
-#' of `eps` is used for the frame and 65 percent for the histogram; all score
-#' `delta` is assigned to the histogram. PVE is normalized over the `k`
-#' estimated values. Non-private references are comparison information and
-#' are not private releases. Budget allocation alone does not establish a
-#' privacy guarantee for the complete preprocessing and estimation procedure.
+#' One estimated or supplied private direction matrix is shared by scree and
+#' score estimation. Scree methods use disjoint pairs of projected scores:
+#' the squared difference within each pair, divided by two, estimates
+#' variance along a private direction. An odd final observation is unused
+#' by scree estimation. Score estimation uses all original projected rows;
+#' the returned `n` remains the original sample size.
+#'
+#' The selected scree method receives the full scree allocation, with
+#' vector noise calibrated jointly over the first `k` components. Within the
+#' score allocation, 35 percent of `eps` is used for the frame and 65 percent
+#' for the histogram; all score `delta` is assigned to the histogram.
+#' Supplying `V_dp` does not redistribute its recorded loading allocation.
+#' PVE is normalized over the `k` estimated values.
+#'
+#' When requested, the ordinary reference is computed separately from the
+#' sample covariance. Its scores use ordinary PCA directions, whereas the
+#' private histogram uses `V_dp` or the internally estimated private basis.
+#' Reference results are not private releases. Data-dependent preprocessing,
+#' including sample standardization, needs separate privacy analysis;
+#' budget allocation alone does not certify the complete procedure.
 #'
 #' @examples
 #' data(gau, package = "dppca")
@@ -59,7 +80,8 @@ dp_pca <- function(
     center = TRUE,
     standardize = FALSE,
     cpp.option = TRUE,
-    non_private = TRUE
+    non_private = TRUE,
+    V_dp = NULL
 ) {
   if (missing(scree)) {
     stop(
@@ -139,23 +161,20 @@ dp_pca <- function(
   .dppca_fun("validate_bins")(bins)
 
   if (is.null(colnames(X_proc))) {
-    colnames(X_proc) <- paste0("V", seq_len(p))
+    colnames(X_proc) <- paste0("X", seq_len(p))
   }
   if (anyDuplicated(colnames(X_proc))) {
     stop("Variable names must be unique.")
   }
   estimator <- .dppca_fun(paste0("dp_scree_", scree_method))
 
-  # Estimate one full loading matrix and reuse its projected scores.
-  loadings <- .dppca_fun("dp_loading")(
+  # Estimate or reuse one full loading matrix and share its projected scores.
+  V <- .get_dp_directions(
     X_proc,
-    eps = budgets$loading[["eps"]],
-    delta = budgets$loading[["delta"]],
-    center = FALSE,
-    standardize = FALSE,
-    cpp.option = cpp.option
+    budgets$loading,
+    cpp.option,
+    V_dp
   )
-  V <- loadings$private
   Y <- X_proc %*% V
 
   scree_args <- c(
@@ -192,17 +211,16 @@ dp_pca <- function(
     bins,
     score_budget$eps_hist,
     score_budget$delta_hist,
-    score_method
+    score_method,
+    non_private = FALSE
   )
 
   nonprivate <- NULL
   if (non_private) {
-    ordinary_eigenvalues <- eigen(
-      stats::cov(X_proc),
-      symmetric = TRUE,
-      only.values = TRUE
-    )$values
-    ordinary_directions <- loadings$nonprivate
+    ordinary <- .nonprivate_pca(X_proc)
+    ordinary_eigenvalues <- ordinary$eigenvalues
+    ordinary_directions <- ordinary$directions
+
     ordinary_eigenvalues <- stats::setNames(
       pmax(ordinary_eigenvalues[seq_len(k)], 0),
       colnames(V)[seq_len(k)]
@@ -1260,10 +1278,11 @@ print.dp_pca <- function(
 #' the first `k` components explain all of the data's variance. If all
 #' estimated eigenvalues are zero, PVE and cumulative PVE are shown as zero.
 #'
-#' The budget table reports allocations, not measured privacy loss. In
-#' particular, the pure-DP frame uses no delta; a scree method may leave
-#' some of its allocated delta unused. Non-private comparison values are
-#' not included in the importance table.
+#' The budget table records component allocations, not measured privacy loss
+#' or cumulative spending across calls. With external `V_dp`, the loading
+#' row records its prior cost. The frame uses no delta; all scree delta is
+#' used by the vector mechanism, including the Huber gradient iterations.
+#' Non-private comparison values are not included in the importance table.
 #' @export
 summary.dp_pca <- function(
     object,

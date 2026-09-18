@@ -46,12 +46,18 @@ and \code{scree} for scree functions, \code{loading} and \code{score} for score
 functions, or all three for \code{\link[=dp_pca]{dp_pca()}}. An estimation function rejects
 a different component set rather than discarding or redistributing a
 budget. Loading is estimated once and shared within that function call.
+When external \code{V_dp} is supplied, loading estimation is skipped but its
+allocation is still required to record the budget already used for
+those directions. It is not redistributed to scree or score estimation.
 
 When comparing several scree or score methods, each method receives the
 corresponding full component allocation. The allocation is not divided
 across methods, so releasing several methods together requires composition.
-The returned totals sum each named component once. This constructor records
-allocations; it does not establish a privacy guarantee for preprocessing
+The returned totals sum each named component once. Reusing a previously
+released loading matrix incurs no new loading cost; compose the actual
+new releases and count its original release once. This object records
+allocations, not cumulative spending across calls, and does not verify
+the privacy provenance of \code{V_dp} or establish a guarantee for preprocessing
 or the complete estimation procedure.
 }
 \examples{
