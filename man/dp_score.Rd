@@ -12,7 +12,9 @@ dp_score(
   center = TRUE,
   standardize = FALSE,
   cpp.option = FALSE,
-  axes = c(1, 2)
+  axes = c(1, 2),
+  V_dp = NULL,
+  non_private = TRUE
 )
 }
 \arguments{
@@ -21,8 +23,10 @@ columns correspond to variables.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
 \code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
-allocation is used once; the histogram portion of the score allocation
-is reused for each requested histogram method; see Details.}
+allocation is used once when \code{V_dp = NULL}. With supplied directions,
+it records the budget already used to obtain them and is not spent again
+or reassigned. The histogram allocation is supplied separately to each
+requested histogram method; see Details.}
 
 \item{bins}{Integer vector of length 2 defining the number of histogram bins
 along the first and second score axes, respectively.}
@@ -32,7 +36,7 @@ compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"
 the sparse thresholded histogram. The default is \code{c("add", "sparse")}.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
-before computing principal component directions. The default is \code{TRUE}.}
+before projection and any direction estimation. The default is \code{TRUE}.}
 
 \item{standardize}{A logical value indicating whether to scale the columns of
 \code{X} by their sample standard deviations after optional centering. The
@@ -45,20 +49,32 @@ Rcpp spherical-Kendall implementation. The default is \code{FALSE}.}
 components used as the horizontal and vertical score axes, in that order.
 Each value must not exceed \code{ncol(X)}. Repeated or decreasing indices are
 accepted. The default is \code{c(1, 2)}.}
+
+\item{V_dp}{Optional finite real \code{p} by \code{p} private direction matrix, where
+\code{p} is the number of feature columns. Columns must be orthonormal and rows
+must follow the feature order in \code{X}; supplied row names must match its
+column names when both are present. Directions must use the same
+preprocessing as this call. If supplied, direction estimation is skipped.
+The caller is responsible for the matrix's DP provenance and prior budget;
+matrix validation does not establish either.}
+
+\item{non_private}{Whether to return observed projected coordinates and
+empirical reference histograms. The default is \code{TRUE}. These references
+use the private directions and are not ordinary PCA references or private
+releases. \code{FALSE} omits them without skipping internal histogram counts.}
 }
 \value{
-A named list with components \code{score} and \code{frame}, followed by
-histogram results. The \code{nonprivate} component contains the non-private
-empirical histogram. Each requested private method is returned as an
-additional component (\code{add} and/or \code{sparse}). Methods that are not requested
-are omitted from the returned list.
+A named list containing \code{frame} and each requested histogram method
+(\code{add} and/or \code{sparse}). When \code{non_private = TRUE}, \code{score} contains the
+observed projected coordinates and \code{nonprivate} contains their empirical
+histogram. Both components are omitted when \code{FALSE}. Unrequested methods
+are omitted.
 }
 \description{
-This function computes two-dimensional principal component scores using
-private directions from \code{\link[=dp_loading]{dp_loading()}} and returns differentially private
-histogram estimates on the score space. It returns the
-score coordinates, the plotting frame, the non-private histogram, and the
-requested private histogram estimates.
+This function projects observations onto supplied private directions or
+directions estimated by \code{\link[=dp_loading]{dp_loading()}} and computes two-dimensional score
+histograms. Observed coordinates and empirical reference histograms are
+returned only when \code{non_private = TRUE}.
 }
 \details{
 Let \eqn{v_a} and \eqn{v_b} be the principal component directions selected
@@ -79,12 +95,17 @@ by 20 percent. The resulting common radius defines an axis-aligned square
 plotting frame.
 
 The private histogram is computed on the rectangular grid defined by the
-private frame and the bin counts in \code{bins}. Under
-row-level adjacency, changing one observation can increase one bin count by
-one and decrease another by one, giving \eqn{\ell_1} sensitivity at most
-\eqn{2} and \eqn{\ell_2} sensitivity at most \eqn{\sqrt{2}} for the count
-vector. Scores outside the private frame are assigned to the nearest boundary
-bin along each out-of-range coordinate.
+private frame and the bin counts in \code{bins}. Conditional on fixed directions,
+a fixed frame and fixed public preprocessing, replacing one row can increase
+one bin count by one and decrease another by one. The count vector then has
+\eqn{\ell_1} sensitivity at most \eqn{2} and \eqn{\ell_2} sensitivity
+at most \eqn{\sqrt{2}}. Scores outside the frame are assigned to the nearest
+boundary bin along each out-of-range coordinate. Adaptive use of private
+directions and a private frame requires composition with those mechanisms.
+Centering by the sample mean and scaling by sample standard deviations can
+change multiple rows when one observation changes. The count argument alone
+does not justify those preprocessing steps; use fixed public preprocessing
+or account for an appropriate private preprocessing mechanism.
 
 Two private histogram mechanisms are supported:
 \itemize{
@@ -101,12 +122,15 @@ following the stability-based private histogram idea of
 \insertCite{karwa2017finite;textual}{dppca}.
 }
 
-Private directions use the \code{loading} component of \code{privacy}. Within the
+Newly estimated directions use the \code{loading} component of \code{privacy}.
+Supplied \code{V_dp} reuses an earlier estimate whose budget is recorded there.
+Within the
 \code{score} component, 35 percent of \code{eps} is used for the private frame and
 65 percent for the histogram; all score \code{delta} is assigned to the histogram.
 With \code{split = c(loading = 0.5, score = 0.5)}, the direction, frame and
-histogram proportions of total \code{eps} are 0.5, 0.175 and 0.325. Directions
-and the frame are estimated once and shared across histogram methods. Frame
+histogram proportions of recorded total \code{eps} are 0.5, 0.175 and 0.325.
+Directions are supplied or estimated once; the frame is estimated once per
+call. Both are shared across histogram methods. Frame
 construction is pure DP and divides \code{eps_frame} equally among its two
 private medians and one private radial-quantile estimate.
 
@@ -117,8 +141,11 @@ can be compared under the same privacy setting. If outputs from multiple
 private histogram methods are released together, the privacy cost of the
 joint release must be accounted for by composition.
 
-The returned score coordinates and the \code{nonprivate} histogram are included as
-non-private references and are not themselves differentially private releases.
+With \code{non_private = TRUE}, the returned \code{score} and \code{nonprivate} histogram
+describe observed projections onto the private directions. They are omitted
+when \code{FALSE}; no ordinary PCA is computed by this function. Each call still
+makes new frame and histogram estimates, including when \code{V_dp} is reused.
+Repeated releases require privacy accounting across calls.
 
 For a detailed procedure and mathematical formulations,
 refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
@@ -157,7 +184,8 @@ head(score_gau$add)
 \insertRef{kim2025robustdppca}{dppca}
 }
 \seealso{
-\code{\link[=dp_score_plot]{dp_score_plot()}} for plotting the output of this function.
+\code{\link[=dp_score_plot]{dp_score_plot()}} for computing and plotting comparison results.
+\code{\link[=dp_pca]{dp_pca()}} and \code{\link[=plot.dp_pca]{plot.dp_pca()}} for estimation followed by plots of a stored fit.
 \code{\link[=dp_score_group]{dp_score_group()}} and \code{\link[=dp_score_plot_group]{dp_score_plot_group()}} for group-wise score
 histograms.
 \code{\link[=dp_loading]{dp_loading()}} for private principal component direction estimation.

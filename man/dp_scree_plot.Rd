@@ -15,72 +15,80 @@ dp_scree_plot(
   cpp.option = FALSE,
   mono = TRUE,
   type = c("pve", "scree"),
-  plot_control = NULL
+  plot_control = NULL,
+  V_dp = NULL,
+  non_private = TRUE
 )
 }
 \arguments{
-\item{X}{A numeric matrix or data frame. Rows correspond to observations and
-columns correspond to variables.}
+\item{X}{A numeric matrix or data frame with observations in rows and
+variables in columns.}
 
-\item{k}{Positive integer defining the number of leading principal components
-to estimate. Must be an integer between \code{1} and the number of columns in \code{X}.}
+\item{k}{Number of leading components, an integer from \code{1} to \code{ncol(X)}.}
 
-\item{privacy}{A \code{\link[=privacy_control]{privacy_control()}} object with exactly the \code{loading} and
-\code{scree} components. For example, use
-\code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, scree = 0.5))}.
-The loading budget is used once; each requested scree method receives
-the full \code{scree} component budget, without division across methods.}
+\item{privacy}{A \code{\link[=privacy_control]{privacy_control()}} object with exactly \code{loading} and
+\code{scree} components. Without \code{V_dp}, the loading allocation is used once
+to estimate directions. With \code{V_dp}, it records the budget already used
+to obtain those directions and is not spent again or redistributed.
+Each requested method receives the full \code{scree} allocation.}
 
-\item{method}{Scree estimation method or methods to plot. One or more of
-\code{"clipped"}, \code{"pmwm"}, or \code{"huber"}. If omitted, \code{"clipped"} is used.}
+\item{method}{One or more of \code{"clipped"}, \code{"pmwm"}, and \code{"huber"}.
+If omitted, \code{"clipped"} is used.}
 
-\item{control}{Optional method-specific control list, or a named list of
-control lists when multiple methods are requested. Use \code{\link[=clipped_control]{clipped_control()}},
-\code{\link[=pmwm_control]{pmwm_control()}}, and \code{\link[=huber_control]{huber_control()}}.}
+\item{control}{Method-specific list created by \code{\link[=clipped_control]{clipped_control()}},
+\code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}. For several methods, supply a
+named list of these controls.}
 
-\item{center}{A logical value indicating whether to center the columns of \code{X}
-before computing principal component directions. The default is \code{TRUE}.}
+\item{center}{Whether to center columns of \code{X} before projection.
+The default is \code{TRUE}.}
 
-\item{standardize}{A logical value indicating whether to scale the columns of
-\code{X} by their sample standard deviations after optional centering. The
-default is \code{FALSE}.}
+\item{standardize}{Whether to divide columns by their sample standard
+deviations after optional centering. The default is \code{FALSE}; see Details
+for the preprocessing assumptions of the scree calibration.}
 
-\item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} for private
-loading estimation. The default is \code{FALSE}.}
+\item{cpp.option}{Logical option passed to \code{\link[=dp_loading]{dp_loading()}} when directions
+must be estimated. The default is \code{FALSE}; ignored when \code{V_dp} is supplied.}
 
-\item{mono}{A logical value indicating whether to apply monotone
-post-processing to the private scree vector. The default is \code{TRUE}.}
+\item{mono}{Whether to enforce a nonnegative, nonincreasing private scree
+sequence by post-processing. The default is \code{TRUE}.}
 
-\item{type}{Quantity to plot. Use \code{"pve"} to plot proportions of variance
-explained and \code{"scree"} to plot raw scree values. The default is \code{"pve"}.}
+\item{type}{Quantity to plot: \code{"pve"} for proportions of variance explained
+or \code{"scree"} for scree values. The default is \code{"pve"}.}
 
-\item{plot_control}{Optional plotting control list created by
-\code{\link[=scree_plot_control]{scree_plot_control()}}. If \code{NULL}, default plotting settings are used.}
+\item{plot_control}{Optional list from \code{\link[=scree_plot_control]{scree_plot_control()}}. If \code{NULL},
+default plotting settings are used.}
+
+\item{V_dp}{Optional full \code{p} by \code{p} private direction matrix, where
+\code{p = ncol(X)}. Its columns must be orthonormal and its rows must match
+the variables of \code{X} in order. If both row and variable names are present,
+they must match. Directions must correspond to the same preprocessing.
+Supplying this matrix skips direction estimation; its privacy provenance
+and previously used loading budget remain the caller's responsibility.}
+
+\item{non_private}{Whether to compute and return the ordinary PCA reference.
+The default is \code{TRUE}. With \code{FALSE}, ordinary PCA is not computed and the
+\code{nonprivate} result is omitted.}
 }
 \value{
-Invisibly returns the named list produced by \code{\link[=dp_scree]{dp_scree()}}.
+Invisibly returns the list produced by \code{\link[=dp_scree]{dp_scree()}}. The
+\code{nonprivate} component is present only when \code{non_private = TRUE}.
 }
 \description{
-This function computes and visualizes scree curves for principal component
-analysis using base R graphics. It overlays the usual non-private curve with
-one or more differentially private estimates and acts as a plotting wrapper
-around \code{\link[=dp_scree]{dp_scree()}}.
+Computes and plots one or more scree estimates using base R graphics.
+The ordinary PCA curve is included only when \code{non_private = TRUE}.
 }
 \details{
-This function calls \code{\link[=dp_scree]{dp_scree()}} once and plots its returned \code{nonprivate}
-result together with each requested private method using base R graphics.
-All private methods share the same estimated loadings and projected scores.
-The \code{loading} component of \code{privacy} is used once; each method receives the
-full \code{scree} component budget. Releasing several methods together requires
-composition; the recorded total covers loading plus one scree method.
+Calls \code{\link[=dp_scree]{dp_scree()}} once and plots the requested method results, together
+with the optional \code{nonprivate} reference. All methods share one estimated
+or supplied direction matrix and one projected score matrix. Each method
+receives the full scree allocation; the composition and preprocessing
+conditions described in \code{\link[=dp_scree]{dp_scree()}} also apply here.
 
-The default legend labels are \code{"Non-private"}, \code{"Clipped"}, \code{"PMWM"}, and
-\code{"Huber"}. Plot appearance, including the title, axis labels, legend
-position, colors, line types, point symbols, and text sizes, can be changed
-with \code{\link[=scree_plot_control]{scree_plot_control()}}.
-
-Because the plot includes the \code{nonprivate} reference curve, the complete plot
-is intended for comparison and is not itself a differentially private release.
+Use \code{\link[=scree_plot_control]{scree_plot_control()}} to change titles, axes, colors, line types,
+point symbols, legend position, and text sizes. The usual labels are
+\code{"Non-private"}, \code{"Clipped"}, \code{"PMWM"}, and \code{"Huber"} for included curves.
+A plot with the non-private reference is intended for comparison and is
+not itself a differentially private release.
 }
 \examples{
 data(gau, package = "dppca")

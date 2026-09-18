@@ -7,23 +7,23 @@
 clipped_control(C_clip)
 }
 \arguments{
-\item{C_clip}{Positive clipping threshold for squared centered principal
-component scores. This value has no default because it should be chosen
-according to the scale of the data.}
+\item{C_clip}{Positive public clipping threshold for squared pair differences
+\eqn{(Y_{b_j,l} - Y_{a_j,l})^2/2}. It has no default and should be chosen
+for this scale without an unaccounted use of private data.}
 }
 \value{
-A list of control options for \code{method = "clipped"}.
+A control list for \code{method = "clipped"}.
 }
 \description{
-Creates a control list for the clipped-mean scree estimator used by
-\code{\link[=dp_scree]{dp_scree()}} and \code{\link[=dp_scree_plot]{dp_scree_plot()}} when \code{method = "clipped"}.
+Creates a control list for \code{method = "clipped"} in \code{\link[=dp_scree]{dp_scree()}},
+\code{\link[=dp_scree_plot]{dp_scree_plot()}}, or the scree configuration of \code{\link[=dp_pca]{dp_pca()}}.
 }
 \details{
-The clipped method estimates each scree value by clipping the squared scores
-at \code{C_clip} and then applying a sensitivity-calibrated Gaussian mechanism
-\insertCite{dwork2014algorithmic}{dppca}. Larger values of \code{C_clip} reduce
-clipping bias but increase the sensitivity, and therefore the scale of
-the privacy noise.
+The method clips the paired quantities at \code{C_clip} and adds Gaussian
+noise to their vector of column means. For \eqn{m=\lfloor n/2\rfloor}
+pairs and \eqn{k} components, the calibration uses vector sensitivity
+\eqn{\sqrt{k}\,C_{clip}/m} under the conditions in \code{\link[=dp_scree]{dp_scree()}}. Larger
+thresholds reduce clipping bias but increase the noise scale.
 }
 \examples{
 clipped_control(C_clip = 3)

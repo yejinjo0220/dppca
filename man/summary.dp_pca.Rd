@@ -37,8 +37,9 @@ than the number of variables, cumulative PVE of one does not mean that
 the first \code{k} components explain all of the data's variance. If all
 estimated eigenvalues are zero, PVE and cumulative PVE are shown as zero.
 
-The budget table reports allocations, not measured privacy loss. In
-particular, the pure-DP frame uses no delta; a scree method may leave
-some of its allocated delta unused. Non-private comparison values are
-not included in the importance table.
+The budget table records component allocations, not measured privacy loss
+or cumulative spending across calls. With external \code{V_dp}, the loading
+row records its prior cost. The frame uses no delta; all scree delta is
+used by the vector mechanism, including the Huber gradient iterations.
+Non-private comparison values are not included in the importance table.
 }

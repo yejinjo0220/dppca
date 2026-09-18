@@ -13,135 +13,118 @@ dp_scree(
   center = TRUE,
   standardize = FALSE,
   cpp.option = FALSE,
-  mono = TRUE
+  mono = TRUE,
+  V_dp = NULL,
+  non_private = TRUE
 )
 }
 \arguments{
-\item{X}{A numeric matrix or data frame. Rows correspond to observations and
-columns correspond to variables.}
+\item{X}{A numeric matrix or data frame with observations in rows and
+variables in columns.}
 
-\item{k}{Positive integer defining the number of leading principal components
-to estimate. Must be an integer between \code{1} and the number of columns in \code{X}.}
+\item{k}{Number of leading components, an integer from \code{1} to \code{ncol(X)}.}
 
-\item{privacy}{A \code{\link[=privacy_control]{privacy_control()}} object with exactly the \code{loading} and
-\code{scree} components. For example, use
-\code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, scree = 0.5))}.
-The loading budget is used once; each requested scree method receives
-the full \code{scree} component budget, without division across methods.}
+\item{privacy}{A \code{\link[=privacy_control]{privacy_control()}} object with exactly \code{loading} and
+\code{scree} components. Without \code{V_dp}, the loading allocation is used once
+to estimate directions. With \code{V_dp}, it records the budget already used
+to obtain those directions and is not spent again or redistributed.
+Each requested method receives the full \code{scree} allocation.}
 
-\item{method}{Scree value estimation method or methods. One or more of
-\code{"clipped"}, \code{"pmwm"}, or \code{"huber"}. If omitted, \code{"clipped"} is used.}
+\item{method}{One or more of \code{"clipped"}, \code{"pmwm"}, and \code{"huber"}.
+If omitted, \code{"clipped"} is used.}
 
-\item{control}{Optional method-specific control list created by
-\code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}. When multiple
-methods are requested, use a named list with method names.}
+\item{control}{Method-specific list created by \code{\link[=clipped_control]{clipped_control()}},
+\code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}. For several methods, supply a
+named list of these controls.}
 
-\item{center}{A logical value indicating whether to center the columns of \code{X}
-before computing principal component directions. The default is \code{TRUE}.}
+\item{center}{Whether to center columns of \code{X} before projection.
+The default is \code{TRUE}.}
 
-\item{standardize}{A logical value indicating whether to scale the columns of
-\code{X} by their sample standard deviations after optional centering. The
-default is \code{FALSE}.}
+\item{standardize}{Whether to divide columns by their sample standard
+deviations after optional centering. The default is \code{FALSE}; see Details
+for the preprocessing assumptions of the scree calibration.}
 
-\item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} for private
-loading estimation. The default is \code{FALSE}.}
+\item{cpp.option}{Logical option passed to \code{\link[=dp_loading]{dp_loading()}} when directions
+must be estimated. The default is \code{FALSE}; ignored when \code{V_dp} is supplied.}
 
-\item{mono}{A logical value indicating whether to apply monotone
-post-processing to the vector of private scree values. The default is
-\code{TRUE}.}
+\item{mono}{Whether to enforce a nonnegative, nonincreasing private scree
+sequence by post-processing. The default is \code{TRUE}.}
+
+\item{V_dp}{Optional full \code{p} by \code{p} private direction matrix, where
+\code{p = ncol(X)}. Its columns must be orthonormal and its rows must match
+the variables of \code{X} in order. If both row and variable names are present,
+they must match. Directions must correspond to the same preprocessing.
+Supplying this matrix skips direction estimation; its privacy provenance
+and previously used loading budget remain the caller's responsibility.}
+
+\item{non_private}{Whether to compute and return the ordinary PCA reference.
+The default is \code{TRUE}. With \code{FALSE}, ordinary PCA is not computed and the
+\code{nonprivate} result is omitted.}
 }
 \value{
-A named list. The first component, \code{nonprivate}, contains:
-\itemize{
-\item \code{scree}: the usual non-private scree estimates.
-\item \code{pve}: the corresponding non-private proportions of variance
-explained, normalized over the \code{k} returned components.
-}
-Each requested private method is returned as an additional named component
-(\code{clipped}, \code{pmwm}, and/or \code{huber}), each containing:
-\itemize{
-\item \code{scree}: the differentially private scree estimates.
-\item \code{pve}: the corresponding private proportions of variance explained,
-normalized over the \code{k} returned components.
-}
-All scree and PVE vectors are named \code{PC1}, ..., \code{PCk}. The return structure is
-the same whether one or multiple private methods are requested.
+A named list containing one entry per requested method (\code{clipped},
+\code{pmwm}, and/or \code{huber}). Each entry has \code{scree} and \code{pve} vectors named
+\code{PC1}, ..., \code{PCk}. If \code{non_private = TRUE}, the first entry, \code{nonprivate},
+contains the corresponding ordinary PCA \code{scree} and \code{pve} reference.
+PVE is normalized over the \code{k} returned components in every entry.
 }
 \description{
-This function computes estimates of scree values, eigenvalues of the
-covariance matrix, for principal component analysis. It returns the usual
-non-private estimates once, together with one or more differentially private
-estimates.
+Estimates scree values along private principal component directions using
+means of squared differences from disjoint score pairs. An ordinary PCA
+reference is computed only when \code{non_private = TRUE}.
 }
 \details{
-The private estimates are computed as private estimates of the mean of the
-squared principal component scores. See Details for the estimating equations
-and method-specific construction.
+Let \eqn{Y = X V} denote the shared projected score matrix after preprocessing.
+Each method independently permutes its rows and forms
+\eqn{m = \lfloor n/2 \rfloor} disjoint pairs, using
+\deqn{W_{jl} = (Y_{b_j,l} - Y_{a_j,l})^2/2.}
+One randomly selected row is unused when \eqn{n} is odd. The methods estimate
+means of the columns of \eqn{W}, without an additional sample-size rescaling.
+For fixed scores, the unclipped pair mean has the usual sample variance as
+its expectation over random pairing; an individual pairing need not equal
+that variance.
 
-Let \eqn{X} denote the preprocessed data matrix and let \eqn{v_l} be the
-\eqn{l}th principal component direction. The \eqn{l}th score vector is
-\eqn{z_l = X v_l}, with sample mean \eqn{\bar z_l}. The corresponding sample
-scree value can be written as
-\deqn{
-  \hat{\lambda}_l
-  = v_l^\top \widehat{\Sigma} v_l
-  = \frac{1}{n - 1}\sum_{i = 1}^n (z_{il} - \bar z_l)^2
-  = \frac{n}{n - 1}\left(\frac{1}{n}\sum_{i = 1}^n w_{il}\right),
-  \qquad w_{il} = (z_{il} - \bar z_l)^2.
-}
-Therefore, each scree value is estimated by privately estimating the mean of
-\eqn{w_{1l}, \ldots, w_{nl}} and multiplying by \eqn{n/(n - 1)}.
-
-The supported methods differ in how this private mean is estimated:
+The supported methods differ in their treatment of \eqn{W}:
 \itemize{
-\item \code{"clipped"} clips the squared scores \eqn{w_{i\ell}} at \code{C_clip} and
-then applies the Gaussian mechanism \insertCite{dwork2014algorithmic}{dppca}.
-This is the simplest option but depends directly on the clipping threshold.
-\item \code{"pmwm"} uses the private modified winsorized mean approach of
-\insertCite{ramsay2025pmw;textual}{dppca}, adapted from the accompanying
-Python implementation into R. The lower and upper tail cutoffs are
-estimated with the pure-DP fully unbounded quantile mechanism of
-\insertCite{durfee2023unbounded;textual}{dppca} and truncated to the public
-bounds supplied through \code{\link[=pmwm_control]{pmwm_control()}}.
-The squared scores \eqn{w_{i\ell}} are then winsorized to those cutoffs,
-and the final winsorized mean is released with a Gaussian mechanism
-calibrated to its share of the \code{scree} component budget.
-\item \code{"huber"} uses a Huber-type private robust mean estimator based on
-noisy gradient descent, following \insertCite{yu2024gaussian;textual}{dppca}.
+\item \code{"clipped"} clips entries at \code{C_clip} and releases the vector of
+column means with Gaussian noise calibrated jointly across components.
+\item \code{"pmwm"} estimates two cutoffs per component using the one-sided
+unbounded quantile routine of
+\insertCite{durfee2023unbounded;textual}{dppca}, with public lower bound
+zero. The cutoffs are truncated to the public bounds from
+\code{\link[=pmwm_control]{pmwm_control()}}. Each of the \eqn{2k} quantiles receives
+\eqn{\epsilon/(4k)}; the vector of winsorized means receives
+\eqn{\epsilon/2} and all of the method's \eqn{\delta}.
+\item \code{"huber"} first estimates a scale for each component using
+\code{m2_frac * epsilon / k}. This scale step uses only epsilon. The vector
+noisy-gradient procedure uses the remaining epsilon and all delta,
+with Gaussian calibration across components and iterations. At least
+eight observations are required; see \code{\link[=huber_control]{huber_control()}}.
 }
 
-Principal component directions are always estimated privately using
-\code{\link[=dp_loading]{dp_loading()}}. The data are preprocessed once, and one loading estimate
-is computed using the \code{loading} component of \code{privacy}. The first \code{k}
-columns of its \code{private} matrix produce one score matrix shared by all
-requested methods. Each method uses the \code{scree} component directly; there
-is no additional loading allocation within a scree method.
+The data are preprocessed once. Directions are estimated once with
+\code{\link[=dp_loading]{dp_loading()}} unless \code{V_dp} is supplied, and the first \code{k} directions
+produce the score matrix shared by the requested methods. Loading is not
+re-estimated within a scree method.
 
-When multiple methods are requested, each receives the same full \code{scree}
-epsilon and delta budgets for method comparison. These budgets are not
-divided across methods. For a joint release, composition counts the shared
-loading allocation once, plus the privacy costs of all requested methods.
-The total recorded in \code{privacy} covers loading plus one scree method, not
-a joint release of several scree methods.
+The paired-score sensitivity calculations condition on the directions
+and use fixed-size replacement adjacency. Common centering cancels in
+the pair differences. Variable scaling must be fixed or public, or have
+its privacy cost accounted for separately; sample standard deviations
+computed from the input are not covered by these sensitivity calculations.
+Supplying \code{V_dp} does not by itself establish its privacy guarantee.
 
-For \code{method = "pmwm"}, the private quantile step is pure DP and does not
-consume \code{delta}; the scree component's delta budget is used by the Gaussian
-winsorized-mean release. For \code{method = "huber"}, the private scale-proxy step
-is pure DP. Noisy gradient descent receives the \code{(1 - m2_frac)} share of
-the scree component's delta budget; the remaining \code{m2_frac} share is unused.
+Multiple methods receive the same full scree allocation for comparison.
+Releasing their results together requires composition across all methods,
+counting loading once. The total recorded in \code{privacy} covers loading plus
+one scree method, not a joint release of several methods. Repeated calls
+likewise require separate accounting for newly released estimates.
 
-The \code{nonprivate} component is provided only as a non-private reference and is
-not itself differentially private.
-
-Proportions of variance explained are normalized over the \code{k} estimated
-scree values. Thus, for each returned result, the \code{k} PVE values sum to one
-whenever the corresponding scree values have a positive finite sum.
-
-When \code{mono = TRUE}, the final monotone adjustment is a post-processing step
-and does not change the privacy guarantee.
-
-For a detailed procedure and mathematical formulations,
-refer \url{https://yejinjo0220.github.io/dppca/articles/dp_scree}.
+The optional \code{nonprivate} result uses ordinary PCA eigenvalues, rather than
+variances along the DP directions. It is a comparison reference and is not
+a private release. PVE is normalized over the \code{k} returned components and
+sums to one when their scree values have a positive finite sum. Monotone
+adjustment accesses only the estimated scree values.
 }
 \examples{
 data(gau, package = "dppca")

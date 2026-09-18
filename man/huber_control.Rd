@@ -15,72 +15,53 @@ huber_control(
 )
 }
 \arguments{
-\item{k_min_m2, k_max_m2}{Finite integers defining the lower and upper dyadic
-bin indices used in the private second-moment scale step, with
-\code{k_min_m2 < k_max_m2}. The histogram searches over scale levels \eqn{2^k}
-for \eqn{k_{\min} \le k \le k_{\max}}. These values have no defaults because
-they should be chosen according to the scale of the data.}
+\item{k_min_m2, k_max_m2}{Public integer bounds for the dyadic scale histogram,
+with \code{k_min_m2 < k_max_m2}. The candidate scales are \eqn{2^r} for
+\eqn{k_{min}\le r\le k_{max}}. Both bounds must be supplied.}
 
-\item{m2_frac}{Number in \verb{(0, 1)} defining the fraction of the Huber scree
-\code{epsilon} parameter allocated to the pure-DP second-moment scale step. This
-value has no default.}
+\item{m2_frac}{Fraction in \verb{(0, 1)} of the method's epsilon budget assigned
+to the pure-DP scale step. It must be supplied.}
 
-\item{mu0}{Numeric initial value for Huber noisy gradient descent. The default
-is \code{0}.}
+\item{mu0}{Finite public initial value for noisy gradient descent.
+The default is \code{0}.}
 
-\item{eta0}{Positive number defining the fixed step size for Huber noisy
-gradient descent. The default is \code{1}.}
+\item{eta0}{Positive public fixed step size. The default is \code{1}.}
 
-\item{T}{Optional positive integer defining the number of noisy gradient
-descent iterations. If \code{NULL}, the implementation uses
-\eqn{\lceil \log n \rceil}, where \eqn{n} is the number of observations.}
+\item{T}{Optional positive integer number of iterations. If \code{NULL}, uses
+\eqn{\lceil\log m\rceil}, where \eqn{m=\lfloor n/2\rfloor} is the
+number of disjoint score pairs.}
 
-\item{M}{Optional positive integer defining the number of blocks used in the
-private second-moment scale step. If \code{NULL}, the implementation uses
-\eqn{\lfloor \sqrt{n} / 2 \rfloor}, where \eqn{n} is the number of
-observations.}
+\item{M}{Optional positive integer number of scale-estimation blocks. If
+\code{NULL}, uses \eqn{\lfloor\sqrt{m/2}\rfloor}. The scale helper caps this
+value at the number of available pairs of its input values.}
 }
 \value{
-A list of control options for \code{method = "huber"}.
+A control list for \code{method = "huber"}.
 }
 \description{
-Creates a control list for the Huber-type private scree estimator used by
-\code{\link[=dp_scree]{dp_scree()}} and \code{\link[=dp_scree_plot]{dp_scree_plot()}} when \code{method = "huber"}.
+Creates a control list for \code{method = "huber"} in \code{\link[=dp_scree]{dp_scree()}},
+\code{\link[=dp_scree_plot]{dp_scree_plot()}}, or the scree configuration of \code{\link[=dp_pca]{dp_pca()}}.
 }
 \details{
-The Huber method estimates the mean of squared principal component scores by
-noisy gradient descent on the Huber loss. It follows the Huber-type private
-robust mean approach of \insertCite{yu2024gaussian;textual}{dppca}.
+The method applies a Huber-type robust mean procedure to squared pair
+score differences, following the approach of
+\insertCite{yu2024gaussian;textual}{dppca}. It requires at least four score
+pairs, or eight observations. For each component, a private scale proxy
+is computed by pairing the squared score differences again, forming
+block medians, and selecting a dyadic scale with a noisy histogram.
+The scale proxy determines a Huber clipping threshold.
 
-The method first privately estimates a scale proxy for the squared scores,
-denoted by \eqn{m_2}. This scale proxy is then used to choose the Huber
-robustification level for noisy gradient descent. The parameters
-\code{k_min_m2}, \code{k_max_m2}, and \code{m2_frac} control this private scale-proxy step,
-while \code{mu0}, \code{eta0}, \code{T}, and \code{M} control the subsequent noisy gradient
-descent routine.
+The scale step uses \code{m2_frac * epsilon / k} for each of the \code{k} components
+and consumes no delta. Joint noisy gradient descent uses
+\code{(1 - m2_frac) * epsilon} and all of the method's delta. Its Gaussian
+calibration accounts for all components and iterations. Every iterate is
+projected to the nonnegative orthant; optional monotone adjustment is
+applied after the last iteration.
 
-The dyadic indices \code{k_min_m2} and \code{k_max_m2} define the search range for the
-private histogram used to estimate \eqn{m_2}. The histogram searches over
-candidate scale levels \eqn{2^k} satisfying
-\eqn{k_{\min} \le k \le k_{\max}}. Because this range depends on the scale of
-the squared scores, these arguments are intentionally not given defaults.
-
-The argument \code{m2_frac} determines how the Huber scree \code{epsilon} parameter is
-split between the private scale-proxy step and noisy gradient descent. If
-\eqn{(\epsilon_{\mathrm{scree}}, \delta_{\mathrm{scree}})} denotes the privacy
-parameters available for Huber scree estimation, then
-\eqn{m2_frac \cdot \epsilon_{\mathrm{scree}}} is used by the pure-DP scale
-step. Noisy gradient descent uses
-\eqn{(1 - m2_frac) \cdot \epsilon_{\mathrm{scree}}} and
-\eqn{(1 - m2_frac) \cdot \delta_{\mathrm{scree}}}. The scale step consumes no
-\code{delta}; the remaining \code{m2_frac} share of \code{delta} is not used.
-
-The remaining parameters have default values. The default \code{mu0 = 0} is the
-initial value for noisy gradient descent, and the default \code{eta0 = 1} is the
-fixed step size. If \code{T = NULL}, the number of noisy gradient descent
-iterations is chosen as \eqn{\lceil \log n \rceil}. If \code{M = NULL}, the number
-of blocks used in the private estimator of \eqn{m_2} is chosen as
-\eqn{\lfloor \sqrt{n} / 2 \rfloor}.
+\code{k_min_m2}, \code{k_max_m2}, and \code{M} control scale estimation, while \code{mu0},
+\code{eta0}, and \code{T} control gradient descent. Tuning choices should be public
+or have their privacy costs accounted for separately. See \code{\link[=dp_scree]{dp_scree()}}
+for the preprocessing and release-accounting conditions.
 }
 \examples{
 huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)

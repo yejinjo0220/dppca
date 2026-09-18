@@ -3,7 +3,7 @@
 # Functions for differentially private loading plot
 # ============================================================
 
-#' Estimate non-private and differentially private loadings
+#' Estimate private loadings with an optional ordinary PCA reference
 #'
 #' @param X Numeric matrix or data frame; rows are observations.
 #' @param eps Positive privacy parameter epsilon.
@@ -13,19 +13,18 @@
 #'   deviations. Default: `FALSE`.
 #' @param cpp.option Use the compiled spherical Kendall implementation from
 #'   dppca. Default: `TRUE`. Use `FALSE` for the R implementation in this file.
+#' @param non_private Whether to compute the ordinary PCA reference.
+#'   Default: `TRUE`; `FALSE` returns `NULL` in `nonprivate`.
 #'
-#' @return A list with two numeric `p` by `p` matrices:
-#'   \itemize{
-#'     \item `nonprivate`: ordinary PCA directions from the sample covariance.
-#'     \item `private`: DP directions from the noisy spherical Kendall matrix.
-#'   }
-#'   Rows are variables; columns are `PC1`, ..., `PCp`. Both matrices contain
-#'   orthonormal directions, without eigenvalue or correlation scaling.
-#' @details Both estimates use the same preprocessed data. All private
-#'   directions come from one noisy spherical Kendall matrix; there is no `k`
-#'   or direction-estimation toggle. The full result includes a non-private
-#'   reference. Sample standardization uses data-dependent scales and requires
-#'   separate privacy analysis.
+#' @return A list with `private`, a numeric `p` by `p` matrix of directions
+#'   from the noisy spherical Kendall matrix, and `nonprivate`, the ordinary
+#'   sample-covariance PCA directions when requested (otherwise `NULL`).
+#'   Rows are variables; columns are `PC1`, ..., `PCp`. Both direction
+#'   matrices are orthonormal, without eigenvalue or correlation scaling.
+#' @details All private directions come from one noisy spherical Kendall
+#'   matrix. The optional ordinary reference uses the same preprocessed data
+#'   and is not a private release. Sample standardization uses data-dependent
+#'   scales and requires separate privacy analysis.
 #' @examples
 #' set.seed(123)
 #' X <- matrix(rnorm(150), 50, 3)
@@ -39,7 +38,8 @@ dp_loading <- function(
     delta,
     center = TRUE,
     standardize = FALSE,
-    cpp.option = TRUE
+    cpp.option = TRUE,
+    non_private = TRUE
 ) {
   # Prepare the data and validate privacy parameters.
   X <- .loading_matrix(X, center, standardize)
@@ -52,6 +52,7 @@ dp_loading <- function(
   }
 
   .loading_flag(cpp.option, "cpp.option")
+  .loading_flag(non_private, "non_private")
 
   n <- nrow(X)
   p <- ncol(X)
@@ -66,13 +67,20 @@ dp_loading <- function(
   noise[lower.tri(noise)] <- z[-seq_len(p)] / sqrt(2)
   noise[upper.tri(noise)] <- t(noise)[upper.tri(noise)]
 
-  # Estimate all directions for both versions.
+  # Estimate private directions and the optional ordinary reference.
   V_private <- eigen(kendall + noise, symmetric = TRUE)$vectors
-  V_nonprivate <- eigen(stats::cov(X), symmetric = TRUE)$vectors
+  V_nonprivate <- if(non_private) {
+    eigen(stats::cov(X), symmetric = TRUE)$vectors
+  } else {
+    NULL
+  }
 
   loading_names <- list(colnames(X), paste0("PC", seq_len(p)))
-  dimnames(V_nonprivate) <- loading_names
+
   dimnames(V_private) <- loading_names
+  if (non_private) {
+    dimnames(V_nonprivate) <- loading_names
+  }
 
   list(
     nonprivate = V_nonprivate,
@@ -96,7 +104,9 @@ dp_loading <- function(
 #' @return A list with `loading` (the result of [dp_loading()]) and `plot`
 #'   (display-named `nonprivate` and `private` lists, plus `all`). Print
 #'   `result$plot$all` to draw the combined patchwork.
-#' @details One display has non-private left and private right. Multiple
+#' @details This comparison wrapper always computes both references and has
+#'   no `non_private` argument. One display has non-private left and private
+#'   right. Multiple
 #'   displays have non-private above private, ordered vector, point, heatmap.
 #'   Non-private panels and comparison-based plot ranges are reference output;
 #'   the combined result is not a private-only release.
@@ -487,6 +497,94 @@ prep_matrix_for_pca <- function(
   kendall * (2 / (n * (n - 1)))
 }
 
+#' Validate a full external loading matrix
+#'
+#' @param V_dp Finite real `p` by `p` matrix with orthonormal columns.
+#' @param X Preprocessed data with `p` variables in the same order as the rows
+#'   of `V_dp`. Names are checked when both inputs have variable names.
+#' @return Validated directions named by the variables and `PC1`, ..., `PCp`.
+#' @details Shape and orthogonality checks do not verify privacy provenance.
+#' @noRd
+.validate_dp_directions <- function(V_dp, X) {
+  V_dp <- as.matrix(V_dp)
+  p <- ncol(X)
+
+  if (!is.numeric(V_dp) || is.complex(V_dp) ||
+      !identical(dim(V_dp), c(p, p)) ||
+      any(!is.finite(V_dp))) {
+    stop(
+      "V_dp must be a finite real p by p matrix.",
+      call. = FALSE
+    )
+  }
+
+  if (max(abs(crossprod(V_dp) - diag(p))) > 1e-6) {
+    stop(
+      "Columns of V_dp must be orthonormal.",
+      call. = FALSE
+    )
+  }
+
+  if (!is.null(rownames(V_dp)) &&
+      !is.null(colnames(X)) &&
+      !identical(rownames(V_dp), colnames(X))) {
+    stop(
+      "Rows of V_dp must match the columns of X in order.",
+      call. = FALSE
+    )
+  }
+
+  dimnames(V_dp) <- list(
+    colnames(X),
+    paste0("PC", seq_len(p))
+  )
+
+  V_dp
+}
+
+
+#' Resolve shared private directions
+#'
+#' @param X Preprocessed data matrix.
+#' @param budget Loading allocation as a named `c(eps, delta)` vector.
+#' @param cpp.option Use the compiled implementation when estimating loadings.
+#' @param V_dp Optional full direction matrix on the same variable scales as
+#'   `X`. When supplied, estimation is skipped and `budget` records its prior
+#'   cost; the caller is responsible for its privacy provenance.
+#' @return A validated full direction matrix. No ordinary PCA is computed.
+#' @noRd
+.get_dp_directions <- function(
+    X, budget, cpp.option, V_dp = NULL
+) {
+  if (is.null(V_dp)) {
+    V_dp <- dp_loading(
+      X,
+      eps = budget[["eps"]],
+      delta = budget[["delta"]],
+      center = FALSE,
+      standardize = FALSE,
+      cpp.option = cpp.option,
+      non_private = FALSE
+    )$private
+  }
+
+  .validate_dp_directions(V_dp, X)
+}
+
+.nonprivate_pca <- function(X) {
+  eig <- eigen(stats::cov(X), symmetric = TRUE)
+
+  dimnames(eig$vectors) <- list(
+    colnames(X),
+    paste0("PC", seq_len(ncol(X)))
+  )
+
+  list(
+    directions = eig$vectors,
+    eigenvalues = pmax(eig$values, 0)
+  )
+}
+
 # Display selection ----------------------------------------------------------
 
 .validate_loading_components <- function(
@@ -658,6 +756,9 @@ prep_matrix_for_pca <- function(
     }
   }
 }
+
+
+
 
 # Build plots from estimated matrices ----------------------------------------
 

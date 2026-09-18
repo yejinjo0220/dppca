@@ -13,7 +13,8 @@ dp_pca(
   center = TRUE,
   standardize = FALSE,
   cpp.option = TRUE,
-  non_private = TRUE
+  non_private = TRUE,
+  V_dp = NULL
 )
 }
 \arguments{
@@ -34,9 +35,19 @@ The other supported histogram method is \code{"add"}.}
 
 \item{center, standardize}{Whether to center or standardize the columns.}
 
-\item{cpp.option}{Whether to use the compiled loading implementation.}
+\item{cpp.option}{Whether to use the compiled loading implementation when
+\code{V_dp = NULL}.}
 
-\item{non_private}{Whether to store ordinary PCA comparison results.}
+\item{non_private}{Whether to compute and store ordinary PCA comparison
+results, including observed scores. Default: \code{TRUE}.}
+
+\item{V_dp}{Optional full \code{p} by \code{p} private direction matrix, with
+\code{p = ncol(X)} and orthonormal columns. Rows must follow the variable
+order in \code{X}; row names, when present, must match the variable names.
+Use the same variable scales and preprocessing as when obtaining these
+directions. When supplied, loading estimation is skipped; the loading
+allocation records the budget already used to obtain \code{V_dp}. The caller
+is responsible for its privacy provenance. Default: \code{NULL}.}
 }
 \value{
 A \code{dp_pca} object containing all \code{directions}, the first \code{k}
@@ -49,14 +60,26 @@ including observed scores; it is \code{NULL} when \code{non_private = FALSE}.
 Estimate shared PCA quantities once
 }
 \details{
-One private loading estimate is shared by scree and score estimation.
-The selected scree method receives the full scree allocation and divides
-it across the first \code{k} components. Within the score allocation, 35 percent
-of \code{eps} is used for the frame and 65 percent for the histogram; all score
-\code{delta} is assigned to the histogram. PVE is normalized over the \code{k}
-estimated values. Non-private references are comparison information and
-are not private releases. Budget allocation alone does not establish a
-privacy guarantee for the complete preprocessing and estimation procedure.
+One estimated or supplied private direction matrix is shared by scree and
+score estimation. Scree methods use disjoint pairs of projected scores:
+the squared difference within each pair, divided by two, estimates
+variance along a private direction. An odd final observation is unused
+by scree estimation. Score estimation uses all original projected rows;
+the returned \code{n} remains the original sample size.
+
+The selected scree method receives the full scree allocation, with
+vector noise calibrated jointly over the first \code{k} components. Within the
+score allocation, 35 percent of \code{eps} is used for the frame and 65 percent
+for the histogram; all score \code{delta} is assigned to the histogram.
+Supplying \code{V_dp} does not redistribute its recorded loading allocation.
+PVE is normalized over the \code{k} estimated values.
+
+When requested, the ordinary reference is computed separately from the
+sample covariance. Its scores use ordinary PCA directions, whereas the
+private histogram uses \code{V_dp} or the internally estimated private basis.
+Reference results are not private releases. Data-dependent preprocessing,
+including sample standardization, needs separate privacy analysis;
+budget allocation alone does not certify the complete procedure.
 }
 \examples{
 data(gau, package = "dppca")

@@ -891,10 +891,15 @@ validate_bins <- function(bins) {
 #' @param axes Positive integer vector of length 2 selecting score axes.
 #' @param center,standardize Logical preprocessing options.
 #' @param cpp.option Whether to use the Rcpp spherical-Kendall implementation.
-#' @param eps_pc,delta_pc Privacy parameters for private direction estimation.
+#' @param eps_pc,delta_pc Privacy parameters used if directions are estimated;
+#'   with supplied `V_dp`, they record its earlier loading allocation.
+#' @param V_dp Optional full private direction matrix with orthonormal columns,
+#'   matching feature order and preprocessing. See [dp_score()]. Supplying it
+#'   skips direction estimation; the caller must establish its DP provenance.
 #'
-#' @return A list containing the selected `score` matrix and `directions`
-#'   matrix.
+#' @return A list containing the observed projected `score` matrix and selected
+#'   `directions`. These raw scores are needed internally and are not themselves
+#'   a private release; public callers control whether to return them.
 #' @noRd
 compute_score_coordinates <- function(
     X,
@@ -903,7 +908,8 @@ compute_score_coordinates <- function(
     standardize,
     cpp.option,
     eps_pc,
-    delta_pc
+    delta_pc,
+    V_dp = NULL
 ) {
   X_proc <- prep_matrix_for_pca(
     X = X,
@@ -911,20 +917,22 @@ compute_score_coordinates <- function(
     standardize = standardize
   )
 
-  V_all <- dp_loading(
-    X = X_proc,
-    center = FALSE,
-    standardize = FALSE,
-    eps = eps_pc,
-    delta = delta_pc,
-    cpp.option = cpp.option
-  )$private
+  V_all <- .get_dp_directions(
+    X_proc,
+    c(eps = eps_pc, delta = delta_pc),
+    cpp.option,
+    V_dp
+  )
 
   V <- V_all[, axes, drop = FALSE]
+
   X_score <- as.matrix(X_proc %*% V)
   colnames(X_score) <- paste0("PC", axes)
 
-  list(score = X_score, directions = V)
+  list(
+    score = X_score,
+    directions = V
+  )
 }
 
 #' Construct a regular two-dimensional histogram grid
@@ -964,8 +972,8 @@ score_histogram_grid <- function(xlim, ylim, m_x, m_y) {
 
 #' Compute score histograms on a privately constructed frame
 #'
-#' Internal helper that constructs the histogram grid and computes the
-#' non-private histogram together with the requested private histogram methods.
+#' Internal helper that constructs the histogram grid and computes requested
+#' private histograms, with an optional empirical reference on the same grid.
 #'
 #' When multiple private methods are requested, the same `eps_hist` and
 #' `delta_hist` values are supplied separately to each method for comparison.
@@ -981,9 +989,12 @@ score_histogram_grid <- function(xlim, ylim, m_x, m_y) {
 #' @param delta_hist Number in `(0, 1)` defining the histogram `delta` privacy
 #'   parameter.
 #' @param method Character vector containing `"add"` and/or `"sparse"`.
+#' @param non_private Whether to include the empirical histogram as `nonprivate`.
+#'   The default is `TRUE`. `FALSE` omits it; internal counts are still computed.
 #'
-#' @return A named list containing the `nonprivate` histogram data frame and the
-#'   requested `add` and/or `sparse` histogram data frames.
+#' @return A named list containing requested `add` and/or `sparse` histogram
+#'   data frames. The `nonprivate` data frame is included only when
+#'   `non_private = TRUE` and describes the supplied score coordinates.
 #' @noRd
 score_histograms <- function(
     X_score,
@@ -992,7 +1003,8 @@ score_histograms <- function(
     bins,
     eps_hist,
     delta_hist,
-    method
+    method,
+    non_private = TRUE
 ) {
   validate_bins(bins)
   bins <- as.integer(bins)
@@ -1023,14 +1035,17 @@ score_histograms <- function(
     eps_hist_method = eps_hist_method,
     delta_hist_method = delta_hist_method,
     method = method,
-    group_name = NULL
+    group_name = NULL,
+    non_private = non_private
   )
 }
 
 #' Compute score histograms on a fixed grid
 #'
-#' Internal helper that computes the empirical non-private histogram and the
-#' requested private histogram estimates on a common grid.
+#' Internal helper that computes requested private histogram estimates and an
+#' optional empirical reference on a common grid. Count-sensitivity arguments
+#' require fixed directions, a fixed grid and suitable preprocessing; see
+#' [dp_score()]. Omitting the reference does not skip count computation.
 #'
 #' The values `eps_hist_method` and `delta_hist_method` are applied separately
 #' to each requested private histogram method. They are not divided across
@@ -1044,9 +1059,12 @@ score_histograms <- function(
 #'   parameter supplied to each requested histogram method.
 #' @param method Character vector containing `"add"` and/or `"sparse"`.
 #' @param group_name Optional group label used to prefix an error message.
+#' @param non_private Whether to include an empirical `nonprivate` histogram.
+#'   The default is `TRUE`; this reference is not a private release.
 #'
-#' @return A named list containing the `nonprivate` histogram data frame and the
-#'   requested `add` and/or `sparse` histogram data frames.
+#' @return A named list containing requested `add` and/or `sparse` histogram
+#'   data frames, plus `nonprivate` only when `non_private = TRUE`. The empirical
+#'   reference uses the supplied coordinates and does not compute ordinary PCA.
 #' @noRd
 score_histograms_from_grid <- function(
     X_score,
@@ -1054,8 +1072,11 @@ score_histograms_from_grid <- function(
     eps_hist_method,
     delta_hist_method,
     method,
-    group_name = NULL
+    group_name = NULL,
+    non_private = TRUE
 ) {
+  validate_logical_value(non_private, "non_private")
+
   n <- nrow(X_score)
   if (n < 1L) {
     stop("Each histogram must contain at least one observation.", call. = FALSE)
@@ -1125,12 +1146,13 @@ score_histograms_from_grid <- function(
   )
   p_hat <- counts / n
 
-  hist_nonprivate <- grid$base_coord
-  hist_nonprivate$prob <- p_hat
+  out <- list()
 
-  out <- list(
-    nonprivate = hist_nonprivate
-  )
+  if (non_private) {
+    hist_nonprivate <- grid$base_coord
+    hist_nonprivate$prob <- p_hat
+    out$nonprivate <- hist_nonprivate
+  }
 
   if ("add" %in% method) {
     sigma <- sqrt(2) *

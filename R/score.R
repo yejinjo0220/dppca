@@ -5,26 +5,27 @@
 
 #' Differentially private score histograms
 #'
-#' This function computes two-dimensional principal component scores using
-#' private directions from [dp_loading()] and returns differentially private
-#' histogram estimates on the score space. It returns the
-#' score coordinates, the plotting frame, the non-private histogram, and the
-#' requested private histogram estimates.
+#' This function projects observations onto supplied private directions or
+#' directions estimated by [dp_loading()] and computes two-dimensional score
+#' histograms. Observed coordinates and empirical reference histograms are
+#' returned only when `non_private = TRUE`.
 #'
 #' @param X A numeric matrix or data frame. Rows correspond to observations and
 #'  columns correspond to variables.
 #' @param privacy Output of [privacy_control()] with exactly `loading` and
 #'   `score` components. For example, use `privacy_control(eps = 3,
 #'   delta = 1e-4, split = c(loading = 0.5, score = 0.5))`. The loading
-#'   allocation is used once; the histogram portion of the score allocation
-#'   is reused for each requested histogram method; see Details.
+#'   allocation is used once when `V_dp = NULL`. With supplied directions,
+#'   it records the budget already used to obtain them and is not spent again
+#'   or reassigned. The histogram allocation is supplied separately to each
+#'   requested histogram method; see Details.
 #' @param bins Integer vector of length 2 defining the number of histogram bins
 #'   along the first and second score axes, respectively.
 #' @param method Character vector specifying which private histogram methods to
 #'   compute. Use `"add"` for the additive Gaussian histogram and `"sparse"` for
 #'   the sparse thresholded histogram. The default is `c("add", "sparse")`.
 #' @param center A logical value indicating whether to center the columns of `X`
-#'   before computing principal component directions. The default is `TRUE`.
+#'   before projection and any direction estimation. The default is `TRUE`.
 #' @param standardize A logical value indicating whether to scale the columns of
 #'   `X` by their sample standard deviations after optional centering. The
 #'   default is `FALSE`.
@@ -34,6 +35,17 @@
 #'   components used as the horizontal and vertical score axes, in that order.
 #'   Each value must not exceed `ncol(X)`. Repeated or decreasing indices are
 #'   accepted. The default is `c(1, 2)`.
+#' @param V_dp Optional finite real `p` by `p` private direction matrix, where
+#'   `p` is the number of feature columns. Columns must be orthonormal and rows
+#'   must follow the feature order in `X`; supplied row names must match its
+#'   column names when both are present. Directions must use the same
+#'   preprocessing as this call. If supplied, direction estimation is skipped.
+#'   The caller is responsible for the matrix's DP provenance and prior budget;
+#'   matrix validation does not establish either.
+#' @param non_private Whether to return observed projected coordinates and
+#'   empirical reference histograms. The default is `TRUE`. These references
+#'   use the private directions and are not ordinary PCA references or private
+#'   releases. `FALSE` omits them without skipping internal histogram counts.
 #'
 #' @details
 #' Let \eqn{v_a} and \eqn{v_b} be the principal component directions selected
@@ -54,12 +66,17 @@
 #' plotting frame.
 #'
 #' The private histogram is computed on the rectangular grid defined by the
-#' private frame and the bin counts in `bins`. Under
-#' row-level adjacency, changing one observation can increase one bin count by
-#' one and decrease another by one, giving \eqn{\ell_1} sensitivity at most
-#' \eqn{2} and \eqn{\ell_2} sensitivity at most \eqn{\sqrt{2}} for the count
-#' vector. Scores outside the private frame are assigned to the nearest boundary
-#' bin along each out-of-range coordinate.
+#' private frame and the bin counts in `bins`. Conditional on fixed directions,
+#' a fixed frame and fixed public preprocessing, replacing one row can increase
+#' one bin count by one and decrease another by one. The count vector then has
+#' \eqn{\ell_1} sensitivity at most \eqn{2} and \eqn{\ell_2} sensitivity
+#' at most \eqn{\sqrt{2}}. Scores outside the frame are assigned to the nearest
+#' boundary bin along each out-of-range coordinate. Adaptive use of private
+#' directions and a private frame requires composition with those mechanisms.
+#' Centering by the sample mean and scaling by sample standard deviations can
+#' change multiple rows when one observation changes. The count argument alone
+#' does not justify those preprocessing steps; use fixed public preprocessing
+#' or account for an appropriate private preprocessing mechanism.
 #'
 #' Two private histogram mechanisms are supported:
 #' \itemize{
@@ -76,12 +93,15 @@
 #'   \insertCite{karwa2017finite;textual}{dppca}.
 #' }
 #'
-#' Private directions use the `loading` component of `privacy`. Within the
+#' Newly estimated directions use the `loading` component of `privacy`.
+#' Supplied `V_dp` reuses an earlier estimate whose budget is recorded there.
+#' Within the
 #' `score` component, 35 percent of `eps` is used for the private frame and
 #' 65 percent for the histogram; all score `delta` is assigned to the histogram.
 #' With `split = c(loading = 0.5, score = 0.5)`, the direction, frame and
-#' histogram proportions of total `eps` are 0.5, 0.175 and 0.325. Directions
-#' and the frame are estimated once and shared across histogram methods. Frame
+#' histogram proportions of recorded total `eps` are 0.5, 0.175 and 0.325.
+#' Directions are supplied or estimated once; the frame is estimated once per
+#' call. Both are shared across histogram methods. Frame
 #' construction is pure DP and divides `eps_frame` equally among its two
 #' private medians and one private radial-quantile estimate.
 #'
@@ -92,20 +112,24 @@
 #' private histogram methods are released together, the privacy cost of the
 #' joint release must be accounted for by composition.
 #'
-#' The returned score coordinates and the `nonprivate` histogram are included as
-#' non-private references and are not themselves differentially private releases.
+#' With `non_private = TRUE`, the returned `score` and `nonprivate` histogram
+#' describe observed projections onto the private directions. They are omitted
+#' when `FALSE`; no ordinary PCA is computed by this function. Each call still
+#' makes new frame and histogram estimates, including when `V_dp` is reused.
+#' Repeated releases require privacy accounting across calls.
 #'
 #' For a detailed procedure and mathematical formulations,
 #' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
 #'
-#' @return A named list with components `score` and `frame`, followed by
-#' histogram results. The `nonprivate` component contains the non-private
-#' empirical histogram. Each requested private method is returned as an
-#' additional component (`add` and/or `sparse`). Methods that are not requested
-#' are omitted from the returned list.
+#' @return A named list containing `frame` and each requested histogram method
+#'   (`add` and/or `sparse`). When `non_private = TRUE`, `score` contains the
+#'   observed projected coordinates and `nonprivate` contains their empirical
+#'   histogram. Both components are omitted when `FALSE`. Unrequested methods
+#'   are omitted.
 #'
 #' @seealso
-#' [dp_score_plot()] for plotting the output of this function.
+#' [dp_score_plot()] for computing and plotting comparison results.
+#' [dp_pca()] and [plot.dp_pca()] for estimation followed by plots of a stored fit.
 #' [dp_score_group()] and [dp_score_plot_group()] for group-wise score
 #' histograms.
 #' [dp_loading()] for private principal component direction estimation.
@@ -152,9 +176,13 @@ dp_score <- function(
     center = TRUE,
     standardize = FALSE,
     cpp.option = FALSE,
-    axes = c(1, 2)
+    axes = c(1, 2),
+    V_dp = NULL,
+    non_private = TRUE
 ) {
+  validate_logical_value(non_private, "non_private")
   privacy <- .validate_privacy_control(privacy, c("loading", "score"))
+
   X <- validate_score_matrix(X)
   validate_score_common(
     X = X,
@@ -184,7 +212,8 @@ dp_score <- function(
     standardize = standardize,
     cpp.option = cpp.option,
     eps_pc = budget$eps_pc,
-    delta_pc = budget$delta_pc
+    delta_pc = budget$delta_pc,
+    V_dp = V_dp
   )
 
   frame_out <- dp_frame(
@@ -200,16 +229,23 @@ dp_score <- function(
     bins = bins,
     eps_hist = budget$eps_hist,
     delta_hist = budget$delta_hist,
-    method = method
+    method = method,
+    non_private = non_private
   )
 
-  c(
-    list(
-      score = score_res$score,
-      frame = frame_out
-    ),
+  out <- c(
+    list(frame = frame_out),
     hist
   )
+
+  if (non_private) {
+    out <- c(
+      list(score = score_res$score),
+      out
+    )
+  }
+
+  out
 }
 
 #' Plot differentially private score histograms or sampled score points
@@ -247,9 +283,14 @@ dp_score <- function(
 #' as references, but no synthetic samples are drawn from the non-private
 #' histogram.
 #'
-#' The original scatter plot and non-private histogram panel are non-private
-#' references. They should not be included in a release that is required to
-#' contain only differentially private output.
+#' This comparison wrapper calls [dp_score()] with `non_private = TRUE` and
+#' has no `non_private` argument. Its observed scatter and empirical histogram
+#' use the supplied or estimated private directions, not ordinary PCA directions;
+#' these panels and their returned data are non-private references.
+#'
+#' Each wrapper call computes a new frame and new histograms, even with supplied
+#' `V_dp`. To redraw stored estimates without repeating those releases, use
+#' [dp_pca()] with `non_private = FALSE` and [plot.dp_pca()].
 #'
 #' @return A named list containing:
 #' \describe{
@@ -315,7 +356,8 @@ dp_score_plot <- function(
     standardize = FALSE,
     cpp.option = FALSE,
     axes = c(1, 2),
-    plot_control = NULL
+    plot_control = NULL,
+    V_dp = NULL
 ) {
   privacy <- .validate_privacy_control(privacy, c("loading", "score"))
   method <- unique(
@@ -344,7 +386,9 @@ dp_score_plot <- function(
     standardize = standardize,
     cpp.option = cpp.option,
     axes = axes,
-    method = method
+    method = method,
+    V_dp = V_dp,
+    non_private = TRUE
   )
 
   X_score <- as.data.frame(score_res$score)
@@ -561,6 +605,13 @@ dp_score_plot <- function(
 #' @param group Group labels. This can be a vector of length `nrow(X)` or a
 #'   single column name in `X`. If a column name is supplied, that column is
 #'   used as the group label and removed from the feature matrix.
+#' @param V_dp Optional full private direction matrix as described in
+#'   [dp_score()]. Its dimension and row order refer to the feature columns
+#'   after removal of any group-label column. The same preprocessing, prior
+#'   loading budget and caller responsibility apply.
+#' @param non_private Whether to return observed projected coordinates,
+#'   per-group sample sizes and empirical histograms. The default is `TRUE`;
+#'   `FALSE` omits these references. Internal counts are still computed.
 #'
 #' @details
 #' The score directions, plotting frame, and histogram grid are shared across all
@@ -579,14 +630,20 @@ dp_score_plot <- function(
 #' multiple private histogram methods together requires composition across
 #' methods.
 #'
-#' The returned score coordinates, per-group sample sizes, and `nonprivate`
-#' histograms are included as non-private references; they must not be treated as
-#' differentially private releases. Group membership itself is also assumed to
-#' be public for the parallel-composition statement above.
+#' When `non_private = TRUE`, observed score coordinates, per-group sample
+#' sizes and empirical histograms are returned as non-private references. They
+#' use the shared private directions, not ordinary PCA directions. `FALSE`
+#' omits those references but does not privatize group labels or membership.
+#' The parallel-composition statement assumes group membership is public and
+#' fixed. The fixed-frame and preprocessing conditions in [dp_score()] also
+#' apply. Reusing `V_dp` skips direction estimation, while each call still
+#' computes a new frame and new group histograms.
 #'
-#' @return A named list with components `score`, `frame`, and `groups`. Each
-#' group entry contains `n`, `nonprivate`, and the requested private histogram
-#' method components (`add` and/or `sparse`). Unrequested methods are omitted.
+#' @return A named list containing `frame` and `groups`. Each group entry
+#'   contains the requested histogram methods (`add` and/or `sparse`). When
+#'   `non_private = TRUE`, the top-level `score` contains observed coordinates
+#'   and each group additionally contains `n` and `nonprivate`. These reference
+#'   components are omitted when `FALSE`. Unrequested methods are omitted.
 #'
 #' @seealso
 #' [dp_score_plot_group()] for plotting group-wise score histograms.
@@ -621,9 +678,13 @@ dp_score_group <- function(
     center = TRUE,
     standardize = FALSE,
     cpp.option = FALSE,
-    axes = c(1, 2)
+    axes = c(1, 2),
+    V_dp = NULL,
+    non_private = TRUE
 ) {
+  validate_logical_value(non_private, "non_private")
   privacy <- .validate_privacy_control(privacy, c("loading", "score"))
+
   method <- unique(
     match.arg(
       method,
@@ -667,7 +728,8 @@ dp_score_group <- function(
     standardize = standardize,
     cpp.option = cpp.option,
     eps_pc = budget$eps_pc,
-    delta_pc = budget$delta_pc
+    delta_pc = budget$delta_pc,
+    V_dp = V_dp
   )
 
   frame_out <- dp_frame(
@@ -701,20 +763,29 @@ dp_score_group <- function(
       eps_hist_method = eps_hist_method,
       delta_hist_method = delta_hist_method,
       method = method,
-      group_name = g
+      group_name = g,
+      non_private = non_private
     )
 
     groups_out[[g]] <- c(
-      list(n = n_g),
+      if (non_private) list(n = n_g),
       hist
     )
   }
 
-  list(
-    score = score_res$score,
+  out <- list(
     frame = frame_out,
     groups = groups_out
   )
+
+  if (non_private) {
+    out <- c(
+      list(score = score_res$score),
+      out
+    )
+  }
+
+  out
 }
 
 #' Plot group-wise differentially private score histograms or samples
@@ -762,16 +833,21 @@ dp_score_group <- function(
 #' histogram method. If both plot types are requested, the non-private
 #' histogram starts the histogram row.
 #'
-#' Sampling uses only the already computed histogram output and fixed
-#' post-processing choices, so it does not consume an additional privacy
-#' budget. A private histogram, especially a sparse histogram, can contain no
+#' Sampling from an already released histogram with fixed public choices does
+#' not consume an additional privacy budget. Here the sample-size allocation
+#' uses observed group sizes, so that allocation also requires public group
+#' sizes or separate privacy accounting. A private histogram, especially a
+#' sparse histogram, can contain no
 #' positive probability mass after thresholding. In that case no synthetic
 #' points are generated for that group and histogram method, and a warning is
 #' issued.
 #'
-#' The original grouped scatter plot and non-private histogram panels are
-#' non-private references. They should not be included in a release that is
-#' required to contain only differentially private output.
+#' This comparison wrapper calls [dp_score_group()] with `non_private = TRUE`
+#' and has no `non_private` argument. Its original grouped scatter, empirical
+#' histograms and observed group sizes are non-private references on the shared
+#' private directions. Each call computes a new frame and new histograms,
+#' including when `V_dp` is reused. Displaying an already returned plot object
+#' does not repeat those estimates.
 #'
 #' @return A list with components:
 #' \describe{
@@ -824,7 +900,8 @@ dp_score_plot_group <- function(
     method = c("add", "sparse"),
     private_plot = c("histogram", "sample"),
     sampling_control = NULL,
-    plot_control = NULL
+    plot_control = NULL,
+    V_dp = NULL
 ) {
   privacy <- .validate_privacy_control(privacy, c("loading", "score"))
   method <- unique(
@@ -877,7 +954,9 @@ dp_score_plot_group <- function(
     standardize = standardize,
     cpp.option = cpp.option,
     axes = axes,
-    method = method
+    method = method,
+    V_dp = V_dp,
+    non_private = TRUE
   )
 
   X_score <- as.data.frame(score_res$score)
