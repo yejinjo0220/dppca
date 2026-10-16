@@ -12,11 +12,14 @@
 #' @param score Named list with `method = "sparse"` and `bins = c(20, 20)`.
 #'   The other supported histogram method is `"add"`.
 #' @param axes Two distinct histogram component indices between `1` and `k`.
-#' @param center,standardize Whether to center or standardize the columns.
+#' @param center,standardize Whether to subtract sample means or divide by
+#'   sample standard deviations. Both default to `FALSE`; see the preprocessing
+#'   conditions below.
 #' @param cpp.option Whether to use the compiled loading implementation when
 #'   `V_dp = NULL`.
 #' @param non_private Whether to compute and store ordinary PCA comparison
-#'   results, including observed scores. Default: `TRUE`.
+#'   results, including observed scores. Default: `FALSE`. These reference
+#'   results are not private releases.
 #' @param V_dp Optional full `p` by `p` private direction matrix, with
 #'   `p = ncol(X)` and orthonormal columns. Rows must follow the variable
 #'   order in `X`; row names, when present, must match the variable names.
@@ -46,12 +49,21 @@
 #' Supplying `V_dp` does not redistribute its recorded loading allocation.
 #' PVE is normalized over the `k` estimated values.
 #'
-#' When requested, the ordinary reference is computed separately from the
-#' sample covariance. Its scores use ordinary PCA directions, whereas the
+#' By default, `center = FALSE` and `standardize = FALSE` leave input rows
+#' unchanged. For the score frame and histogram guarantees, any centering or
+#' scaling must use fixed public values, or separately privatized quantities
+#' with their privacy cost accounted for. Sample-mean centering can change all
+#' score rows when one observation is replaced; sample standardization has the
+#' same issue. Centering the input by its sample mean before calling this
+#' function does not avoid this requirement. Common centering cancels in the
+#' pair differences used for loading and scree estimation.
+#'
+#' With `non_private = TRUE`, the ordinary reference is computed separately
+#' from the sample covariance. Its scores use ordinary PCA directions, whereas the
 #' private histogram uses `V_dp` or the internally estimated private basis.
-#' Reference results are not private releases. Data-dependent preprocessing,
-#' including sample standardization, needs separate privacy analysis;
-#' budget allocation alone does not certify the complete procedure.
+#' The default `non_private = FALSE` omits these reference results.
+#' Reference results are not private releases. Budget allocation alone does
+#' not certify the complete procedure.
 #'
 #' @examples
 #' data(gau, package = "dppca")
@@ -60,14 +72,18 @@
 #'   gau[1:200, ],
 #'   privacy = privacy_control(eps = 5, delta = 1e-4),
 #'   scree = list(k = 2, control = clipped_control(C_clip = 3)),
-#'   score = list(method = "sparse", bins = c(10, 10))
+#'   score = list(method = "sparse", bins = c(10, 10)),
+#'   center = FALSE,
+#'   standardize = FALSE,
+#'   non_private = FALSE
 #' )
 #' fit
 #' summary(fit)
 #' fit$directions
+#' fit$nonprivate # NULL by default
 #'
 #' set.seed(123)
-#' plots <- plot(fit)
+#' plots <- plot(fit) # DP panels only
 #' plots$private$plots$biplot
 #'
 #' @export
@@ -77,10 +93,10 @@ dp_pca <- function(
     scree,
     score = list(),
     axes = c(1, 2),
-    center = TRUE,
+    center = FALSE,
     standardize = FALSE,
     cpp.option = TRUE,
-    non_private = TRUE,
+    non_private = FALSE,
     V_dp = NULL
 ) {
   if (missing(scree)) {
@@ -315,6 +331,9 @@ dp_pca <- function(
 #' @param type `"all"` or an ordered vector containing `"scree"`, `"score"`,
 #'   `"loading"`, `"variable"` and/or `"biplot"`.
 #' @param non_private Show the stored non-private comparison before DP plots.
+#'   Defaults to whether `x$nonprivate` is stored, so a default [dp_pca()] fit
+#'   shows DP plots only. Set `non_private = TRUE` when fitting to store the
+#'   comparison.
 #'   Non-private signs are aligned to the DP directions in a plotting copy.
 #'   Histogram grids, probability scales and biplot display frames are shared.
 #' @param scree List with `display = "pve"` (or `"eigenvalue"`),

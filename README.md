@@ -26,7 +26,7 @@ The main workflow is:
 
 The scree and score functions, including grouped versions, always estimate private loadings internally with `dp_loading()`. Each function accepts `X` directly and estimates its own loadings. Within one scree call, all requested methods share one loading estimate. Within one score call, the methods share both the loading estimate and the frame.
 
-Use `dp_pca()` to estimate loadings, scree values and score summaries together, sharing one loading estimate across them.
+Use `dp_pca()` to estimate loadings, scree values and score summaries together, sharing one loading estimate across them. Its defaults are `center = FALSE`, `standardize = FALSE` and `non_private = FALSE`.
 
 The examples below use the synthetic Gaussian cluster dataset included in the package.
 
@@ -282,6 +282,8 @@ score_group_plot$plot$all
 
 `dp_pca()` estimates loading, scree and score quantities once for use across its plots. Choose one scree method and one histogram method, and supply the scree method's required control. The clipping threshold below is an example tuning value.
 
+The defaults leave input rows unchanged and omit ordinary PCA comparison results. For the score frame and histogram guarantees, any centering or scaling must use fixed public values, or separately privatized quantities with their privacy cost accounted for. Sample-mean centering and sample-standard-deviation scaling can change every score row when one observation is replaced. Applying those transformations before calling `dp_pca()` does not avoid this requirement. Common centering cancels in the pair differences used for loading and scree estimation.
+
 When updating an existing package checkout, include the new `R/privacy_controls.R` file along with the changed R files. From the package root, refresh the documentation and S3 method registrations before reloading:
 
 ```r
@@ -300,19 +302,25 @@ fit <- dp_pca(
     method = "clipped",
     control = clipped_control(C_clip = 3)
   ),
-  score = list(method = "sparse", bins = c(15, 15))
+  score = list(method = "sparse", bins = c(15, 15)),
+  center = FALSE,
+  standardize = FALSE,
+  non_private = FALSE
 )
 
 fit
 summary(fit)
+fit$nonprivate # NULL by default
 
 set.seed(123)
-plots <- plot(fit)
+plots <- plot(fit) # DP panels only
 ```
 
 Printing `fit` shows the data dimensions, preprocessing settings and a short preview of the DP eigenvalues. `summary(fit)` provides more detailed PCA results and a budget table. The stored estimates remain accessible through fields such as `fit$directions` and `fit$eigenvalues`.
 
-`plot(fit)` draws the scree, score, loading, variable and biplot panels and returns their plot objects invisibly. Plotting reuses the estimates; `set.seed()` controls the synthetic samples. To draw only the biplot, use `plot(fit, type = "biplot")`.
+`plot(fit)` draws the DP scree, score, loading, variable and biplot panels and returns their plot objects invisibly. Plotting reuses the estimates; `set.seed()` controls the synthetic samples. To draw only the biplot, use `plot(fit, type = "biplot")`.
+
+For an ordinary PCA comparison, explicitly set `non_private = TRUE` in the `dp_pca()` call. The fit then stores the reference, including observed scores, and `plot(fit)` includes the comparison by default. These reference results and comparison panels are not private releases.
 
 Biplots default to `alpha = 0`, adjustable through `biplot = list(alpha = ...)`, and always use a square display. Observation points are grey (`#B0B0B0`); both private and non-private arrows are dark blue (`#174A7E`).
 

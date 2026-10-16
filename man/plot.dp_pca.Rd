@@ -27,6 +27,9 @@
 \code{"loading"}, \code{"variable"} and/or \code{"biplot"}.}
 
 \item{non_private}{Show the stored non-private comparison before DP plots.
+Defaults to whether \code{x$nonprivate} is stored, so a default \code{\link[=dp_pca]{dp_pca()}} fit
+shows DP plots only. Set \code{non_private = TRUE} when fitting to store the
+comparison.
 Non-private signs are aligned to the DP directions in a plotting copy.
 Histogram grids, probability scales and biplot display frames are shared.}
 
