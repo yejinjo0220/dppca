@@ -2,6 +2,7 @@
 % Please edit documentation in R/dp_pca.R
 \name{dp_pca}
 \alias{dp_pca}
+\alias{print.dp_pca}
 \title{Estimate shared PCA quantities once}
 \usage{
 dp_pca(
@@ -16,16 +17,21 @@ dp_pca(
   non_private = FALSE,
   V_dp = NULL
 )
+
+\method{print}{dp_pca}(x, digits = max(3L, getOption("digits") - 3L), ...)
 }
 \arguments{
-\item{X}{Numeric matrix or data frame with observations in rows.}
+\item{X}{Finite numeric matrix or data frame with at least two observations
+in rows and two variables in columns. When \code{V_dp = NULL}, observations
+must also satisfy the pairwise-separation requirement of \code{\link[=dp_loading]{dp_loading()}}.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with loading, scree and score
 budgets. The default split allocates one third of eps and delta to each.}
 
 \item{scree}{Required named list containing a method-specific \code{control}.
 Other fields are \code{k = NULL} (all variables), \code{method = "clipped"} and
-\code{mono = TRUE}. Use \code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}} or
+\code{mono = TRUE}. A supplied \code{k} must be an integer from \code{2} to \code{ncol(X)}.
+Use \code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}} or
 \code{\link[=huber_control]{huber_control()}} to supply the selected method's tuning parameters.}
 
 \item{score}{Named list with \code{method = "sparse"} and \code{bins = c(20, 20)}.
@@ -51,6 +57,13 @@ Use the same variable scales and preprocessing as when obtaining these
 directions. When supplied, loading estimation is skipped; the loading
 allocation records the budget already used to obtain \code{V_dp}. The caller
 is responsible for its privacy provenance. Default: \code{NULL}.}
+
+\item{x}{A \code{dp_pca} object.}
+
+\item{digits}{Significant digits for printing, from \code{1} to \code{22}.}
+
+\item{...}{Additional formatting arguments passed to \code{\link[=print]{print()}} by the print
+method.}
 }
 \value{
 A \code{dp_pca} object containing all \code{directions}, the first \code{k}
@@ -58,6 +71,7 @@ A \code{dp_pca} object containing all \code{directions}, the first \code{k}
 \code{score_budget}, resolved \code{methods}, \code{controls}, \code{preprocessing}, \code{n},
 \code{k} and \code{axes}. \code{nonprivate} contains the optional reference results,
 including observed scores; it is \code{NULL} when \code{non_private = FALSE}.
+The print method returns the fitted object invisibly.
 }
 \description{
 Estimate shared PCA quantities once
@@ -75,7 +89,13 @@ vector noise calibrated jointly over the first \code{k} components. Within the
 score allocation, 35 percent of \code{eps} is used for the frame and 65 percent
 for the histogram; all score \code{delta} is assigned to the histogram.
 Supplying \code{V_dp} does not redistribute its recorded loading allocation.
-PVE is normalized over the \code{k} estimated values.
+The \code{eigenvalues} estimate variances along the private directions; they are
+not necessarily eigenvalues of the empirical covariance matrix. PVE is
+normalized over the \code{k} estimated values, and is zero if their sum is zero.
+With \code{k < ncol(X)}, it describes relative variation within those components.
+The sample size and variable names are treated as public. Selected
+components, grid sizes and tuning parameters must be public or selected
+with separate privacy accounting.
 
 By default, \code{center = FALSE} and \code{standardize = FALSE} leave input rows
 unchanged. For the score frame and histogram guarantees, any centering or
@@ -91,7 +111,8 @@ from the sample covariance. Its scores use ordinary PCA directions, whereas the
 private histogram uses \code{V_dp} or the internally estimated private basis.
 The default \code{non_private = FALSE} omits these reference results.
 Reference results are not private releases. Budget allocation alone does
-not certify the complete procedure.
+not certify the complete procedure; the loading calibration and input
+conditions in \code{\link[=dp_loading]{dp_loading()}} also apply when directions are estimated.
 }
 \examples{
 data(gau, package = "dppca")

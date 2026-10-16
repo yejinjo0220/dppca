@@ -21,7 +21,9 @@ dp_loading_plot(
 )
 }
 \arguments{
-\item{X}{Numeric matrix or data frame; rows are observations.}
+\item{X}{Finite numeric matrix or data frame with at least two observations
+in rows. Pairwise differences must have Euclidean norm greater than
+\code{sqrt(.Machine$double.eps)} after preprocessing.}
 
 \item{eps}{Positive privacy parameter epsilon.}
 
@@ -41,9 +43,10 @@ deviations. Default: \code{FALSE}.}
 \item{cpp.option}{Use the compiled spherical Kendall implementation from
 dppca. Default: \code{TRUE}. Use \code{FALSE} for the R implementation in this file.}
 
-\item{variables}{A positive number selects top variables separately in each
-panel. Use \code{"all"} or \code{NULL}, variable names, or multiple column indices
-for other selections. Default: top 10.}
+\item{variables}{A positive integer selects the variables with the largest
+loading-vector norms across the displayed components, separately for
+each version and display. Use \code{"all"} or \code{NULL}, variable names, or multiple
+column indices for other selections. Default: top 10.}
 
 \item{labels}{Show variable labels in vector and point displays.}
 

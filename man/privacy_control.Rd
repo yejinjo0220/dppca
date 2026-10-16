@@ -50,9 +50,12 @@ When external \code{V_dp} is supplied, loading estimation is skipped but its
 allocation is still required to record the budget already used for
 those directions. It is not redistributed to scree or score estimation.
 
-When comparing several scree or score methods, each method receives the
-corresponding full component allocation. The allocation is not divided
-across methods, so releasing several methods together requires composition.
+When comparing several scree methods, each method receives the full scree
+allocation. Score methods share one frame, which uses 35 percent of the
+score \code{eps}; each histogram method receives the remaining 65 percent of
+score \code{eps} and all score \code{delta}. These allocations are not divided across
+methods. Releasing several methods together requires composition, counting
+the shared loading and frame releases once per call.
 The returned totals sum each named component once. Reusing a previously
 released loading matrix incurs no new loading cost; compose the actual
 new releases and count its original release once. This object records

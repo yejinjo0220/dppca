@@ -8,7 +8,8 @@
 A data frame with 32,561 rows and 5 columns:
 \describe{
 \item{age}{Age of the individual.}
-\item{education_num}{Number of years of education.}
+\item{education_num}{Ordered education-level code from 1 (Preschool) to
+16 (Doctorate), rather than a literal number of years.}
 \item{capital_gain}{Capital gain.}
 \item{capital_loss}{Capital loss.}
 \item{hours_per_week}{Number of working hours per week.}
@@ -31,11 +32,13 @@ the 1994 United States Census database.
 This package dataset retains five numerical variables:
 \code{age}, \code{education_num}, \code{capital_gain}, \code{capital_loss}, and
 \code{hours_per_week}. These selected numerical variables contain no missing
-values in the original data file used here. The resulting dataset contains
-32,561 observations.
+values in the original training file, \code{adult.data}, used here. The
+resulting dataset contains 32,561 observations; \code{adult.test} is not included.
 
-Since the variables have substantially different units and scales, scaling
-is recommended before applying PCA-based methods.
+The variables have substantially different units and scales. For private
+analyses, any scaling constants must be public and fixed, or estimated
+privately with their privacy cost accounted for. Scaling by the confidential
+sample standard deviations is not covered by the package's guarantees.
 }
 \references{
 \insertRef{adult}{dppca}

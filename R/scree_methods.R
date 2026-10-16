@@ -130,7 +130,8 @@ paired_score_squares <- function(Y) {
 #'   after the shared loading allocation.
 #' @param delta Delta budget in `(0, 1)` for the joint scree-vector release.
 #' @param C_clip Positive public clipping threshold for squared pair differences.
-#' @param mono Whether to enforce a nonnegative, nonincreasing final sequence.
+#' @param mono Whether to enforce a nonincreasing final sequence. The estimates
+#'   are nonnegative even when `FALSE`.
 #'
 #' @return A list with `scree` and `pve` vectors.
 #' @noRd
@@ -183,10 +184,13 @@ dp_scree_clipped <- function(
 
 #' Select a private dyadic scale by a noisy histogram
 #'
-#' Internal helper for the Huber scree estimator. Nonnegative values are assigned
-#' to dyadic bins indexed by powers of two, the bin counts are perturbed with
-#' Laplace noise, and the dyadic scale corresponding to the largest noisy count
-#' is returned.
+#' Internal helper for the Huber scree estimator. Positive finite values use
+#' bin index `floor(log2(u))`, clamped to the public index range; zeros use the
+#' lowest bin. Negative and non-finite entries are skipped. Independent Laplace
+#' noise with scale `2 / eps_m2` is added to each count, and negative noisy
+#' counts are truncated at zero. The scale `2^r` of the largest resulting count
+#' is returned, choosing the smallest index on ties. The count vector has
+#' replacement \eqn{\ell_1}-sensitivity at most two.
 #'
 #' @param u Nonnegative numeric vector whose scale is summarized.
 #' @param eps_m2 Positive number defining the `epsilon` privacy parameter for
@@ -242,10 +246,14 @@ dp_hist_m2 <- function(u, eps_m2, k_min_m2, k_max_m2) {
 
 #' Estimate a private scalar scale proxy
 #'
-#' Randomly permutes `w`, forms squared differences from disjoint pairs of
-#' its entries, summarizes them by block medians, and calls `dp_hist_m2()`.
+#' Randomly permutes `w`, forms half the squared differences from disjoint
+#' pairs of its entries, summarizes them by block medians, and calls
+#' `dp_hist_m2()`. One entry is unused when `length(w)` is odd. The first
+#' `M - 1` blocks have size `floor(floor(length(w) / 2) / M)`; the last
+#' block contains the remaining pair values.
 #' For Huber scree estimation, `w` already contains squared score-pair
 #' differences; this helper performs an additional pairing for scale estimation.
+#' Its result is a private scale proxy, not the empirical second moment of `w`.
 #'
 #' @param w Numeric vector of length at least four; in scree estimation, a
 #'   column returned by `paired_score_squares()`.
@@ -301,13 +309,15 @@ dp_m2 <- function(w, eps_m2, k_min_m2, k_max_m2, M = NULL) {
 #' Convert a scale proxy to a Huber threshold
 #'
 #' Converts a private scale proxy into a robustification threshold for the scalar
-#' Huber mean step.
+#' Huber mean step, using
+#' `sqrt(m2_hat) * sqrt(eps_tau * n_tau / sqrt((1 + log(n_tau)) * log(n_tau)))`.
 #'
 #' @param m2_hat Nonnegative private scale proxy.
 #' @param eps_tau Positive threshold-tuning parameter. Huber scree estimation
 #'   passes the joint gradient-descent epsilon budget divided by `k`; this
 #'   calculation does not itself release data or spend an additional budget.
-#' @param n_tau Effective sample size; the number of score pairs for scree.
+#' @param n_tau Effective sample size, at least two; the number of score pairs
+#'   for scree.
 #'
 #' @return Nonnegative numeric scalar Huber threshold.
 #' @noRd
@@ -332,7 +342,10 @@ tau_from_m2 <- function(m2_hat, eps_tau, n_tau) {
 #'
 #' Evaluates the trade-off conversion from a positive Gaussian-DP parameter
 #' `mu` and a positive `epsilon` value to the corresponding nonnegative
-#' `delta` value.
+#' `delta` value:
+#' \deqn{\delta=\Phi(\mu/2-\epsilon/\mu)
+#'   -e^\epsilon\Phi(-\mu/2-\epsilon/\mu),}
+#' where \eqn{\Phi} is the standard normal distribution function.
 #'
 #' @param mu Positive Gaussian-DP parameter.
 #' @param eps Positive `epsilon` privacy parameter.
@@ -351,7 +364,9 @@ gdp_delta <- function(mu, eps) {
 
 #' Recover a Gaussian-DP parameter from epsilon and delta
 #'
-#' Numerically inverts `gdp_delta()` on a log scale.
+#' Numerically inverts `gdp_delta()` on a log scale, using the fixed search
+#' interval `1e-12 <= mu <= 1e3`. Root finding fails if the requested
+#' calibration is not bracketed by these limits.
 #'
 #' @param eps Positive `epsilon` privacy parameter.
 #' @param delta Number in `(0, 1)` defining the target `delta` privacy
@@ -385,16 +400,23 @@ mu_from_eps_delta <- function(eps, delta, tol = 1e-12) {
 #' Internal implementation of a scalar Huber-type private mean estimator. At
 #' each iteration, residuals are clipped at `tau`, the average clipped residual
 #' is used as a gradient step, and Gaussian noise is added for privacy.
+#' With \eqn{n=\operatorname{length}(w)} and
+#' `gamma = mu_from_eps_delta(eps_gd, delta_gd)`, the noise standard deviation
+#' is `2 * eta0 * tau * sqrt(T) / (n * gamma)` at each iteration. The guarantee
+#' conditions on a public or previously privatized threshold and public tuning
+#' parameters. This scalar helper does not project iterates to nonnegative
+#' values and is not called by the joint scree estimator `dp_scree_huber()`.
 #'
-#' @param w Numeric vector representing a one-dimensional sample.
+#' @param w Numeric vector representing a one-dimensional sample of length
+#'   at least two.
 #' @param eps_gd Positive number defining the `epsilon` privacy parameter for
 #'   noisy gradient descent.
 #' @param delta_gd Number in `(0, 1)` defining the `delta` privacy parameter for
 #'   noisy gradient descent.
-#' @param tau Positive Huber threshold.
-#' @param T Positive number of gradient-descent iterations.
-#' @param mu0 Initial value for the iterative procedure.
-#' @param eta0 Positive step size.
+#' @param tau Positive public or previously privatized Huber threshold.
+#' @param T Positive integer number of gradient-descent iterations.
+#' @param mu0 Public initial value for the iterative procedure.
+#' @param eta0 Positive public step size.
 #'
 #' @return Numeric scalar giving the final private estimate.
 #' @noRd
@@ -449,6 +471,9 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 #' step uses `(1 - m2_frac) * eps` and all delta. Component `l` receives
 #' Gaussian noise with standard deviation
 #' `2 * eta0 * tau[l] * sqrt(k * T) / (m * gamma_gd)` at each iteration.
+#' Here `gamma_gd` is obtained by inverting the GDP conversion for the joint
+#' gradient budget and all delta. Threshold tuning uses the gradient epsilon
+#' divided by `k`, without spending an additional budget.
 #' Each iterate is projected to nonnegative values. There is no additional
 #' sample-size rescaling; optional monotone adjustment is applied last.
 #' See [dp_scree()] for preprocessing and accounting conditions.
@@ -464,7 +489,8 @@ dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
 #' @param eta0 Positive fixed step size.
 #' @param T Optional iteration count; defaults to `ceiling(log(m))`.
 #' @param M Optional scale block count; defaults to `floor(sqrt(m / 2))`.
-#' @param mono Whether to enforce a nonnegative, nonincreasing final sequence.
+#' @param mono Whether to enforce a nonincreasing final sequence. The estimates
+#'   are nonnegative even when `FALSE`.
 #'
 #' @return A list with `scree` and `pve` vectors.
 #' @noRd
@@ -605,9 +631,10 @@ dp_scree_huber <- function(
 #' noisy strict-below count reaches a noisy target count `q * length(x)`.
 #'
 #' The noisy target and every noisy query independently use one-sided
-#' exponential noise with privacy parameter `epsilon / 2`. Because the count
-#' queries are monotone and have sensitivity one, one call is pure
-#' `epsilon`-DP under fixed-size replacement adjacency.
+#' exponential noise with rate `epsilon / 2`. The count queries have sensitivity
+#' one, and their differences between neighboring scalar datasets have a common
+#' sign across thresholds. The monotone AboveThreshold guarantee therefore gives
+#' pure `epsilon`-DP under fixed-size replacement adjacency.
 #'
 #'
 #' @param x Nonempty numeric vector containing only finite values.
@@ -719,9 +746,10 @@ unbounded_quantile_upper <- function(x, q, epsilon, lower = 0,
 #' @param max_steps Positive integer limiting each one-sided search. The default
 #'   is `5000L`.
 #'
-#' @return A numeric scalar giving the private quantile estimate. If either
-#'   one-sided search reaches `max_steps`, the function warns and does not select
-#'   the capped result from that side.
+#' @return A numeric scalar giving the private quantile estimate. A nonzero
+#'   positive estimate takes precedence over a nonzero negative estimate;
+#'   otherwise the result is zero. A search that fails to cross within
+#'   `max_steps` causes a warning, and its capped result is not selected.
 #' @noRd
 unbounded_quantile <- function(x, q, epsilon,
                                beta = 1.01, max_steps = 5000L) {
@@ -853,13 +881,16 @@ unbounded_quantile <- function(x, q, epsilon,
 #' Forms squared differences from `m = floor(nrow(Y) / 2)` disjoint score
 #' pairs. For each component, lower and upper cutoffs are estimated with
 #' `unbounded_quantile_upper()`, using public lower bound zero, then
-#' truncated to `[a, b]`. The pair values are winsorized to those cutoffs.
+#' truncated to `[a, b]`. If the upper cutoff is below the lower cutoff,
+#' they are reset to `a` and `b`. The pair values are winsorized to those cutoffs.
 #'
 #' Each of the `2 * k` pure-DP quantiles receives `eps / (4 * k)`. The joint
 #' winsorized-mean release uses `eps / 2` and all delta. Gaussian noise for
 #' component `l` has standard deviation
 #' `sqrt(k) * (U[l] - L[l]) / (n_m * gamma_M)`, where `n_m` is the number of
-#' pair rows used for the mean. There is no additional sample-size rescaling.
+#' pair rows used for the mean and `gamma_M = mu_from_eps_delta(eps / 2, delta)`.
+#' Equal cutoffs give a conditionally constant mean and zero noise in that
+#' component. There is no additional sample-size rescaling.
 #' See [dp_scree()] for preprocessing and accounting conditions.
 #'
 #' With `split_mode = TRUE`, pair rows are randomly split between quantile
@@ -872,14 +903,17 @@ unbounded_quantile <- function(x, q, epsilon,
 #' @param eps Positive epsilon budget for this method after the shared
 #'   loading allocation; divided between quantiles and the joint mean release.
 #' @param delta Delta budget in `(0, 1)`, used entirely by the joint mean release.
-#' @param a,b Finite public post-processing bounds for private cutoffs.
+#' @param a,b Finite public post-processing bounds for private cutoffs, with
+#'   `a <= b`. They do not need to bound the original paired observations.
 #' @param trim_const Positive public constant in the trimming proportion
 #'   `min(max(trim_const / n_q, eta), 0.49)`, where `n_q` counts quantile pairs.
-#' @param eta Public lower bound on the trimming proportion, in `[0, 0.5)`.
+#' @param eta Public tuning value in `[0, 0.5)` used before the trimming
+#'   proportion is capped at `0.49`.
 #' @param beta Geometric search-grid base greater than one. Default `1.001`.
 #' @param split_mode Whether to split pair rows into quantile and mean subsets.
 #'   Default `FALSE`.
-#' @param mono Whether to enforce a nonnegative, nonincreasing final sequence.
+#' @param mono Whether to enforce a nonincreasing final sequence. The estimates
+#'   are nonnegative even when `FALSE`.
 #'
 #' @return A list with `scree` and `pve` vectors.
 #' @noRd

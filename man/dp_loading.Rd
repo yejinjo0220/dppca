@@ -15,7 +15,9 @@ dp_loading(
 )
 }
 \arguments{
-\item{X}{Numeric matrix or data frame; rows are observations.}
+\item{X}{Finite numeric matrix or data frame with at least two observations
+in rows. Pairwise differences must have Euclidean norm greater than
+\code{sqrt(.Machine$double.eps)} after preprocessing.}
 
 \item{eps}{Positive privacy parameter epsilon.}
 
@@ -44,9 +46,27 @@ Estimate private loadings with an optional ordinary PCA reference
 }
 \details{
 All private directions come from one noisy spherical Kendall
-matrix. The optional ordinary reference uses the same preprocessed data
-and is not a private release. Sample standardization uses data-dependent
-scales and requires separate privacy analysis.
+matrix, ordered by decreasing noisy eigenvalue. They are not the
+eigenvectors of the empirical covariance matrix. Under suitable
+distributional assumptions, the population spherical Kendall and
+covariance matrices share eigendirections.
+
+Under fixed-size replacement adjacency and fixed scaling, the matrix has
+Frobenius sensitivity at most \code{4 / n}. The Gaussian noise has diagonal
+standard deviation \code{4 * sqrt(2 * log(1.25 / delta)) / (n * eps)} and
+off-diagonal standard deviation smaller by a factor of \code{sqrt(2)}.
+This classical Gaussian calibration has a standard sufficient privacy
+argument for \verb{0 < eps < 1}. For larger \code{eps}, its privacy guarantee
+requires a separate Gaussian calibration check; the function does not
+enforce this range or perform that check.
+
+Common centering cancels in pairwise differences. Sample standardization
+uses data-dependent scales and requires separate privacy analysis.
+Coincident or numerically indistinguishable observations are rejected;
+these input checks are not a private validation mechanism on unrestricted
+datasets. Sample size and variable names are assumed public.
+The optional ordinary reference uses the same preprocessed data and is
+not a private release.
 }
 \examples{
 set.seed(123)

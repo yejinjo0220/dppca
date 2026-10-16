@@ -19,35 +19,41 @@ dp_score_group(
 )
 }
 \arguments{
-\item{X}{A matrix or data frame where rows correspond to observations
-and columns correspond to variables.
+\item{X}{A matrix or data frame with at least two observations and two
+finite numeric feature columns. Rows correspond to observations and
+feature columns correspond to variables.
 \code{X} can additionally include a named column representing the group label
 for each observation.}
 
 \item{group}{Group labels. This can be a vector of length \code{nrow(X)} or a
 single column name in \code{X}. If a column name is supplied, that column is
-used as the group label and removed from the feature matrix.}
+used as the group label and removed from the feature matrix. Missing
+labels are not allowed. Group membership must be public and fixed for
+the parallel-composition guarantee below.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
-\code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
+\code{score} components. For example, use \code{privacy_control(eps = 1.8, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
 allocation is used once when \code{V_dp = NULL}. With supplied directions,
 it records the budget already used to obtain them and is not spent again
 or reassigned. The histogram allocation is supplied separately to each
 requested histogram method; see Details.}
 
-\item{bins}{Integer vector of length 2 defining the number of histogram bins
-along the first and second score axes, respectively.}
+\item{bins}{Positive integer vector of length 2 defining the number of
+histogram bins along the first and second score axes, respectively.}
 
 \item{method}{Character vector specifying which private histogram methods to
 compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"} for
 the sparse thresholded histogram. The default is \code{c("add", "sparse")}.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
-before projection and any direction estimation. The default is \code{TRUE}.}
+before projection and any direction estimation. The default is \code{TRUE}.
+Sample-mean centering is not covered by the score privacy argument; use
+\code{FALSE} with fixed public preprocessing for that guarantee.}
 
 \item{standardize}{A logical value indicating whether to scale the columns of
 \code{X} by their sample standard deviations after optional centering. The
-default is \code{FALSE}.}
+default is \code{FALSE}. Sample-standard-deviation scaling is not covered by
+the score privacy argument.}
 
 \item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} to select the
 Rcpp spherical-Kendall implementation. The default is \code{FALSE}.}
@@ -72,6 +78,8 @@ contains the requested histogram methods (\code{add} and/or \code{sparse}). When
 \code{non_private = TRUE}, the top-level \code{score} contains observed coordinates
 and each group additionally contains \code{n} and \code{nonprivate}. These reference
 components are omitted when \code{FALSE}. Unrequested methods are omitted.
+Frame and histogram components have the format described in \code{\link[=dp_score]{dp_score()}};
+\code{groups} is named by labels in their first-occurrence order.
 }
 \description{
 This function computes two-dimensional principal component scores and releases
@@ -108,19 +116,26 @@ computes a new frame and new group histograms.
 \examples{
 data(gau_g, package = "dppca")
 
-# Compute private grouped PCA scores.
+# A small deterministic subset of the simulated data includes all groups.
+X <- gau_g[seq(1, nrow(gau_g), by = 20), ]
+
+# Treat these simulated group labels as public and fixed.
+# Release one histogram method without observed-score references.
 set.seed(123)
 score_gau_g <- dp_score_group(
-  gau_g,
+  X,
   group = "group",
   privacy = privacy_control(
-    eps = 3, delta = 1e-3,
+    eps = 1.8, delta = 1e-3,
     split = c(loading = 0.5, score = 0.5)
   ),
-  bins = c(8, 8)
+  bins = c(8, 8),
+  method = "add",
+  center = FALSE,
+  non_private = FALSE
 )
 
-head(score_gau_g$score)
+score_gau_g$frame
 head(score_gau_g$groups$group1$add)
 
 }

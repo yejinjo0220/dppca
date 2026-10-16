@@ -14,6 +14,14 @@ two-dimensional score histograms; group-wise score visualizations; synthetic
 score sampling from released private histograms; and an interactive Shiny
 application.
 }
+\details{
+\code{\link[=dp_pca]{dp_pca()}} stores a shared set of private estimates for summaries and
+scree, score, loading, variable, and biplot displays. Its default settings
+disable sample-mean centering and omit non-private reference results.
+Standalone plotting wrappers and the Shiny app also support diagnostic
+comparisons that include non-private data summaries. See the individual
+functions for preprocessing assumptions and privacy-budget accounting.
+}
 \seealso{
 Useful links:
 \itemize{

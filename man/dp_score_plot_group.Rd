@@ -21,31 +21,37 @@ dp_score_plot_group(
 )
 }
 \arguments{
-\item{X}{A matrix or data frame where rows correspond to observations
-and columns correspond to variables.
+\item{X}{A matrix or data frame with at least two observations and two
+finite numeric feature columns. Rows correspond to observations and
+feature columns correspond to variables.
 \code{X} can additionally include a named column representing the group label
 for each observation.}
 
 \item{group}{Group labels. This can be a vector of length \code{nrow(X)} or a
 single column name in \code{X}. If a column name is supplied, that column is
-used as the group label and removed from the feature matrix.}
+used as the group label and removed from the feature matrix. Missing
+labels are not allowed. Group membership must be public and fixed for
+the parallel-composition guarantee below.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
-\code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
+\code{score} components. For example, use \code{privacy_control(eps = 1.8, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
 allocation is used once when \code{V_dp = NULL}. With supplied directions,
 it records the budget already used to obtain them and is not spent again
 or reassigned. The histogram allocation is supplied separately to each
 requested histogram method; see Details.}
 
-\item{bins}{Integer vector of length 2 defining the number of histogram bins
-along the first and second score axes, respectively.}
+\item{bins}{Positive integer vector of length 2 defining the number of
+histogram bins along the first and second score axes, respectively.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
-before projection and any direction estimation. The default is \code{TRUE}.}
+before projection and any direction estimation. The default is \code{TRUE}.
+Sample-mean centering is not covered by the score privacy argument; use
+\code{FALSE} with fixed public preprocessing for that guarantee.}
 
 \item{standardize}{A logical value indicating whether to scale the columns of
 \code{X} by their sample standard deviations after optional centering. The
-default is \code{FALSE}.}
+default is \code{FALSE}. Sample-standard-deviation scaling is not covered by
+the score privacy argument.}
 
 \item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} to select the
 Rcpp spherical-Kendall implementation. The default is \code{FALSE}.}
@@ -127,8 +133,7 @@ histogram starts the histogram row.
 Sampling from an already released histogram with fixed public choices does
 not consume an additional privacy budget. Here the sample-size allocation
 uses observed group sizes, so that allocation also requires public group
-sizes or separate privacy accounting. A private histogram, especially a
-sparse histogram, can contain no
+sizes or separate privacy accounting. A sparse histogram can contain no
 positive probability mass after thresholding. In that case no synthetic
 points are generated for that group and histogram method, and a warning is
 issued.
@@ -143,15 +148,21 @@ does not repeat those estimates.
 \examples{
 data(gau_g, package = "dppca")
 
+# A small deterministic subset of the simulated data includes all groups.
+X <- gau_g[seq(1, nrow(gau_g), by = 20), ]
+
+# This comparison includes non-private references and public group labels.
 set.seed(123)
 score_plot_gau_g <- dp_score_plot_group(
-  gau_g,
+  X,
   group = "group",
   privacy = privacy_control(
-    eps = 3, delta = 1e-3,
+    eps = 1.8, delta = 1e-3,
     split = c(loading = 0.5, score = 0.5)
   ),
   bins = c(8, 8),
+  method = "add",
+  center = FALSE,
   sampling_control = sampling_control(
     method = c("center", "uniform")
   )

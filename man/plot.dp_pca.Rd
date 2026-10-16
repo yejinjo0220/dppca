@@ -47,8 +47,8 @@ Multiple displays are available with \code{type = "loading"} only.
 Appearance uses \code{\link[=loading_plot_control]{loading_plot_control()}}, including \code{heatmap_colors}.}
 
 \item{variable}{List with \code{display = "vector"} (or \code{"point"}),
-\code{circle = TRUE} and \code{plot_control = NULL}. DP correlations are
-reconstructed using all estimated eigenvalues.}
+\code{circle = TRUE} and \code{plot_control = NULL}. DP correlation-style coordinates
+use the covariance reconstructed from all \code{k} estimated components.}
 
 \item{biplot}{List with \code{alpha = 0} and \code{plot_control = NULL}.
 Alpha is between zero and one. The display is always square: the shorter
@@ -62,11 +62,13 @@ samples both versions from their stored histograms. Histogram panels
 themselves do not change.}
 
 \item{variables}{Common variable selection: top count, \code{"all"}, \code{NULL},
-names or indices. Common top-N selection uses raw loading on the fit axes
-within each version. The loading, variable and biplot lists can override
-\code{variables} and \code{labels}; local top-N selection uses that panel's geometry.}
+names or multiple indices. Common top-N selection uses raw loading norms
+on the fit axes within each version; loading heatmaps instead use the
+selected \code{heatmap_components}. The loading, variable and biplot lists can
+override \code{variables} and \code{labels}; local top-N selection uses that panel's
+geometry.}
 
-\item{labels}{Show variable labels.}
+\item{labels}{Show variable labels in point and vector panels.}
 
 \item{base_size}{Common font size. Local plot controls take precedence.}
 
@@ -86,9 +88,18 @@ Uses the stored estimates without estimating loading, scree or score again.
 Use \code{set.seed()} before plotting to reproduce synthetic samples.
 }
 \details{
+Variable coordinates are \code{sqrt(eigenvalue[l]) * V[j, l] / s[j]}, where the
+private denominator is \code{s[j] = sqrt(sum(eigenvalues * V[j, 1:k]^2))}.
+They describe correlations implied by the reconstructed covariance, not
+the observed correlations with noisy private directions. Zero-denominator
+variables are omitted. For \code{k < ncol(x$directions)}, the denominator uses
+only the retained components. The ordinary comparison instead uses observed
+variable standard deviations and is not a private release.
+
 Biplot scores are divided by \code{d^alpha} and loading columns multiplied by
 \code{d^alpha}, where \code{d = sqrt((n - 1) * eigenvalue)} on the selected axes.
-Each version uses its own eigenvalues. A zero eigenvalue with positive
+Here \code{n} is the original sample size, even when the synthetic sample size
+differs. Each version uses its own eigenvalues. A zero eigenvalue with positive
 alpha suppresses that axis and is reported in the plot subtitle.
 
 A single arrow multiplier is computed from the DP panel: the 90th percentile
@@ -97,6 +108,8 @@ largest norm of all transformed DP variable vectors. There is no additional
 0.8 factor. Points keep their transformed coordinates and arrows start at
 the origin. The same multiplier is used for the non-private comparison.
 Empty or zero-radius DP samples give a zero multiplier and omit arrows.
+This display scaling is post-processing of the stored DP quantities and
+synthetic points; it does not produce an exact factorization of the data.
 
 The biplot display first extends the alpha-transformed DP frame to include
 the origin and all DP arrow endpoints, then pads the shorter axis to make

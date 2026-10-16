@@ -5,7 +5,9 @@
 
 #' Estimate private loadings with an optional ordinary PCA reference
 #'
-#' @param X Numeric matrix or data frame; rows are observations.
+#' @param X Finite numeric matrix or data frame with at least two observations
+#'   in rows. Pairwise differences must have Euclidean norm greater than
+#'   `sqrt(.Machine$double.eps)` after preprocessing.
 #' @param eps Positive privacy parameter epsilon.
 #' @param delta Privacy parameter delta in `(0, 1)`.
 #' @param center Whether to center columns. Default: `TRUE`.
@@ -22,9 +24,27 @@
 #'   Rows are variables; columns are `PC1`, ..., `PCp`. Both direction
 #'   matrices are orthonormal, without eigenvalue or correlation scaling.
 #' @details All private directions come from one noisy spherical Kendall
-#'   matrix. The optional ordinary reference uses the same preprocessed data
-#'   and is not a private release. Sample standardization uses data-dependent
-#'   scales and requires separate privacy analysis.
+#'   matrix, ordered by decreasing noisy eigenvalue. They are not the
+#'   eigenvectors of the empirical covariance matrix. Under suitable
+#'   distributional assumptions, the population spherical Kendall and
+#'   covariance matrices share eigendirections.
+#'
+#'   Under fixed-size replacement adjacency and fixed scaling, the matrix has
+#'   Frobenius sensitivity at most `4 / n`. The Gaussian noise has diagonal
+#'   standard deviation `4 * sqrt(2 * log(1.25 / delta)) / (n * eps)` and
+#'   off-diagonal standard deviation smaller by a factor of `sqrt(2)`.
+#'   This classical Gaussian calibration has a standard sufficient privacy
+#'   argument for `0 < eps < 1`. For larger `eps`, its privacy guarantee
+#'   requires a separate Gaussian calibration check; the function does not
+#'   enforce this range or perform that check.
+#'
+#'   Common centering cancels in pairwise differences. Sample standardization
+#'   uses data-dependent scales and requires separate privacy analysis.
+#'   Coincident or numerically indistinguishable observations are rejected;
+#'   these input checks are not a private validation mechanism on unrestricted
+#'   datasets. Sample size and variable names are assumed public.
+#'   The optional ordinary reference uses the same preprocessed data and is
+#'   not a private release.
 #' @examples
 #' set.seed(123)
 #' X <- matrix(rnorm(150), 50, 3)
@@ -94,9 +114,10 @@ dp_loading <- function(
 #' @param axes Two distinct PCs for vector and point displays.
 #' @param display One or more of `"vector"`, `"point"`, `"heatmap"`.
 #' @param heatmap_components PCs in the heatmap; `NULL` uses `axes`.
-#' @param variables A positive number selects top variables separately in each
-#'   panel. Use `"all"` or `NULL`, variable names, or multiple column indices
-#'   for other selections. Default: top 10.
+#' @param variables A positive integer selects the variables with the largest
+#'   loading-vector norms across the displayed components, separately for
+#'   each version and display. Use `"all"` or `NULL`, variable names, or multiple
+#'   column indices for other selections. Default: top 10.
 #' @param labels Show variable labels in vector and point displays.
 #' @param align_sign Align only non-private plotting directions to the private
 #'   directions. Default: `TRUE`. Returned loading matrices are unchanged.
@@ -310,10 +331,12 @@ loading_plot_control <- function(
 #' Preprocess a matrix for principal component analysis
 #'
 #' @param X A numeric matrix or data frame.
-#' @param center A logical value indicating whether to center columns.
-#' @param standardize A logical value indicating whether to scale columns.
+#' @param center Whether to subtract column sample means. Default: `TRUE`.
+#' @param standardize Whether to divide by column sample standard deviations,
+#'   regardless of `center`. Default: `FALSE`.
 #'
 #' @return A numeric matrix after preprocessing.
+#' @details This helper does not privatize the means or standard deviations.
 #' @noRd
 prep_matrix_for_pca <- function(
     X,

@@ -10,25 +10,28 @@
 #' histograms. Observed coordinates and empirical reference histograms are
 #' returned only when `non_private = TRUE`.
 #'
-#' @param X A numeric matrix or data frame. Rows correspond to observations and
-#'  columns correspond to variables.
+#' @param X A finite numeric matrix or data frame with at least two rows and
+#'   two columns. Rows correspond to observations and columns to variables.
 #' @param privacy Output of [privacy_control()] with exactly `loading` and
-#'   `score` components. For example, use `privacy_control(eps = 3,
+#'   `score` components. For example, use `privacy_control(eps = 1.8,
 #'   delta = 1e-4, split = c(loading = 0.5, score = 0.5))`. The loading
 #'   allocation is used once when `V_dp = NULL`. With supplied directions,
 #'   it records the budget already used to obtain them and is not spent again
 #'   or reassigned. The histogram allocation is supplied separately to each
 #'   requested histogram method; see Details.
-#' @param bins Integer vector of length 2 defining the number of histogram bins
-#'   along the first and second score axes, respectively.
+#' @param bins Positive integer vector of length 2 defining the number of
+#'   histogram bins along the first and second score axes, respectively.
 #' @param method Character vector specifying which private histogram methods to
 #'   compute. Use `"add"` for the additive Gaussian histogram and `"sparse"` for
 #'   the sparse thresholded histogram. The default is `c("add", "sparse")`.
 #' @param center A logical value indicating whether to center the columns of `X`
 #'   before projection and any direction estimation. The default is `TRUE`.
+#'   Sample-mean centering is not covered by the score privacy argument; use
+#'   `FALSE` with fixed public preprocessing for that guarantee.
 #' @param standardize A logical value indicating whether to scale the columns of
 #'   `X` by their sample standard deviations after optional centering. The
-#'   default is `FALSE`.
+#'   default is `FALSE`. Sample-standard-deviation scaling is not covered by
+#'   the score privacy argument.
 #' @param cpp.option A logical value passed to [dp_loading()] to select the
 #'   Rcpp spherical-Kendall implementation. The default is `FALSE`.
 #' @param axes Positive integer vector of length 2 specifying the principal
@@ -82,15 +85,24 @@
 #' \itemize{
 #'   \item `"add"` constructs an additive differentially private histogram by
 #'   adding Gaussian noise to all bin counts, clipping negative noisy counts to
-#'   zero, and normalizing the result. This additive-noise approach is commonly
+#'   zero, and normalizing the result. Its noise standard deviation is
+#'   \eqn{\sqrt{2}\sqrt{2\log(1.25/\delta_H)}/\varepsilon_H}, where
+#'   \eqn{(\varepsilon_H,\delta_H)} is the histogram allocation. The classical
+#'   sufficient guarantee applies for \eqn{0 < \varepsilon_H < 1}; larger
+#'   values require a separate check of the Gaussian calibration. If all
+#'   clipped counts are zero, the function stops with an error.
+#'   This additive-noise approach is commonly
 #'   used for private histograms; see
 #'   \insertCite{wasserman2010statistical;textual}{dppca}.
 #'
 #'   \item `"sparse"` constructs a sparse differentially private histogram for
 #'   settings where many bins are empty. It perturbs only nonzero empirical bin
-#'   proportions and keeps bins whose noisy values exceed a stability threshold,
+#'   proportions with Laplace noise of scale \eqn{2/(n\varepsilon_H)} and
+#'   keeps bins whose noisy values are at least
+#'   \eqn{1/n + 2\log(2/\delta_H)/(n\varepsilon_H)},
 #'   following the stability-based private histogram idea of
-#'   \insertCite{karwa2017finite;textual}{dppca}.
+#'   \insertCite{karwa2017finite;textual}{dppca}. Retained values are normalized
+#'   when their sum is positive; otherwise an all-zero histogram is returned.
 #' }
 #'
 #' Newly estimated directions use the `loading` component of `privacy`.
@@ -117,6 +129,11 @@
 #' when `FALSE`; no ordinary PCA is computed by this function. Each call still
 #' makes new frame and histogram estimates, including when `V_dp` is reused.
 #' Repeated releases require privacy accounting across calls.
+#' The sample size, selected axes, bin counts and tuning choices are assumed
+#' public. The default `center = TRUE` and `non_private = TRUE` do not provide
+#' a private-only release; set both to `FALSE` and keep `standardize = FALSE`
+#' when using fixed public preprocessing. Loading estimation also requires
+#' the Gaussian-calibration conditions documented in [dp_loading()].
 #'
 #' For a detailed procedure and mathematical formulations,
 #' refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
@@ -125,7 +142,10 @@
 #'   (`add` and/or `sparse`). When `non_private = TRUE`, `score` contains the
 #'   observed projected coordinates and `nonprivate` contains their empirical
 #'   histogram. Both components are omitted when `FALSE`. Unrequested methods
-#'   are omitted.
+#'   are omitted. `frame` contains length-two vectors `xlim` and `ylim`.
+#'   Each histogram is a data frame with columns `xmin`, `xmax`, `ymin`,
+#'   `ymax` and `prob`, including bins with zero probability. The optional
+#'   `score` is an `nrow(X)` by 2 matrix with column names determined by `axes`.
 #'
 #' @seealso
 #' [dp_score_plot()] for computing and plotting comparison results.
@@ -151,19 +171,21 @@
 #' # Use a small subset to keep the example fast.
 #' X <- gau[1:300, ]
 #'
-#' # Compute private two-dimensional PCA scores using the additive histogram method.
+#' # Release a private histogram with fixed preprocessing and no raw scores.
 #' set.seed(123)
 #' score_gau <- dp_score(
 #'   X,
 #'   privacy = privacy_control(
-#'     eps = 2, delta = 1e-3,
+#'     eps = 1.8, delta = 1e-3,
 #'     split = c(loading = 0.5, score = 0.5)
 #'   ),
 #'   method = "add",
-#'   bins = c(10, 10)
+#'   bins = c(10, 10),
+#'   center = FALSE,
+#'   non_private = FALSE
 #' )
 #'
-#' head(score_gau$score)
+#' score_gau$frame
 #' head(score_gau$add)
 #'
 #' @importFrom VGAM rlaplace
@@ -314,16 +336,18 @@ dp_score <- function(
 #'
 #' X <- gau[1:300, ]
 #'
+#' # This comparison includes non-private reference panels.
 #' # By default, both histogram and sampled panels are displayed.
 #' set.seed(123)
 #' score_plot <- dp_score_plot(
 #'   X,
 #'   privacy = privacy_control(
-#'     eps = 3, delta = 1e-3,
+#'     eps = 1.8, delta = 1e-3,
 #'     split = c(loading = 0.5, score = 0.5)
 #'   ),
 #'   bins = c(8, 8),
-#'   method = "add"
+#'   method = "add",
+#'   center = FALSE
 #' )
 #' score_plot$plot$all
 #'
@@ -332,11 +356,12 @@ dp_score <- function(
 #' sample_plot <- dp_score_plot(
 #'   X,
 #'   privacy = privacy_control(
-#'     eps = 3, delta = 1e-3,
+#'     eps = 1.8, delta = 1e-3,
 #'     split = c(loading = 0.5, score = 0.5)
 #'   ),
 #'   bins = c(8, 8),
 #'   method = "add",
+#'   center = FALSE,
 #'   private_plot = "sample",
 #'   sampling_control = sampling_control(
 #'     method = c("center", "uniform")
@@ -598,13 +623,16 @@ dp_score_plot <- function(
 #' distribution should be compared across groups.
 #'
 #' @inheritParams dp_score
-#' @param X A matrix or data frame where rows correspond to observations
-#'   and columns correspond to variables.
+#' @param X A matrix or data frame with at least two observations and two
+#'   finite numeric feature columns. Rows correspond to observations and
+#'   feature columns correspond to variables.
 #'   `X` can additionally include a named column representing the group label
 #'   for each observation.
 #' @param group Group labels. This can be a vector of length `nrow(X)` or a
 #'   single column name in `X`. If a column name is supplied, that column is
-#'   used as the group label and removed from the feature matrix.
+#'   used as the group label and removed from the feature matrix. Missing
+#'   labels are not allowed. Group membership must be public and fixed for
+#'   the parallel-composition guarantee below.
 #' @param V_dp Optional full private direction matrix as described in
 #'   [dp_score()]. Its dimension and row order refer to the feature columns
 #'   after removal of any group-label column. The same preprocessing, prior
@@ -644,6 +672,8 @@ dp_score_plot <- function(
 #'   `non_private = TRUE`, the top-level `score` contains observed coordinates
 #'   and each group additionally contains `n` and `nonprivate`. These reference
 #'   components are omitted when `FALSE`. Unrequested methods are omitted.
+#'   Frame and histogram components have the format described in [dp_score()];
+#'   `groups` is named by labels in their first-occurrence order.
 #'
 #' @seealso
 #' [dp_score_plot_group()] for plotting group-wise score histograms.
@@ -652,19 +682,26 @@ dp_score_plot <- function(
 #' @examples
 #' data(gau_g, package = "dppca")
 #'
-#' # Compute private grouped PCA scores.
+#' # A small deterministic subset of the simulated data includes all groups.
+#' X <- gau_g[seq(1, nrow(gau_g), by = 20), ]
+#'
+#' # Treat these simulated group labels as public and fixed.
+#' # Release one histogram method without observed-score references.
 #' set.seed(123)
 #' score_gau_g <- dp_score_group(
-#'   gau_g,
+#'   X,
 #'   group = "group",
 #'   privacy = privacy_control(
-#'     eps = 3, delta = 1e-3,
+#'     eps = 1.8, delta = 1e-3,
 #'     split = c(loading = 0.5, score = 0.5)
 #'   ),
-#'   bins = c(8, 8)
+#'   bins = c(8, 8),
+#'   method = "add",
+#'   center = FALSE,
+#'   non_private = FALSE
 #' )
 #'
-#' head(score_gau_g$score)
+#' score_gau_g$frame
 #' head(score_gau_g$groups$group1$add)
 #'
 #' @importFrom VGAM rlaplace
@@ -836,8 +873,7 @@ dp_score_group <- function(
 #' Sampling from an already released histogram with fixed public choices does
 #' not consume an additional privacy budget. Here the sample-size allocation
 #' uses observed group sizes, so that allocation also requires public group
-#' sizes or separate privacy accounting. A private histogram, especially a
-#' sparse histogram, can contain no
+#' sizes or separate privacy accounting. A sparse histogram can contain no
 #' positive probability mass after thresholding. In that case no synthetic
 #' points are generated for that group and histogram method, and a warning is
 #' issued.
@@ -871,15 +907,21 @@ dp_score_group <- function(
 #' @examples
 #' data(gau_g, package = "dppca")
 #'
+#' # A small deterministic subset of the simulated data includes all groups.
+#' X <- gau_g[seq(1, nrow(gau_g), by = 20), ]
+#'
+#' # This comparison includes non-private references and public group labels.
 #' set.seed(123)
 #' score_plot_gau_g <- dp_score_plot_group(
-#'   gau_g,
+#'   X,
 #'   group = "group",
 #'   privacy = privacy_control(
-#'     eps = 3, delta = 1e-3,
+#'     eps = 1.8, delta = 1e-3,
 #'     split = c(loading = 0.5, score = 0.5)
 #'   ),
 #'   bins = c(8, 8),
+#'   method = "add",
+#'   center = FALSE,
 #'   sampling_control = sampling_control(
 #'     method = c("center", "uniform")
 #'   )

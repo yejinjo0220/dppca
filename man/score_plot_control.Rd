@@ -58,9 +58,9 @@ The default is \code{"Sparse DP Histogram"}.}
 \item{ylab}{Optional y-axis label. If \code{NULL}, the selected PC name is used.}
 
 \item{group_colors}{Optional nonempty character vector of colors for grouped
-score plots. A named vector maps names to group labels; missing groups are
-assigned additional colors automatically. An unnamed vector is recycled in
-group order. If \code{NULL}, group colors are determined automatically.}
+score plots. The current implementation recycles colors in group order
+and ignores vector names. If \code{NULL}, group labels that are valid R colors
+are used directly; otherwise a palette is generated automatically.}
 
 \item{group_ncol}{Positive integer retained for backward compatibility.
 Grouped score plots are currently overlaid by group color rather than

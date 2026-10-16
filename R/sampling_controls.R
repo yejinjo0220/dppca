@@ -5,30 +5,38 @@
 
 #' Control options for synthetic score sampling
 #'
-#' Creates a control list for generating synthetic score points from a released
-#' private score histogram. Sampling is used only as post-processing of the
-#' private histogram; it does not alter the histogram privacy mechanism.
+#' Creates a control list for generating synthetic score points from a score
+#' histogram. Sampling from a released private histogram is post-processing
+#' under the conditions below; it does not alter the histogram mechanism.
+#' [plot.dp_pca()] can also use these controls to sample an empirical reference
+#' histogram, which does not make that reference private.
 #'
 #' @param method Character vector specifying the sampling construction.
-#'   `"center"` selects a histogram bin according to its private probability
+#'   `"center"` selects a histogram bin according to its histogram probability
 #'   and samples around that bin center using Gaussian jitter.
-#'   `"uniform"` selects a histogram bin according to its private probability,
+#'   `"uniform"` selects a histogram bin according to its histogram probability,
 #'   samples uniformly inside the selected bin, and then adds Gaussian jitter.
 #'   The default is `"uniform"`. Both methods can be requested with
-#'   `c("center", "uniform")`.
+#'   `c("center", "uniform")` in the score plotting wrappers;
+#'   [plot.dp_pca()] requires exactly one sampling method.
 #' @param sample_size Optional positive integer giving the synthetic sample
 #'   size for each requested sampling construction. For [dp_score_plot()], this
 #'   is the number of pooled synthetic score points. For
 #'   [dp_score_plot_group()], this is the total number of synthetic points
 #'   across all groups and is allocated in proportion to the observed group
-#'   sizes. If `NULL`, the total number of input observations is used. This
-#'   default therefore assumes that the sample size and group sizes are not
-#'   sensitive.
+#'   sizes. For [plot.dp_pca()], it is the size shared by score and biplot
+#'   samples within each version; an explicit value also samples non-private
+#'   reference histograms when comparison panels are requested. With `NULL`,
+#'   private samples use the number of input observations and integrated
+#'   non-private panels use observed scores. The default private sample size
+#'   assumes that the input sample size is public. Grouped allocation also
+#'   requires public group sizes, even when an explicit total is supplied.
 #' @param bandwidth_scale Gaussian smoothing scale. If `NULL`, method-specific
 #'   defaults are used: `0.5` for `"center"` and `0.25` for `"uniform"`.
 #'   A single nonnegative number applies the same scale to all requested
 #'   sampling methods. A named numeric vector can specify method-specific
-#'   values, for example `c(center = 0.5, uniform = 0.2)`.
+#'   values, for example `c(center = 0.5, uniform = 0.2)`; it must include every
+#'   requested method. A scale of zero disables Gaussian jitter.
 #'
 #' @details
 #' Let \eqn{\widetilde p_k} denote the released private probability of
@@ -51,13 +59,16 @@
 #' where \eqn{\Delta_x} and \eqn{\Delta_y} are the histogram bin widths and
 #' \eqn{c} is `bandwidth_scale`.
 #'
-#' The sampling step uses only the released private histogram and fixed
-#' histogram geometry. Consequently, when its tuning parameters are specified
-#' without consulting the original score data, it is a post-processing
-#' operation and requires no additional privacy budget.
+#' The sampling step uses only the histogram probabilities and bin geometry.
+#' If both come from private releases and sampling choices are public or based
+#' only on those releases, it is post-processing and requires no additional
+#' privacy budget. Gaussian jitter can place points outside the histogram
+#' frame. An all-zero histogram generates no points and produces a warning.
 #'
-#' @return A named list with components `method`, `sample_size`, and
-#'   `bandwidth_scale`.
+#' @return A `dppca_sampling_control` list with components `method`,
+#'   `sample_size`, and `bandwidth_scale`. The bandwidth values are resolved
+#'   to a named numeric vector, while `sample_size = NULL` is resolved later
+#'   by the plotting function.
 #'
 #' @examples
 #' sampling_control()

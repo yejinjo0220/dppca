@@ -37,7 +37,8 @@ If omitted, \code{"clipped"} is used.}
 
 \item{control}{Method-specific list created by \code{\link[=clipped_control]{clipped_control()}},
 \code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}. For several methods, supply a
-named list of these controls.}
+named list of these controls. Each method requires its public tuning
+parameters; \code{NULL} does not provide a complete usable control.}
 
 \item{center}{Whether to center columns of \code{X} before projection.
 The default is \code{TRUE}.}
@@ -49,8 +50,9 @@ for the preprocessing assumptions of the scree calibration.}
 \item{cpp.option}{Logical option passed to \code{\link[=dp_loading]{dp_loading()}} when directions
 must be estimated. The default is \code{FALSE}; ignored when \code{V_dp} is supplied.}
 
-\item{mono}{Whether to enforce a nonnegative, nonincreasing private scree
-sequence by post-processing. The default is \code{TRUE}.}
+\item{mono}{Whether to enforce a nonincreasing private scree sequence by
+isotonic post-processing. The default is \code{TRUE}. Estimates are truncated
+at zero even when \code{mono = FALSE}.}
 
 \item{type}{Quantity to plot: \code{"pve"} for proportions of variance explained
 or \code{"scree"} for scree values. The default is \code{"pve"}.}
@@ -101,7 +103,7 @@ privacy <- privacy_control(
   split = c(loading = 0.5, scree = 0.5)
 )
 
-# Draw a private PVE plot using the clipped mean method.
+# Compare clipped private PVE estimates with the ordinary PCA reference.
 set.seed(123)
 dp_scree_plot(
   X,

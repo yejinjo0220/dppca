@@ -23,9 +23,12 @@
 #'   The default is `"topright"`.
 #' @param legend_labels Optional named character vector giving legend labels.
 #'   Recognized names are `"nonprivate"`, `"clipped"`, `"pmwm"`, and `"huber"`.
-#' @param col Optional named vector of plotting colors.
-#' @param lty Optional named vector of line types.
-#' @param pch Optional named vector of point symbols.
+#' @param col Optional named character vector of plotting colors, using the
+#'   same series names as `legend_labels`.
+#' @param lty Optional named vector of line types, using the same series names
+#'   as `legend_labels`.
+#' @param pch Optional named vector of point symbols, using the same series
+#'   names as `legend_labels`.
 #' @param lwd Positive line width. The default is `1`.
 #' @param point_cex Positive point-size multiplier. The default is `1`.
 #' @param cex_main Positive title-size multiplier. The default is `1.5`.
@@ -269,9 +272,9 @@ scree_plot_control <- function(
 #' @param xlab Optional x-axis label. If `NULL`, the selected PC name is used.
 #' @param ylab Optional y-axis label. If `NULL`, the selected PC name is used.
 #' @param group_colors Optional nonempty character vector of colors for grouped
-#'   score plots. A named vector maps names to group labels; missing groups are
-#'   assigned additional colors automatically. An unnamed vector is recycled in
-#'   group order. If `NULL`, group colors are determined automatically.
+#'   score plots. The current implementation recycles colors in group order
+#'   and ignores vector names. If `NULL`, group labels that are valid R colors
+#'   are used directly; otherwise a palette is generated automatically.
 #' @param group_ncol Positive integer retained for backward compatibility.
 #'   Grouped score plots are currently overlaid by group color rather than
 #'   arranged as separate group-specific panels, so this option is not used by

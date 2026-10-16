@@ -21,7 +21,8 @@
 #'   If omitted, `"clipped"` is used.
 #' @param control Method-specific list created by [clipped_control()],
 #'   [pmwm_control()], or [huber_control()]. For several methods, supply a
-#'   named list of these controls.
+#'   named list of these controls. Each method requires its public tuning
+#'   parameters; `NULL` does not provide a complete usable control.
 #' @param center Whether to center columns of `X` before projection.
 #'   The default is `TRUE`.
 #' @param standardize Whether to divide columns by their sample standard
@@ -29,8 +30,9 @@
 #'   for the preprocessing assumptions of the scree calibration.
 #' @param cpp.option Logical option passed to [dp_loading()] when directions
 #'   must be estimated. The default is `FALSE`; ignored when `V_dp` is supplied.
-#' @param mono Whether to enforce a nonnegative, nonincreasing private scree
-#'   sequence by post-processing. The default is `TRUE`.
+#' @param mono Whether to enforce a nonincreasing private scree sequence by
+#'   isotonic post-processing. The default is `TRUE`. Estimates are truncated
+#'   at zero even when `mono = FALSE`.
 #' @param V_dp Optional full `p` by `p` private direction matrix, where
 #'   `p = ncol(X)`. Its columns must be orthonormal and its rows must match
 #'   the variables of `X` in order. If both row and variable names are present,
@@ -50,7 +52,10 @@
 #' means of the columns of \eqn{W}, without an additional sample-size rescaling.
 #' For fixed scores, the unclipped pair mean has the usual sample variance as
 #' its expectation over random pairing; an individual pairing need not equal
-#' that variance.
+#' that variance. These quantities describe variance along the private
+#' directions, rather than exact eigenvalues of the sample covariance.
+#' Clipping, winsorization, Huber estimation, and nonnegative projection can
+#' change this statistical target.
 #'
 #' The supported methods differ in their treatment of \eqn{W}:
 #' \itemize{
@@ -77,10 +82,13 @@
 #'
 #' The paired-score sensitivity calculations condition on the directions
 #' and use fixed-size replacement adjacency. Common centering cancels in
-#' the pair differences. Variable scaling must be fixed or public, or have
-#' its privacy cost accounted for separately; sample standard deviations
+#' the pair differences. Variable scaling must be fixed independently of the
+#' confidential data or obtained through a separately accounted private
+#' mechanism; sample standard deviations
 #' computed from the input are not covered by these sensitivity calculations.
 #' Supplying `V_dp` does not by itself establish its privacy guarantee.
+#' Sample size, component selection, and tuning parameters are treated as
+#' public; selecting them from confidential data needs separate accounting.
 #'
 #' Multiple methods receive the same full scree allocation for comparison.
 #' Releasing their results together requires composition across all methods,
@@ -91,8 +99,9 @@
 #' The optional `nonprivate` result uses ordinary PCA eigenvalues, rather than
 #' variances along the DP directions. It is a comparison reference and is not
 #' a private release. PVE is normalized over the `k` returned components and
-#' sums to one when their scree values have a positive finite sum. Monotone
-#' adjustment accesses only the estimated scree values.
+#' sums to one when their scree values have a positive finite sum; otherwise
+#' it is a zero vector. Monotone adjustment accesses only the estimated scree
+#' values and does not reorder the directions.
 #'
 #' @return A named list containing one entry per requested method (`clipped`,
 #'   `pmwm`, and/or `huber`). Each entry has `scree` and `pve` vectors named
@@ -126,7 +135,7 @@
 #'   split = c(loading = 0.5, scree = 0.5)
 #' )
 #'
-#' # Estimate private scree values using the clipped mean method.
+#' # Estimate clipped private scree values and an ordinary PCA comparison.
 #' set.seed(123)
 #' out <- dp_scree(
 #'   X,
@@ -362,7 +371,7 @@ dp_scree <- function(
 #'   split = c(loading = 0.5, scree = 0.5)
 #' )
 #'
-#' # Draw a private PVE plot using the clipped mean method.
+#' # Compare clipped private PVE estimates with the ordinary PCA reference.
 #' set.seed(123)
 #' dp_scree_plot(
 #'   X,

@@ -49,7 +49,8 @@ score differences, following the approach of
 pairs, or eight observations. For each component, a private scale proxy
 is computed by pairing the squared score differences again, forming
 block medians, and selecting a dyadic scale with a noisy histogram.
-The scale proxy determines a Huber clipping threshold.
+The scale proxy determines a Huber clipping threshold; it is not the
+empirical second moment of the squared score differences.
 
 The scale step uses \code{m2_frac * epsilon / k} for each of the \code{k} components
 and consumes no delta. Joint noisy gradient descent uses

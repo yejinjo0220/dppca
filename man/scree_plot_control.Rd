@@ -38,11 +38,14 @@ The default is \code{"topright"}.}
 \item{legend_labels}{Optional named character vector giving legend labels.
 Recognized names are \code{"nonprivate"}, \code{"clipped"}, \code{"pmwm"}, and \code{"huber"}.}
 
-\item{col}{Optional named vector of plotting colors.}
+\item{col}{Optional named character vector of plotting colors, using the
+same series names as \code{legend_labels}.}
 
-\item{lty}{Optional named vector of line types.}
+\item{lty}{Optional named vector of line types, using the same series names
+as \code{legend_labels}.}
 
-\item{pch}{Optional named vector of point symbols.}
+\item{pch}{Optional named vector of point symbols, using the same series
+names as \code{legend_labels}.}
 
 \item{lwd}{Positive line width. The default is \code{1}.}
 

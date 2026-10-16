@@ -35,7 +35,8 @@ If omitted, \code{"clipped"} is used.}
 
 \item{control}{Method-specific list created by \code{\link[=clipped_control]{clipped_control()}},
 \code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}}. For several methods, supply a
-named list of these controls.}
+named list of these controls. Each method requires its public tuning
+parameters; \code{NULL} does not provide a complete usable control.}
 
 \item{center}{Whether to center columns of \code{X} before projection.
 The default is \code{TRUE}.}
@@ -47,8 +48,9 @@ for the preprocessing assumptions of the scree calibration.}
 \item{cpp.option}{Logical option passed to \code{\link[=dp_loading]{dp_loading()}} when directions
 must be estimated. The default is \code{FALSE}; ignored when \code{V_dp} is supplied.}
 
-\item{mono}{Whether to enforce a nonnegative, nonincreasing private scree
-sequence by post-processing. The default is \code{TRUE}.}
+\item{mono}{Whether to enforce a nonincreasing private scree sequence by
+isotonic post-processing. The default is \code{TRUE}. Estimates are truncated
+at zero even when \code{mono = FALSE}.}
 
 \item{V_dp}{Optional full \code{p} by \code{p} private direction matrix, where
 \code{p = ncol(X)}. Its columns must be orthonormal and its rows must match
@@ -82,7 +84,10 @@ One randomly selected row is unused when \eqn{n} is odd. The methods estimate
 means of the columns of \eqn{W}, without an additional sample-size rescaling.
 For fixed scores, the unclipped pair mean has the usual sample variance as
 its expectation over random pairing; an individual pairing need not equal
-that variance.
+that variance. These quantities describe variance along the private
+directions, rather than exact eigenvalues of the sample covariance.
+Clipping, winsorization, Huber estimation, and nonnegative projection can
+change this statistical target.
 
 The supported methods differ in their treatment of \eqn{W}:
 \itemize{
@@ -109,10 +114,13 @@ re-estimated within a scree method.
 
 The paired-score sensitivity calculations condition on the directions
 and use fixed-size replacement adjacency. Common centering cancels in
-the pair differences. Variable scaling must be fixed or public, or have
-its privacy cost accounted for separately; sample standard deviations
+the pair differences. Variable scaling must be fixed independently of the
+confidential data or obtained through a separately accounted private
+mechanism; sample standard deviations
 computed from the input are not covered by these sensitivity calculations.
 Supplying \code{V_dp} does not by itself establish its privacy guarantee.
+Sample size, component selection, and tuning parameters are treated as
+public; selecting them from confidential data needs separate accounting.
 
 Multiple methods receive the same full scree allocation for comparison.
 Releasing their results together requires composition across all methods,
@@ -123,8 +131,9 @@ likewise require separate accounting for newly released estimates.
 The optional \code{nonprivate} result uses ordinary PCA eigenvalues, rather than
 variances along the DP directions. It is a comparison reference and is not
 a private release. PVE is normalized over the \code{k} returned components and
-sums to one when their scree values have a positive finite sum. Monotone
-adjustment accesses only the estimated scree values.
+sums to one when their scree values have a positive finite sum; otherwise
+it is a zero vector. Monotone adjustment accesses only the estimated scree
+values and does not reorder the directions.
 }
 \examples{
 data(gau, package = "dppca")
@@ -137,7 +146,7 @@ privacy <- privacy_control(
   split = c(loading = 0.5, scree = 0.5)
 )
 
-# Estimate private scree values using the clipped mean method.
+# Estimate clipped private scree values and an ordinary PCA comparison.
 set.seed(123)
 out <- dp_scree(
   X,

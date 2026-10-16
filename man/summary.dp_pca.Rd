@@ -27,6 +27,7 @@ score frame and score histogram, plus the total. Other fields describe
 data dimensions, selected axes, methods, preprocessing and whether a
 non-private reference is stored. Raw scores and loading matrices are
 not copied into the summary.
+The print method returns its input invisibly.
 }
 \description{
 Summarizes an existing fit without new estimation or random sampling.

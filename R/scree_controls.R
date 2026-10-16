@@ -53,8 +53,9 @@ clipped_control <- function(C_clip) {
 #'   pair differences used in [dp_scree()].
 #' @param trim_const Positive public constant controlling the baseline trimming
 #'   proportion. It has no default.
-#' @param eta Public lower bound on the practical trimming proportion, in
-#'   `[0, 0.5)`. It has no default.
+#' @param eta Public tuning value in `[0, 0.5)` combined with
+#'   `trim_const / n_q` before the trimming proportion is capped at `0.49`.
+#'   It has no default.
 #' @param beta Geometric search-grid base greater than `1` for private quantile
 #'   estimation. The default is `1.001`.
 #' @param split_mode Whether to split the pair rows into quantile and mean
@@ -67,7 +68,9 @@ clipped_control <- function(C_clip) {
 #' routine of \insertCite{durfee2023unbounded;textual}{dppca}, with public
 #' lower bound zero. Both private cutoffs are truncated to `[a, b]`; the
 #' paired quantities are then winsorized and their mean vector is perturbed
-#' with Gaussian noise.
+#' with Gaussian noise. The bounds constrain the cutoffs, not the original
+#' observations. If the estimated upper cutoff is below the lower cutoff,
+#' they are reset to `a` and `b`.
 #'
 #' For \eqn{k} components, each of the \eqn{2k} pure-DP quantile calls receives
 #' \eqn{\epsilon/(4k)}. The vector mean step receives \eqn{\epsilon/2} and
@@ -80,7 +83,10 @@ clipped_control <- function(C_clip) {
 #' \deqn{p=\min\{\max(\mathrm{trim\_const}/n_q,\eta),0.49\}.}
 #' With `split_mode = TRUE`, the \eqn{\lfloor n/2\rfloor} pair rows are
 #' randomly split between quantile and mean estimation, requiring at least
-#' four observations. With `FALSE`, all pair rows are reused in both steps.
+#' four observations. Quantile estimation uses \eqn{\lfloor m/2\rfloor}
+#' rows and mean estimation uses the remainder, where \eqn{m=\lfloor n/2\rfloor}.
+#' With `FALSE`, all pair rows are reused in both steps; the privacy accounting
+#' above covers this reuse.
 #'
 #' Smaller `beta` gives a finer grid but may require more search steps. The
 #' parameters without defaults should be chosen as public tuning inputs;
@@ -176,7 +182,8 @@ pmwm_control <- function(
 #' pairs, or eight observations. For each component, a private scale proxy
 #' is computed by pairing the squared score differences again, forming
 #' block medians, and selecting a dyadic scale with a noisy histogram.
-#' The scale proxy determines a Huber clipping threshold.
+#' The scale proxy determines a Huber clipping threshold; it is not the
+#' empirical second moment of the squared score differences.
 #'
 #' The scale step uses `m2_frac * epsilon / k` for each of the `k` components
 #' and consumes no delta. Joint noisy gradient descent uses

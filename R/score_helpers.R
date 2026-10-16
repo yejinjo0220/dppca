@@ -3,17 +3,23 @@
 # Internal helper functions for score-related routines
 # ============================================================
 
-#' Differentially private quantile by smooth sensitivity
+#' Legacy quantile perturbation using observed order-statistic spacings
 #'
-#' Internal helper for estimating a univariate quantile with a smooth-sensitivity
-#' based Laplace mechanism.
+#' Unused internal helper that adds Laplace noise scaled by exponentially
+#' weighted spacings between observed order statistics. It does not include
+#' public domain endpoints or a bound on replacements outside the observed
+#' range, so this calculation does not establish a smooth-sensitivity or DP
+#' guarantee on unbounded data. Current frame estimation uses
+#' `unbounded_quantile()` and `unbounded_quantile_upper()` instead.
 #'
 #' @param x Numeric vector of observations.
 #' @param q Quantile level in `(0, 1)`.
-#' @param epsilon Positive `epsilon` privacy parameter.
-#' @param delta Number in `(0, 1)` defining the `delta` privacy parameter.
+#' @param epsilon Positive value used to calculate the noise scale.
+#' @param delta Number in `(0, 1)` used to calculate the spacing decay rate.
 #'
-#' @return A numeric value giving the noisy quantile estimate.
+#' @return A numeric value giving the perturbed order statistic at rank
+#'   `ceiling(q * length(x))`. A zero computed scale, including for constant
+#'   inputs, is rejected by `VGAM::rlaplace()`.
 #'
 #' @noRd
 dp_quantile_ss <- function(x, q, epsilon, delta) {
@@ -71,7 +77,10 @@ dp_quantile_ss <- function(x, q, epsilon, delta) {
 #' estimates the 0.99 quantile of the Euclidean distances from that private
 #' center. Each of the two center mechanisms and the radial-quantile mechanism
 #' receives `eps_frame / 3`, so the three mechanisms compose to a pure
-#' `eps_frame`-DP frame under fixed-size replacement adjacency.
+#' `eps_frame`-DP frame under fixed-size replacement adjacency of the score
+#' rows. For a guarantee with respect to the original observations, directions
+#' and preprocessing must satisfy the conditions in [dp_score()], and earlier
+#' private releases must be composed with the frame mechanism.
 #'
 #' The common private radius is multiplied by `1 + inflate` and applied to both
 #' coordinates. This produces an axis-aligned square centered at the two private
@@ -694,9 +703,14 @@ allocate_group_sample_sizes <- function(group_sizes, total_size) {
 }
 
 
-#' Complete a named color map
+#' Assign colors in group order
 #'
-#' @param col_map Optional color map.
+#' The current implementation discards supplied color names before assigning
+#' values. Colors are recycled in `group_levels` order; named lookup and
+#' completion of missing named groups are not performed.
+#'
+#' @param col_map Optional color vector. Supply values in `group_levels` order.
+#'   If `NULL` or empty, an HCL palette is generated.
 #' @param group_levels Character vector of group levels.
 #'
 #' @return A named character vector of colors.
@@ -1217,13 +1231,17 @@ score_histograms_from_grid <- function(
   out
 }
 
-#' Sample synthetic score points from a private histogram
+#' Sample synthetic score points from a histogram
 #'
-#' Internal post-processing helper for converting a private histogram into
-#' synthetic score coordinates.
+#' Internal helper for converting a histogram into synthetic score coordinates.
+#' With a private histogram and public sampling choices, this is private
+#' post-processing. It is also used for empirical comparison histograms by
+#' [plot.dp_pca()]; sampling those does not make them private.
 #'
-#' @param hist_df Private histogram data frame containing bin boundaries and
-#'   probabilities.
+#' @param hist_df Histogram data frame with columns `xmin`, `xmax`, `ymin`,
+#'   `ymax` and `prob`. Nonfinite or negative probabilities are set to zero,
+#'   and positive remaining mass is normalized before sampling. Bin widths
+#'   must be positive and finite; the median widths determine jitter scales.
 #' @param sample_size Positive integer number of synthetic points.
 #' @param sample_method Character vector containing `"center"` and/or
 #'   `"uniform"`.
@@ -1231,7 +1249,9 @@ score_histograms_from_grid <- function(
 #'   each requested sampling method.
 #'
 #' @return A named list of data frames. Each data frame has columns `pc_x` and
-#'   `pc_y`.
+#'   `pc_y`. If no positive probability mass remains, a warning is issued and
+#'   each data frame has zero rows. Gaussian jitter can place points outside
+#'   the histogram frame.
 #'
 #' @noRd
 sample_private_score_histogram <- function(

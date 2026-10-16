@@ -14,8 +14,9 @@ pair differences used in \code{\link[=dp_scree]{dp_scree()}}.}
 \item{trim_const}{Positive public constant controlling the baseline trimming
 proportion. It has no default.}
 
-\item{eta}{Public lower bound on the practical trimming proportion, in
-\verb{[0, 0.5)}. It has no default.}
+\item{eta}{Public tuning value in \verb{[0, 0.5)} combined with
+\code{trim_const / n_q} before the trimming proportion is capped at \code{0.49}.
+It has no default.}
 
 \item{beta}{Geometric search-grid base greater than \code{1} for private quantile
 estimation. The default is \code{1.001}.}
@@ -37,7 +38,9 @@ quantiles of the squared pair differences using the one-sided unbounded
 routine of \insertCite{durfee2023unbounded;textual}{dppca}, with public
 lower bound zero. Both private cutoffs are truncated to \verb{[a, b]}; the
 paired quantities are then winsorized and their mean vector is perturbed
-with Gaussian noise.
+with Gaussian noise. The bounds constrain the cutoffs, not the original
+observations. If the estimated upper cutoff is below the lower cutoff,
+they are reset to \code{a} and \code{b}.
 
 For \eqn{k} components, each of the \eqn{2k} pure-DP quantile calls receives
 \eqn{\epsilon/(4k)}. The vector mean step receives \eqn{\epsilon/2} and
@@ -50,7 +53,10 @@ The trimming proportion is
 \deqn{p=\min\{\max(\mathrm{trim\_const}/n_q,\eta),0.49\}.}
 With \code{split_mode = TRUE}, the \eqn{\lfloor n/2\rfloor} pair rows are
 randomly split between quantile and mean estimation, requiring at least
-four observations. With \code{FALSE}, all pair rows are reused in both steps.
+four observations. Quantile estimation uses \eqn{\lfloor m/2\rfloor}
+rows and mean estimation uses the remainder, where \eqn{m=\lfloor n/2\rfloor}.
+With \code{FALSE}, all pair rows are reused in both steps; the privacy accounting
+above covers this reuse.
 
 Smaller \code{beta} gives a finer grid but may require more search steps. The
 parameters without defaults should be chosen as public tuning inputs;

@@ -18,29 +18,32 @@ dp_score(
 )
 }
 \arguments{
-\item{X}{A numeric matrix or data frame. Rows correspond to observations and
-columns correspond to variables.}
+\item{X}{A finite numeric matrix or data frame with at least two rows and
+two columns. Rows correspond to observations and columns to variables.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
-\code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
+\code{score} components. For example, use \code{privacy_control(eps = 1.8, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
 allocation is used once when \code{V_dp = NULL}. With supplied directions,
 it records the budget already used to obtain them and is not spent again
 or reassigned. The histogram allocation is supplied separately to each
 requested histogram method; see Details.}
 
-\item{bins}{Integer vector of length 2 defining the number of histogram bins
-along the first and second score axes, respectively.}
+\item{bins}{Positive integer vector of length 2 defining the number of
+histogram bins along the first and second score axes, respectively.}
 
 \item{method}{Character vector specifying which private histogram methods to
 compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"} for
 the sparse thresholded histogram. The default is \code{c("add", "sparse")}.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
-before projection and any direction estimation. The default is \code{TRUE}.}
+before projection and any direction estimation. The default is \code{TRUE}.
+Sample-mean centering is not covered by the score privacy argument; use
+\code{FALSE} with fixed public preprocessing for that guarantee.}
 
 \item{standardize}{A logical value indicating whether to scale the columns of
 \code{X} by their sample standard deviations after optional centering. The
-default is \code{FALSE}.}
+default is \code{FALSE}. Sample-standard-deviation scaling is not covered by
+the score privacy argument.}
 
 \item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} to select the
 Rcpp spherical-Kendall implementation. The default is \code{FALSE}.}
@@ -68,7 +71,10 @@ A named list containing \code{frame} and each requested histogram method
 (\code{add} and/or \code{sparse}). When \code{non_private = TRUE}, \code{score} contains the
 observed projected coordinates and \code{nonprivate} contains their empirical
 histogram. Both components are omitted when \code{FALSE}. Unrequested methods
-are omitted.
+are omitted. \code{frame} contains length-two vectors \code{xlim} and \code{ylim}.
+Each histogram is a data frame with columns \code{xmin}, \code{xmax}, \code{ymin},
+\code{ymax} and \code{prob}, including bins with zero probability. The optional
+\code{score} is an \code{nrow(X)} by 2 matrix with column names determined by \code{axes}.
 }
 \description{
 This function projects observations onto supplied private directions or
@@ -111,15 +117,24 @@ Two private histogram mechanisms are supported:
 \itemize{
 \item \code{"add"} constructs an additive differentially private histogram by
 adding Gaussian noise to all bin counts, clipping negative noisy counts to
-zero, and normalizing the result. This additive-noise approach is commonly
+zero, and normalizing the result. Its noise standard deviation is
+\eqn{\sqrt{2}\sqrt{2\log(1.25/\delta_H)}/\varepsilon_H}, where
+\eqn{(\varepsilon_H,\delta_H)} is the histogram allocation. The classical
+sufficient guarantee applies for \eqn{0 < \varepsilon_H < 1}; larger
+values require a separate check of the Gaussian calibration. If all
+clipped counts are zero, the function stops with an error.
+This additive-noise approach is commonly
 used for private histograms; see
 \insertCite{wasserman2010statistical;textual}{dppca}.
 
 \item \code{"sparse"} constructs a sparse differentially private histogram for
 settings where many bins are empty. It perturbs only nonzero empirical bin
-proportions and keeps bins whose noisy values exceed a stability threshold,
+proportions with Laplace noise of scale \eqn{2/(n\varepsilon_H)} and
+keeps bins whose noisy values are at least
+\eqn{1/n + 2\log(2/\delta_H)/(n\varepsilon_H)},
 following the stability-based private histogram idea of
-\insertCite{karwa2017finite;textual}{dppca}.
+\insertCite{karwa2017finite;textual}{dppca}. Retained values are normalized
+when their sum is positive; otherwise an all-zero histogram is returned.
 }
 
 Newly estimated directions use the \code{loading} component of \code{privacy}.
@@ -146,6 +161,11 @@ describe observed projections onto the private directions. They are omitted
 when \code{FALSE}; no ordinary PCA is computed by this function. Each call still
 makes new frame and histogram estimates, including when \code{V_dp} is reused.
 Repeated releases require privacy accounting across calls.
+The sample size, selected axes, bin counts and tuning choices are assumed
+public. The default \code{center = TRUE} and \code{non_private = TRUE} do not provide
+a private-only release; set both to \code{FALSE} and keep \code{standardize = FALSE}
+when using fixed public preprocessing. Loading estimation also requires
+the Gaussian-calibration conditions documented in \code{\link[=dp_loading]{dp_loading()}}.
 
 For a detailed procedure and mathematical formulations,
 refer \url{https://yejinjo0220.github.io/dppca/articles/dp_score}.
@@ -156,19 +176,21 @@ data(gau, package = "dppca")
 # Use a small subset to keep the example fast.
 X <- gau[1:300, ]
 
-# Compute private two-dimensional PCA scores using the additive histogram method.
+# Release a private histogram with fixed preprocessing and no raw scores.
 set.seed(123)
 score_gau <- dp_score(
   X,
   privacy = privacy_control(
-    eps = 2, delta = 1e-3,
+    eps = 1.8, delta = 1e-3,
     split = c(loading = 0.5, score = 0.5)
   ),
   method = "add",
-  bins = c(10, 10)
+  bins = c(10, 10),
+  center = FALSE,
+  non_private = FALSE
 )
 
-head(score_gau$score)
+score_gau$frame
 head(score_gau$add)
 
 }

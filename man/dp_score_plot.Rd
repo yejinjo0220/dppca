@@ -20,18 +20,18 @@ dp_score_plot(
 )
 }
 \arguments{
-\item{X}{A numeric matrix or data frame. Rows correspond to observations and
-columns correspond to variables.}
+\item{X}{A finite numeric matrix or data frame with at least two rows and
+two columns. Rows correspond to observations and columns to variables.}
 
 \item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with exactly \code{loading} and
-\code{score} components. For example, use \code{privacy_control(eps = 3, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
+\code{score} components. For example, use \code{privacy_control(eps = 1.8, delta = 1e-4, split = c(loading = 0.5, score = 0.5))}. The loading
 allocation is used once when \code{V_dp = NULL}. With supplied directions,
 it records the budget already used to obtain them and is not spent again
 or reassigned. The histogram allocation is supplied separately to each
 requested histogram method; see Details.}
 
-\item{bins}{Integer vector of length 2 defining the number of histogram bins
-along the first and second score axes, respectively.}
+\item{bins}{Positive integer vector of length 2 defining the number of
+histogram bins along the first and second score axes, respectively.}
 
 \item{method}{Character vector specifying which private histogram methods to
 compute. Use \code{"add"} for the additive Gaussian histogram and \code{"sparse"} for
@@ -49,11 +49,14 @@ histograms. Both can be requested with
 \code{private_plot}. If \code{NULL}, the default sampling settings are used.}
 
 \item{center}{A logical value indicating whether to center the columns of \code{X}
-before projection and any direction estimation. The default is \code{TRUE}.}
+before projection and any direction estimation. The default is \code{TRUE}.
+Sample-mean centering is not covered by the score privacy argument; use
+\code{FALSE} with fixed public preprocessing for that guarantee.}
 
 \item{standardize}{A logical value indicating whether to scale the columns of
 \code{X} by their sample standard deviations after optional centering. The
-default is \code{FALSE}.}
+default is \code{FALSE}. Sample-standard-deviation scaling is not covered by
+the score privacy argument.}
 
 \item{cpp.option}{A logical value passed to \code{\link[=dp_loading]{dp_loading()}} to select the
 Rcpp spherical-Kendall implementation. The default is \code{FALSE}.}
@@ -123,16 +126,18 @@ data(gau, package = "dppca")
 
 X <- gau[1:300, ]
 
+# This comparison includes non-private reference panels.
 # By default, both histogram and sampled panels are displayed.
 set.seed(123)
 score_plot <- dp_score_plot(
   X,
   privacy = privacy_control(
-    eps = 3, delta = 1e-3,
+    eps = 1.8, delta = 1e-3,
     split = c(loading = 0.5, score = 0.5)
   ),
   bins = c(8, 8),
-  method = "add"
+  method = "add",
+  center = FALSE
 )
 score_plot$plot$all
 
@@ -141,11 +146,12 @@ set.seed(123)
 sample_plot <- dp_score_plot(
   X,
   privacy = privacy_control(
-    eps = 3, delta = 1e-3,
+    eps = 1.8, delta = 1e-3,
     split = c(loading = 0.5, score = 0.5)
   ),
   bins = c(8, 8),
   method = "add",
+  center = FALSE,
   private_plot = "sample",
   sampling_control = sampling_control(
     method = c("center", "uniform")
