@@ -786,7 +786,13 @@ ui <- fluidPage(
           condition = "input.data_source == 'example'",
           selectInput(
             "example_dataset", "Example dataset",
-            choices = c("Gaussian" = "gau", "Gaussian with groups" = "gau_grouped", "Adult" = "adult"),
+            choices = c(
+              "Gaussian" = "gau",
+              "Gaussian with groups" = "gau_grouped",
+              "Gaussian (small)" = "gau_s",
+              "Gaussian with groups (small)" = "gau_s_g",
+              "Adult" = "adult"
+            ),
             selected = "gau_grouped"
           )
         ),
@@ -1152,7 +1158,13 @@ server <- function(input, output, session) {
       }
       return(.app_data(data, "Gaussian with groups"))
     }
-    label <- if (input$example_dataset == "gau") "Gaussian" else "Adult"
+    label <- switch(
+      input$example_dataset,
+      gau = "Gaussian",
+      gau_s = "Gaussian (small)",
+      gau_s_g = "Gaussian with groups (small)",
+      adult = "Adult"
+    )
     .app_data(.app_load_data(input$example_dataset), label)
   }))
 
