@@ -647,6 +647,12 @@ ui <- fluidPage(
         box-shadow: 0 3px 14px rgba(23, 45, 72, .035);
         padding: 20px;
       }
+      .app-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 24px; align-items: start; }
+      .app-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; margin-bottom: 0; }
+      .control-column, .app-results { min-width: 0; }
+      .control-column:first-child { padding-right: 20px; }
+      .control-column + .control-column { border-left: 1px solid var(--line); padding-left: 20px; }
+      .app-controls .shiny-input-container { width: 100%; max-width: 100%; min-width: 0; }
       .sidebar-heading {
         margin: 0 0 13px;
         font-size: 12px;
@@ -731,10 +737,17 @@ ui <- fluidPage(
       .summary-heading { font-size: 14px; color: var(--navy); font-weight: 650; margin: 23px 0 12px; }
       .fit-info { color: var(--muted); font-size: 12px; margin-top: 18px; }
       .irs--shiny .irs-bar, .irs--shiny .irs-single { background: var(--teal); border-color: var(--teal); }
+      @media (max-width: 1600px) {
+        .budget-pair { grid-template-columns: 1fr; gap: 0; }
+      }
+      @media (max-width: 1400px) {
+        .control-pair { grid-template-columns: 1fr; gap: 0; }
+      }
       @media (max-width: 1100px) {
         .container-fluid { padding-right: 18px; padding-left: 18px; }
+        .app-layout { grid-template-columns: 1fr; }
         .well { padding: 16px; }
-        .control-pair { grid-template-columns: 1fr; gap: 0; }
+        .control-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
         .plot-settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .result-card { padding: 20px; }
       }
@@ -748,8 +761,13 @@ ui <- fluidPage(
         .result-card { padding: 18px 15px; }
         .plot-toolbar { gap: 4px 16px; }
       }
+      @media (max-width: 600px) {
+        .app-controls { grid-template-columns: 1fr; }
+        .control-column:first-child { padding-right: 0; }
+        .control-column + .control-column { border-left: 0; border-top: 1px solid var(--line); padding: 20px 0 0; margin-top: 20px; }
+      }
       @media (max-width: 420px) {
-        .control-pair, .plot-settings-grid { grid-template-columns: 1fr; }
+        .control-pair, .plot-settings-grid { grid-template-columns: 1fr; gap: 0; }
       }
     "))
   ),
@@ -763,257 +781,263 @@ ui <- fluidPage(
     )
   ),
 
-  sidebarLayout(
-    sidebarPanel(
-      width = 3,
+  div(
+    class = "app-layout",
+    tags$form(
+      class = "well app-controls", role = "complementary",
       div(
-        class = "control-section",
-        h3(class = "sidebar-heading", "Data"),
-        radioButtons(
-          "data_source", NULL,
-          choices = if (.has_supplied_data) {
-            c("Provided data" = "provided", "Example data" = "example", "Upload CSV" = "upload")
-          } else {
-            c("Example data" = "example", "Upload CSV" = "upload")
-          },
-          selected = if (.has_supplied_data) "provided" else "example"
-        ),
-        conditionalPanel(
-          condition = "input.data_source == 'provided'",
-          helpText("Using the data supplied to dppca_app().")
-        ),
-        conditionalPanel(
-          condition = "input.data_source == 'example'",
+        class = "control-column",
+        div(
+          class = "control-section",
+          h3(class = "sidebar-heading", "Data"),
+          radioButtons(
+            "data_source", NULL,
+            choices = if (.has_supplied_data) {
+              c("Provided data" = "provided", "Example data" = "example", "Upload CSV" = "upload")
+            } else {
+              c("Example data" = "example", "Upload CSV" = "upload")
+            },
+            selected = if (.has_supplied_data) "provided" else "example"
+          ),
+          conditionalPanel(
+            condition = "input.data_source == 'provided'",
+            helpText("Using the data supplied to dppca_app().")
+          ),
+          conditionalPanel(
+            condition = "input.data_source == 'example'",
+            selectInput(
+              "example_dataset", "Example dataset",
+              choices = c(
+                "Gaussian" = "gau",
+                "Gaussian with groups" = "gau_grouped",
+                "Gaussian (small)" = "gau_s",
+                "Gaussian with groups (small)" = "gau_s_g",
+                "Adult" = "adult"
+              ),
+              selected = "gau_grouped"
+            )
+          ),
+          conditionalPanel(
+            condition = "input.data_source == 'upload'",
+            fileInput("csv_file", "CSV file", accept = ".csv"),
+            checkboxInput("csv_header", "First row contains column names", value = TRUE)
+          ),
           selectInput(
-            "example_dataset", "Example dataset",
-            choices = c(
-              "Gaussian" = "gau",
-              "Gaussian with groups" = "gau_grouped",
-              "Gaussian (small)" = "gau_s",
-              "Gaussian with groups (small)" = "gau_s_g",
-              "Adult" = "adult"
-            ),
-            selected = "gau_grouped"
+            "group_col", "Group column",
+            choices = c("None" = ""), selected = ""
+          ),
+          checkboxInput(
+            "use_group", "Use group labels for score plot", value = TRUE
           )
         ),
-        conditionalPanel(
-          condition = "input.data_source == 'upload'",
-          fileInput("csv_file", "CSV file", accept = ".csv"),
-          checkboxInput("csv_header", "First row contains column names", value = TRUE)
-        ),
-        selectInput(
-          "group_col", "Group column",
-          choices = c("None" = ""), selected = ""
-        ),
-        checkboxInput(
-          "use_group", "Use group labels for score plot", value = TRUE
+
+        div(
+          class = "control-section",
+          h3(class = "sidebar-heading", "Budget allocation"),
+          conditionalPanel(
+            condition = "input.analysis != 'loading'",
+            radioButtons(
+              "budget_mode", "Budget input",
+              choices = c(
+                "Total + proportions" = "total",
+                "Set each component" = "direct"
+              ),
+              selected = "total"
+            )
+          ),
+          conditionalPanel(
+            condition = "input.analysis == 'loading' || input.budget_mode == 'total'",
+            div(
+              class = "control-pair budget-pair",
+              numericInput(
+                "eps", "Total epsilon",
+                value = 10, min = 1e-6, step = 0.1
+              ),
+              numericInput(
+                "delta", "Total delta",
+                value = 1e-8, min = 0, max = 0.99, step = 1e-6
+              )
+            )
+          ),
+          conditionalPanel(
+            condition = "input.analysis == 'loading'",
+            helpText("Loading uses the full budget to estimate all PC directions.")
+          ),
+          conditionalPanel(
+            condition = "input.budget_mode == 'total' && (input.analysis == 'scree' || input.analysis == 'score')",
+            sliderInput(
+              "loading_share", "Loading share",
+              min = 0.05, max = 0.95, value = 0.5, step = 0.05
+            ),
+            helpText("The remaining share is used for the selected scree or score method.")
+          ),
+          conditionalPanel(
+            condition = "input.analysis == 'pca' && input.budget_mode == 'total'",
+            .app_pca_split_control()
+          ),
+          conditionalPanel(
+            condition = "input.analysis != 'loading' && input.budget_mode == 'direct'",
+            div(class = "control-caption", "Loading"),
+            div(
+              class = "control-pair budget-pair",
+              numericInput(
+                "budget_loading_eps", "Epsilon",
+                value = 10 / 3, min = 0, step = 0.1
+              ),
+              numericInput(
+                "budget_loading_delta", "Delta",
+                value = 1e-6, min = 0, max = 0.99, step = 1e-6
+              )
+            ),
+            conditionalPanel(
+              condition = "input.analysis == 'pca' || input.analysis == 'scree'",
+              div(class = "control-caption", "Scree"),
+              div(
+                class = "control-pair budget-pair",
+                numericInput(
+                  "budget_scree_eps", "Epsilon",
+                  value = 10 / 3, min = 0, step = 0.1
+                ),
+                numericInput(
+                  "budget_scree_delta", "Delta",
+                  value = 1e-6, min = 0, max = 0.99, step = 1e-6
+                )
+              )
+            ),
+            conditionalPanel(
+              condition = "input.analysis == 'pca' || input.analysis == 'score'",
+              div(class = "control-caption", "Score"),
+              div(
+                class = "control-pair budget-pair",
+                numericInput(
+                  "budget_score_eps", "Epsilon",
+                  value = 10 / 3, min = 0, step = 0.1
+                ),
+                numericInput(
+                  "budget_score_delta", "Delta",
+                  value = 1e-6, min = 0, max = 0.99, step = 1e-6
+                )
+              )
+            ),
+            helpText("The total budget is derived from the component budgets above.")
+          ),
+          div(class = "table-wrap", tableOutput("budget_preview"))
         )
       ),
-
       div(
-        class = "control-section",
-        h3(class = "sidebar-heading", "Budget allocation"),
-        conditionalPanel(
-          condition = "input.analysis != 'loading'",
-          radioButtons(
-            "budget_mode", "Budget input",
-            choices = c(
-              "Total + proportions" = "total",
-              "Set each component" = "direct"
-            ),
-            selected = "total"
-          )
-        ),
-        conditionalPanel(
-          condition = "input.analysis == 'loading' || input.budget_mode == 'total'",
-          div(
-            class = "control-pair",
-            numericInput(
-              "eps", "Total epsilon",
-              value = 10, min = 1e-6, step = 0.1
-            ),
-            numericInput(
-              "delta", "Total delta",
-              value = 1e-8, min = 0, max = 0.99, step = 1e-6
+        class = "control-column",
+        div(
+          class = "control-section",
+          tags$details(
+            class = "app-details preprocessing-details",
+            tags$summary("Preprocessing"),
+            div(
+              class = "details-body",
+              checkboxInput("center", "Center columns", value = TRUE),
+              checkboxInput("standardize", "Standardize columns", value = FALSE),
+              checkboxInput("cpp", "Use C++ implementation", value = TRUE)
             )
           )
         ),
-        conditionalPanel(
-          condition = "input.analysis == 'loading'",
-          helpText("Loading uses the full budget to estimate all PC directions.")
-        ),
-        conditionalPanel(
-          condition = "input.budget_mode == 'total' && (input.analysis == 'scree' || input.analysis == 'score')",
-          sliderInput(
-            "loading_share", "Loading share",
-            min = 0.05, max = 0.95, value = 0.5, step = 0.05
+
+        div(
+          class = "control-section",
+          h3(class = "sidebar-heading", "Analysis settings"),
+          conditionalPanel(
+            condition = "input.analysis == 'pca' || input.analysis == 'scree'",
+            numericInput("k", "Leading PCs", value = 4, min = 1, step = 1)
           ),
-          helpText("The remaining share is used for the selected scree or score method.")
-        ),
-        conditionalPanel(
-          condition = "input.analysis == 'pca' && input.budget_mode == 'total'",
-          .app_pca_split_control()
-        ),
-        conditionalPanel(
-          condition = "input.analysis != 'loading' && input.budget_mode == 'direct'",
-          div(class = "control-caption", "Loading"),
-          div(
-            class = "control-pair",
-            numericInput(
-              "budget_loading_eps", "Epsilon",
-              value = 10 / 3, min = 0, step = 0.1
-            ),
-            numericInput(
-              "budget_loading_delta", "Delta",
-              value = 1e-6, min = 0, max = 0.99, step = 1e-6
+          conditionalPanel(
+            condition = "input.analysis != 'scree'",
+            div(
+              class = "control-pair",
+              numericInput("axis_x", "x-axis PC", value = 1, min = 1, step = 1),
+              numericInput("axis_y", "y-axis PC", value = 2, min = 1, step = 1)
+            )
+          ),
+          conditionalPanel(
+            condition = "input.analysis == 'pca'",
+            selectInput(
+              "pca_scree_method", "Scree method",
+              choices = c("Clipped" = "clipped", "PMWM" = "pmwm", "Huber" = "huber"),
+              selected = "clipped"
+            )
+          ),
+          conditionalPanel(
+            condition = "input.analysis == 'scree'",
+            checkboxGroupInput(
+              "scree_methods", "Scree methods",
+              choices = c("Clipped" = "clipped", "PMWM" = "pmwm", "Huber" = "huber"),
+              selected = "clipped"
             )
           ),
           conditionalPanel(
             condition = "input.analysis == 'pca' || input.analysis == 'scree'",
-            div(class = "control-caption", "Scree"),
-            div(
-              class = "control-pair",
-              numericInput(
-                "budget_scree_eps", "Epsilon",
-                value = 10 / 3, min = 0, step = 0.1
-              ),
-              numericInput(
-                "budget_scree_delta", "Delta",
-                value = 1e-6, min = 0, max = 0.99, step = 1e-6
-              )
-            )
+            .app_scree_controls()
           ),
           conditionalPanel(
-            condition = "input.analysis == 'pca' || input.analysis == 'score'",
-            div(class = "control-caption", "Score"),
-            div(
-              class = "control-pair",
-              numericInput(
-                "budget_score_eps", "Epsilon",
-                value = 10 / 3, min = 0, step = 0.1
-              ),
-              numericInput(
-                "budget_score_delta", "Delta",
-                value = 1e-6, min = 0, max = 0.99, step = 1e-6
-              )
+            condition = "input.analysis == 'pca'",
+            selectInput(
+              "pca_score_method", "Score method",
+              choices = c("Sparse histogram" = "sparse", "Additive histogram" = "add"),
+              selected = "sparse"
             )
-          ),
-          helpText("The total budget is derived from the component budgets above.")
-        ),
-        div(class = "table-wrap", tableOutput("budget_preview"))
-      ),
-
-      div(
-        class = "control-section",
-        tags$details(
-          class = "app-details preprocessing-details",
-          tags$summary("Preprocessing"),
-          div(
-            class = "details-body",
-            checkboxInput("center", "Center columns", value = TRUE),
-            checkboxInput("standardize", "Standardize columns", value = FALSE),
-            checkboxInput("cpp", "Use C++ implementation", value = TRUE)
-          )
-        )
-      ),
-
-      div(
-        class = "control-section",
-        h3(class = "sidebar-heading", "Analysis settings"),
-        conditionalPanel(
-          condition = "input.analysis == 'pca' || input.analysis == 'scree'",
-          numericInput("k", "Leading PCs", value = 4, min = 1, step = 1)
-        ),
-        conditionalPanel(
-          condition = "input.analysis != 'scree'",
-          div(
-            class = "control-pair",
-            numericInput("axis_x", "x-axis PC", value = 1, min = 1, step = 1),
-            numericInput("axis_y", "y-axis PC", value = 2, min = 1, step = 1)
-          )
-        ),
-        conditionalPanel(
-          condition = "input.analysis == 'pca'",
-          selectInput(
-            "pca_scree_method", "Scree method",
-            choices = c("Clipped" = "clipped", "PMWM" = "pmwm", "Huber" = "huber"),
-            selected = "clipped"
-          )
-        ),
-        conditionalPanel(
-          condition = "input.analysis == 'scree'",
-          checkboxGroupInput(
-            "scree_methods", "Scree methods",
-            choices = c("Clipped" = "clipped", "PMWM" = "pmwm", "Huber" = "huber"),
-            selected = "clipped"
-          )
-        ),
-        conditionalPanel(
-          condition = "input.analysis == 'pca' || input.analysis == 'scree'",
-          .app_scree_controls()
-        ),
-        conditionalPanel(
-          condition = "input.analysis == 'pca'",
-          selectInput(
-            "pca_score_method", "Score method",
-            choices = c("Sparse histogram" = "sparse", "Additive histogram" = "add"),
-            selected = "sparse"
-          )
-        ),
-        conditionalPanel(
-          condition = "input.analysis == 'score'",
-          checkboxGroupInput(
-            "score_methods", "Score methods",
-            choices = c("Sparse histogram" = "sparse", "Additive histogram" = "add"),
-            selected = "sparse"
-          )
-        ),
-        conditionalPanel(
-          condition = "input.analysis == 'pca' || input.analysis == 'score'",
-          div(
-            class = "control-pair",
-            numericInput("bins_x", "x-axis bins", value = 10, min = 1, step = 1),
-            numericInput("bins_y", "y-axis bins", value = 10, min = 1, step = 1)
           ),
           conditionalPanel(
             condition = "input.analysis == 'score'",
             checkboxGroupInput(
-              "score_display", "Score displays",
-              choices = c("Histogram" = "histogram", "Sampled points" = "sample"),
-              selected = "histogram"
+              "score_methods", "Score methods",
+              choices = c("Sparse histogram" = "sparse", "Additive histogram" = "add"),
+              selected = "sparse"
+            )
+          ),
+          conditionalPanel(
+            condition = "input.analysis == 'pca' || input.analysis == 'score'",
+            div(
+              class = "control-pair",
+              numericInput("bins_x", "x-axis bins", value = 10, min = 1, step = 1),
+              numericInput("bins_y", "y-axis bins", value = 10, min = 1, step = 1)
             ),
-            numericInput(
-              "sampling_size", "Sampled points",
-              value = 500, min = 1, step = 100
+            conditionalPanel(
+              condition = "input.analysis == 'score'",
+              checkboxGroupInput(
+                "score_display", "Score displays",
+                choices = c("Histogram" = "histogram", "Sampled points" = "sample"),
+                selected = "histogram"
+              ),
+              numericInput(
+                "sampling_size", "Sampled points",
+                value = 500, min = 1, step = 100
+              ),
+              helpText("Sample size takes effect on the next run. Histogram and sample views reuse the same estimate.")
+            )
+          ),
+          conditionalPanel(
+            condition = "input.analysis == 'loading'",
+            checkboxGroupInput(
+              "loading_display", "Loading displays",
+              choices = c("Vector" = "vector", "Point" = "point", "Heatmap" = "heatmap"),
+              selected = "vector", inline = TRUE
             ),
-            helpText("Sample size takes effect on the next run. Histogram and sample views reuse the same estimate.")
+            numericInput("variables", "Top variables", value = 10, min = 1, step = 1),
+            checkboxInput("labels", "Show variable labels", value = TRUE),
+            checkboxInput("align_sign", "Align non-private signs to DP directions", value = TRUE),
+            conditionalPanel(
+              condition = "input.loading_display && input.loading_display.indexOf('heatmap') >= 0",
+              selectizeInput(
+                "heatmap_components", "Heatmap PCs",
+                choices = NULL, multiple = TRUE
+              ),
+              helpText("Leave empty to use the two selected axis PCs.")
+            )
           )
         ),
-        conditionalPanel(
-          condition = "input.analysis == 'loading'",
-          checkboxGroupInput(
-            "loading_display", "Loading displays",
-            choices = c("Vector" = "vector", "Point" = "point", "Heatmap" = "heatmap"),
-            selected = "vector", inline = TRUE
-          ),
-          numericInput("variables", "Top variables", value = 10, min = 1, step = 1),
-          checkboxInput("labels", "Show variable labels", value = TRUE),
-          checkboxInput("align_sign", "Align non-private signs to DP directions", value = TRUE),
-          conditionalPanel(
-            condition = "input.loading_display && input.loading_display.indexOf('heatmap') >= 0",
-            selectizeInput(
-              "heatmap_components", "Heatmap PCs",
-              choices = NULL, multiple = TRUE
-            ),
-            helpText("Leave empty to use the two selected axis PCs.")
-          )
-        )
-      ),
-      div(class = "run-area", actionButton("run", "Run PCA", class = "btn-primary"))
+        div(class = "run-area", actionButton("run", "Run PCA", class = "btn-primary"))
+      )
     ),
 
-    mainPanel(
-      width = 9,
+    tags$main(
+      class = "app-results",
       tabsetPanel(
         id = "analysis", type = "pills", selected = "pca",
         tabPanel(
