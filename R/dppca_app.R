@@ -2,28 +2,44 @@
 #'
 #' @description
 #' Launches an interactive 'shiny' application for exploring differentially
-#' private PCA visualizations. The app provides a graphical interface for
-#' \code{dp_scree_plot()} and \code{dp_score_plot()}, including private scree
-#' plot methods and histogram-based private score plot methods.
+#' private PCA visualizations. The PCA tab uses [dp_pca()] for integrated
+#' estimation, summaries, and scree, score, loading, variable, and biplot
+#' displays. The Loading, Scree, and Score tabs provide standalone analyses,
+#' including method comparisons and grouped score plots.
 #'
 #' @param X Optional numeric matrix or data frame. If supplied, the app opens
-#'   with this data as the initial dataset.
+#'   with this data as the initial dataset. Analysis uses numeric columns after
+#'   removing the selected group column. At least two rows and two numeric
+#'   feature columns with finite values are required.
 #' @param group Optional group labels. This can be either a vector of length
 #'   \code{nrow(X)} or, when \code{X} is a data frame, a single column name in
-#'   \code{X}.
+#'   \code{X}. Used only with a supplied \code{X}.
 #'
 #' @return Invisibly returns the value produced by \code{shiny::runApp()} after
 #'   the application exits.
 #'
 #' @details
-#' The app can be opened with built-in example datasets or with a user-supplied
-#' dataset. If \code{X} is supplied, the app starts with \code{X} as the initial
+#' The app can use built-in example datasets, a user-supplied dataset, or an
+#' uploaded CSV file. If \code{X} is supplied, it starts with \code{X} as the initial
 #' dataset. If \code{group} is supplied, the score plot can use the group labels
 #' for coloring. The \code{group} argument can be either a vector of length
 #' \code{nrow(X)} or, for a data-frame \code{X}, the name of a column in
 #' \code{X}. When \code{group} is a column name, that column is used as group
 #' labels and is removed from the PCA feature matrix. For a matrix \code{X},
 #' supply group labels as a vector rather than a column name.
+#'
+#' Clicking the run button estimates results for the selected tab and stores
+#' them for display. In the PCA tab, display controls redraw the stored fit
+#' without repeating estimation. The budget tables report allocations; the
+#' app does not track cumulative privacy expenditure across runs.
+#'
+#' The app is intended for exploration and diagnostic comparisons. It enables
+#' sample-mean centering by default and retains non-private reference results,
+#' including when calling [dp_pca()]. These differ from the defaults of
+#' [dp_pca()]. Sample-dependent centering is not covered by the score frame and
+#' histogram guarantees, and non-private references must not be treated as
+#' private releases. See [dp_pca()] and [dp_score()] for the required
+#' preprocessing and privacy conditions.
 #'
 #' @examples
 #' if (interactive()) {

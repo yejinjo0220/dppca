@@ -2,12 +2,15 @@
 
 #' Estimate shared PCA quantities once
 #'
-#' @param X Numeric matrix or data frame with observations in rows.
+#' @param X Finite numeric matrix or data frame with at least two observations
+#'   in rows and two variables in columns. When `V_dp = NULL`, observations
+#'   must also satisfy the pairwise-separation requirement of [dp_loading()].
 #' @param privacy Output of [privacy_control()] with loading, scree and score
 #'   budgets. The default split allocates one third of eps and delta to each.
 #' @param scree Required named list containing a method-specific `control`.
 #'   Other fields are `k = NULL` (all variables), `method = "clipped"` and
-#'   `mono = TRUE`. Use [clipped_control()], [pmwm_control()] or
+#'   `mono = TRUE`. A supplied `k` must be an integer from `2` to `ncol(X)`.
+#'   Use [clipped_control()], [pmwm_control()] or
 #'   [huber_control()] to supply the selected method's tuning parameters.
 #' @param score Named list with `method = "sparse"` and `bins = c(20, 20)`.
 #'   The other supported histogram method is `"add"`.
@@ -33,6 +36,7 @@
 #'   `score_budget`, resolved `methods`, `controls`, `preprocessing`, `n`,
 #'   `k` and `axes`. `nonprivate` contains the optional reference results,
 #'   including observed scores; it is `NULL` when `non_private = FALSE`.
+#'   The print method returns the fitted object invisibly.
 #'
 #' @details
 #' One estimated or supplied private direction matrix is shared by scree and
@@ -47,7 +51,13 @@
 #' score allocation, 35 percent of `eps` is used for the frame and 65 percent
 #' for the histogram; all score `delta` is assigned to the histogram.
 #' Supplying `V_dp` does not redistribute its recorded loading allocation.
-#' PVE is normalized over the `k` estimated values.
+#' The `eigenvalues` estimate variances along the private directions; they are
+#' not necessarily eigenvalues of the empirical covariance matrix. PVE is
+#' normalized over the `k` estimated values, and is zero if their sum is zero.
+#' With `k < ncol(X)`, it describes relative variation within those components.
+#' The sample size and variable names are treated as public. Selected
+#' components, grid sizes and tuning parameters must be public or selected
+#' with separate privacy accounting.
 #'
 #' By default, `center = FALSE` and `standardize = FALSE` leave input rows
 #' unchanged. For the score frame and histogram guarantees, any centering or
@@ -63,7 +73,8 @@
 #' private histogram uses `V_dp` or the internally estimated private basis.
 #' The default `non_private = FALSE` omits these reference results.
 #' Reference results are not private releases. Budget allocation alone does
-#' not certify the complete procedure.
+#' not certify the complete procedure; the loading calibration and input
+#' conditions in [dp_loading()] also apply when directions are estimated.
 #'
 #' @examples
 #' data(gau, package = "dppca")
@@ -347,8 +358,8 @@ dp_pca <- function(
 #'   Multiple displays are available with `type = "loading"` only.
 #'   Appearance uses [loading_plot_control()], including `heatmap_colors`.
 #' @param variable List with `display = "vector"` (or `"point"`),
-#'   `circle = TRUE` and `plot_control = NULL`. DP correlations are
-#'   reconstructed using all estimated eigenvalues.
+#'   `circle = TRUE` and `plot_control = NULL`. DP correlation-style coordinates
+#'   use the covariance reconstructed from all `k` estimated components.
 #' @param biplot List with `alpha = 0` and `plot_control = NULL`.
 #'   Alpha is between zero and one. The display is always square: the shorter
 #'   axis range is padded while preserving equal physical units on both axes.
@@ -359,17 +370,28 @@ dp_pca <- function(
 #'   samples both versions from their stored histograms. Histogram panels
 #'   themselves do not change.
 #' @param variables Common variable selection: top count, `"all"`, `NULL`,
-#'   names or indices. Common top-N selection uses raw loading on the fit axes
-#'   within each version. The loading, variable and biplot lists can override
-#'   `variables` and `labels`; local top-N selection uses that panel's geometry.
-#' @param labels Show variable labels.
+#'   names or multiple indices. Common top-N selection uses raw loading norms
+#'   on the fit axes within each version; loading heatmaps instead use the
+#'   selected `heatmap_components`. The loading, variable and biplot lists can
+#'   override `variables` and `labels`; local top-N selection uses that panel's
+#'   geometry.
+#' @param labels Show variable labels in point and vector panels.
 #' @param base_size Common font size. Local plot controls take precedence.
 #' @param ... Unrecognized arguments are rejected.
 #'
 #' @details
+#' Variable coordinates are `sqrt(eigenvalue[l]) * V[j, l] / s[j]`, where the
+#' private denominator is `s[j] = sqrt(sum(eigenvalues * V[j, 1:k]^2))`.
+#' They describe correlations implied by the reconstructed covariance, not
+#' the observed correlations with noisy private directions. Zero-denominator
+#' variables are omitted. For `k < ncol(x$directions)`, the denominator uses
+#' only the retained components. The ordinary comparison instead uses observed
+#' variable standard deviations and is not a private release.
+#'
 #' Biplot scores are divided by `d^alpha` and loading columns multiplied by
 #' `d^alpha`, where `d = sqrt((n - 1) * eigenvalue)` on the selected axes.
-#' Each version uses its own eigenvalues. A zero eigenvalue with positive
+#' Here `n` is the original sample size, even when the synthetic sample size
+#' differs. Each version uses its own eigenvalues. A zero eigenvalue with positive
 #' alpha suppresses that axis and is reported in the plot subtitle.
 #'
 #' A single arrow multiplier is computed from the DP panel: the 90th percentile
@@ -378,6 +400,8 @@ dp_pca <- function(
 #' 0.8 factor. Points keep their transformed coordinates and arrows start at
 #' the origin. The same multiplier is used for the non-private comparison.
 #' Empty or zero-radius DP samples give a zero multiplier and omit arrows.
+#' This display scaling is post-processing of the stored DP quantities and
+#' synthetic points; it does not produce an exact factorization of the data.
 #'
 #' The biplot display first extends the alpha-transformed DP frame to include
 #' the origin and all DP arrow endpoints, then pads the shorter axis to make
@@ -1228,6 +1252,11 @@ plot.dp_pca <- function(
   .dppca_square_frame(frame)
 }
 
+#' @rdname dp_pca
+#' @param x A `dp_pca` object.
+#' @param digits Significant digits for printing, from `1` to `22`.
+#' @param ... Additional formatting arguments passed to [print()] by the print
+#'   method.
 #' @export
 print.dp_pca <- function(
     x,
@@ -1290,6 +1319,7 @@ print.dp_pca <- function(
 #'   data dimensions, selected axes, methods, preprocessing and whether a
 #'   non-private reference is stored. Raw scores and loading matrices are
 #'   not copied into the summary.
+#'   The print method returns its input invisibly.
 #'
 #' @details
 #' PVE is normalized over the `k` estimated eigenvalues. If `k` is smaller
