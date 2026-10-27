@@ -305,6 +305,18 @@ For complete argument descriptions, use the R help pages:
 and the corresponding `plot.*` methods. The development implementation
 is available on [GitHub](https://github.com/yejinjo0220/dppca).
 
+## Online Shiny app
+
+Explore the `dppca` visualizations interactively in your browser,
+without installing R:
+
+**[Launch the online DP-PCA Shiny
+app](https://yejinjo0220-dppca.share.connect.posit.cloud/)**
+
+See the [Shiny App
+guide](https://yejinjo0220.github.io/dppca/articles/shiny-app.html) for
+the available analyses, data options, and privacy considerations.
+
 ## References
 
 - Kim, M. and Jung, S. (2025). Robust and Differentially Private

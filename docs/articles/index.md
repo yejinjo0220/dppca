@@ -75,3 +75,13 @@ Background and mathematical methods for DP PCA visualization.
 ### Algorithms
 
 - [Algorithms](https://yejinjo0220.github.io/dppca/articles/algorithms.md):
+
+### Shiny Application
+
+Launch and explore the online interactive dppca app.
+
+- [Interactive Shiny
+  App](https://yejinjo0220.github.io/dppca/articles/shiny-app.md):
+
+  Launch the hosted dppca Shiny application and explore private PCA
+  directions, scree, scores, and integrated visualizations.

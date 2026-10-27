@@ -239,6 +239,15 @@ For the mathematics, see [PCA Background](https://yejinjo0220.github.io/dppca/ar
 
 For complete argument descriptions, use the R help pages: `?dp_loading`, `?dp_scree`, `?dp_score`, `?dp_pca`, and the corresponding `plot.*` methods. The development implementation is available on [GitHub](https://github.com/yejinjo0220/dppca).
 
+
+## Online Shiny app
+
+Explore the `dppca` visualizations interactively in your browser, without installing R:
+
+**[Launch the online DP-PCA Shiny app](https://yejinjo0220-dppca.share.connect.posit.cloud/)**
+
+See the [Shiny App guide](https://yejinjo0220.github.io/dppca/articles/shiny-app.html) for the available analyses, data options, and privacy considerations. 
+
 ## References
 
 - Kim, M. and Jung, S. (2025). Robust and Differentially Private Principal Component Analysis. *Statistical Analysis and Data Mining: An ASA Data Science Journal*, 18(6), e70053. https://doi.org/10.1002/sam.70053

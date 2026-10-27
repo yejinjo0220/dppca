@@ -16,7 +16,7 @@ home:
 navbar:
   title: "dppca"
   structure:
-    left: [tutorials, theory, algorithms, reference]
+    left: [tutorials, theory, algorithms, shiny, reference]
     right: [search, github]
   components:
     tutorials:
@@ -51,6 +51,10 @@ navbar:
       text: Algorithms
       href: articles/algorithms.html
 
+    shiny:
+      text: Shiny App
+      href: articles/shiny-app.html
+
     reference:
       text: Function
       href: reference/index.html
@@ -78,6 +82,11 @@ articles:
   - title: Algorithms
     contents:
       - algorithms
+
+  - title: Shiny Application
+    desc: Launch and explore the online interactive dppca app.
+    contents:
+      - shiny-app
 
 reference:
   - title: Integrated DP PCA
