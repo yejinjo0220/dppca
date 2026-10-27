@@ -11,14 +11,14 @@
 #' Control options for scree and PVE plots
 #'
 #' Creates a control list for the appearance of plots produced by
-#' [dp_scree_plot()]. The plotting function uses base R graphics.
+#' [plot.dp_scree()]. The plotting function uses base R graphics.
 #'
-#' @param title Optional plot title. If `NULL`, [dp_scree_plot()] uses
+#' @param title Optional plot title. If `NULL`, [plot.dp_scree()] uses
 #'   `"DP PVE Plot"` when `type = "pve"` and `"DP Scree Plot"` when
 #'   `type = "scree"`.
 #' @param xlab Optional x-axis label. If `NULL`, `"Component"` is used.
-#' @param ylab Optional y-axis label. If `NULL`, the label is chosen according
-#'   to the plotted quantity.
+#' @param ylab Optional y-axis label. If `NULL`, `"PVE"` is used for PVE
+#'   and `"Scree Value"` for scree values.
 #' @param legend_position Legend position passed to [graphics::legend()].
 #'   The default is `"topright"`.
 #' @param legend_labels Optional named character vector giving legend labels.
@@ -38,7 +38,7 @@
 #' @param legend_bty Box type passed to [graphics::legend()]. The default
 #'   `"n"` suppresses the legend border.
 #'
-#' @return A list of plotting options for [dp_scree_plot()].
+#' @return A list of plotting options for [plot.dp_scree()].
 #'
 #' @examples
 #' scree_plot_control()
@@ -151,13 +151,13 @@ scree_plot_control <- function(
     title = if (type == "pve") "DP PVE Plot" else "DP Scree Plot",
     xlab = "Component",
     ylab = if (type == "pve") {
-      "Proportion of Variance Explained"
+      "PVE"
     } else {
       "Scree Value"
     },
     legend_position = "topright",
     legend_labels = c(
-      nonprivate = "Non-private",
+      nonprivate = "Non-Private",
       clipped = "Clipped",
       pmwm = "PMWM",
       huber = "Huber"
@@ -246,8 +246,8 @@ scree_plot_control <- function(
 #' Control options for score plots
 #'
 #' Creates a control list for the appearance of plots produced by
-#' [dp_score_plot()] and [dp_score_plot_group()]. Score plots are constructed
-#' with `ggplot2` and combined with `patchwork`.
+#' [plot.dp_score()], including grouped score plots. Score plots are
+#' constructed with `ggplot2` and combined with `patchwork`.
 #'
 #' @param color Single color used for non-group score plots. The default is
 #'   `"#6A5ACD"`.
@@ -262,9 +262,9 @@ scree_plot_control <- function(
 #' @param base_size Positive base font size for score plots. The default is `12`.
 #' @param title_size Positive plot-title font size. The default is `14`.
 #' @param scatter_title Optional title for the non-private scatter panel.
-#'   The default is `"Non-private Scatter"`.
+#'   The default is `"Non-Private Scatter"`.
 #' @param nonprivate_title Optional title for the non-private histogram panel.
-#'   The default is `"Non-private Histogram"`.
+#'   The default is `"Non-Private Histogram"`.
 #' @param add_title Optional title for the additive private histogram panel.
 #'   The default is `"Add DP Histogram"`.
 #' @param sparse_title Optional title for the sparse private histogram panel.
@@ -272,18 +272,21 @@ scree_plot_control <- function(
 #' @param xlab Optional x-axis label. If `NULL`, the selected PC name is used.
 #' @param ylab Optional y-axis label. If `NULL`, the selected PC name is used.
 #' @param group_colors Optional nonempty character vector of colors for grouped
-#'   score plots. The current implementation recycles colors in group order
-#'   and ignores vector names. If `NULL`, group labels that are valid R colors
-#'   are used directly; otherwise a palette is generated automatically.
+#'   score plots. Named colors are matched to group labels; missing groups
+#'   receive generated colors. Unnamed colors are recycled in group order.
+#'   If `NULL`, valid color labels are used directly, otherwise a palette is
+#'   generated automatically.
 #' @param group_ncol Positive integer retained for backward compatibility.
 #'   Grouped score plots are currently overlaid by group color rather than
 #'   arranged as separate group-specific panels, so this option is not used by
-#'   [dp_score_plot_group()]. The default is `3`.
+#'   [plot.dp_score()]. The default is `3`.
 #' @param show_group_legend Logical value indicating whether to display the
-#'   group legend in grouped score plots. The default is `FALSE`.
+#'   group legend in grouped score plots. The default is `TRUE`. In combined
+#'   grouped displays, each histogram method uses one legend; standalone panels
+#'   retain their own legends. Groups with no sampled points are omitted from
+#'   sampled-point legends.
 #'
-#' @return A list of plotting options for [dp_score_plot()] and
-#'   [dp_score_plot_group()].
+#' @return A list of plotting options for [plot.dp_score()].
 #'
 #' @examples
 #' score_plot_control()
@@ -291,7 +294,7 @@ scree_plot_control <- function(
 #' score_plot_control(
 #'   scatter_size = 2.2,
 #'   title_size = 13,
-#'   nonprivate_title = "Non-private score histogram"
+#'   nonprivate_title = "Non-Private score histogram"
 #' )
 #'
 #' @export
@@ -302,15 +305,15 @@ score_plot_control <- function(
     hist_alpha_range = c(0, 1),
     base_size = 12,
     title_size = 14,
-    scatter_title = "Non-private Scatter",
-    nonprivate_title = "Non-private Histogram",
+    scatter_title = "Non-Private Scatter",
+    nonprivate_title = "Non-Private Histogram",
     add_title = "Add DP Histogram",
     sparse_title = "Sparse DP Histogram",
     xlab = NULL,
     ylab = NULL,
     group_colors = NULL,
     group_ncol = 3L,
-    show_group_legend = FALSE
+    show_group_legend = TRUE
 ) {
   .validate_plot_color(color, "color")
   .validate_plot_probability(scatter_alpha, "scatter_alpha")
@@ -350,8 +353,8 @@ score_plot_control <- function(
     }
   }
 
-  .validate_plot_positive_integer(group_ncol, "group_ncol")
-  .validate_plot_logical(show_group_legend, "show_group_legend")
+  validate_positive_integer(group_ncol, "group_ncol")
+  validate_logical_value(show_group_legend, "show_group_legend")
 
   list(
     color = color,
@@ -385,15 +388,15 @@ score_plot_control <- function(
     hist_alpha_range = c(0, 1),
     base_size = 12,
     title_size = 14,
-    scatter_title = "Non-private Scatter",
-    nonprivate_title = "Non-private Histogram",
+    scatter_title = "Non-Private Scatter",
+    nonprivate_title = "Non-Private Histogram",
     add_title = "Add DP Histogram",
     sparse_title = "Sparse DP Histogram",
     xlab = NULL,
     ylab = NULL,
     group_colors = NULL,
     group_ncol = 3L,
-    show_group_legend = FALSE
+    show_group_legend = TRUE
   )
 }
 
@@ -596,50 +599,6 @@ score_plot_control <- function(
 }
 
 
-#' Validate a positive integer used for plotting
-#'
-#' @param x Object to validate.
-#' @param arg Argument name.
-#'
-#' @return Invisibly returns `TRUE`.
-#' @noRd
-.validate_plot_positive_integer <- function(x, arg) {
-  if (
-    !is.numeric(x) ||
-    length(x) != 1L ||
-    !is.finite(x) ||
-    x < 1 ||
-    x != as.integer(x)
-  ) {
-    stop(
-      "`", arg, "` must be a positive integer.",
-      call. = FALSE
-    )
-  }
-
-  invisible(TRUE)
-}
-
-
-#' Validate a logical plotting option
-#'
-#' @param x Object to validate.
-#' @param arg Argument name.
-#'
-#' @return Invisibly returns `TRUE`.
-#' @noRd
-.validate_plot_logical <- function(x, arg) {
-  if (!is.logical(x) || length(x) != 1L || is.na(x)) {
-    stop(
-      "`", arg, "` must be `TRUE` or `FALSE`.",
-      call. = FALSE
-    )
-  }
-
-  invisible(TRUE)
-}
-
-
 #' Validate a named plotting vector
 #'
 #' @param x Vector to validate.
@@ -678,6 +637,296 @@ score_plot_control <- function(
   if (mode == "character" && !is.character(x)) {
     stop(
       "`", arg, "` must be a named character vector.",
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
+
+# Synthetic score sampling controls ----------------------------------------
+
+#' Control options for synthetic score sampling
+#'
+#' Creates a control list for generating synthetic score points from a score
+#' histogram. Sampling from a released private histogram is post-processing
+#' under the conditions below; it does not alter the histogram mechanism.
+#' [plot.dp_pca()] can also use these controls to sample an empirical reference
+#' histogram, which does not make that reference private.
+#'
+#' @param method Character vector specifying the sampling construction.
+#'   `"center"` selects a histogram bin according to its histogram probability
+#'   and samples around that bin center using Gaussian jitter.
+#'   `"uniform"` selects a histogram bin according to its histogram probability,
+#'   samples uniformly inside the selected bin, and then adds Gaussian jitter.
+#'   The default is `"uniform"`. Both methods can be requested with
+#'   `c("center", "uniform")` in [plot.dp_score()];
+#'   [plot.dp_pca()] requires exactly one sampling method.
+#' @param sample_size Optional positive integer giving the synthetic sample
+#'   size for each requested sampling construction. For [plot.dp_score()], this
+#'   is the number of synthetic score points, or the total across all groups
+#'   for a grouped fit. For [plot.dp_pca()], it is the size shared by score and biplot
+#'   samples within each version; an explicit value also samples non-private
+#'   reference histograms when comparison panels are requested. With `NULL`,
+#'   private samples use the number of input observations and integrated
+#'   non-private panels use observed scores. The default private sample size
+#'   assumes that the input sample size is public. See [dp_score()] and
+#'   [dp_pca()] for grouped sampling weights and the applicable privacy
+#'   conditions.
+#' @param bandwidth_scale Gaussian smoothing scale. If `NULL`, method-specific
+#'   defaults are used: `0.5` for `"center"` and `0.25` for `"uniform"`.
+#'   A single nonnegative number applies the same scale to all requested
+#'   sampling methods. A named numeric vector can specify method-specific
+#'   values, for example `c(center = 0.5, uniform = 0.2)`; it must include every
+#'   requested method. A scale of zero disables Gaussian jitter.
+#'
+#' @details
+#' For released histogram probabilities `p_k` and cells `B_k`, first draw
+#' \deqn{J \sim \mathrm{Categorical}(p_1,\ldots,p_m).}
+#' With `method = "center"`, sample `S^* = c_J + Z`, where `c_J` is the
+#' selected cell center. With `method = "uniform"`, sample `U` uniformly in
+#' `B_J` and use `S^* = U + Z`. In both cases Gaussian jitter has covariance
+#' \deqn{\mathrm{Cov}(Z)=c^2\,\mathrm{diag}(\Delta_x^2,\Delta_y^2),}
+#' where `c` is `bandwidth_scale` and the deltas are bin widths.
+#'
+#' Sampling uses only released histogram probabilities and bin geometry.
+#' With publicly chosen settings it is post-processing and requires no new
+#' privacy budget. Jitter can place points outside the frame; an all-zero
+#' histogram yields no sampled points and a warning.
+#'
+#' @return A `dppca_sampling_control` list with components `method`,
+#'   `sample_size`, and `bandwidth_scale`. The bandwidth values are resolved
+#'   to a named numeric vector, while `sample_size = NULL` is resolved later
+#'   by the plotting function.
+#'
+#' @examples
+#' sampling_control()
+#'
+#' sampling_control(
+#'   method = c("center", "uniform"),
+#'   sample_size = 1000,
+#'   bandwidth_scale = c(center = 0.5, uniform = 0.2)
+#' )
+#'
+#' @export
+sampling_control <- function(
+    method = "uniform",
+    sample_size = NULL,
+    bandwidth_scale = NULL
+) {
+  method <- unique(
+    match.arg(
+      method,
+      choices = c("center", "uniform"),
+      several.ok = TRUE
+    )
+  )
+
+  .validate_sampling_size(sample_size)
+  scales <- .resolve_sampling_bandwidth(
+    method = method,
+    bandwidth_scale = bandwidth_scale
+  )
+
+  out <- list(
+    method = method,
+    sample_size = sample_size,
+    bandwidth_scale = scales
+  )
+
+  class(out) <- c("dppca_sampling_control", "list")
+  out
+}
+
+
+#' Default sampling control
+#'
+#' @return A sampling-control list using the package defaults.
+#' @noRd
+.default_sampling_control <- function() {
+  sampling_control(
+    method = "uniform",
+    sample_size = NULL,
+    bandwidth_scale = NULL
+  )
+}
+
+
+#' Resolve and validate a sampling control
+#'
+#' @param control Optional sampling-control list.
+#' @param n Number of input observations.
+#'
+#' @return A validated list with a resolved positive integer `sample_size`.
+#' @noRd
+.resolve_sampling_control <- function(control, n) {
+  if (is.null(control)) {
+    control <- .default_sampling_control()
+  }
+
+  if (!is.list(control)) {
+    stop(
+      "`sampling_control` must be a list created by `sampling_control()`.",
+      call. = FALSE
+    )
+  }
+
+  required <- c("method", "sample_size", "bandwidth_scale")
+  missing <- setdiff(required, names(control))
+  if (length(missing) > 0L) {
+    stop(
+      "`sampling_control` is missing component(s): ",
+      paste(missing, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  method <- unique(
+    match.arg(
+      control$method,
+      choices = c("center", "uniform"),
+      several.ok = TRUE
+    )
+  )
+
+  .validate_sampling_size(control$sample_size)
+
+  if (
+    !is.numeric(n) ||
+    length(n) != 1L ||
+    !is.finite(n) ||
+    n < 1 ||
+    n != as.integer(n)
+  ) {
+    stop("`n` must be a positive integer.", call. = FALSE)
+  }
+
+  sample_size <- if (is.null(control$sample_size)) {
+    as.integer(n)
+  } else {
+    as.integer(control$sample_size)
+  }
+
+  scales <- .resolve_sampling_bandwidth(
+    method = method,
+    bandwidth_scale = control$bandwidth_scale
+  )
+
+  list(
+    method = method,
+    sample_size = sample_size,
+    bandwidth_scale = scales
+  )
+}
+
+
+#' Resolve method-specific bandwidth scales
+#'
+#' @param method Requested sampling methods.
+#' @param bandwidth_scale User-supplied scale specification.
+#'
+#' @return Named numeric vector with one scale per requested method.
+#' @noRd
+.resolve_sampling_bandwidth <- function(method, bandwidth_scale) {
+  defaults <- c(
+    center = 0.5,
+    uniform = 0.25
+  )
+
+  method <- unique(
+    match.arg(
+      method,
+      choices = names(defaults),
+      several.ok = TRUE
+    )
+  )
+
+  if (is.null(bandwidth_scale)) {
+    return(defaults[method])
+  }
+
+  if (
+    !is.numeric(bandwidth_scale) ||
+    length(bandwidth_scale) < 1L ||
+    anyNA(bandwidth_scale) ||
+    any(!is.finite(bandwidth_scale)) ||
+    any(bandwidth_scale < 0)
+  ) {
+    stop(
+      "`bandwidth_scale` must be `NULL` or contain finite nonnegative numbers.",
+      call. = FALSE
+    )
+  }
+
+  if (length(bandwidth_scale) == 1L) {
+    return(
+      stats::setNames(
+        rep(as.numeric(bandwidth_scale), length(method)),
+        method
+      )
+    )
+  }
+
+  nm <- names(bandwidth_scale)
+  if (is.null(nm) || any(nm == "")) {
+    stop(
+      "When `bandwidth_scale` has length greater than one, it must be a named ",
+      "vector with names `center` and/or `uniform`.",
+      call. = FALSE
+    )
+  }
+
+  if (anyDuplicated(nm)) {
+    stop("`bandwidth_scale` must not contain duplicated names.", call. = FALSE)
+  }
+
+  invalid <- setdiff(nm, names(defaults))
+  if (length(invalid) > 0L) {
+    stop(
+      "Unsupported `bandwidth_scale` name(s): ",
+      paste(invalid, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  missing_method <- setdiff(method, nm)
+  if (length(missing_method) > 0L) {
+    stop(
+      "`bandwidth_scale` must provide a value for each requested sampling ",
+      "method. Missing: ",
+      paste(missing_method, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  as.numeric(bandwidth_scale[method]) |>
+    stats::setNames(method)
+}
+
+
+#' Validate synthetic sample size
+#'
+#' @param sample_size Sample-size specification.
+#'
+#' @return Invisibly returns `TRUE`.
+#' @noRd
+.validate_sampling_size <- function(sample_size) {
+  if (is.null(sample_size)) {
+    return(invisible(TRUE))
+  }
+
+  if (
+    !is.numeric(sample_size) ||
+    length(sample_size) != 1L ||
+    !is.finite(sample_size) ||
+    sample_size < 1 ||
+    sample_size != as.integer(sample_size)
+  ) {
+    stop(
+      "`sample_size` must be `NULL` or a positive integer.",
       call. = FALSE
     )
   }

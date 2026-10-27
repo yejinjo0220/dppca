@@ -18,9 +18,21 @@ application.
 \code{\link[=dp_pca]{dp_pca()}} stores a shared set of private estimates for summaries and
 scree, score, loading, variable, and biplot displays. Its default settings
 disable sample-mean centering and omit non-private reference results.
-Standalone plotting wrappers and the Shiny app also support diagnostic
-comparisons that include non-private data summaries. See the individual
-functions for preprocessing assumptions and privacy-budget accounting.
+\code{\link[=dp_loading]{dp_loading()}}, \code{\link[=dp_scree]{dp_scree()}}, and \code{\link[=dp_score]{dp_score()}} also
+support print, summary and plot methods for their stored results.
+For example, call \code{dp_loading()} with a privacy budget, then plot the fit.
+The Shiny app also supports diagnostic comparisons that include non-private
+data summaries.
+
+Data frames may include numeric and non-numeric columns. PCA uses the
+numeric feature columns and warns when non-numeric columns are excluded.
+Set \code{group} to a column name in \code{\link[=dp_score]{dp_score()}} or \code{\link[=dp_pca]{dp_pca()}} to obtain grouped
+score results; the selected group column is excluded from the PCA features,
+even when it is numeric. Leave \code{group = NULL} for an ungrouped analysis.
+Summaries identify the selected group variable and its groups. Numeric
+features are used without automatic centering or standardization. See the
+individual functions for preprocessing assumptions and privacy-budget
+accounting.
 }
 \seealso{
 Useful links:
@@ -37,6 +49,7 @@ Useful links:
 Authors:
 \itemize{
   \item Minwoo Kim \email{mwkim.stat@gmail.com}
+  \item Sungkyu Jung \email{sungkyu@snu.ac.kr}
 }
 
 }

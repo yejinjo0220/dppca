@@ -6,80 +6,71 @@
 \usage{
 \method{plot}{dp_pca}(
   x,
-  type = "all",
-  non_private = !is.null(x$nonprivate),
+  display = "all",
   scree = list(),
   score = list(),
   loading = list(),
   variable = list(),
   biplot = list(),
   sampling = NULL,
+  center = TRUE,
   variables = 10,
-  labels = TRUE,
   base_size = 12,
   ...
 )
 }
 \arguments{
-\item{x}{A \code{\link[=dp_pca]{dp_pca()}} result.}
+\item{x}{A fitted \code{\link[=dp_pca]{dp_pca()}} object.}
 
-\item{type}{\code{"all"} or an ordered vector containing \code{"scree"}, \code{"score"},
-\code{"loading"}, \code{"variable"} and/or \code{"biplot"}.}
+\item{display}{\code{"all"} (default) or a vector selecting \code{"scree"},
+\code{"score"}, \code{"loading"}, \code{"variable"}, and \code{"biplot"}.}
 
-\item{non_private}{Show the stored non-private comparison before DP plots.
-Defaults to whether \code{x$nonprivate} is stored, so a default \code{\link[=dp_pca]{dp_pca()}} fit
-shows DP plots only. Set \code{non_private = TRUE} when fitting to store the
-comparison.
-Non-private signs are aligned to the DP directions in a plotting copy.
-Histogram grids, probability scales and biplot display frames are shared.}
+\item{scree}{Plot options: \code{type = "pve"} or \code{"scree"}, and
+\code{plot_control = NULL} (\code{\link[=scree_plot_control]{scree_plot_control()}}).}
 
-\item{scree}{List with \code{display = "pve"} (or \code{"eigenvalue"}),
-\code{display_k = NULL} and \code{plot_control = NULL}. Use \code{\link[=scree_plot_control]{scree_plot_control()}}
-for line, point, title and axis styles. Each panel contains one curve,
-so its legend options are not used. PVE uses all estimated eigenvalues.}
+\item{score}{Plot options: \code{type = "histogram"} or \code{"sample"}, and
+\code{plot_control = NULL} (\code{\link[=score_plot_control]{score_plot_control()}}). For grouped plots, the
+color map and legend settings also apply to the biplot.}
 
-\item{score}{List with \code{display = "histogram"} (or \code{"sample"}) and
-\code{plot_control = NULL}. Appearance uses \code{\link[=score_plot_control]{score_plot_control()}}.}
+\item{loading}{Plot options: \code{type = "vector"}, \code{"point"}, or \code{"heatmap"},
+\code{heatmap_components = NULL}, and \code{plot_control = NULL}
+(\code{\link[=loading_plot_control]{loading_plot_control()}}). Multiple types require
+\code{display = "loading"}.}
 
-\item{loading}{List with \code{display = "point"}, \code{heatmap_components = NULL}
-and \code{plot_control = NULL}. Display also accepts \code{"vector"} or \code{"heatmap"}.
-Multiple displays are available with \code{type = "loading"} only.
-Appearance uses \code{\link[=loading_plot_control]{loading_plot_control()}}, including \code{heatmap_colors}.}
+\item{variable}{Plot options: \code{plot_control = NULL}. Shows labeled arrows
+and the correlation-style unit circle.}
 
-\item{variable}{List with \code{display = "vector"} (or \code{"point"}),
-\code{circle = TRUE} and \code{plot_control = NULL}. DP correlation-style coordinates
-use the covariance reconstructed from all \code{k} estimated components.}
+\item{biplot}{Plot options: \code{alpha = 0} (between 0 and 1), \code{labels = TRUE},
+and \code{plot_control = NULL}.}
 
-\item{biplot}{List with \code{alpha = 0} and \code{plot_control = NULL}.
-Alpha is between zero and one. The display is always square: the shorter
-axis range is padded while preserving equal physical units on both axes.
-Tick labels show the actual alpha-transformed score coordinates.}
+\item{sampling}{A \code{\link[=sampling_control]{sampling_control()}} object with one method, shared by the
+score sample plot and biplot. By default, DP sample size is the input
+sample size, and non-private plots use observed scores. An explicit
+\code{sample_size} samples both versions from their histograms. For groups,
+sizes are allocated across groups; zero-mass groups yield no points.}
 
-\item{sampling}{A \code{\link[=sampling_control]{sampling_control()}} result with one method, shared by
-score and biplot. By default DP panels sample \code{n} synthetic points and
-non-private panels use the original scores. An explicit \code{sample_size}
-samples both versions from their stored histograms. Histogram panels
-themselves do not change.}
+\item{center}{Whether to shift displayed private scores by the midpoint of
+the private frame (\code{TRUE} by default). Shared by score and biplot;
+the biplot arrows start at the origin when \code{TRUE}. Ordinary reference
+scores remain centered at zero. This is display-only post-processing.}
 
-\item{variables}{Common variable selection: top count, \code{"all"}, \code{NULL},
-names or multiple indices. Common top-N selection uses raw loading norms
-on the fit axes within each version; loading heatmaps instead use the
-selected \code{heatmap_components}. The loading, variable and biplot lists can
-override \code{variables} and \code{labels}; local top-N selection uses that panel's
-geometry.}
+\item{variables}{Variables to display: positive top-N count (\code{10} by default),
+\code{"all"}, \code{NULL}, names, or indices. Top-N selection uses norms of private
+loading coefficients on the two selected axes. Selection is shared by
+loading, variable and biplot panels, including non-private comparisons.}
 
-\item{labels}{Show variable labels in point and vector panels.}
+\item{base_size}{Base font size (\code{12} by default); local plot controls
+override it.}
 
-\item{base_size}{Common font size. Local plot controls take precedence.}
-
-\item{...}{Unrecognized arguments are rejected.}
+\item{...}{Unused arguments are rejected.}
 }
 \value{
 Invisibly returns \code{private} and, when requested, \code{nonprivate} lists.
-Each contains \code{plots}, \code{page}, \code{sampled_points}, \code{biplot}, \code{frames} and
+Each contains \code{plots}, \code{page}, \code{sampled_points} (unshifted), \code{biplot}, \code{frames} and
 \code{direction_sign}. Biplot metadata includes the alpha-transformed and
 displayed coordinates, \code{scale}, \code{arrow_scale}, \code{score_center},
-\code{score_radius}, and display frame. The plots are always drawn;
+\code{score_radius}, \code{estimated_center}, \code{centered}, \code{arrow_start},
+\code{arrow_endpoints} and display frame. The plots are always drawn;
 \code{out <- plot(fit)} also keeps these results for reuse. Multiple loading
 displays with both versions additionally return a \code{comparison} patchwork.
 }
@@ -88,41 +79,23 @@ Uses the stored estimates without estimating loading, scree or score again.
 Use \code{set.seed()} before plotting to reproduce synthetic samples.
 }
 \details{
-Variable coordinates are \code{sqrt(eigenvalue[l]) * V[j, l] / s[j]}, where the
-private denominator is \code{s[j] = sqrt(sum(eigenvalues * V[j, 1:k]^2))}.
-They describe correlations implied by the reconstructed covariance, not
-the observed correlations with noisy private directions. Zero-denominator
-variables are omitted. For \code{k < ncol(x$directions)}, the denominator uses
-only the retained components. The ordinary comparison instead uses observed
-variable standard deviations and is not a private release.
+Plotting reuses the stored estimates; non-private panels appear
+automatically if the fit contains them. Synthetic sampling is
+post-processing, and \code{set.seed()} can reproduce sampled displays.
 
-Biplot scores are divided by \code{d^alpha} and loading columns multiplied by
-\code{d^alpha}, where \code{d = sqrt((n - 1) * eigenvalue)} on the selected axes.
-Here \code{n} is the original sample size, even when the synthetic sample size
-differs. Each version uses its own eigenvalues. A zero eigenvalue with positive
-alpha suppresses that axis and is reported in the plot subtitle.
+Variable-plot coordinates use the covariance reconstructed from the \code{k}
+private scree estimates and directions; they need not equal observed
+variable–score correlations. Variables with zero implied variance are omitted.
 
-A single arrow multiplier is computed from the DP panel: the 90th percentile
-of distances from the transformed synthetic-point mean, divided by the
-largest norm of all transformed DP variable vectors. There is no additional
-0.8 factor. Points keep their transformed coordinates and arrows start at
-the origin. The same multiplier is used for the non-private comparison.
-Empty or zero-radius DP samples give a zero multiplier and omit arrows.
-This display scaling is post-processing of the stored DP quantities and
-synthetic points; it does not produce an exact factorization of the data.
+Biplot coordinates divide sampled scores by \code{d^alpha} and multiply private
+direction coefficients by \code{d^alpha}, where
+\code{d = sqrt((n - 1) * scree)} on the selected axes. A zero scree value with
+positive alpha suppresses that axis. Arrows use one display multiplier
+computed from the private sample and shared with the ordinary comparison;
+empty or zero-radius samples omit arrows. The comparison uses the same square
+biplot frame.
 
-The biplot display first extends the alpha-transformed DP frame to include
-the origin and all DP arrow endpoints, then pads the shorter axis to make
-a square. It does not change the estimated frame or histogram.
-Non-private plots reuse this display frame;
-endpoints outside it are reported in the subtitle. Changing \code{variables}
-alone does not change the DP multiplier or display frame.
-
-Variable and biplot \code{plot_control} accept plain lists with
-\code{nonprivate_color}, \code{private_color}, \code{arrow_size}, \code{point_size},
-\code{point_alpha}, \code{label_size}, \code{base_size}, \code{title_size}, \code{title}, \code{xlab}
-and \code{ylab}. \code{point_color} sets the synthetic/observation-point color in
-biplots. Variable points and arrows use the corresponding version color.
-A NULL title or axis label keeps the automatic text. Biplot defaults are
-\code{point_color = "#B0B0B0"} and both version colors \code{"#174A7E"}.
+Centering translates only displayed coordinates. Combined grouped pages
+show one group legend, while individual ggplot objects retain their own.
+The returned object stores both the combined pages and individual plots.
 }

@@ -3,6 +3,8 @@
 \name{dp_pca}
 \alias{dp_pca}
 \alias{print.dp_pca}
+\alias{summary.dp_pca}
+\alias{print.summary.dp_pca}
 \title{Estimate shared PCA quantities once}
 \usage{
 dp_pca(
@@ -11,108 +13,115 @@ dp_pca(
   scree,
   score = list(),
   axes = c(1, 2),
-  center = FALSE,
-  standardize = FALSE,
   cpp.option = TRUE,
   non_private = FALSE,
-  V_dp = NULL
+  V_dp = NULL,
+  group = NULL
 )
 
 \method{print}{dp_pca}(x, digits = max(3L, getOption("digits") - 3L), ...)
+
+\method{summary}{dp_pca}(object, ...)
+
+\method{print}{summary.dp_pca}(x, digits = max(3L, getOption("digits") - 3L), ...)
 }
 \arguments{
-\item{X}{Finite numeric matrix or data frame with at least two observations
-in rows and two variables in columns. When \code{V_dp = NULL}, observations
-must also satisfy the pairwise-separation requirement of \code{\link[=dp_loading]{dp_loading()}}.}
+\item{X}{A numeric matrix or data frame with observations in rows and variables
+in columns. Non-numeric data-frame columns are excluded with a warning;
+numeric values must be finite. At least two observations and two numeric
+features are required. If directions must be estimated, the
+pairwise-separation condition of \code{\link[=dp_loading]{dp_loading()}} also applies.}
 
-\item{privacy}{Output of \code{\link[=privacy_control]{privacy_control()}} with loading, scree and score
-budgets. The default split allocates one third of eps and delta to each.}
+\item{privacy}{A \code{\link[=privacy_control]{privacy_control()}} object allocating budget to \code{loading},
+\code{scree}, and \code{score} (equal thirds by default).}
 
-\item{scree}{Required named list containing a method-specific \code{control}.
-Other fields are \code{k = NULL} (all variables), \code{method = "clipped"} and
-\code{mono = TRUE}. A supplied \code{k} must be an integer from \code{2} to \code{ncol(X)}.
-Use \code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}} or
-\code{\link[=huber_control]{huber_control()}} to supply the selected method's tuning parameters.}
+\item{scree}{Required named list with \code{k = NULL} (all components),
+\code{method = "clipped"}, \code{control} (required), and \code{mono = TRUE}.
+\code{k}, when supplied, must be between \code{2} and the number of numeric features.
+Use \code{\link[=clipped_control]{clipped_control()}}, \code{\link[=pmwm_control]{pmwm_control()}}, or \code{\link[=huber_control]{huber_control()}} for tuning.}
 
-\item{score}{Named list with \code{method = "sparse"} and \code{bins = c(20, 20)}.
-The other supported histogram method is \code{"add"}.}
+\item{score}{Named list specifying \code{method = "sparse"} or \code{"add"} and
+\code{bins = c(20, 20)} by default. Exactly one histogram method is used.}
 
-\item{axes}{Two distinct histogram component indices between \code{1} and \code{k}.}
+\item{axes}{Two distinct PC indices between \code{1} and the fitted \code{k}
+(\code{c(1, 2)} by default).}
 
-\item{center, standardize}{Whether to subtract sample means or divide by
-sample standard deviations. Both default to \code{FALSE}; see the preprocessing
-conditions below.}
+\item{cpp.option}{Whether to use the compiled spherical-Kendall implementation
+(\code{TRUE} by default) when estimating private directions; ignored if
+\code{V_dp} is supplied.}
 
-\item{cpp.option}{Whether to use the compiled loading implementation when
-\code{V_dp = NULL}.}
+\item{non_private}{Whether to compute and store ordinary PCA reference results
+(\code{FALSE} by default).}
 
-\item{non_private}{Whether to compute and store ordinary PCA comparison
-results, including observed scores. Default: \code{FALSE}. These reference
-results are not private releases.}
+\item{V_dp}{Optional \code{p} by \code{p} private PC direction matrix (\code{NULL} by default),
+where \code{p} is the number of numeric PCA features. Columns must be
+orthonormal and rows must follow the feature order in \code{X}; matching
+row names are required when both sets of names exist.}
 
-\item{V_dp}{Optional full \code{p} by \code{p} private direction matrix, with
-\code{p = ncol(X)} and orthonormal columns. Rows must follow the variable
-order in \code{X}; row names, when present, must match the variable names.
-Use the same variable scales and preprocessing as when obtaining these
-directions. When supplied, loading estimation is skipped; the loading
-allocation records the budget already used to obtain \code{V_dp}. The caller
-is responsible for its privacy provenance. Default: \code{NULL}.}
+\item{group}{Optional group column name in \code{X} or vector of group labels
+(\code{NULL} by default). A selected group column is excluded from PCA
+features, even when numeric; group labels and membership are assumed
+public.}
 
-\item{x}{A \code{dp_pca} object.}
+\item{x}{A \code{summary.dp_pca} object.}
 
-\item{digits}{Significant digits for printing, from \code{1} to \code{22}.}
+\item{digits}{Significant digits used when printing tables.}
 
-\item{...}{Additional formatting arguments passed to \code{\link[=print]{print()}} by the print
-method.}
+\item{...}{Additional arguments. The summary calculation takes no extra
+options; print methods pass formatting arguments to the printed tables.}
+
+\item{object}{A \code{\link[=dp_pca]{dp_pca()}} result.}
 }
 \value{
-A \code{dp_pca} object containing all \code{directions}, the first \code{k}
-\code{eigenvalues} and their \code{pve}, \code{score_histogram}, \code{frame}, \code{privacy},
-\code{score_budget}, resolved \code{methods}, \code{controls}, \code{preprocessing}, \code{n},
-\code{k} and \code{axes}. \code{nonprivate} contains the optional reference results,
-including observed scores; it is \code{NULL} when \code{non_private = FALSE}.
+A \code{dp_pca} object containing private \code{directions}, \code{scree},
+\code{pve}, \code{hist}, \code{frame}, and optional \code{score_groups}.
+\code{nonprivate} contains the optional ordinary PCA reference, or \code{NULL}
+when \code{non_private = FALSE}. \code{metadata} contains data dimensions,
+privacy allocations, methods, controls, grouping information and axes.
 The print method returns the fitted object invisibly.
+
+A \code{summary.dp_pca} object. \code{importance} contains DP eigenvalues,
+PVE and cumulative PVE, with a column for each estimated component.
+\code{budget} contains the allocated eps and delta for loading, scree,
+score frame and score histogram, plus the total. Other fields describe
+data dimensions, selected axes, methods and whether a non-private
+reference is stored. Raw scores and loading matrices are
+not copied into the summary.
+The print method returns its input invisibly.
 }
 \description{
-Estimate shared PCA quantities once
+Summarizes an existing fit without new estimation or random sampling.
 }
 \details{
-One estimated or supplied private direction matrix is shared by scree and
-score estimation. Scree methods use disjoint pairs of projected scores:
-the squared difference within each pair, divided by two, estimates
-variance along a private direction. An odd final observation is unused
-by scree estimation. Score estimation uses all original projected rows;
-the returned \code{n} remains the original sample size.
+A single private PC direction matrix is estimated or supplied and reused
+for scree and score estimation. Scree values estimate variance along those
+directions using disjoint paired differences; an odd final observation is
+unused for scree, while the score histogram uses all rows. PVE is normalized
+over the retained \code{k} components, not necessarily all original variables.
 
-The selected scree method receives the full scree allocation, with
-vector noise calibrated jointly over the first \code{k} components. Within the
-score allocation, 35 percent of \code{eps} is used for the frame and 65 percent
-for the histogram; all score \code{delta} is assigned to the histogram.
-Supplying \code{V_dp} does not redistribute its recorded loading allocation.
-The \code{eigenvalues} estimate variances along the private directions; they are
-not necessarily eigenvalues of the empirical covariance matrix. PVE is
-normalized over the \code{k} estimated values, and is zero if their sum is zero.
-With \code{k < ncol(X)}, it describes relative variation within those components.
-The sample size and variable names are treated as public. Selected
-components, grid sizes and tuning parameters must be public or selected
-with separate privacy accounting.
+The selected scree method uses the entire scree allocation. Of the score
+epsilon budget, 35\% goes to the private frame and 65\% to the histogram; all
+score delta goes to the histogram. With supplied \code{V_dp}, the loading budget
+records its previous release rather than being reassigned.
 
-By default, \code{center = FALSE} and \code{standardize = FALSE} leave input rows
-unchanged. For the score frame and histogram guarantees, any centering or
-scaling must use fixed public values, or separately privatized quantities
-with their privacy cost accounted for. Sample-mean centering can change all
-score rows when one observation is replaced; sample standardization has the
-same issue. Centering the input by its sample mean before calling this
-function does not avoid this requirement. Common centering cancels in the
-pair differences used for loading and scree estimation.
+Grouped data use one direction estimate and private frame. Their disjoint
+histograms use parallel composition when group labels and membership are
+public and fixed. The pooled histogram is post-processed from the grouped
+histograms.
 
-With \code{non_private = TRUE}, the ordinary reference is computed separately
-from the sample covariance. Its scores use ordinary PCA directions, whereas the
-private histogram uses \code{V_dp} or the internally estimated private basis.
-The default \code{non_private = FALSE} omits these reference results.
-Reference results are not private releases. Budget allocation alone does
-not certify the complete procedure; the loading calibration and input
-conditions in \code{\link[=dp_loading]{dp_loading()}} also apply when directions are estimated.
+Input is not automatically centered or standardized. Data-dependent
+preprocessing needs separate privacy accounting, and sample size, schema,
+selected components, and tuning settings are assumed public. The loading
+conditions in \code{\link[=dp_loading]{dp_loading()}} also apply. The optional non-private reference
+uses sample-mean-centered ordinary PCA scores and is not private.
+
+PVE is normalized over the \code{k} retained components; a total of zero
+produces zero PVE. When \code{k} is smaller than the number of variables, a
+cumulative PVE of one does not describe all original variation.
+
+The budget table reports allocated budgets, not cumulative privacy spending.
+With supplied \code{V_dp}, the loading allocation records its prior cost. The
+optional non-private comparison is excluded from the importance table.
 }
 \examples{
 data(gau, package = "dppca")
@@ -122,14 +131,13 @@ fit <- dp_pca(
   privacy = privacy_control(eps = 5, delta = 1e-4),
   scree = list(k = 2, control = clipped_control(C_clip = 3)),
   score = list(method = "sparse", bins = c(10, 10)),
-  center = FALSE,
-  standardize = FALSE,
   non_private = FALSE
 )
 fit
 summary(fit)
 fit$directions
 fit$nonprivate # NULL by default
+fit$metadata$privacy
 
 set.seed(123)
 plots <- plot(fit) # DP panels only

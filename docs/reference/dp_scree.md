@@ -1,11 +1,8 @@
 # Differentially private scree values
 
-This function computes estimates of scree values, eigenvalues of
-covariance matrix, for principal component analysis, including both the
-usual non-private estimates and differentially private estimates. The
-private estimates are computed as the private mean of the squared
-principal component scores. See Details for the estimating equations and
-method-specific construction.
+Estimates scree values along private principal component directions
+using means of squared differences from disjoint score pairs. An
+ordinary PCA reference is computed only when `non_private = TRUE`.
 
 ## Usage
 
@@ -13,149 +10,165 @@ method-specific construction.
 dp_scree(
   X,
   k,
+  privacy,
   method = c("clipped", "pmwm", "huber"),
   control = NULL,
-  eps,
-  delta,
-  center = TRUE,
-  standardize = FALSE,
-  g_dppca = FALSE,
-  cpp.option = FALSE,
-  mono = TRUE
+  cpp.option = TRUE,
+  mono = TRUE,
+  V_dp = NULL,
+  non_private = FALSE
 )
+
+# S3 method for class 'dp_scree'
+print(x, ...)
+
+# S3 method for class 'dp_scree'
+summary(object, ...)
+
+# S3 method for class 'summary.dp_scree'
+print(x, digits = 4, ...)
 ```
 
 ## Arguments
 
 - X:
 
-  A numeric matrix or data frame. Rows correspond to observations and
-  columns correspond to variables.
+  A numeric matrix or data frame with observations in rows and variables
+  in columns. Non-numeric data-frame columns are excluded with a
+  warning; numeric values must be finite. At least two observations and
+  one numeric feature are required. If directions must be estimated, the
+  pairwise-separation condition of
+  [`dp_loading()`](https://yejinjo0220.github.io/dppca/reference/dp_loading.md)
+  also applies.
 
 - k:
 
-  Positive integer defining the number of leading principal components
-  to estimate. Must be an integer between `1` and the number of columns
-  in `X`.
+  Number of leading components to estimate; an integer from `1` to the
+  number of retained numeric features.
+
+- privacy:
+
+  A
+  [`privacy_control()`](https://yejinjo0220.github.io/dppca/reference/privacy_control.md)
+  object allocating budget to `loading` and `scree` (equal shares by
+  default). Each requested scree method receives the full scree
+  allocation.
 
 - method:
 
-  Scree value estimation method or methods. One or more of `"clipped"`,
-  `"pmwm"`, or `"huber"`. If omitted, `"clipped"` is used.
+  One or more scree estimators: `"clipped"`, `"pmwm"`, or `"huber"`
+  (`"clipped"` by default).
 
 - control:
 
-  Optional method-specific control list created by
+  Tuning parameters from
   [`clipped_control()`](https://yejinjo0220.github.io/dppca/reference/clipped_control.md),
   [`pmwm_control()`](https://yejinjo0220.github.io/dppca/reference/pmwm_control.md),
   or
   [`huber_control()`](https://yejinjo0220.github.io/dppca/reference/huber_control.md).
-  When multiple methods are requested, use a named list with method
-  names.
-
-- eps:
-
-  Positive number defining the total `epsilon` privacy parameter. If
-  `g_dppca = TRUE`, it is split between private direction estimation and
-  private scree estimation.
-
-- delta:
-
-  Number in `(0, 1)` defining the total `delta` privacy parameter. If
-  `g_dppca = TRUE`, it is split between private direction estimation and
-  private scree estimation.
-
-- center:
-
-  A logical value indicating whether to center the columns of `X` before
-  computing principal component directions. The default is `TRUE`.
-
-- standardize:
-
-  A logical value indicating whether to scale the columns of `X` by
-  their sample standard deviations after optional centering. The default
-  is `FALSE`.
-
-- g_dppca:
-
-  A logical value indicating whether to use private principal component
-  directions for scree estimation. The default is `FALSE`. See
-  [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
-  for details.
+  For multiple methods, supply a named list of method-specific controls;
+  required tuning values must be supplied.
 
 - cpp.option:
 
-  A logical value passed to
-  [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
-  when `g_dppca = TRUE`. The default is `FALSE`. When `g_dppca = TRUE`,
-  [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
-  is called with arguments `eps = eps / 2` and `delta = delta / 2`.
+  Whether to use the compiled spherical-Kendall implementation (`TRUE`
+  by default) when estimating private directions; ignored if `V_dp` is
+  supplied.
 
 - mono:
 
-  A logical value indicating whether to apply monotone post-processing
-  to the vector of private scree values. The default is `TRUE`.
+  Whether to apply nonincreasing isotonic regression (`TRUE` by
+  default). Negative scree estimates are truncated to zero in either
+  case.
+
+- V_dp:
+
+  Optional `p` by `p` private PC direction matrix (`NULL` by default),
+  where `p` is the number of numeric PCA features. Columns must be
+  orthonormal and rows must follow the feature order in `X`; matching
+  row names are required when both sets of names exist.
+
+- non_private:
+
+  Whether to compute and store ordinary PCA reference results (`FALSE`
+  by default). The reference contains ordinary PCA scree and PVE.
+
+- x:
+
+  A `summary.dp_scree` object.
+
+- ...:
+
+  Further arguments, reserved for compatibility with the generic.
+
+- object:
+
+  A `dp_scree` object.
+
+- digits:
+
+  Number of significant digits used for printing.
 
 ## Value
 
-If one method is requested, a list with components:
+A `dp_scree` list containing one entry per requested method (`clipped`,
+`pmwm`, and/or `huber`). Each entry has `scree` and `pve` vectors named
+`PC1`, ..., `PCk`. The `nonprivate` entry holds the optional ordinary
+PCA reference (or `NULL` when omitted), and `metadata` stores input
+dimensions, methods and the recorded privacy budget. PVE is normalized
+over the `k` returned components in every entry. Use
+[`summary()`](https://rdrr.io/r/base/summary.html) for scree, PVE and
+cumulative PVE tables, and
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) to draw stored
+estimates without a new randomized computation.
 
-- `method`: scree value estimation method.
+Invisibly returns `x`.
 
-- `scree_np`: non-private scree estimates.
-
-- `pve_np`: non-private proportions of variance explained.
-
-- `scree`: differentially private scree value estimates.
-
-- `pve`: differentially private proportions of variance explained.
-
-If multiple methods are requested, a named list of method-specific
-results is returned.
+A `summary.dp_scree` object containing one table per stored method. Each
+table gives scree values, PVE and cumulative PVE. PVE is normalized over
+the fitted components, as in `dp_scree()`. Printing the summary shows
+component importance by method and the privacy allocations.
 
 ## Details
 
-Let \\X\\ denote the preprocessed data matrix and let \\v_l\\ be the
-\\l\\th principal component direction. The \\l\\th score vector is \\z_l
-= X v_l\\. The corresponding sample scree value can be written as \$\$
-\hat{\lambda}\_l = v_l^\top \widehat{\Sigma} v_l = \frac{1}{n -
-1}\sum\_{i = 1}^n z\_{il}^2 = \frac{n}{n - 1}\left(\frac{1}{n}\sum\_{i =
-1}^n w\_{il}\right), \qquad w\_{il} = z\_{il}^2. \$\$ Therefore, each
-scree value is estimated by privately estimating the mean of \\w\_{1l},
-\ldots, w\_{nl}\\ and multiplying by \\n/(n - 1)\\.
+Let `Y = X V` be scores along the private directions. For each method,
+`m = floor(n / 2)` disjoint pairs of rows are formed and the
+component-wise values are \$\$W\_{jl} = (Y\_{b_j,l} -
+Y\_{a_j,l})^2/2.\$\$ An odd final observation is unused. The methods
+privately estimate the column means of `W`, corresponding to variance
+along private directions rather than necessarily to sample covariance
+eigenvalues.
 
-The supported methods differ in how this private mean is estimated:
+The estimators differ as follows:
 
-- `"clipped"` clips the squared scores \\w\_{i\ell}\\ at `C_clip` and
-  then applies the Gaussian mechanism (Dwork and Roth 2014) . This is
-  the simplest option but depends directly on the clipping threshold.
+- `"clipped"`: Clip the paired values at `C_clip`, then perturb their
+  mean vector with Gaussian noise.
 
-- `"pmwm"` uses the private modified winsorized mean approach of Ramsay
-  and Spicker (2025) , adapted from the accompanying Python
-  implementation into R. It privately estimates tail cutoffs, winsorizes
-  the squared scores \\w\_{i\ell}\\, and releases a noisy winsorized
-  mean.
+- `"pmwm"`: Estimate private lower and upper quantiles, winsorize the
+  paired values, and perturb their mean vector with Gaussian noise.
+  Quantile calls share half of the method's epsilon; the mean receives
+  the remaining half and all delta.
 
-- `"huber"` uses a Huber-type private robust mean estimator based on
-  noisy gradient descent, following Yu et al. (2024) .
+- `"huber"`: Estimate private component scales and apply noisy Huber
+  gradient updates. The scale step uses `m2_frac` of epsilon; the
+  updates use the remainder and all delta. At least eight observations
+  are required.
 
-The argument `g_dppca` controls how the principal component directions
-are obtained. If `g_dppca = FALSE`, the directions are computed
-non-privately as an eigenvector of sample covariance, and the full
-privacy parameters `eps` and `delta` are used for private scree value
-estimation. If `g_dppca = TRUE`, the directions are computed privately
-using
-[`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md).
-In that case, the privacy parameters are split equally:
-[`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
-receives `eps = eps / 2` and `delta = delta / 2` for private direction
-estimation, and the remaining `eps / 2` and `delta / 2` are used for
-private scree value estimation. When `mono = TRUE`, the final monotone
-adjustment is a post-processing step and does not change the privacy
-guarantee.
+Directions are estimated once unless `V_dp` is supplied. The input is
+not automatically centered or standardized; sensitivity arguments use
+fixed-size replacement adjacency and condition on the directions.
+Data-dependent scaling requires separate privacy analysis. Sample size,
+schema, component selection, and tuning parameters are assumed public.
 
-For a detailed procedure and mathematical formulations, refer
-<https://yejinjo0220.github.io/dppca/articles/dp_scree>.
+Each requested scree method uses the full scree allocation. Releasing
+several methods together, or releasing results from repeated calls,
+requires composition beyond the stored budget for a single method. The
+optional ordinary PCA reference is not private.
+
+Scree values are truncated at zero, optionally made nonincreasing, and
+normalized over the returned `k` components for PVE. A zero total yields
+zero PVE. These steps are post-processing and do not reorder the
+directions.
 
 ## References
 
@@ -169,6 +182,12 @@ private modified winsorized mean.” Code available at
 <https://github.com/12ramsake/PMWM>, 2501.14095,
 <https://arxiv.org/abs/2501.14095>.
 
+Durfee D (2023). “Unbounded Differentially Private Quantile and Maximum
+Estimation.” In *Advances in Neural Information Processing Systems*,
+volume 36, 77691–77712.
+[doi:10.52202/075280-3394](https://doi.org/10.52202/075280-3394) ,
+<https://proceedings.neurips.cc/paper_files/paper/2023/hash/f4b6ef2a78684dca2fb3f1c09372e041-Abstract-Conference.html>.
+
 Yu M, Ren Z, Zhou W (2024). “Gaussian differentially private robust mean
 estimation and inference.” *Bernoulli*, **30**(4), 3059–3088.
 
@@ -179,8 +198,8 @@ Science Journal*, **18**(6), e70053.
 
 ## See also
 
-[`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
-for principal component direction estimation.
+[`dp_loading()`](https://yejinjo0220.github.io/dppca/reference/dp_loading.md)
+for private principal component direction estimation.
 [`clipped_control()`](https://yejinjo0220.github.io/dppca/reference/clipped_control.md),
 [`pmwm_control()`](https://yejinjo0220.github.io/dppca/reference/pmwm_control.md),
 and
@@ -194,37 +213,31 @@ data(gau, package = "dppca")
 
 # Use a small subset to keep the example fast.
 X <- gau[1:100, ]
+privacy <- privacy_control(eps = 3, delta = 1e-4)
 
-# Estimate the private scree values using the clipped mean method.
+# Estimate clipped private scree values and an ordinary PCA comparison.
 set.seed(123)
-dp_scree(
+out <- dp_scree(
   X,
   k = 2,
+  privacy = privacy,
   method = "clipped",
-  control = clipped_control(C_clip = 3),
-  eps = 2,
-  delta = 1e-3
+  control = clipped_control(C_clip = 3)
 )
-#> $method
-#> [1] "clipped"
-#> 
-#> $scree_np
-#> [1] 2.061105 1.771498
-#> 
-#> $pve_np
-#> [1] 0.5377819 0.4622181
-#> 
+
+out$nonprivate
+#> NULL
+out$clipped
 #> $scree
-#> [1] 1.196163 1.196163
+#>       PC1       PC2 
+#> 0.7621344 0.7621344 
 #> 
 #> $pve
-#> [1] 0.5 0.5
+#> PC1 PC2 
+#> 0.5 0.5 
 #> 
 
-# Other scree methods can be used by changing `method` and `control`, e.g.,
-# method = "pmwm",
-# control = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01)
-#
-# method = "huber",
-# control = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
+# Multiple methods can be requested together by using a named control list.
+# Loading is estimated once; each method receives the full scree budget.
+# Change the split in privacy_control() to choose a different allocation.
 ```

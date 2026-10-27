@@ -1,0 +1,348 @@
+---
+title: "DP Score Plots"
+description: >
+  Estimate and plot private two-dimensional PCA score histograms,
+  configure synthetic sampling, compare groups, and reuse directions.
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{DP Score Plots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r score-setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  fig.width = 7,
+  fig.height = 5,
+  message = FALSE,
+  warning = TRUE,
+  error = FALSE,
+  cache = FALSE
+)
+```
+
+This tutorial shows how to use `dp_score()` to estimate **private 2D score histograms**, inspect their stored probabilities, and display them as histograms or **synthetic score points**. It also covers the additive and sparse estimators, grouped plots, plot controls, and reuse of previously estimated private PC directions.
+
+The focus is on **R arguments, examples, and visualization**. 
+For the mathematics of the private frame, histogram mechanisms, and privacy accounting, see [Theory of DP Score](theory-dp-score.html). 
+For data requirements and general budget allocation, see [Getting Started](tutorials-getting-started.html).
+
+## 1. Load the example data
+
+We use `gau`, a synthetic dataset containing 1,000 observations and 20 numeric variables. 
+For dataset details, see the [`gau`](../reference/gau.html).
+
+```{r score-data}
+library(dppca)
+data("gau", package = "dppca")
+
+X <- gau
+dim(X)
+```
+
+## 2. Set the privacy budget and estimate a score histogram
+
+A `dp_score()` fit needs two privacy components: **`loading`**, to estimate private PC directions, and **`score`**, to estimate the private plotting frame and the histogram. If `split` is omitted, `dp_score()` allocates the total privacy budget equally between them.
+
+```{r score-privacy}
+score_privacy <- privacy_control(
+  eps = 6,
+  delta = 1e-4
+)
+```
+
+In this example, loading and score each receive $(\varepsilon,\delta)=(3,5\times10^{-5})$ when used by `dp_score()`.
+Within the score allocation, the package automatically assigns **35% of score epsilon to frame estimation**, **65% to the histogram**, and **all score delta to the histogram**.
+
+
+First, we use both the additive and sparse histogram methods, without retaining non-private reference data:
+
+
+```{r score-fit}
+set.seed(123)
+score_fit <- dp_score(
+  X,
+  privacy = score_privacy,
+  bins = c(10, 10),
+  method = c("add", "sparse"),
+  axes = c(1, 2),
+  non_private = FALSE
+)
+
+score_fit
+```
+
+The main arguments of `dp_score()` are:
+
+<style>
+.score-argument-table table { width: 100%; table-layout: fixed; }
+.score-argument-table colgroup col:nth-child(1) { width: 19% !important; }
+.score-argument-table colgroup col:nth-child(2) { width: 81% !important; }
+</style>
+
+::: {.score-argument-table}
+
+| Argument | Description |
+|:--|:--|
+| `X` | Input observations; numeric features in columns. The selected group column, if any, is excluded from PCA. |
+| `privacy` | Loading/score allocations from `privacy_control()`; an omitted `split` gives an equal two-way allocation for `dp_score()`. |
+| `bins` | Positive integer vector `c(m_x, m_y)` specifying the numbers of horizontal and vertical histogram bins (required). |
+| `method` | One or both of `"add"` (Gaussian) and `"sparse"` (stability-based); default: `c("add", "sparse")`. |
+| `axes` | Two distinct PC indices, in horizontal/vertical order (default: `c(1, 2)`). |
+| `cpp.option` | Use the compiled direction estimator (`TRUE`, the default), or the R implementation (`FALSE`). |
+| `V_dp` | Reuse a previously estimated full private direction matrix; the loading allocation must record its actual prior privacy cost. |
+| `non_private` | Retain ordinary PCA reference scores and histograms when `TRUE` (default: `FALSE`). |
+| `group` | A group-column name or a label vector; `NULL` (default) fits a pooled histogram. Groups must be publicly fixed for the stated parallel-composition argument. |
+
+:::
+
+The `V_dp` argument allows previously estimated private PC directions to be reused in `dp_score()`. 
+For a detailed example, see [Reusing Private PC Directions](tutorials-scree-plots.html#reusing-private-pc-directions) in the DP Scree Plot tutorial.
+
+### 2.1. Additive and sparse methods
+
+The two estimators differ in how they perturb bin frequencies. 
+The full mathematical definitions are in [Additive histogram](theory-dp-score.html#additive-histogram) and [Sparse histogram](theory-dp-score.html#sparse-histogram).
+
+<style>
+.score-method-table table { width: 100%; table-layout: fixed; }
+.score-method-table colgroup col:nth-child(1) { width: 20% !important; }
+.score-method-table colgroup col:nth-child(2) { width: 80% !important; }
+</style>
+
+::: {.score-method-table}
+
+| Method | What to expect |
+|:--|:--|
+| `"add"` | Adds Gaussian noise to **every** count; normalizes truncated positive counts. |
+| `"sparse"` | Adds Laplace noise **only to nonempty** bin proportions; keeps cells passing a threshold and may produce an all-zero histogram. |
+
+:::
+
+## 3. Inspect and plot the result
+
+### 3.1. Read the fit and stored estimates
+
+Printing the fitted object gives a summary of the stored results. `summary()` reports the frame, grid, grouping information when applicable, and positive bin counts and probability sums:
+
+```{r score-summary}
+score_summary <- summary(score_fit)
+score_summary
+```
+
+You can inspect the same results directly:
+
+```{r score-values}
+score_fit$frame
+head(score_fit$add)
+sum(score_fit$add$prob)
+score_fit$metadata$method
+score_fit$metadata$privacy
+```
+
+::: {.score-argument-table}
+
+| Stored component | Meaning |
+|:--|:--|
+| `score_fit$frame$xlim`, `$ylim` | Private horizontal and vertical plotting limits. |
+| `score_fit$add` | Data frame with `xmin`, `xmax`, `ymin`, `ymax`, and `prob` for every cell. |
+| `score_fit$add$prob` | Estimated probability mass in each cell, **not** density height or an observed cell count. |
+| `score_fit$nonprivate` | `NULL` here (`non_private = FALSE`); when requested, stores ordinary PCA reference results. |
+| `score_fit$nonprivate$scores` | Centered ordinary PCA score coordinates, available only when `non_private = TRUE`. |
+| `score_fit$nonprivate$frame`, `$histogram` | Ordinary reference frame and histogram when requested. |
+| `score_fit$metadata` | Data dimensions, axes, bin counts, method(s), privacy allocation, and grouping settings. |
+
+:::
+
+
+### 3.2. Show a private histogram
+
+```{r score-histogram, fig.alt="Private two-dimensional PCA score histogram with shaded rectangular bins."}
+histogram_plot <- plot(
+  score_fit,
+  type = "histogram"
+)
+```
+
+The shade of a cell represents its estimated probability mass. 
+
+The `center` argument controls **display centering**, not the estimation of
+private directions, the score frame, or histogram probabilities. By default,
+`center = TRUE` shifts the midpoint of the privately estimated score frame
+to $(0,0)$ in both histogram and synthetic-sample plots,  See [Display centering](theory-dp-score.html#score-display-centering).
+
+To retain the original private frame coordinates in the plots, set
+`center = FALSE` explicitly:
+
+```{r score-center, eval=FALSE, fig.alt="Private PCA score histogram and synthetic samples displayed without shifting the private frame center to the origin."}
+set.seed(321)
+plot(score_fit, type = c("histogram", "sample"), center = FALSE)
+```
+
+### 3.3. Draw synthetic score points
+
+The same fitted histogram can be displayed as synthetic points.
+
+```{r score-sample, fig.alt="Synthetic PCA score points sampled from the private histogram."}
+set.seed(321)
+sample_plot <- plot(
+  score_fit,
+  type = "sample",
+  sampling_control = sampling_control(
+    method = "uniform",
+    sample_size = 500,
+    bandwidth_scale = 0.1
+  )
+)
+```
+
+These are **500 newly generated coordinates**. A bin is first selected using the stored private probabilities;
+the point is then generated within that bin or at its center, optionally with Gaussian jitter. See [Synthetic score sampling](theory-dp-score.html#synthetic-sampling).
+
+The main arguments of `sampling_control()` are:
+
+<style>
+.score-sampling-table table { width: 100%; table-layout: fixed; }
+.score-sampling-table colgroup col:nth-child(1) { width: 30% !important; }
+.score-sampling-table colgroup col:nth-child(2) { width: 70% !important; }
+</style>
+
+::: {.score-sampling-table}
+
+| Setting | Description |
+|:--|:--|
+| `method = "uniform"` | Draw uniformly inside a sampled bin, followed by optional jitter (default). |
+| `method = "center"` | Start at a sampled bin's center, followed by optional jitter. |
+| `sample_size = NULL` | By default, generate the same number of synthetic points as the original observations (1,000 in this example). |
+| `bandwidth_scale = NULL` | Use method-specific default jitter multipliers: `center = 0.5` and `uniform = 0.25`. |
+| `bandwidth_scale = 0` | Disable jitter; `"center"` then produces points exactly at bin centers. |
+
+:::
+
+When `dp_score()` is fitted with `non_private = TRUE`, `plot()` automatically includes non-private comparison panels. For sample plots, the non-private panel displays the original centered PCA scores by default, while the private panel displays synthetic points generated from the DP histogram. If `sample_size` is explicitly specified, both panels display the specified number of synthetic points sampled from their respective histograms. A fit with `non_private = FALSE` displays only private panels; `plot()` has no separate `non_private` option.
+
+## 4. Customize the plot
+
+Use `score_plot_control()` to adjust colors, labels, point sizes, and the group legend. 
+
+```{r score-customize, fig.alt="Private additive score histogram with customized labels and shading."}
+plot(
+  score_fit,
+  type = "histogram",
+  plot_control = score_plot_control(
+    color = "#1F4E79",
+    add_title = "Estimated distribution on PC1 and PC2",
+    xlab = "Private PC1 score",
+    ylab = "Private PC2 score",
+    hist_alpha_range = c(0, 0.85),
+    base_size = 13,
+    title_size = 14
+  )
+)
+```
+
+::: {.score-sampling-table}
+
+| Plot setting | What it changes |
+|:--|:--|
+| `color`, `hist_alpha_range` | Default histogram/scatter color and shading intensity. |
+| `scatter_size`, `scatter_alpha` | Synthetic/observed point size and transparency. |
+| `add_title`, `sparse_title` | Titles for the private histogram methods. |
+| `scatter_title`, `nonprivate_title` | Titles used when ordinary reference panels are shown. |
+| `xlab`, `ylab`, `base_size`, `title_size` | Axis labels and typography. |
+| `group_colors`, `show_group_legend` | Group palette and legend visibility. |
+
+:::
+
+
+## 5. Group-wise private score histograms {#group-score-tutorial}
+
+The `group` argument estimates histograms for labelled groups using **one shared private direction estimate, one frame, and one grid**. 
+Group labels and their fixed membership must be public for the stated group-level privacy accounting. The `group` column is excluded from PCA features. The theory and assumptions are detailed in [Group-wise private score histograms](theory-dp-score.html#grouped-score).
+
+### 5.1. Fit a private histogram for each group
+
+The `gau_g` dataset adds a `group` column to the 20 numeric variables.
+
+```{r score-group-data}
+data("gau_g", package = "dppca")
+X_group <- gau_g
+
+dim(X_group)
+table(X_group$group)
+```
+
+We first fit private-only group histograms:
+
+```{r score-group-fit}
+set.seed(456)
+group_fit <- dp_score(
+  X_group,
+  privacy = score_privacy,
+  bins = c(10, 10),
+  group = "group",
+  non_private = FALSE
+)
+
+summary(group_fit)
+names(group_fit$groups)
+```
+
+The result stores one histogram per group, for example `group_fit$groups[["group1"]]$add`. 
+Optional ordinary reference group histograms would be available through `group_fit$nonprivate$groups[["group1"]]$histogram` only when fitted with `non_private = TRUE`. 
+
+### 5.2. Plot a group histogram overlay
+
+The group-wise histograms can be visualized using `plot(group_fit)` without specifying any additional options.
+
+```{r score-group-default, fig.alt="Group-wise differentially private score histogram"}
+plot(group_fit)
+```
+
+Group colors are assigned automatically according to the following rules:
+
+- If all group labels are valid color names recognized by R (e.g., `"red"`, `"blue"`, and `"green"`), those colors are used directly.
+- Otherwise, colors are automatically generated using the `"Dark 3"` palette from `grDevices::hcl.colors()`.
+- Users can override the automatic colors by specifying `group_colors` through `score_plot_control()`.
+
+For example, we can assign custom colors to the five groups and adjust the histogram transparency:
+
+```{r score-group-histogram, fig.alt="Group-wise differentially private score histogram overlays with five custom group colors"}
+group_colors <- c(
+  group1 = "#0072B2", group2 = "#D55E00", group3 = "#009E73",
+  group4 = "#CC79A7", group5 = "#E69F00"
+)
+
+group_hist_plot <- plot(
+  group_fit,
+  sampling_control = sampling_control(
+    method = "uniform", sample_size = 500
+  ),
+  plot_control = score_plot_control(
+    group_colors = group_colors,
+    hist_alpha_range = c(0, 0.75)
+  )
+)
+```
+
+The `hist_alpha_range` argument controls the transparency range, with `c(0, 0.75)` setting the maximum opacity to 0.75. Each group's bin probabilities are normalized within that group. Also, `sample_size = 500` requests **500 points across all groups**, not 500
+per group. 
+
+
+
+For complete argument descriptions, see `?dp_score`, `?plot.dp_score`,
+`?score_plot_control`, and `?sampling_control`. For a combined scree,
+score, and loading analysis, continue to
+[DP PCA Visualization](tutorials-pca-visualization.html).
+
+---
+
+**Previous:** [DP Scree Plot](tutorials-scree-plots.html)  
+**Next:** [DP PCA Visualization](tutorials-dp-visualization.html)  
+**Tutorial overview:** [Choose a starting point](tutorials-getting-started.html#choose-a-starting-point)

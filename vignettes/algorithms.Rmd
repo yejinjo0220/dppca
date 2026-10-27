@@ -14,28 +14,16 @@ knitr::opts_chunk$set(
 )
 ```
 
-This page collects the algorithms used in the `dppca` package. The algorithms are
-included as images from the `figures/` folder.
+This page collects the algorithms used in the `dppca` package. 
 
-## Algorithm 1: Private histogram learner {#alg-private-histogram-learner}
 
-The private histogram learner is used as an auxiliary routine for privately
-identifying the scale of a one-dimensional collection of values. In our setting,
-it is used in the private scale-proxy step for the Huber scree estimator,
-following the construction used by [Yu, Ren, and Zhou (2024)](#ref-Yu2024).
+## Algorithm 1: Private and robust estimator for \(m_2\) {#alg-m2}
 
-![Algorithm 1: Private histogram learner](figures/alg1-HL.png){width=95%}
+This algorithm constructs a private scale proxy $\widetilde m_{2,\ell}$ for selecting the Huber robustification parameter $\tau_\ell$. Given the paired squared differences $\{w_{r\ell}\}_{r=1}^{m}$, it forms additional pairwise half squared differences and computes block medians to obtain a robust measure of variability. A private histogram over dyadic scales is then used to select the final scale proxy.
 
-## Algorithm 2: Private and robust estimator for \(m_2\) {#alg-m2}
+![Algorithm 1: Private and robust estimator for \(m_2\)](figures/alg2-robust_estimator_for_m2.png){width=95%}
 
-This algorithm privately estimates the second-moment scale \(m_2\), which is
-needed to choose the Huber robustification parameter \(\tau\). It uses pairwise
-squared distances, block medians for robustness, and the private histogram
-learner above to select a dyadic scale level.
-
-![Algorithm 2: Private and robust estimator for \(m_2\)](figures/alg2-robust_estimator_for_m2.png){width=95%}
-
-## Algorithm 3: Unbounded DP upper-quantile estimator {#alg-unbounded-quantile}
+## Algorithm 2: Unbounded DP upper-quantile estimator {#alg-unbounded-quantile}
 
 This one-sided algorithm is the building block for the score-frame and PMWM
 quantile estimates. Following [Durfee (2023)](#ref-Durfee2023), it searches a
@@ -43,40 +31,41 @@ geometric grid using noisy comparisons against the empirical CDF. The fully
 unbounded mechanism invokes the one-sided search in both the positive and
 sign-flipped directions.
 
-![Algorithm 3: Unbounded DP upper-quantile estimator](figures/alg3-Unbounded_DP_Quantile.png){width=95%}
+![Algorithm 2: Unbounded DP upper-quantile estimator](figures/alg3-Unbounded_DP_Quantile.png){width=95%}
+Algorithm 2 estimates a private scale proxy for each component using the paired squared differences. The method forms additional disjoint pairs, computes block medians, and constructs a histogram over a finite range of dyadic bins. Independent Laplace noise is added to the histogram counts, and the scale corresponding to the bin with the largest noisy count is returned. The resulting estimate \(\widetilde m_{2,\ell}\) is used to determine the Huber robustification parameter \(\tau_\ell\).
 
-## Algorithm 4: Additive DP histogram {#alg-add-hist}
+## Algorithm 3: Additive DP histogram {#alg-add-hist}
 
 The additive DP histogram adds independent Gaussian noise to each bin count and
 then post-processes the noisy counts to make them nonnegative and normalized.
 This is the basic DP histogram mechanism used for score histogram visualization.
 
-![Algorithm 4: Additive DP histogram](figures/alg4-add_hist.png){width=95%}
+![Algorithm 3: Additive DP histogram](figures/alg4-add_hist.png){width=95%}
 
-## Algorithm 5: Sparse DP histogram {#alg-sparse-hist}
+## Algorithm 4: Sparse DP histogram {#alg-sparse-hist}
 
 When the grid is fine, many bins may be empty, and additive noise can dominate
 the visualization. The sparse histogram keeps only stable bins whose noisy
 counts are above a threshold, following the count-based sparse histogram idea of
 [Karwa and Vadhan (2018)](#ref-Karwa2018).
 
-![Algorithm 5: Sparse DP histogram](figures/alg5-sparse_hist.png){width=95%}
+![Algorithm 4: Sparse DP histogram](figures/alg5-sparse_hist.png){width=95%}
 
-## Algorithm 6: Group-wise additive DP histogram {#alg-group-add-hist}
+## Algorithm 5: Group-wise additive DP histogram {#alg-group-add-hist}
 
 The group-wise additive histogram applies the additive DP histogram procedure
 separately to each group, using a common frame and grid. It is useful for
 comparing PCA score distributions across groups.
 
-![Algorithm 6: Group-wise additive DP histogram](figures/alg6-add_hist_group.png){width=95%}
+![Algorithm 5: Group-wise additive DP histogram](figures/alg6-add_hist_group.png){width=95%}
 
-## Algorithm 7: Group-wise sparse DP histogram {#alg-group-sparse-hist}
+## Algorithm 6: Group-wise sparse DP histogram {#alg-group-sparse-hist}
 
 The group-wise sparse histogram applies sparse thresholding separately within
 each group and bin. It provides a private group-wise score histogram while
 suppressing bins that are not reliably distinguishable from zero.
 
-![Algorithm 7: Group-wise sparse DP histogram](figures/alg7-sparse_hist_group.png){width=95%}
+![Algorithm 6: Group-wise sparse DP histogram](figures/alg7-sparse_hist_group.png){width=95%}
 
 ## References
 

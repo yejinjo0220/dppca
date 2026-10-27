@@ -3,73 +3,6 @@
 # Internal helper functions for score-related routines
 # ============================================================
 
-#' Legacy quantile perturbation using observed order-statistic spacings
-#'
-#' Unused internal helper that adds Laplace noise scaled by exponentially
-#' weighted spacings between observed order statistics. It does not include
-#' public domain endpoints or a bound on replacements outside the observed
-#' range, so this calculation does not establish a smooth-sensitivity or DP
-#' guarantee on unbounded data. Current frame estimation uses
-#' `unbounded_quantile()` and `unbounded_quantile_upper()` instead.
-#'
-#' @param x Numeric vector of observations.
-#' @param q Quantile level in `(0, 1)`.
-#' @param epsilon Positive value used to calculate the noise scale.
-#' @param delta Number in `(0, 1)` used to calculate the spacing decay rate.
-#'
-#' @return A numeric value giving the perturbed order statistic at rank
-#'   `ceiling(q * length(x))`. A zero computed scale, including for constant
-#'   inputs, is rejected by `VGAM::rlaplace()`.
-#'
-#' @noRd
-dp_quantile_ss <- function(x, q, epsilon, delta) {
-  x <- as.numeric(x)
-
-  if (length(x) < 1L || anyNA(x) || any(!is.finite(x))) {
-    stop("`x` must contain finite numeric values.", call. = FALSE)
-  }
-  if (!is.numeric(q) || length(q) != 1L || !is.finite(q) || q <= 0 || q >= 1) {
-    stop("`q` must be a number in `(0, 1)`.", call. = FALSE)
-  }
-  if (
-    !is.numeric(epsilon) || length(epsilon) != 1L ||
-    !is.finite(epsilon) || epsilon <= 0
-  ) {
-    stop("`epsilon` must be a positive number.", call. = FALSE)
-  }
-  if (
-    !is.numeric(delta) || length(delta) != 1L ||
-    !is.finite(delta) || delta <= 0 || delta >= 1
-  ) {
-    stop("`delta` must be a number in `(0, 1)`.", call. = FALSE)
-  }
-
-  xs <- sort(x)
-  n <- length(xs)
-  r <- max(1L, min(n, ceiling(q * n)))
-  beta <- epsilon / (2 * log(1 / delta))
-
-  ss_beta <- 0
-  for (k in 0:(n - 1L)) {
-    t_vals <- 0:(k + 1L)
-    left <- r + t_vals - (k + 1L)
-    right <- r + t_vals
-    valid <- (left >= 1L) & (right <= n)
-
-    if (any(valid)) {
-      a_k <- max(xs[right[valid]] - xs[left[valid]])
-      val <- exp(-beta * k) * a_k
-      if (val > ss_beta) {
-        ss_beta <- val
-      }
-    }
-  }
-
-  scale <- (2 * ss_beta) / epsilon
-  xs[r] + VGAM::rlaplace(1, location = 0, scale = scale)
-}
-
-
 #' Construct a pure-DP plotting frame for two-dimensional scores
 #'
 #' The frame uses coordinate-wise pure-DP median estimates from
@@ -164,38 +97,7 @@ dp_frame <- function(
     ylim = c(center_y - inflated_radius, center_y + inflated_radius)
   )
 
-  # r_x_values <- abs( X[, 1] - center_x )
-  # r_x_max <- unbounded_quantile_upper(
-  #   x = r_x_values, q = q_radius, epsilon = eps_radius_x, beta = 1.05
-  # )
-  #
-  # r_y_values <- abs( X[, 2] - center_y )
-  # r_y_max <- unbounded_quantile_upper(
-  #   x = r_y_values, q = q_radius, epsilon = eps_radius_y, beta = 1.05
-  # )
-  #
-  # if (!is.finite(r_x_max) || r_x_max <= 0) {
-  #   stop(
-  #     "The private frame radius for x-axis is not positive. ",
-  #     "Try a larger privacy budget.",
-  #     call. = FALSE
-  #   )
-  # }
-  # if (!is.finite(r_y_max) || r_y_max <= 0) {
-  #   stop(
-  #     "The private frame radius for y-axis is not positive. ",
-  #     "Try a larger privacy budget.",
-  #     call. = FALSE
-  #   )
-  # }
-  #
-  # r_x_max <- (1 + inflate) * r_x_max
-  # r_y_max <- (1 + inflate) * r_y_max
-  #
-  # list(
-  #   xlim = c(center_x - r_x_max, center_x + r_x_max),
-  #   ylim = c(center_y - r_y_max, center_y + r_y_max)
-  # )
+
 }
 
 #' Add a centered title to a ggplot object
@@ -420,6 +322,9 @@ make_hist_all_dp <- function(
     df$group <- as.factor(df$group)
     group_levels <- levels(df$group)
     col_map <- complete_color_map(col_map, group_levels)
+    # Show only groups with at least one nonzero histogram bin in the legend.
+    # The stored histogram and displayed rectangles remain unchanged.
+    active_groups <- unique(as.character(df$group[df$prob > 0]))
 
     p <- ggplot2::ggplot(df) +
       ggplot2::geom_rect(
@@ -433,7 +338,10 @@ make_hist_all_dp <- function(
         ),
         linewidth = 0
       ) +
-      ggplot2::scale_fill_manual(values = col_map, drop = FALSE) +
+      ggplot2::scale_fill_manual(
+        values = col_map, breaks = group_levels[group_levels %in% active_groups],
+        drop = TRUE
+      ) +
       ggplot2::scale_alpha_continuous(
         range = alpha_range,
         guide = "none"
@@ -471,66 +379,6 @@ make_hist_all_dp <- function(
 
   add_title_dp(p, title, title_size = title_size)
 }
-
-
-#' Plot a single group histogram panel
-#'
-#' @param df Histogram data frame with bin coordinates and probabilities.
-#' @param xlim,ylim Plotting limits.
-#' @param col Fill color.
-#' @param title Optional plot title.
-#' @param xlab,ylab Axis labels.
-#' @param alpha_range Numeric alpha range for histogram cells.
-#' @param base_size Positive base font size.
-#' @param title_size Positive title font size.
-#'
-#' @return A `ggplot` object or a patchwork spacer.
-#'
-#' @noRd
-make_hist_single_dp <- function(
-    df,
-    xlim,
-    ylim,
-    col,
-    title = NULL,
-    xlab = "PC1",
-    ylab = "PC2",
-    alpha_range = c(0, 1),
-    base_size = 12,
-    title_size = 14
-) {
-  if (is.null(df)) {
-    return(patchwork::plot_spacer())
-  }
-
-  p <- ggplot2::ggplot(df) +
-    ggplot2::geom_rect(
-      ggplot2::aes(
-        xmin = .data$xmin,
-        xmax = .data$xmax,
-        ymin = .data$ymin,
-        ymax = .data$ymax,
-        alpha = .data$prob
-      ),
-      fill = col,
-      linewidth = 0
-    ) +
-    ggplot2::scale_alpha(range = alpha_range, guide = "none") +
-    ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
-    ggplot2::scale_x_continuous(
-      expand = c(0, 0),
-      breaks = pretty(xlim, n = 5)
-    ) +
-    ggplot2::scale_y_continuous(
-      expand = c(0, 0),
-      breaks = pretty(ylim, n = 5)
-    ) +
-    theme_dp_base(base_size = base_size) +
-    ggplot2::labs(x = xlab, y = ylab)
-
-  add_title_dp(p, title, title_size = title_size)
-}
-
 
 
 #' Plot grouped synthetic score points
@@ -593,9 +441,10 @@ make_group_sample_plot_dp <- function(
       alpha = point_alpha,
       size = point_size
     ) +
+    # Omit groups with no sampled points from the sample legend.
     ggplot2::scale_colour_manual(
       values = col_map,
-      drop = FALSE
+      drop = TRUE
     ) +
     ggplot2::coord_fixed(xlim = xlim, ylim = ylim) +
     ggplot2::scale_x_continuous(
@@ -703,13 +552,12 @@ allocate_group_sample_sizes <- function(group_sizes, total_size) {
 }
 
 
-#' Assign colors in group order
+#' Assign colors to groups
 #'
-#' The current implementation discards supplied color names before assigning
-#' values. Colors are recycled in `group_levels` order; named lookup and
-#' completion of missing named groups are not performed.
+#' Named colors are matched to group labels and missing groups receive an HCL
+#' color. Unnamed colors are recycled in `group_levels` order.
 #'
-#' @param col_map Optional color vector. Supply values in `group_levels` order.
+#' @param col_map Optional color vector, either named by group or in group order.
 #'   If `NULL` or empty, an HCL palette is generated.
 #' @param group_levels Character vector of group levels.
 #'
@@ -721,7 +569,9 @@ complete_color_map <- function(col_map, group_levels) {
     return(stats::setNames(grDevices::hcl.colors(length(group_levels), "Dark 3"), group_levels))
   }
 
+  color_names <- names(col_map)
   col_map <- as.character(col_map)
+  names(col_map) <- color_names
   if (is.null(names(col_map))) {
     return(stats::setNames(rep_len(col_map, length(group_levels)), group_levels))
   }
@@ -770,11 +620,11 @@ NULL
 #' @noRd
 split_score_privacy_budget <- function(privacy) {
   components <- c("loading", "score")
-  if (is.list(privacy) && "scree" %in% names(privacy$components)) {
+  if (is.list(privacy) && "scree" %in% names(privacy$budgets)) {
     components <- c("loading", "scree", "score")
   }
   privacy <- .validate_privacy_control(privacy, components)
-  budget <- privacy$components
+  budget <- privacy$budgets
 
   list(
     eps_pc = budget$loading[["eps"]],
@@ -785,37 +635,11 @@ split_score_privacy_budget <- function(privacy) {
   )
 }
 
-#' Validate and coerce a score input matrix
-#'
-#' @param X Matrix-like object with observations in rows and variables in
-#'   columns.
-#'
-#' @return A finite numeric matrix with at least two rows and two columns.
-#' @noRd
-validate_score_matrix <- function(X) {
-  X <- as.matrix(X)
-
-  if (!is.numeric(X)) {
-    stop("`X` must be numeric or coercible to a numeric matrix.", call. = FALSE)
-  }
-  if (nrow(X) < 2L) {
-    stop("`X` must have at least two rows.", call. = FALSE)
-  }
-  if (ncol(X) < 2L) {
-    stop("`X` must have at least two columns.", call. = FALSE)
-  }
-  if (anyNA(X) || any(!is.finite(X))) {
-    stop("`X` must contain only finite values.", call. = FALSE)
-  }
-
-  X
-}
-
 #' Validate common score-estimation arguments
 #'
 #' @param X Numeric matrix used to check the available component indices.
 #' @param bins Positive integer vector of length 2.
-#' @param center,standardize,cpp.option Logical scalar options.
+#' @param cpp.option Logical scalar option.
 #' @param axes Positive integer vector of length 2 whose largest value does not
 #'   exceed `ncol(X)`.
 #'
@@ -824,13 +648,9 @@ validate_score_matrix <- function(X) {
 validate_score_common <- function(
     X,
     bins,
-    center,
-    standardize,
     cpp.option,
     axes
 ) {
-  validate_logical_value(center, "center")
-  validate_logical_value(standardize, "standardize")
   validate_logical_value(cpp.option, "cpp.option")
 
   validate_bins(bins)
@@ -842,41 +662,11 @@ validate_score_common <- function(
       any(axes != as.integer(axes))) {
     stop("`axes` must contain positive integers.", call. = FALSE)
   }
+  if (anyDuplicated(axes)) {
+    stop("`axes` must contain two distinct component indices.", call. = FALSE)
+  }
   if (max(axes) > ncol(X)) {
     stop("The largest value in `axes` must not exceed `ncol(X)`.", call. = FALSE)
-  }
-
-  invisible(TRUE)
-}
-
-#' Validate a logical scalar
-#'
-#' @param x Object to validate.
-#' @param arg Argument name used in an error message.
-#'
-#' @return Invisibly returns `TRUE`.
-#' @noRd
-validate_logical_value <- function(x, arg) {
-  if (!is.logical(x) || length(x) != 1L || is.na(x)) {
-    stop("`", arg, "` must be `TRUE` or `FALSE`.", call. = FALSE)
-  }
-
-  invisible(TRUE)
-}
-
-#' Validate a positive integer scalar
-#'
-#' @param x Object to validate.
-#' @param arg Argument name used in an error message.
-#'
-#' @return Invisibly returns `TRUE`.
-#' @noRd
-validate_positive_integer <- function(x, arg) {
-  if (
-    !is.numeric(x) || length(x) != 1L || !is.finite(x) ||
-    x < 1 || x != as.integer(x)
-  ) {
-    stop("`", arg, "` must be a positive integer.", call. = FALSE)
   }
 
   invisible(TRUE)
@@ -903,7 +693,6 @@ validate_bins <- function(bins) {
 #'
 #' @param X Numeric data matrix with observations in rows.
 #' @param axes Positive integer vector of length 2 selecting score axes.
-#' @param center,standardize Logical preprocessing options.
 #' @param cpp.option Whether to use the Rcpp spherical-Kendall implementation.
 #' @param eps_pc,delta_pc Privacy parameters used if directions are estimated;
 #'   with supplied `V_dp`, they record its earlier loading allocation.
@@ -918,17 +707,13 @@ validate_bins <- function(bins) {
 compute_score_coordinates <- function(
     X,
     axes,
-    center,
-    standardize,
     cpp.option,
     eps_pc,
     delta_pc,
     V_dp = NULL
 ) {
   X_proc <- prep_matrix_for_pca(
-    X = X,
-    center = center,
-    standardize = standardize
+    X = X
   )
 
   V_all <- .get_dp_directions(
@@ -1079,6 +864,8 @@ score_histograms <- function(
 #' @return A named list containing requested `add` and/or `sparse` histogram
 #'   data frames, plus `nonprivate` only when `non_private = TRUE`. The empirical
 #'   reference uses the supplied coordinates and does not compute ordinary PCA.
+#'   Private histograms also retain a `dp_mass` attribute of unnormalized
+#'   nonnegative noised counts for pooling already released group histograms.
 #' @noRd
 score_histograms_from_grid <- function(
     X_score,
@@ -1195,6 +982,7 @@ score_histograms_from_grid <- function(
 
     hist_add <- grid$base_coord
     hist_add$prob <- c_tilde / sum(c_tilde)
+    attr(hist_add, "dp_mass") <- c_tilde
     out$add <- hist_add
   }
 
@@ -1219,12 +1007,16 @@ score_histograms_from_grid <- function(
       }
     }
 
+    # Save the noised count scale before probabilities are normalized.
+    # This permits pooled displays to reuse the group releases.
+    private_mass <- q_sparse * n
     if (sum(q_sparse) > 0) {
       q_sparse <- q_sparse / sum(q_sparse)
     }
 
     hist_sparse <- grid$base_coord
     hist_sparse$prob <- q_sparse
+    attr(hist_sparse, "dp_mass") <- private_mass
     out$sparse <- hist_sparse
   }
 
@@ -1418,32 +1210,511 @@ sample_private_score_histogram <- function(
 }
 
 
-#' Split features and group labels
-#'
-#' Separates the feature data from group labels for grouped score
-#' visualizations. If `group` is a column name, that column is removed from `X`
-#' and used as the group vector. Otherwise, `group` is treated as an external
-#' group vector.
-#'
-#' @param X Input data frame or matrix.
-#' @param group Group column name or group vector.
-#'
-#' @return A list with feature data `X` and group vector `group`.
-#'
-#' @noRd
-split_group_input <- function(X, group) {
-  X_df <- as.data.frame(X)
+# Compute each group on one shared grid. The directions and frame have
+# already been estimated by dp_score() or dp_pca().
+.score_group_histograms <- function(
+    scores,
+    group,
+    frame,
+    bins,
+    eps_hist,
+    delta_hist,
+    method,
+    non_private
+) {
+  group <- as.character(group)
+  labels <- unique(group)
+  grid <- score_histogram_grid(
+    xlim = frame$xlim, ylim = frame$ylim,
+    m_x = bins[1L], m_y = bins[2L]
+  )
+  out <- stats::setNames(vector("list", length(labels)), labels)
+  for (g in labels) {
+    group_scores <- scores[group == g, , drop = FALSE]
+    hist <- score_histograms_from_grid(
+      X_score = group_scores, grid = grid,
+      eps_hist_method = eps_hist, delta_hist_method = delta_hist,
+      method = method, group_name = g, non_private = non_private
+    )
+    out[[g]] <- c(if (non_private) list(n = nrow(group_scores)), hist)
+  }
+  out
+}
 
-  if (is.character(group) && length(group) == 1L) {
-    if (!group %in% colnames(X_df)) {
-      stop("Column `", group, "` was not found in `X`.", call. = FALSE)
+# Sum released noised counts rather than estimating a second pooled histogram.
+# Empirical references, when retained, may use their observed group sizes.
+.score_pool_histograms <- function(groups, method) {
+  method <- unique(match.arg(method, c("add", "sparse"), several.ok = TRUE))
+  out <- list()
+  if (all(vapply(groups, function(g) !is.null(g$nonprivate), logical(1)))) {
+    sizes <- vapply(groups, function(g) g$n, numeric(1))
+    hist <- groups[[1L]]$nonprivate
+    mass <- Reduce(`+`, lapply(seq_along(groups), function(i) {
+      groups[[i]]$nonprivate$prob * sizes[i]
+    }))
+    hist$prob <- mass / sum(sizes)
+    out$nonprivate <- hist
+  }
+  for (m in method) {
+    hist <- groups[[1L]][[m]]
+    masses <- lapply(groups, function(g) attr(g[[m]], "dp_mass"))
+    if (any(vapply(masses, is.null, logical(1)))) {
+      stop("Stored group histograms are missing private bin masses.", call. = FALSE)
     }
-    group_vec <- X_df[[group]]
-    X_feat <- X_df[, setdiff(colnames(X_df), group), drop = FALSE]
-  } else {
-    group_vec <- group
-    X_feat <- X_df
+    mass <- Reduce(`+`, masses)
+    hist$prob <- if (sum(mass) > 0) mass / sum(mass) else numeric(length(mass))
+    attr(hist, "dp_mass") <- mass
+    out[[m]] <- hist
+  }
+  out
+}
+
+# Render only stored histograms, frames and optional reference scores.
+# The pooled and grouped S3 plot methods share this code.
+.render_dp_score <- function(
+    x,
+    private_plot,
+    sampling_control,
+    plot_control,
+    non_private,
+    center = FALSE
+) {
+  validate_logical_value(center, "center")
+  private_plot <- unique(match.arg(
+    private_plot, c("histogram", "sample"), several.ok = TRUE
+  ))
+  validate_logical_value(non_private, "non_private")
+  grouped <- inherits(x, "dp_score_group")
+  metadata <- attr(x, "metadata")
+  pctrl <- .merge_score_plot_control(plot_control)
+  available_methods <- if (grouped) names(x$groups[[1L]]) else names(x)
+  methods <- intersect(metadata$method, available_methods)
+  if (!length(methods)) {
+    stop("The stored score result contains no private histogram.", call. = FALSE)
   }
 
-  list(X = X_feat, group = group_vec)
+  has_reference <- if (grouped) {
+    !is.null(x$groups[[1L]]$nonprivate)
+  } else {
+    !is.null(x$nonprivate)
+  }
+  if (non_private && !has_reference) {
+    stop(
+      "Non-private references were not retained; use `non_private = FALSE`.",
+      call. = FALSE
+    )
+  }
+
+  # Display-only centering: keep stored frames, bins and samples unchanged.
+  private_shift <- if (center) {
+    c(mean(x$frame$xlim), mean(x$frame$ylim))
+  } else {
+    c(0, 0)
+  }
+  xlim <- x$frame$xlim - private_shift[1L]
+  ylim <- x$frame$ylim - private_shift[2L]
+  reference_frame <- if (non_private) x$nonprivate_frame else NULL
+  if (non_private && is.null(reference_frame)) {
+    stop("The non-private frame is missing from the stored result.", call. = FALSE)
+  }
+  pc_names <- paste0("PC", metadata$axes)
+  xlab <- if (is.null(pctrl$xlab)) pc_names[1L] else pctrl$xlab
+  ylab <- if (is.null(pctrl$ylab)) pc_names[2L] else pctrl$ylab
+  col_map <- NULL
+  legend_position <- "none"
+
+  if (grouped) {
+    group_levels <- names(x$groups)
+    col_map <- if (!is.null(pctrl$group_colors)) {
+      complete_color_map(pctrl$group_colors, group_levels)
+    } else if (.is_color_vec(group_levels)) {
+      stats::setNames(group_levels, group_levels)
+    } else {
+      complete_color_map(NULL, group_levels)
+    }
+    legend_position <- if (pctrl$show_group_legend) "right" else "none"
+  }
+
+  # Keep each group legend as a single vertical column.
+  legend_cols <- 1L
+  format_group_plot <- function(pl) {
+    if (!grouped || !pctrl$show_group_legend) return(pl)
+    pl + ggplot2::theme(
+      legend.position = "right",
+      legend.text = ggplot2::element_text(size = max(8, 0.8 * pctrl$base_size)),
+      legend.key.height = grid::unit(3, "mm"),
+      legend.key.width = grid::unit(3, "mm")
+    ) + ggplot2::guides(
+      colour = ggplot2::guide_legend(ncol = legend_cols, byrow = FALSE),
+      fill = ggplot2::guide_legend(ncol = legend_cols, byrow = FALSE)
+    )
+  }
+
+  scatter <- NULL
+  if (non_private && !is.null(x$score)) {
+    observed <- as.data.frame(x$score)
+    names(observed) <- c("pc_x", "pc_y")
+    if (grouped) {
+      observed$group <- factor(metadata$group, levels = group_levels)
+      scatter <- make_group_sample_plot_dp(
+        observed, reference_frame$xlim, reference_frame$ylim, col_map,
+        title = pctrl$scatter_title, xlab = xlab, ylab = ylab,
+        point_alpha = pctrl$scatter_alpha, point_size = pctrl$scatter_size,
+        base_size = pctrl$base_size, title_size = pctrl$title_size,
+        legend_position = legend_position
+      ) + ggplot2::labs(colour = NULL)
+      scatter <- format_group_plot(scatter)
+    } else {
+      scatter <- make_sample_plot_dp(
+        observed, reference_frame$xlim, reference_frame$ylim, pctrl$color,
+        title = pctrl$scatter_title, xlab = xlab, ylab = ylab,
+        point_alpha = pctrl$scatter_alpha, point_size = pctrl$scatter_size,
+        base_size = pctrl$base_size, title_size = pctrl$title_size
+      )
+    }
+  }
+
+  histograms <- list()
+  hist_methods <- c(if (non_private) "nonprivate", methods)
+  for (m in hist_methods) {
+    title <- pctrl[[paste0(m, "_title")]]
+    this_frame <- if (m == "nonprivate") {
+      reference_frame
+    } else {
+      list(xlim = xlim, ylim = ylim)
+    }
+    if (grouped) {
+      pieces <- lapply(group_levels, function(g) {
+        df <- x$groups[[g]][[m]]
+        if (m != "nonprivate") {
+          df$xmin <- df$xmin - private_shift[1L]
+          df$xmax <- df$xmax - private_shift[1L]
+          df$ymin <- df$ymin - private_shift[2L]
+          df$ymax <- df$ymax - private_shift[2L]
+        }
+        df$group <- rep(g, nrow(df))
+        df
+      })
+      histograms[[m]] <- make_hist_all_dp(
+        do.call(rbind, pieces), this_frame$xlim, this_frame$ylim, col_map,
+        title = title, xlab = xlab, ylab = ylab,
+        alpha_range = pctrl$hist_alpha_range, base_size = pctrl$base_size,
+        title_size = pctrl$title_size, legend_position = legend_position
+      ) + ggplot2::labs(fill = NULL)
+      histograms[[m]] <- format_group_plot(histograms[[m]])
+    } else {
+      display_hist <- x[[m]]
+      if (m != "nonprivate") {
+        display_hist$xmin <- display_hist$xmin - private_shift[1L]
+        display_hist$xmax <- display_hist$xmax - private_shift[1L]
+        display_hist$ymin <- display_hist$ymin - private_shift[2L]
+        display_hist$ymax <- display_hist$ymax - private_shift[2L]
+      }
+      histograms[[m]] <- make_hist_plot_dp(
+        display_hist, this_frame$xlim, this_frame$ylim, pctrl$color,
+        title = title, xlab = xlab, ylab = ylab,
+        alpha_range = pctrl$hist_alpha_range, base_size = pctrl$base_size,
+        title_size = pctrl$title_size
+      )
+    }
+  }
+
+  samples <- NULL
+  sample_plots <- NULL
+  reference_sample_plots <- NULL
+  sampling_methods <- character(0)
+  if ("sample" %in% private_plot) {
+    sctrl <- .resolve_sampling_control(sampling_control, n = metadata$n)
+    sampling_methods <- sctrl$method
+    samples <- list()
+    sample_plots <- list()
+
+    # An explicit size requests sampling on *both* sides. With NULL, the
+    # reference retains the actual centered PCA scores shown in `scatter`.
+    sample_reference <- non_private && is.list(sampling_control) &&
+      !is.null(sampling_control$sample_size)
+    if (non_private) {
+      reference_sample_plots <- stats::setNames(
+        rep(list(scatter), length(sctrl$method)), sctrl$method
+      )
+    }
+    if (sample_reference) {
+      if (!grouped) {
+        reference_samples <- sample_private_score_histogram(
+          x$nonprivate, sctrl$sample_size, sctrl$method, sctrl$bandwidth_scale
+        )
+      }
+      for (sm in sctrl$method) {
+        if (grouped) {
+          # Same sampling rule as dp_pca(): sample each reference group
+          # proportional to its observed size, on the ordinary grid.
+          one_method <- sctrl
+          one_method$method <- sm
+          sizes <- vapply(x$groups, function(g) g$n, numeric(1))
+          ref <- .dppca_group_sample(
+            x$groups, "nonprivate", one_method, group_sizes = sizes
+          )
+          names(ref)[1:2] <- c("pc_x", "pc_y")
+          reference_sample_plots[[sm]] <- make_group_sample_plot_dp(
+            ref, reference_frame$xlim, reference_frame$ylim, col_map,
+            title = "Non-private Sample", xlab = xlab, ylab = ylab,
+            point_alpha = pctrl$scatter_alpha, point_size = pctrl$scatter_size,
+            base_size = pctrl$base_size, title_size = pctrl$title_size,
+            legend_position = legend_position
+          ) + ggplot2::labs(colour = NULL)
+          reference_sample_plots[[sm]] <- format_group_plot(reference_sample_plots[[sm]])
+        } else {
+          reference_sample_plots[[sm]] <- make_sample_plot_dp(
+            reference_samples[[sm]], reference_frame$xlim, reference_frame$ylim,
+            pctrl$color, title = "Non-private Sample", xlab = xlab, ylab = ylab,
+            point_alpha = pctrl$scatter_alpha, point_size = pctrl$scatter_size,
+            base_size = pctrl$base_size, title_size = pctrl$title_size
+          )
+        }
+      }
+    }
+
+    if (grouped) {
+      # Use stored reference counts even when the reference plot is hidden.
+      # Private-only results omit counts and retain equal allocation.
+      group_sizes <- stats::setNames(rep(1, length(group_levels)), group_levels)
+      if (has_reference) {
+        group_sizes <- vapply(x$groups, function(g) g$n, numeric(1))
+      }
+      sample_sizes <- allocate_group_sample_sizes(group_sizes, sctrl$sample_size)
+    }
+
+    for (m in methods) {
+      if (grouped) {
+        pieces <- stats::setNames(vector("list", length(group_levels)), group_levels)
+        for (g in group_levels) {
+          if (sample_sizes[[g]] == 0L) {
+            pieces[[g]] <- stats::setNames(
+              lapply(sctrl$method, function(sm) {
+                data.frame(pc_x = numeric(0), pc_y = numeric(0))
+              }), sctrl$method
+            )
+          } else {
+            pieces[[g]] <- sample_private_score_histogram(
+              x$groups[[g]][[m]], sample_size = sample_sizes[[g]],
+              sample_method = sctrl$method, bandwidth_scale = sctrl$bandwidth_scale
+            )
+          }
+        }
+        samples[[m]] <- stats::setNames(lapply(sctrl$method, function(sm) {
+          combined <- do.call(rbind, lapply(group_levels, function(g) {
+            df <- pieces[[g]][[sm]]
+            df$group <- rep(g, nrow(df))
+            df
+          }))
+          combined$group <- factor(combined$group, levels = group_levels)
+          combined
+        }), sctrl$method)
+      } else {
+        samples[[m]] <- sample_private_score_histogram(
+          x[[m]], sample_size = sctrl$sample_size,
+          sample_method = sctrl$method, bandwidth_scale = sctrl$bandwidth_scale
+        )
+      }
+
+      sample_plots[[m]] <- list()
+      for (sm in sctrl$method) {
+        hist_label <- if (m == "add") "Add" else "Sparse"
+        sample_label <- if (sm == "center") "Center" else "Uniform"
+        title <- paste0(hist_label, " Sample (", sample_label, ")")
+        display_sample <- samples[[m]][[sm]]
+        display_sample$pc_x <- display_sample$pc_x - private_shift[1L]
+        display_sample$pc_y <- display_sample$pc_y - private_shift[2L]
+        if (grouped) {
+          sample_plots[[m]][[sm]] <- make_group_sample_plot_dp(
+            display_sample, xlim, ylim, col_map,
+            title = title, xlab = xlab, ylab = ylab,
+            point_alpha = pctrl$scatter_alpha, point_size = pctrl$scatter_size,
+            base_size = pctrl$base_size, title_size = pctrl$title_size,
+            legend_position = legend_position
+          ) + ggplot2::labs(colour = NULL)
+          sample_plots[[m]][[sm]] <- format_group_plot(sample_plots[[m]][[sm]])
+        } else {
+          sample_plots[[m]][[sm]] <- make_sample_plot_dp(
+            display_sample, xlim, ylim, pctrl$color,
+            title = title, xlab = xlab, ylab = ylab,
+            point_alpha = pctrl$scatter_alpha, point_size = pctrl$scatter_size,
+            base_size = pctrl$base_size, title_size = pctrl$title_size
+          )
+        }
+      }
+    }
+  }
+
+  plot_out <- c(if (!is.null(scatter)) list(scatter = scatter), histograms)
+  if (!is.null(reference_sample_plots)) {
+    plot_out$reference_samples <- reference_sample_plots
+  }
+  if (!is.null(sample_plots)) {
+    plot_out$sample <- sample_plots
+  }
+  plot_out$all <- .score_plot_layout(
+    scatter, histograms, sample_plots, methods, private_plot,
+    sampling_methods, reference_sample_plots, grouped = grouped
+  )
+  out <- list(score = x)
+  if (!is.null(samples)) {
+    out$sample <- samples
+  }
+  out$plot <- plot_out
+  if (grouped) {
+    out$group_colors <- col_map
+  }
+  class(out) <- c(if (grouped) "dp_score_plot_group" else "dp_score_plot", "list")
+  out
+}
+
+# Keep the same reference-column layout for both pooled and grouped displays.
+.score_plot_layout <- function(
+    scatter, histograms, samples, methods, private_plot, sampling_methods,
+    reference_sample_plots = NULL, grouped = FALSE
+) {
+  use_samples <- "sample" %in% private_plot
+  has_reference <- !is.null(scatter) || !is.null(histograms$nonprivate)
+  keys <- c(if (has_reference) "reference", methods)
+  columns <- list()
+
+  # One method, histogram + one sampled panel, and no ordinary reference:
+  # display the two plots side by side. Otherwise, keep one vertical stack
+  # per method (ordinary reference, Add, Sparse).
+  single_pair <- length(keys) == 1L &&
+    length(private_plot) == 2L &&
+    all(c("histogram", "sample") %in% private_plot) &&
+    length(sampling_methods) == 1L
+
+  for (key in keys) {
+    method_panels <- list()
+    if ("histogram" %in% private_plot) {
+      if (key == "reference") {
+        if (!use_samples && !is.null(scatter)) {
+          method_panels[[length(method_panels) + 1L]] <- scatter
+        }
+        if (!is.null(histograms$nonprivate)) {
+          method_panels[[length(method_panels) + 1L]] <- histograms$nonprivate
+        }
+      } else {
+        method_panels[[length(method_panels) + 1L]] <- histograms[[key]]
+      }
+    }
+    if (use_samples) {
+      for (sm in sampling_methods) {
+        panel <- if (key == "reference") {
+          if (!is.null(reference_sample_plots)) reference_sample_plots[[sm]]
+          else scatter
+        } else {
+          samples[[key]][[sm]]
+        }
+        if (!is.null(panel)) {
+          method_panels[[length(method_panels) + 1L]] <- panel
+        }
+      }
+    }
+    if (!length(method_panels)) next
+
+    # Display the group legend only alongside the last panel, i.e. the
+    # sampled points when sampling was requested. The original per-panel
+    # ggplot objects in the returned result are never modified.
+    displayed <- lapply(seq_along(method_panels), function(i) {
+      panel <- method_panels[[i]]
+      if (grouped && i < length(method_panels) && inherits(panel, "ggplot")) {
+        panel <- panel + ggplot2::theme(legend.position = "none")
+      }
+      panel
+    })
+    columns[[length(columns) + 1L]] <- patchwork::wrap_plots(
+      displayed, ncol = if (single_pair) 2L else 1L
+    )
+  }
+  if (!length(columns)) return(patchwork::plot_spacer())
+  patchwork::wrap_plots(columns, ncol = length(columns))
+}
+
+# A short table rather than printing every bin and observed coordinate.
+.score_summary <- function(object, grouped = FALSE) {
+  metadata <- attr(object, "metadata")
+  histograms <- if (grouped) object$groups else list(All = object)
+  rows <- list()
+  for (g in names(histograms)) {
+    hist <- histograms[[g]]
+    for (m in intersect(c("nonprivate", "add", "sparse"), names(hist))) {
+      prob <- hist[[m]]$prob
+      rows[[length(rows) + 1L]] <- data.frame(
+        group = g, method = m, bins = length(prob),
+        positive_bins = sum(prob > 0), probability_sum = sum(prob)
+      )
+    }
+  }
+  table <- do.call(rbind, rows)
+  if (!grouped) {
+    table$group <- NULL
+  }
+  out <- list(
+    n = metadata$n, axes = metadata$axes, bins = metadata$bins,
+    frame = object$frame, histograms = table, privacy = metadata$privacy,
+    non_private = !is.null(object$score), grouped = grouped,
+    group_name = metadata$group_name, group_levels = metadata$group_levels,
+    excluded_columns = metadata$excluded_columns
+  )
+  class(out) <- "summary.dp_score"
+  out
+}
+
+.score_plot_summary <- function(object) {
+  out <- summary(object$score)
+  counts <- list()
+  for (m in names(object$sample)) {
+    for (sm in names(object$sample[[m]])) {
+      counts[[length(counts) + 1L]] <- data.frame(
+        method = m, sampling = sm, points = nrow(object$sample[[m]][[sm]])
+      )
+    }
+  }
+  out$samples <- if (length(counts)) do.call(rbind, counts) else NULL
+  out
+}
+
+# Number of columns used in a right-side group legend. Keep each column
+# short enough to fit alongside a square score/biplot panel.
+.dppca_group_legend_cols <- function(n) {
+  n <- as.integer(n)
+  if (n <= 7L) return(1L)
+  if (n <= 14L) return(2L)
+  max(3L, as.integer(ceiling(n / 7)))
+}
+
+# Infer the total number of known groups from an individual plot.
+.dppca_plot_group_count <- function(plot) {
+  if (!inherits(plot, "ggplot") || is.null(plot$data$group)) return(0L)
+  group <- plot$data$group
+  if (is.factor(group)) nlevels(group) else length(unique(group))
+}
+
+# Extract a right-positioned group guide from a plot without changing the
+# original ggplot returned for individual extraction. A plot with no legend
+# (for example an all-zero sparse sample) returns NULL.
+.dppca_right_group_guide <- function(plot, group_count, title = NULL) {
+  if (!inherits(plot, "ggplot")) return(NULL)
+  if (identical(plot$theme$legend.position, "none")) return(NULL)
+  guide_plot <- plot + ggplot2::theme(
+    legend.position = "right",
+    legend.text = ggplot2::element_text(size = 9),
+    legend.title = ggplot2::element_text(size = 10, face = "bold"),
+    legend.key.height = grid::unit(3, "mm"),
+    legend.key.width = grid::unit(3, "mm")
+  ) + ggplot2::guides(
+    colour = ggplot2::guide_legend(ncol = 1L),
+    fill = ggplot2::guide_legend(ncol = 1L)
+  )
+  if (!is.null(title)) {
+    guide_plot <- guide_plot + ggplot2::labs(colour = title, fill = title)
+  }
+  g <- ggplot2::ggplotGrob(guide_plot)
+  guides <- g$grobs[grepl("^guide-box", g$layout$name)]
+  guides <- Filter(function(x) !inherits(x, "zeroGrob"), guides)
+  if (length(guides)) guides[[1L]] else NULL
 }

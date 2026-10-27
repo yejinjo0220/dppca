@@ -1,10 +1,9 @@
 # Control options for clipped scree estimation
 
-Creates a control list for the clipped-mean scree estimator used by
+Creates a control list for `method = "clipped"` in
 [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
-and
-[`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
-when `method = "clipped"`.
+or the scree configuration of
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md).
 
 ## Usage
 
@@ -16,21 +15,22 @@ clipped_control(C_clip)
 
 - C_clip:
 
-  Positive clipping threshold for squared principal component scores.
-  This value has no default because it should be chosen according to the
-  scale of the data.
+  Required positive public clipping threshold for squared pair
+  differences. Larger values reduce clipping bias but increase Gaussian
+  noise; data-dependent selection requires separate privacy accounting.
 
 ## Value
 
-A list of control options for `method = "clipped"`.
+A control list for `method = "clipped"`.
 
 ## Details
 
-The clipped method estimates each scree value by clipping the squared
-scores at `C_clip` and then applying a sensitivity-calibrated Gaussian
-mechanism (Dwork and Roth 2014) . Larger values of `C_clip` reduce
-clipping bias but increase the sensitivity, and therefore the scale of
-the privacy noise.
+The method clips the paired quantities at `C_clip` and adds Gaussian
+noise to their vector of column means. For \\m=\lfloor n/2\rfloor\\
+pairs and \\k\\ components, the calibration uses vector sensitivity
+\\\sqrt{k}\\C\_{clip}/m\\ under the conditions in
+[`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md).
+Larger thresholds reduce clipping bias but increase the noise scale.
 
 ## References
 
@@ -43,7 +43,7 @@ Privacy.” *Found. Trends Theor. Comput. Sci.*, **9**(3–4), 211–407. ISSN
 
 [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
 for using clipped scree estimation.
-[`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
+[`plot.dp_scree()`](https://yejinjo0220.github.io/dppca/reference/plot.dp_scree.md)
 for plotting private scree estimates.
 
 ## Examples

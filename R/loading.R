@@ -1,68 +1,103 @@
 # ============================================================
 # loading.R
-# Functions for differentially private loading plot
+# Private PC direction estimation and loading visualization
 # ============================================================
 
-#' Estimate private loadings with an optional ordinary PCA reference
+#' Estimate differentially private PC directions
 #'
-#' @param X Finite numeric matrix or data frame with at least two observations
-#'   in rows. Pairwise differences must have Euclidean norm greater than
-#'   `sqrt(.Machine$double.eps)` after preprocessing.
-#' @param eps Positive privacy parameter epsilon.
-#' @param delta Privacy parameter delta in `(0, 1)`.
-#' @param center Whether to center columns. Default: `TRUE`.
-#' @param standardize Whether to divide columns by their sample standard
-#'   deviations. Default: `FALSE`.
-#' @param cpp.option Use the compiled spherical Kendall implementation from
-#'   dppca. Default: `TRUE`. Use `FALSE` for the R implementation in this file.
-#' @param non_private Whether to compute the ordinary PCA reference.
-#'   Default: `TRUE`; `FALSE` returns `NULL` in `nonprivate`.
+#' Estimate principal component (PC) directions using a noisy spherical Kendall
+#' matrix, with optional ordinary PCA directions for comparison.
 #'
-#' @return A list with `private`, a numeric `p` by `p` matrix of directions
-#'   from the noisy spherical Kendall matrix, and `nonprivate`, the ordinary
-#'   sample-covariance PCA directions when requested (otherwise `NULL`).
-#'   Rows are variables; columns are `PC1`, ..., `PCp`. Both direction
-#'   matrices are orthonormal, without eigenvalue or correlation scaling.
-#' @details All private directions come from one noisy spherical Kendall
-#'   matrix, ordered by decreasing noisy eigenvalue. They are not the
-#'   eigenvectors of the empirical covariance matrix. Under suitable
-#'   distributional assumptions, the population spherical Kendall and
-#'   covariance matrices share eigendirections.
+#' @param X A numeric matrix or data frame with observations in rows and variables
+#'   in columns. Non-numeric data-frame columns are excluded with a warning;
+#'   numeric values must be finite. At least two observations and one numeric
+#'   feature are required. Observations must be sufficiently separated to compute
+#'   normalized pairwise differences.
+#' @param privacy A [privacy_control()] object allocating privacy budget to
+#'   `loading` alone. Either specify total `eps` and `delta` or an absolute
+#'   `loading` budget.
+#' @param cpp.option Whether to use the compiled spherical-Kendall implementation
+#'   (`TRUE` by default); `FALSE` uses the R implementation.
+#' @param non_private Whether to compute and store ordinary PCA reference results
+#'   (`FALSE` by default).
 #'
-#'   Under fixed-size replacement adjacency and fixed scaling, the matrix has
-#'   Frobenius sensitivity at most `4 / n`. The Gaussian noise has diagonal
-#'   standard deviation `4 * sqrt(2 * log(1.25 / delta)) / (n * eps)` and
-#'   off-diagonal standard deviation smaller by a factor of `sqrt(2)`.
-#'   This classical Gaussian calibration has a standard sufficient privacy
-#'   argument for `0 < eps < 1`. For larger `eps`, its privacy guarantee
-#'   requires a separate Gaussian calibration check; the function does not
-#'   enforce this range or perform that check.
+#' @return A `dp_loading` object with the following components:
+#'   \describe{
+#'     \item{`directions`}{A `p` by `p` matrix of private PC directions.}
+#'     \item{`nonprivate`}{A `p` by `p` matrix of ordinary PC directions,
+#'       or `NULL` when `non_private = FALSE`.}
+#'     \item{`metadata`}{Sample size, variable count and privacy parameters.}
+#'   }
+#'   Rows represent variables, and columns represent `PC1`, ..., `PCp`.
+#'   The columns are orthonormal eigenvectors, without eigenvalue or
+#'   correlation scaling.
 #'
-#'   Common centering cancels in pairwise differences. Sample standardization
-#'   uses data-dependent scales and requires separate privacy analysis.
-#'   Coincident or numerically indistinguishable observations are rejected;
-#'   these input checks are not a private validation mechanism on unrestricted
-#'   datasets. Sample size and variable names are assumed public.
-#'   The optional ordinary reference uses the same preprocessed data and is
-#'   not a private release.
+#' @details
+#' The private PC directions are eigenvectors of a spherical Kendall matrix
+#' perturbed with symmetric Gaussian noise. Directions are ordered by the noisy
+#' eigenvalues; they need not be eigenvectors of the sample covariance matrix.
+#' The spherical Kendall construction uses normalized pairwise differences and
+#' is invariant to common translations.
+#'
+#' With `non_private = TRUE`, ordinary covariance-based directions are stored
+#' after sign alignment with the private directions. This comparison is not a
+#' private release.
+#'
+#' Under fixed-size replacement adjacency, the matrix has Frobenius sensitivity
+#' at most `4 / n`. The diagonal Gaussian noise standard deviation is
+#' `4 * sqrt(2 * log(1.25 / delta)) / (n * eps)`; off-diagonal entries use this
+#' scale divided by `sqrt(2)`. This classical calibration has a standard
+#' sufficient guarantee for `0 < eps < 1`; larger `eps` requires an additional
+#' calibration check, which is not performed by the function.
+#'
+#' Duplicate or numerically indistinguishable observations are rejected, but
+#' these checks do not privatize input validation. Data schema and sample size
+#' are assumed public. Data-dependent preprocessing requires separate privacy
+#' analysis and accounting.
+#'
 #' @examples
 #' set.seed(123)
-#' X <- matrix(rnorm(150), 50, 3)
-#' result <- dp_loading(X, eps = 2, delta = 1e-3, cpp.option = FALSE)
-#' result$nonprivate
-#' result$private
+#' X <- matrix(rnorm(150), nrow = 50, ncol = 3)
+#' fit <- dp_loading(
+#'   X, privacy = privacy_control(eps = 0.5, delta = 1e-3),
+#'   cpp.option = FALSE
+#' )
+#' print(fit)
+#' summary(fit)
+#' fit$directions
+#' fit_with_reference <- dp_loading(
+#'   X, privacy = privacy_control(loading = c(eps = 0.5, delta = 1e-3)),
+#'   cpp.option = FALSE, non_private = TRUE
+#' )
+#' fit_with_reference$nonprivate
+#' \dontrun{
+#' loading_plot <- plot(fit, type = c("vector", "point", "heatmap"),
+#'                      heatmap_components = 1:3, variables = "all")
+#' loading_plot                 # Display the saved plot
+#' loading_plot$loading$directions # Access the stored directions
+#' loading_plot$plot$all       # Access the combined plot
+#' }
 #' @export
 dp_loading <- function(
     X,
-    eps,
-    delta,
-    center = TRUE,
-    standardize = FALSE,
+    privacy,
     cpp.option = TRUE,
-    non_private = TRUE
+    non_private = FALSE
 ) {
-  # Prepare the data and validate privacy parameters.
-  X <- .loading_matrix(X, center, standardize)
+  # Validate the supplied data without centering or standardizing it.
+  X <- .loading_matrix(X)
+
+  if (missing(privacy)) {
+    stop("Supply `privacy = privacy_control(...)`.", call. = FALSE)
+  }
+
+  # The implicit default split is for integrated PCA, not for dp_loading().
+  implicit <- isTRUE(attr(privacy, "implicit_split"))
+  required <- if (implicit) c("loading", "scree", "score") else "loading"
+  checked <- .validate_privacy_control(privacy, required)
+  budget <- if (implicit) checked$total else checked$budgets$loading
+  eps <- budget[["eps"]]
+  delta <- budget[["delta"]]
 
   .loading_positive(eps, "eps")
   .loading_positive(delta, "delta")
@@ -71,8 +106,8 @@ dp_loading <- function(
     stop("`delta` must be less than 1.", call. = FALSE)
   }
 
-  .loading_flag(cpp.option, "cpp.option")
-  .loading_flag(non_private, "non_private")
+  validate_logical_value(cpp.option, "cpp.option")
+  validate_logical_value(non_private, "non_private")
 
   n <- nrow(X)
   p <- ncol(X)
@@ -89,8 +124,12 @@ dp_loading <- function(
 
   # Estimate private directions and the optional ordinary reference.
   V_private <- eigen(kendall + noise, symmetric = TRUE)$vectors
-  V_nonprivate <- if(non_private) {
-    eigen(stats::cov(X), symmetric = TRUE)$vectors
+  V_nonprivate <- if (non_private) {
+    V <- eigen(stats::cov(X), symmetric = TRUE)$vectors
+
+    # Align the non-private PC signs with the private directions before storage.
+    signs <- ifelse(colSums(V * V_private) < 0, -1, 1)
+    sweep(V, 2L, signs, "*")
   } else {
     NULL
   }
@@ -102,121 +141,248 @@ dp_loading <- function(
     dimnames(V_nonprivate) <- loading_names
   }
 
-  list(
-    nonprivate = V_nonprivate,
-    private = V_private
+  structure(
+    list(
+      directions = V_private,
+      nonprivate = V_nonprivate,
+      metadata = list(n = n, p = p, privacy = c(eps = eps, delta = delta))
+    ),
+    class = "dp_loading"
   )
 }
 
-#' Build loading plots directly from data
+#' Print private PC direction results
 #'
-#' @inheritParams dp_loading
-#' @param axes Two distinct PCs for vector and point displays.
-#' @param display One or more of `"vector"`, `"point"`, `"heatmap"`.
-#' @param heatmap_components PCs in the heatmap; `NULL` uses `axes`.
-#' @param variables A positive integer selects the variables with the largest
-#'   loading-vector norms across the displayed components, separately for
-#'   each version and display. Use `"all"` or `NULL`, variable names, or multiple
-#'   column indices for other selections. Default: top 10.
-#' @param labels Show variable labels in vector and point displays.
-#' @param align_sign Align only non-private plotting directions to the private
-#'   directions. Default: `TRUE`. Returned loading matrices are unchanged.
-#' @param plot_control Optional output of [loading_plot_control()].
-#' @return A list with `loading` (the result of [dp_loading()]) and `plot`
-#'   (display-named `nonprivate` and `private` lists, plus `all`). Print
-#'   `result$plot$all` to draw the combined patchwork.
-#' @details This comparison wrapper always computes both references and has
-#'   no `non_private` argument. One display has non-private left and private
-#'   right. Multiple
-#'   displays have non-private above private, ordered vector, point, heatmap.
-#'   Non-private panels and comparison-based plot ranges are reference output;
-#'   the combined result is not a private-only release.
-#' @examples
-#' \dontrun{
-#' set.seed(123)
-#' X <- matrix(rnorm(150), 50, 3)
-#' out <- dp_loading_plot(X, eps = 2, delta = 1e-3, cpp.option = FALSE)
-#' out$loading$nonprivate
-#' out$loading$private
-#' out$plot$all
-#' }
+#' Display a concise overview of a [dp_loading()] fit, including its data
+#' dimensions, privacy parameters, and whether a non-private reference is stored.
+#'
+#' @param x A `dp_loading` or `summary.dp_loading` object, depending
+#'   on the S3 method.
+#' @param ... Additional arguments, reserved for S3 generic compatibility.
+#' @return Invisibly returns `x`.
+#' @rdname dp_loading
 #' @export
-dp_loading_plot <- function(
-    X,
-    eps,
-    delta,
+print.dp_loading <- function(x, ...) {
+  cat("Differentially Private PC Directions\n")
+  if (!is.null(x$metadata$n)) {
+    cat("Data:", x$metadata$n, "observations x",
+        nrow(x$directions), "variables\n")
+  } else {
+    cat("Variables:", nrow(x$directions), "\n")
+  }
+  cat("Components:", ncol(x$directions), "PC directions\n")
+  privacy <- x$metadata$privacy
+  if (!is.null(privacy)) {
+    cat("Total privacy budget: eps =", format(privacy[["eps"]], digits = 6),
+        "; delta =", format(privacy[["delta"]], digits = 6), "\n")
+  }
+  cat("Non-private reference:",
+      if (is.null(x$nonprivate)) "not stored" else "included", "\n")
+  invisible(x)
+}
+
+#' Summarize private PC directions
+#'
+#' Summarize a fitted [dp_loading()] object without recomputing its estimates
+#' or consuming additional privacy budget.
+#'
+#' @param object A `dp_loading` object.
+#' @param ... Additional arguments, reserved for S3 generic compatibility.
+#' @return A `summary.dp_loading` object containing the stored `private` and
+#'   `nonprivate` direction matrices, with sample size and privacy budget
+#'   metadata. The print method displays up to six variables and four PCs;
+#'   the full matrices remain stored. The non-private matrix remains `NULL`
+#'   if it was not stored.
+#' @rdname dp_loading
+#' @export
+summary.dp_loading <- function(object, ...) {
+  structure(
+    list(
+      directions = object$directions,
+      nonprivate = object$nonprivate,
+      metadata = object$metadata
+    ),
+    class = "summary.dp_loading"
+  )
+}
+
+#' Print summarized PC directions
+#'
+#' @param x A `summary.dp_loading` object.
+#' @param digits Number of significant digits used for printing.
+#' @param ... Additional arguments.
+#' @return Invisibly returns `x`.
+#' @rdname dp_loading
+#' @export
+print.summary.dp_loading <- function(x, digits = 3, ...) {
+  cat("DP PC Directions Summary\n")
+  if (!is.null(x$metadata$n)) {
+    cat("Data:", x$metadata$n, "observations x",
+        nrow(x$directions), "variables\n")
+  } else {
+    cat("Variables:", nrow(x$directions), "\n")
+  }
+  cat("Components:", ncol(x$directions), "PC directions\n")
+
+  rows <- seq_len(min(6L, nrow(x$directions)))
+  cols <- seq_len(min(4L, ncol(x$directions)))
+  caption <- paste0(" (first ", length(rows), " variables x first ",
+                    length(cols), " PCs):\n")
+  cat("\nPrivate PC directions", caption)
+  print(x$directions[rows, cols, drop = FALSE], digits = digits, ...)
+  if (!is.null(x$nonprivate)) {
+    cat("\nNon-private PC directions", caption)
+    print(x$nonprivate[rows, cols, drop = FALSE], digits = digits, ...)
+  }
+
+  privacy <- x$metadata$privacy
+  if (!is.null(privacy)) {
+    cat("\nTotal privacy budget: eps =", format(privacy[["eps"]], digits = 6),
+        "; delta =", format(privacy[["delta"]], digits = 6), "\n")
+  }
+  cat("Non-private reference:",
+      if (is.null(x$nonprivate)) "not stored" else "included", "\n")
+  cat(if (!is.null(x$nonprivate)) {
+    "Full direction matrices are available in $directions and $nonprivate.\n"
+  } else {
+    "The full direction matrix is available in $directions.\n"
+  })
+  invisible(x)
+}
+
+#' Plot stored private PC directions
+#'
+#' Create loading plots from an existing [dp_loading()] fit. Plotting uses the
+#' stored direction matrices and does not re-estimate PCs or spend additional
+#' privacy budget.
+#'
+#' @param x A `dp_loading` object.
+#' @param axes Two distinct PC indices for vector and point plots, displayed
+#'   on fixed axes from -1.2 to 1.2. Default: `c(1, 2)`.
+#' @param type One or more of `"vector"`, `"point"`, and `"heatmap"`.
+#'   The default shows all three types. With only one stored component, the
+#'   default shows a heatmap because vector and point plots need two axes.
+#' @param heatmap_components PC indices to include in a heatmap; `NULL`
+#'   (default) uses `axes`.
+#' @param variables Variables to display. A single positive integer selects
+#'   the variables with the largest Euclidean norms across the displayed PC
+#'   coefficients (top 10 by default). Use `"all"` or `NULL` for every
+#'   variable, or provide variable names or a vector of column indices.
+#'   Selection is performed separately for each version and display.
+#' @param plot_control Optional appearance settings from
+#'   [loading_plot_control()] or a named list of its options.
+#' @param ... Additional arguments, reserved for S3 generic compatibility.
+#' @return Draws the combined plot and invisibly returns a `dp_loading_plot`
+#'   object with `loading` (the original fit) and `plot` (individual plots and
+#'   the combined `plot$all`). Printing the saved object displays the plot.
+#' @details
+#' Vector and point plots use fixed axes from -1.2 to 1.2 and show variable
+#' labels. Each heatmap scales colors over its own displayed coefficients,
+#' so comparable coefficients can have different colors between versions.
+#' An ordinary PCA reference is shown automatically only when it was stored
+#' at fitting; it is not a private release.
+#'
+#' @export
+plot.dp_loading <- function(
+    x,
     axes = c(1, 2),
-    display = "vector",
+    type = c("vector", "point", "heatmap"),
     heatmap_components = NULL,
-    center = TRUE,
-    standardize = FALSE,
-    cpp.option = TRUE,
     variables = 10,
-    labels = TRUE,
-    align_sign = TRUE,
-    plot_control = NULL
+    plot_control = NULL,
+    ...
 ) {
-  # Prepare the data and check the plot settings.
-  X <- .loading_matrix(X, center, standardize)
-
-  if (ncol(X) < 2L) {
-    stop("Loading plots need at least two variables.", call. = FALSE)
+  if (length(list(...))) {
+    stop("Use `type`, the named loading plot options or `plot_control`.", call. = FALSE)
   }
-
-  if (anyDuplicated(colnames(X))) {
-    stop("Variable names must be unique.", call. = FALSE)
+  if (missing(type) && ncol(x$directions) == 1L) {
+    type <- "heatmap"
   }
-
-  axes <- .validate_loading_axes(axes, ncol(X))
-  display <- .validate_loading_display(display)
-  components <- .validate_loading_components(
-    components = heatmap_components,
-    p = ncol(X),
-    default = axes,
-    argument = "heatmap_components"
-  )
-
-  .loading_flag(labels, "labels")
-  .loading_flag(align_sign, "align_sign")
-
-  control <- .merge_loading_plot_control(plot_control, axes)
-  .loading_plot_packages(display, labels)
-
-  # X is already preprocessed, so do not center or standardize it again.
-  loading <- dp_loading(
-    X = X,
-    eps = eps,
-    delta = delta,
-    center = FALSE,
-    standardize = FALSE,
-    cpp.option = cpp.option
-  )
-
-  .plot_loading_result(
-    loading = loading,
+  result <- .plot_loading_result(
+    loading = x,
     axes = axes,
-    display = display,
-    heatmap_components = components,
+    display = type,
+    heatmap_components = heatmap_components,
     variables = variables,
-    labels = labels,
-    align_sign = align_sign,
-    plot_control = control
+    plot_control = plot_control
   )
+  print(result$plot$all)
+  invisible(result)
+}
+
+#' Print a saved loading plot
+#'
+#' Draw the combined plot stored in a `dp_loading_plot` object. The original
+#' directions remain available in `x$loading`.
+#'
+#' @param x A `dp_loading_plot` object.
+#' @param ... Additional arguments, reserved for S3 generic compatibility.
+#' @return Invisibly returns `x`.
+#' @rdname plot.dp_loading
+#' @export
+print.dp_loading_plot <- function(x, ...) {
+  print(x$plot$all)
+  invisible(x)
+}
+
+#' Summarize a loading plot result
+#'
+#' Summarize the fitted PC directions stored in a `dp_loading_plot` object.
+#'
+#' @param object A `dp_loading_plot` object.
+#' @param ... Arguments passed to [summary.dp_loading()].
+#' @return A `summary.dp_loading` object.
+#' @rdname plot.dp_loading
+#' @export
+summary.dp_loading_plot <- function(object, ...) {
+  summary(object$loading, ...)
+}
+
+#' Redraw or customize a loading plot result
+#'
+#' Display a previously constructed plot or redraw it using new plotting
+#' options without re-estimating the PC directions.
+#'
+#' @param x A `dp_loading_plot` object.
+#' @param ... Options passed to [plot.dp_loading()]. With no additional
+#'   options, redraw the stored plot using its original settings.
+#' @return Invisibly returns a `dp_loading_plot` object.
+#' @rdname plot.dp_loading
+#' @export
+plot.dp_loading_plot <- function(x, ...) {
+  if (!length(list(...))) {
+    print(x$plot$all)
+    return(invisible(x))
+  }
+  plot(x$loading, ...)
 }
 
 #' Control loading plot appearance
 #'
-#' @param nonprivate_color,private_color Colors for vectors and points.
-#' @param arrow_size,point_size,label_size Vector width, point size, label size.
-#' @param heatmap_values Print coefficients inside heatmap cells.
-#' @param heatmap_digits Number of decimal places in heatmap cells.
-#' @param heatmap_text_size Heatmap cell text size.
-#' @param base_size,title_size Base font and title sizes.
-#' @param nonprivate_title,private_title Panel titles; `NULL` hides them.
-#' @param xlab,ylab Axis labels; `NULL` uses the selected PC names.
-#' @param heatmap_colors Named character vector with `low` and `high` colors.
-#'   Both heatmaps use these colors, with white at zero.
-#' @return A named list of plot settings.
+#' Specify colors, text sizes, labels, and heatmap settings for loading plots.
+#' Pass the resulting list through the `plot_control` argument of
+#' [plot.dp_loading()].
+#'
+#' @param nonprivate_color,private_color Colors of the non-private and private
+#'   vectors or points, respectively.
+#' @param arrow_size Width of arrows in vector plots.
+#' @param point_size Size of points in point plots.
+#' @param label_size Size of variable labels in vector and point plots.
+#' @param heatmap_values Whether to display loading coefficients in heatmap
+#'   cells. Default: `TRUE`.
+#' @param heatmap_digits Number of decimal places for heatmap labels.
+#' @param heatmap_text_size Size of coefficient labels in heatmaps.
+#' @param base_size Base font size for all loading plots.
+#' @param title_size Font size for panel titles.
+#' @param nonprivate_title,private_title Text used for the corresponding panel
+#'   titles. The display name is appended in parentheses; `NULL` hides a title.
+#' @param xlab,ylab Axis labels for vector and point plots. `NULL` uses the
+#'   selected PC names.
+#' @param heatmap_colors Named character vector with `low` and `high` colors
+#'   for negative and positive loading coefficients. White represents zero.
+#'   Private and non-private heatmaps use separate, symmetric color ranges
+#'   based on their own displayed coefficients.
+#' @return A named list of validated loading plot settings.
 #' @export
 loading_plot_control <- function(
     nonprivate_color = "black",
@@ -266,7 +432,7 @@ loading_plot_control <- function(
     .loading_positive(control[[name]], name)
   }
 
-  .loading_flag(heatmap_values, "heatmap_values")
+  validate_logical_value(heatmap_values, "heatmap_values")
 
   if (
     !is.numeric(heatmap_digits) ||
@@ -328,78 +494,143 @@ loading_plot_control <- function(
 
 # Input preparation and estimation -------------------------------------------
 
-#' Preprocess a matrix for principal component analysis
+#' Select numeric PCA variables without centering or scaling
 #'
-#' @param X A numeric matrix or data frame.
-#' @param center Whether to subtract column sample means. Default: `TRUE`.
-#' @param standardize Whether to divide by column sample standard deviations,
-#'   regardless of `center`. Default: `FALSE`.
-#'
-#' @return A numeric matrix after preprocessing.
-#' @details This helper does not privatize the means or standard deviations.
+#' @param X A real numeric matrix or a data frame.
+#' @param group NULL, a column name, or one group label per observation.
+#' @param warn Whether to report excluded columns and the selected group.
+#' @param min_cols Minimum number of numeric PCA variables required.
+#' @return A list containing `X`, `group`, `group_name`, `group_levels`,
+#'   and `excluded_columns`. Column types, names, and group labels are
+#'   assumed public; the warning is not a private release mechanism.
 #' @noRd
-prep_matrix_for_pca <- function(
-    X,
-    center = TRUE,
-    standardize = FALSE
-) {
-  .loading_flag(center, "center")
-  .loading_flag(standardize, "standardize")
-
-  if (is.data.frame(X)) {
-    numeric_cols <- vapply(X, is.numeric, logical(1))
-    if (!all(numeric_cols)) {
-      stop("All columns of `X` must be numeric.", call. = FALSE)
-    }
+.prepare_pca_input <- function(X, group = NULL, warn = TRUE, min_cols = 1L) {
+  validate_logical_value(warn, "warn")
+  if (!is.numeric(min_cols) || is.complex(min_cols) || length(min_cols) != 1L ||
+      !is.finite(min_cols) || min_cols < 1L || min_cols != floor(min_cols)) {
+    stop("`min_cols` must be a positive integer.", call. = FALSE)
   }
-
-  X <- as.matrix(X)
-
-  if (!is.numeric(X)) {
+  if (!is.data.frame(X) && !is.matrix(X)) {
     stop("`X` must be a numeric matrix or data frame.", call. = FALSE)
   }
-
-  storage.mode(X) <- "double"
-
-  if (nrow(X) < 2) {
+  if (nrow(X) < 2L) {
     stop("`X` must have at least two rows.", call. = FALSE)
   }
-  if (ncol(X) < 1) {
-    stop("`X` must have at least one column.", call. = FALSE)
-  }
-  if (anyNA(X) || any(!is.finite(X))) {
-    stop("`X` must contain only finite, non-missing values.", call. = FALSE)
-  }
-
-  X_proc <- X
-
-  if (center) {
-    X_proc <- scale(X_proc, center = TRUE, scale = FALSE)
+  if (is.matrix(X) && (!is.numeric(X) || is.complex(X))) {
+    stop(
+      "`X` must be a real numeric matrix. For mixed columns, supply a ",
+      "data frame so numeric columns can be selected.",
+      call. = FALSE
+    )
   }
 
-  if (standardize) {
-    sds <- apply(X_proc, 2, stats::sd)
-    if (any(!is.finite(sds)) || any(sds <= 0)) {
+  column_names <- colnames(X)
+  if (is.null(column_names)) {
+    column_names <- if (ncol(X)) paste0("X", seq_len(ncol(X))) else character()
+    colnames(X) <- column_names
+  }
+  if (anyNA(column_names) || any(!nzchar(column_names)) ||
+      anyDuplicated(column_names)) {
+    stop("`X` must have unique, non-missing column names.", call. = FALSE)
+  }
+  numeric_cols <- if (is.data.frame(X)) {
+    vapply(X, function(column) {
+      is.numeric(column) && !is.complex(column) && is.null(dim(column))
+    }, logical(1))
+  } else {
+    rep(TRUE, ncol(X))
+  }
+  group_values <- group_name <- group_levels <- NULL
+  group_column <- NULL
+
+  if (!is.null(group)) {
+    if (is.character(group) && length(group) == 1L && !is.na(group)) {
+      if (!group %in% column_names) {
+        stop("Group column `", group, "` was not found in `X`.", call. = FALSE)
+      }
+      group_column <- group
+      group_name <- group
+      group_values <- if (is.data.frame(X)) X[[group]] else X[, group]
+    } else {
+      group_name <- "<supplied vector>"
+      group_values <- group
+      # Recover a useful label when the supplied vector uniquely matches a
+      # column. This changes metadata only, not feature selection.
+      matching_columns <- column_names[vapply(seq_along(column_names), function(i) {
+        column <- if (is.data.frame(X)) X[[i]] else X[, i]
+        identical(unname(column), unname(group_values))
+      }, logical(1))]
+      if (length(matching_columns) == 1L) {
+        group_name <- matching_columns
+      }
+    }
+    if (!is.atomic(group_values) || !is.null(dim(group_values)) ||
+        is.complex(group_values) || length(group_values) != nrow(X) ||
+        anyNA(group_values)) {
       stop(
-        "All columns of `X` must have positive finite standard deviations ",
-        "when `standardize = TRUE`.",
+        "`group` must select a column or supply one non-missing label per row.",
         call. = FALSE
       )
     }
-    X_proc <- sweep(X_proc, 2, sds, "/")
+    group_values <- as.character(group_values)
+    if (anyNA(group_values) || any(!nzchar(trimws(group_values)))) {
+      stop("Group labels must be non-missing and non-empty.", call. = FALSE)
+    }
+    group_levels <- unique(group_values)
   }
 
-  X_proc
+  # A selected group is a label, even if the column stores numeric codes.
+  keep <- numeric_cols & !(column_names %in% group_column)
+  excluded_columns <- column_names[!keep]
+  if (!any(keep)) {
+    stop("No numeric PCA variables remain after excluding non-numeric and group columns.",
+         call. = FALSE)
+  }
+  if (sum(keep) < min_cols) {
+    stop("At least ", min_cols, " numeric PCA variables are required after exclusions.",
+         call. = FALSE)
+  }
+  X <- as.matrix(X[, keep, drop = FALSE])
+  storage.mode(X) <- "double"
+  if (anyNA(X) || any(!is.finite(X))) {
+    stop("Numeric PCA variables must contain only finite, non-missing values.",
+         call. = FALSE)
+  }
+
+  if (warn && (length(excluded_columns) || !is.null(group_values))) {
+    messages <- c(
+      paste0("PCA: ", ncol(X), " numeric variables used."),
+      paste0("Excluded from PCA (", length(excluded_columns), "): ",
+             if (length(excluded_columns)) paste(excluded_columns, collapse = ", ") else "none",
+             ".")
+    )
+    if (!is.null(group_values)) {
+      messages <- c(messages,
+        paste0("Grouping variable: ", group_name),
+        paste0("Groups (", length(group_levels), "): ",
+               paste(group_levels, collapse = ", "))
+      )
+    }
+    warning(paste(messages, collapse = "\n"), call. = FALSE)
+  }
+
+  list(
+    X = X,
+    group = group_values,
+    group_name = group_name,
+    group_levels = group_levels,
+    excluded_columns = excluded_columns
+  )
 }
 
-.loading_flag <- function(
-    x,
-    name
-) {
-  if (!is.logical(x) || length(x) != 1L || is.na(x)) {
-    stop("`", name, "` must be TRUE or FALSE.", call. = FALSE)
-  }
+#' Prepare the shared numeric matrix used by estimation routines
+#' @inheritParams .prepare_pca_input
+#' @return A double matrix of the selected numeric variables.
+#' @noRd
+prep_matrix_for_pca <- function(X) {
+  .prepare_pca_input(X)$X
 }
+
 
 .loading_positive <- function(
     x,
@@ -410,53 +641,11 @@ prep_matrix_for_pca <- function(
   }
 }
 
-.loading_matrix <- function(
-    X,
-    center,
-    standardize
-) {
-  .loading_flag(center, "center")
-  .loading_flag(standardize, "standardize")
-
-  if (is.data.frame(X) && !all(vapply(X, is.numeric, logical(1)))) {
-    stop("All columns of `X` must be numeric.", call. = FALSE)
-  }
-
-  X <- as.matrix(X)
-
-  if (
-    !is.numeric(X) ||
-      nrow(X) < 2L ||
-      ncol(X) < 1L ||
-      any(!is.finite(X))
-  ) {
-    stop(
-      "`X` must be finite numeric data with at least two rows and one column.",
-      call. = FALSE
-    )
-  }
-
-  storage.mode(X) <- "double"
+.loading_matrix <- function(X) {
+  X <- prep_matrix_for_pca(X)
 
   if (is.null(colnames(X))) {
     colnames(X) <- paste0("X", seq_len(ncol(X)))
-  }
-
-  if (center) {
-    X <- scale(X, center = TRUE, scale = FALSE)
-  }
-
-  if (standardize) {
-    sds <- apply(X, 2L, stats::sd)
-
-    if (any(!is.finite(sds)) || any(sds <= 0)) {
-      stop(
-        "Standardization requires positive finite column standard deviations.",
-        call. = FALSE
-      )
-    }
-
-    X <- sweep(X, 2L, sds, "/")
   }
 
   X
@@ -523,7 +712,7 @@ prep_matrix_for_pca <- function(
 #' Validate a full external loading matrix
 #'
 #' @param V_dp Finite real `p` by `p` matrix with orthonormal columns.
-#' @param X Preprocessed data with `p` variables in the same order as the rows
+#' @param X Input data with `p` variables in the same order as the rows
 #'   of `V_dp`. Names are checked when both inputs have variable names.
 #' @return Validated directions named by the variables and `PC1`, ..., `PCp`.
 #' @details Shape and orthogonality checks do not verify privacy provenance.
@@ -568,7 +757,7 @@ prep_matrix_for_pca <- function(
 
 #' Resolve shared private directions
 #'
-#' @param X Preprocessed data matrix.
+#' @param X Validated input data matrix.
 #' @param budget Loading allocation as a named `c(eps, delta)` vector.
 #' @param cpp.option Use the compiled implementation when estimating loadings.
 #' @param V_dp Optional full direction matrix on the same variable scales as
@@ -582,13 +771,10 @@ prep_matrix_for_pca <- function(
   if (is.null(V_dp)) {
     V_dp <- dp_loading(
       X,
-      eps = budget[["eps"]],
-      delta = budget[["delta"]],
-      center = FALSE,
-      standardize = FALSE,
+      privacy = privacy_control(loading = budget),
       cpp.option = cpp.option,
       non_private = FALSE
-    )$private
+    )$directions
   }
 
   .validate_dp_directions(V_dp, X)
@@ -658,7 +844,7 @@ prep_matrix_for_pca <- function(
       anyNA(display) ||
       any(!display %in% valid)
   ) {
-    stop("`display` must contain vector, point, or heatmap.", call. = FALSE)
+    stop("`type` must contain vector, point, or heatmap.", call. = FALSE)
   }
 
   valid[valid %in% display]
@@ -763,15 +949,8 @@ prep_matrix_for_pca <- function(
   control
 }
 
-.loading_plot_packages <- function(
-    display,
-    labels
-) {
+.loading_plot_packages <- function() {
   packages <- c("ggplot2", "patchwork")
-
-  if (labels && any(display %in% c("vector", "point"))) {
-    packages <- c(packages, "ggrepel")
-  }
 
   for (package in packages) {
     if (!requireNamespace(package, quietly = TRUE)) {
@@ -779,8 +958,6 @@ prep_matrix_for_pca <- function(
     }
   }
 }
-
-
 
 
 # Build plots from estimated matrices ----------------------------------------
@@ -791,25 +968,42 @@ prep_matrix_for_pca <- function(
     display,
     heatmap_components,
     variables,
-    labels,
-    align_sign,
-    plot_control
+    plot_control,
+    non_private = !is.null(loading$nonprivate)
 ) {
-  V_private <- loading$private
-  V_nonprivate <- loading$nonprivate
+  V_private <- loading$directions
+  p <- ncol(V_private)
+  if (anyDuplicated(rownames(V_private))) {
+    stop("Variable names must be unique.", call. = FALSE)
+  }
+  display <- .validate_loading_display(display)
+  # A heatmap can display one component, even for a one-variable fit.
+  if (identical(display, "heatmap") && p == 1L && identical(axes, c(1, 2))) {
+    axes <- c(1L, 1L)
+  } else {
+    axes <- .validate_loading_axes(axes, p)
+  }
+  heatmap_components <- .validate_loading_components(
+    heatmap_components, p, axes, "heatmap_components"
+  )
+  validate_logical_value(non_private, "non_private")
+  if (non_private && is.null(loading$nonprivate)) {
+    stop("No non-private reference was stored. Refit with non_private = TRUE.",
+         call. = FALSE)
+  }
+  .loading_plot_packages()
+
+  V_nonprivate <- if (non_private) loading$nonprivate else NULL
   variable_names <- rownames(V_private)
+  if (is.null(variable_names)) {
+    variable_names <- paste0("X", seq_len(nrow(V_private)))
+  }
   control <- .merge_loading_plot_control(plot_control, axes)
 
-  # Align a plotting copy only; keep the returned loading matrices unchanged.
-  if (align_sign) {
-    signs <- ifelse(colSums(V_nonprivate * V_private) < 0, -1, 1)
-    V_nonprivate <- sweep(V_nonprivate, 2L, signs, "*")
+  matrices <- list(private = V_private)
+  if (non_private) {
+    matrices <- list(nonprivate = V_nonprivate, private = V_private)
   }
-
-  matrices <- list(
-    nonprivate = V_nonprivate,
-    private = V_private
-  )
   plots <- list(
     nonprivate = list(),
     private = list()
@@ -856,19 +1050,8 @@ prep_matrix_for_pca <- function(
     })
     names(data) <- names(matrices)
 
-    # Use the same scale for the non-private and private panels.
-    values <- unlist(lapply(data, function(d) {
-      if (kind == "heatmap") {
-        d$loading
-      } else {
-        c(d$x, d$y)
-      }
-    }))
-    limit <- max(abs(values))
-
-    if (!is.finite(limit) || limit <= sqrt(.Machine$double.eps)) {
-      limit <- 1
-    }
+    # Heatmap limits are computed separately for each version below.
+    # Vector and point plots use a fixed [-1.2, 1.2] square.
 
     for (version in names(matrices)) {
       base_title <- control[[paste0(version, "_title")]]
@@ -885,10 +1068,15 @@ prep_matrix_for_pca <- function(
       }
 
       if (kind == "heatmap") {
+        fill_limit <- max(abs(data[[version]]$loading))
+        if (!is.finite(fill_limit) ||
+            fill_limit <= sqrt(.Machine$double.eps)) {
+          fill_limit <- 1
+        }
         plots[[version]][[kind]] <- .build_loading_heatmap(
           dat = data[[version]],
           title = title,
-          fill_limit = limit,
+          fill_limit = fill_limit,
           control = control
         )
       } else {
@@ -898,8 +1086,6 @@ prep_matrix_for_pca <- function(
           title = title,
           xlab = control$xlab,
           ylab = control$ylab,
-          labels = labels,
-          axis_limit = 1.2 * limit,
           display = kind,
           control = control
         )
@@ -912,10 +1098,10 @@ prep_matrix_for_pca <- function(
   single <- length(display) == 1L
   combined <- patchwork::wrap_plots(
     c(unname(plots$nonprivate), unname(plots$private)),
-    ncol = if (single) 2L else length(display),
-    nrow = if (single) 1L else 2L,
+    ncol = if (single) length(matrices) else length(display),
+    nrow = if (single) 1L else length(matrices),
     byrow = TRUE,
-    guides = "collect"
+    guides = "keep"
   ) & ggplot2::theme(legend.position = "right")
 
   attr(combined, "axes") <- axes
@@ -933,9 +1119,9 @@ prep_matrix_for_pca <- function(
     attr(combined, "selected_heatmap_variables") <- selected$heatmap
   }
 
-  list(
-    loading = loading,
-    plot = c(plots, list(all = combined))
+  structure(
+    list(loading = loading, plot = c(plots, list(all = combined))),
+    class = "dp_loading_plot"
   )
 }
 
@@ -979,8 +1165,6 @@ prep_matrix_for_pca <- function(
     title,
     xlab,
     ylab,
-    labels,
-    axis_limit,
     display,
     control
 ) {
@@ -1020,8 +1204,8 @@ prep_matrix_for_pca <- function(
 
   plot <- plot +
     ggplot2::coord_equal(
-      xlim = c(-axis_limit, axis_limit),
-      ylim = c(-axis_limit, axis_limit),
+      xlim = c(-1.2, 1.2),
+      ylim = c(-1.2, 1.2),
       expand = FALSE
     ) +
     ggplot2::labs(title = title, x = xlab, y = ylab) +
@@ -1039,7 +1223,7 @@ prep_matrix_for_pca <- function(
       )
     )
 
-  if (labels) {
+  if (requireNamespace("ggrepel", quietly = TRUE)) {
     plot <- plot + ggrepel::geom_text_repel(
       ggplot2::aes(x = .data$x, y = .data$y, label = .data$variable),
       color = color,
@@ -1051,6 +1235,13 @@ prep_matrix_for_pca <- function(
       segment.color = "grey65",
       segment.size = 0.35,
       seed = 123
+    )
+  } else {
+    plot <- plot + ggplot2::geom_text(
+      ggplot2::aes(x = .data$x, y = .data$y, label = .data$variable),
+      color = color,
+      size = control$label_size,
+      vjust = -0.6
     )
   }
 
@@ -1089,7 +1280,7 @@ prep_matrix_for_pca <- function(
       high = control$heatmap_colors[["high"]],
       midpoint = 0,
       limits = c(-fill_limit, fill_limit),
-      name = "Loading"
+      name = NULL
     )
 
   if (control$heatmap_values) {

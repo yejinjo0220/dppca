@@ -1,0 +1,254 @@
+---
+title: "DP Loading Plots"
+description: "Estimate private principal component directions, inspect their coefficients, and create vector, point, and heatmap loading plots."
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{DP Loading Plots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r loading-setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  message = FALSE,
+  warning = TRUE,
+  error = FALSE,
+  cache = FALSE
+)
+```
+
+This tutorial explains how to estimate private principal component (PC) directions with `dp_loading()`, inspect the fitted results, and create vector, point, and heatmap plots with `plot()`. It covers **R arguments, examples, and visualization**, including optional ordinary PCA comparisons.
+
+Here, *loading* means a coefficient of a **unit-length PC direction vector**. Rows of the direction matrix represent variables and columns represent PCs and loading plots visualize variables. For the spherical Kendall construction, Gaussian mechanism, and interpretation of the coefficients, see [Theory of DP Loading](theory-dp-loading.html). For installation, input requirements, example datasets, and general budget allocation, see [Getting Started](tutorials-getting-started.html).
+
+## 1. Load the example data
+
+We use `gau`, a synthetic dataset with 1,000 observations and 20 numeric variables. For more details, see the documentation for [`gau`](../reference/gau.html).
+
+```{r loading-data}
+library(dppca)
+data("gau", package = "dppca")
+
+X <- gau
+dim(X)
+```
+
+## 2. Set the privacy budget and estimate PC directions
+
+For `dp_loading()`, the entire privacy budget is allocated to private direction estimation, so no `split` argument is needed.
+
+```{r loading-privacy}
+loading_privacy <- privacy_control(
+  eps = 3,
+  delta = 1e-4
+)
+```
+
+Now, estimate the private directions. We set `non_private = TRUE` to include ordinary PCA directions for comparison.
+
+```{r loading-fit}
+set.seed(123)
+loading_fit <- dp_loading(
+  X,
+  privacy = loading_privacy,
+  non_private = TRUE
+)
+
+loading_fit
+```
+
+The main arguments of `dp_loading()` are:
+
+<style>
+.loading-argument-table table { width: 100%; table-layout: fixed; }
+.loading-argument-table colgroup col:nth-child(1) { width: 19% !important; }
+.loading-argument-table colgroup col:nth-child(2) { width: 81% !important; }
+</style>
+
+::: {.loading-argument-table}
+
+| Argument | Description |
+|:--|:--|
+| `X` | Numeric input matrix or data frame; rows are observations and columns are variables. |
+| `privacy` | The loading budget from `privacy_control()`; when only the total `eps` and `delta` are given, the full budget is used by `dp_loading()`. |
+| `cpp.option` | Use the compiled direction estimator (`TRUE`, the default), or the R implementation (`FALSE`). |
+| `non_private` | Compute ordinary PCA directions for comparison when `TRUE` (default: `FALSE`). |
+
+:::
+
+The optional non-private reference is computed from the sample covariance matrix and **is not a differentially private output**. 
+
+## 3. Inspect the result
+
+The fitted object stores **private directions at the top level**, an optional ordinary PCA reference under `nonprivate`, and input dimensions and privacy settings under `metadata`:
+
+<style>
+.loading-fit-table table { width: 100%; table-layout: fixed; }
+.loading-fit-table colgroup col:nth-child(1) { width: 40% !important; }
+.loading-fit-table colgroup col:nth-child(2) { width: 60% !important; }
+</style>
+
+::: {.loading-fit-table}
+| Result | Description |
+|:--|:--|
+| `loading_fit$directions` | Private PC direction coefficients (a `p` by `p` matrix). |
+| `loading_fit$nonprivate` | Ordinary PCA direction coefficients, or `NULL` if not requested. |
+| `loading_fit$metadata$n`, `$p` | Number of observations and numeric variables. |
+| `loading_fit$metadata$privacy` | Privacy parameters used for private direction estimation. |
+:::
+
+For this dataset, each direction matrix has 20 rows (variables) and 20 columns
+(PCs). Each coefficient indicates the weight of a variable in a particular PC direction.
+
+```{r loading-inspect}
+dim(loading_fit$directions)
+round(loading_fit$directions[1:6, 1:3, drop = FALSE], 3)
+```
+
+The `summary()` function reports the estimated directions and the privacy settings without rerunning the estimator. Its returned summary object retains the direction matrices under `directions` and `nonprivate`:
+
+```{r loading-summary}
+summary(loading_fit)
+```
+
+
+## 4. Plot the result
+
+The `plot()` method for a `dp_loading` object provides three display types: `"vector"`, `"point"`, and `"heatmap"`. 
+
+<style>
+.loading-plot-table table { width: 100%; table-layout: fixed; }
+.loading-plot-table colgroup col:nth-child(1) { width: 15% !important; }
+.loading-plot-table colgroup col:nth-child(2) { width: 85% !important; }
+</style>
+
+::: {.loading-plot-table}
+| Plot type | What it shows |
+|:--|:--|
+| `"vector"` | Each variable as an arrow from the origin to its coefficients on two selected PCs. |
+| `"point"` | The same pair of PC coefficients shown as a point instead of an arrow. |
+| `"heatmap"` | Signed direction coefficients for selected variables across one or more PCs. |
+::: 
+
+### 4.1. Vector plot
+
+A vector plot displays each variable using its coefficients on the two selected PC axes. 
+For example, a variable with coefficients $(v_{j1}, v_{j2})$ appears as an arrow from $(0,0)$ to $(v_{j1}, v_{j2})$.
+The arrows represent variables with their lengths reflecting the magnitudes of the selected direction coefficients.
+
+```{r loading-vector, fig.width=10, fig.height=4.5, out.width="100%", fig.alt="Comparison of non-private and differentially private PCA direction coefficients shown as variable arrows."}
+vector_plot <- plot(
+  loading_fit,
+  type = "vector"
+)
+```
+
+By default, the plot displays PC1 and PC2, selecting the ten variables with the largest coefficient norms. Since `non_private = TRUE` was used when fitting, the non-private reference appears on the left and the private result on the right.
+
+
+
+### 4.2. Point and heatmap plots
+
+A point plot displays the same coefficient pairs without arrows. A heatmap shows the sign and magnitude of the coefficients across selected PCs.
+
+To display all three plot types together, simply omit `type`:
+
+```{r loading-all-plots, fig.width=12, fig.height=7.5, out.width="100%", fig.alt = "Non-private and private PCA direction coefficients shown in vector, point, and heatmap plots."}
+loading_plots <- plot(loading_fit)
+```
+
+By default, all three plot types display PC1 and PC2. When multiple types are selected, the non-private plots appear in the top row and the private plots in the bottom row.
+
+In the heatmaps, negative coefficients are shown in blue and positive coefficients in red by default. Each private and non-private heatmap uses its own symmetric color scale, so comparisons should be based on the displayed values or colorbars rather than on color intensity alone.
+
+The displayed PCs and variables can be customized using `axes`, `heatmap_components`, and `variables`, as described in the next section.
+
+
+## 5. Select PCs and variables
+
+The `plot()` method provides three arguments for selecting which PCs and variables to display:
+
+<style>
+.loading-option-table table { width: 100%; table-layout: fixed; }
+.loading-option-table colgroup col:nth-child(1) { width: 20% !important; }
+.loading-option-table colgroup col:nth-child(2) { width: 80% !important; }
+</style>
+
+::: {.loading-option-table}
+| Argument | Description |
+|:--|:--|
+| `axes` | Selects the two PCs displayed in vector and point plots (default: `c(1, 2)`). |
+| `heatmap_components` | Selects the PCs displayed in heatmaps (default: `NULL`, which uses the PCs specified by `axes`). |
+| `variables` | Selects the variables displayed in each plot (default: `10`). |
+:::
+
+For example, the following code displays PC1 and PC3 in the vector plot and PC1 through PC4 in the heatmap, using the first eight variables:
+
+```{r loading-select-pcs, eval=FALSE, fig.alt = "Selected PCA direction coefficients displayed using vector and heatmap plots."} 
+plot(
+  loading_fit,
+  type = c("vector", "heatmap"),
+  axes = c(1, 3),
+  heatmap_components = 1:4,
+  variables = 1:8  # Alternatively, select by name using paste0("V", 1:8)
+)
+```
+
+The `variables` argument supports several ways to select variables:
+
+| Example | Selection |
+|:--|:--|
+| `variables = 6` | Selects the six variables with the largest coefficient norms across the displayed PCs (default: `variables = 10`). |
+| `variables = "all"` | All variables. |
+| `variables = c("V1", "V3", "V5")` | Variables selected by name. |
+| `variables = c(1, 3, 5)` | Variables selected by column position. |
+
+When a single number is specified (e.g., `variables = 6`), variables are selected based on the magnitudes of their coefficients across the PCs displayed in each plot. Thus, vector and point plots select the same variables, while heatmaps may select different variables depending on `heatmap_components`. Variable selection is performed separately for private and non-private results. To display the same variables across all plots, specify their names or column positions explicitly.
+
+## 6. Customize the appearance
+
+Use `loading_plot_control()` to change colors, text sizes, and heatmap appearance. 
+Specify plot type, PC axes, and variable selection directly in `plot()`.
+
+```{r loading-custom, fig.alt = "Customized visualization of differentially private PCA direction coefficients."}
+custom_plot <- plot(
+  loading_fit,
+  type = "point",
+  axes = c(1, 2),
+  variables = 1:8,
+  plot_control = loading_plot_control(
+    nonprivate_color = "black",
+    private_color = "navy",
+    point_size = 3,
+    label_size = 3.5,
+    base_size = 12,
+    title_size = 13,
+    private_title = "Private directions"
+  )
+)
+```
+
+
+| Option | Purpose |
+|:--|:--|
+| `nonprivate_color`, `private_color` | Colors used for ordinary and private vectors or points. |
+| `arrow_size`, `point_size`, `label_size` | Sizes of arrows, points, and variable labels. |
+| `heatmap_values`, `heatmap_digits`, `heatmap_text_size` | Display and formatting of coefficient labels inside heatmap cells. |
+| `heatmap_colors` | Negative and positive heatmap colors, supplied as `c(low = ..., high = ...)`. |
+| `base_size`, `title_size` | General text and title sizes. |
+| `nonprivate_title`, `private_title` | Titles of the ordinary and private panels. |
+| `xlab`, `ylab` | Axis labels for vector and point plots. |
+
+For complete argument descriptions, see `?dp_loading`, `?plot.dp_loading`, and `?loading_plot_control`. 
+
+---
+
+**Previous:** [Getting Started](tutorials-getting-started.html)  
+**Next:** [DP Scree Plot](tutorials-scree-plots.html)  
+**Tutorial overview:** [Choose a starting point](tutorials-getting-started.html#choose-a-starting-point)

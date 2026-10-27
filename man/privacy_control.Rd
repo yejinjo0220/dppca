@@ -19,55 +19,56 @@ finite, and \code{delta} must lie in \verb{(0, 1)}. Leave both \code{NULL} when
 supplying absolute component budgets instead.}
 
 \item{split}{Named positive proportions that sum to one. The same
-proportions apply to \code{eps} and \code{delta}. Include \code{loading} and either
-\code{scree}, \code{score}, or both. The default allocates one third to each of
-\code{loading}, \code{scree} and \code{score}, as required by \code{\link[=dp_pca]{dp_pca()}}. For
-\code{\link[=dp_scree]{dp_scree()}} use, for example, \code{c(loading = 0.5, scree = 0.5)}; for
-\code{\link[=dp_score]{dp_score()}} use \code{c(loading = 0.5, score = 0.5)}.}
+proportions apply to \code{eps} and \code{delta}. Include \code{loading} alone, or
+\code{loading} with \code{scree}, \code{score}, or both. When \code{split} is omitted,
+the fitting function automatically divides the total budget equally
+among its required components: \code{loading} for \code{\link[=dp_loading]{dp_loading()}},
+\code{loading} and \code{scree} for \code{\link[=dp_scree]{dp_scree()}}, \code{loading} and \code{score} for
+\code{\link[=dp_score]{dp_score()}}, or all three for \code{\link[=dp_pca]{dp_pca()}}. An explicitly supplied
+\code{split} is used exactly as specified, without automatic redistribution.}
 
 \item{loading, scree, score}{Optional absolute component budgets, each a
-named \code{c(eps = ..., delta = ...)} vector. Supply \code{loading} with either
-\code{scree}, \code{score}, or both, without total budgets or a \code{split} argument.
+named \code{c(eps = ..., delta = ...)} vector. Supply \code{loading} alone or
+with \code{scree}, \code{score}, or both, without total budgets or a \code{split} argument.
 Each component must have positive finite \code{eps} and \code{delta} in \verb{(0, 1)};
 the component deltas must sum to less than one. Absolute budgets may
 allocate different proportions of \code{eps} and \code{delta}.}
 }
 \value{
 A \code{dppca_privacy_control} list with \code{total}, a named
-\code{c(eps, delta)} vector, and \code{components}, a list of the supplied
+\code{c(eps, delta)} vector, and \code{budgets}, a list of the supplied
 component budget vectors in \code{loading}, \code{scree}, \code{score} order.
 }
 \description{
 Allocate privacy budgets for shared PCA estimation
 }
 \details{
-Use the component set required by the estimation function: \code{loading}
-and \code{scree} for scree functions, \code{loading} and \code{score} for score
-functions, or all three for \code{\link[=dp_pca]{dp_pca()}}. An estimation function rejects
-a different component set rather than discarding or redistributing a
-budget. Loading is estimated once and shared within that function call.
-When external \code{V_dp} is supplied, loading estimation is skipped but its
-allocation is still required to record the budget already used for
-those directions. It is not redistributed to scree or score estimation.
+The estimation function resolves the required component budgets:
+\code{loading} for \code{\link[=dp_loading]{dp_loading()}}, \code{loading} plus \code{scree} for \code{\link[=dp_scree]{dp_scree()}},
+\code{loading} plus \code{score} for \code{\link[=dp_score]{dp_score()}}, and all three for \code{\link[=dp_pca]{dp_pca()}}.
+With total \code{eps} and \code{delta} and no explicit \code{split}, the constructor
+initially shows equal thirds, but the fitting function resolves the actual
+equal shares. An explicit split or absolute budget must match the required
+components.
 
-When comparing several scree methods, each method receives the full scree
-allocation. Score methods share one frame, which uses 35 percent of the
-score \code{eps}; each histogram method receives the remaining 65 percent of
-score \code{eps} and all score \code{delta}. These allocations are not divided across
-methods. Releasing several methods together requires composition, counting
-the shared loading and frame releases once per call.
-The returned totals sum each named component once. Reusing a previously
-released loading matrix incurs no new loading cost; compose the actual
-new releases and count its original release once. This object records
-allocations, not cumulative spending across calls, and does not verify
-the privacy provenance of \code{V_dp} or establish a guarantee for preprocessing
-or the complete estimation procedure.
+With supplied \code{V_dp}, the loading allocation records the prior direction
+release; it is not spent again or redistributed. Score epsilon is divided
+35\% to the private frame and 65\% to the histogram; all score delta goes to
+the histogram. When multiple scree or score estimators are requested, each
+receives its respective full allocation. Releasing them together requires
+privacy composition; the recorded totals are allocations, not cumulative
+privacy expenditure. Preprocessing and supplied directions require their
+own privacy justification.
 }
 \examples{
-# Integrated PCA: equal loading, scree and score allocations.
+# With no split, the fitting function resolves equal shares:
+# loading only (100\%), scree/score (50\%-50\%), or PCA (one-third each).
 privacy_control(eps = 6, delta = 1e-4)
 
-# Scree estimation: equal loading and scree allocations.
+# Alternatively, specify the loading-only absolute budget.
+privacy_control(loading = c(eps = 6, delta = 1e-4))
+
+# Explicit splits customize allocation for scree or score.
 privacy_control(
   eps = 6,
   delta = 1e-4,
