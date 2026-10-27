@@ -1,11 +1,9 @@
 # Control options for Huber scree estimation
 
-Creates a control list for the Huber-type private scree estimator used
-by
+Creates a control list for `method = "huber"` in
 [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
-and
-[`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
-when `method = "huber"`.
+or the scree configuration of
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md).
 
 ## Usage
 
@@ -25,80 +23,50 @@ huber_control(
 
 - k_min_m2, k_max_m2:
 
-  Integers defining the lower and upper dyadic bin indices used in the
-  private second-moment scale step. The histogram searches over scale
-  levels \\2^k\\ for \\k\_{\min} \le k \le k\_{\max}\\. These values
-  have no defaults because they should be chosen according to the scale
-  of the data.
+  Required public integer bounds for the dyadic scale grid, with
+  `k_min_m2 < k_max_m2`.
 
 - m2_frac:
 
-  Number in `(0, 1)` defining the fraction of the Huber scree privacy
-  parameters allocated to the private second-moment scale step. This
-  value has no default.
+  Required fraction in `(0, 1)` of epsilon used for the private scale
+  step.
 
 - mu0:
 
-  Numeric initial value for Huber noisy gradient descent. The default is
-  `0`.
+  Public initial mean estimate (`0` by default).
 
 - eta0:
 
-  Positive number defining the fixed step size for Huber noisy gradient
-  descent. The default is `1`.
+  Positive public gradient step size (`1` by default).
 
 - T:
 
-  Optional positive integer defining the number of noisy gradient
-  descent iterations. If `NULL`, the implementation uses \\\lceil \log n
-  \rceil\\, where \\n\\ is the number of observations.
+  Number of gradient iterations; `NULL` (default) uses
+  `ceiling(log(m))`, where `m = floor(n / 2)`.
 
 - M:
 
-  Optional positive integer defining the number of blocks used in the
-  private second-moment scale step. If `NULL`, the implementation uses
-  \\\lfloor \sqrt{n} / 2 \rfloor\\, where \\n\\ is the number of
-  observations.
+  Number of scale-estimation blocks; `NULL` (default) uses
+  `floor(sqrt(m / 2))`, capped by available input pairs.
 
 ## Value
 
-A list of control options for `method = "huber"`.
+A control list for `method = "huber"`.
 
 ## Details
 
-The Huber method estimates the mean of squared principal component
-scores by noisy gradient descent on the Huber loss. It follows the
-Huber-type private robust mean approach of Yu et al. (2024) .
+The Huber method privately estimates a robust scale for each component
+using a noisy dyadic histogram, then performs projected noisy gradient
+updates to estimate the mean of squared pair differences. The scale
+proxy sets the Huber threshold; it is not a raw second moment. At least
+eight observations are required.
 
-The method first privately estimates a scale proxy for the squared
-scores, denoted by \\m_2\\. This scale proxy is then used to choose the
-Huber robustification level for noisy gradient descent. The parameters
-`k_min_m2`, `k_max_m2`, and `m2_frac` control this private scale-proxy
-step, while `mu0`, `eta0`, `T`, and `M` control the subsequent noisy
-gradient descent routine.
-
-The dyadic indices `k_min_m2` and `k_max_m2` define the search range for
-the private histogram used to estimate \\m_2\\. The histogram searches
-over candidate scale levels \\2^k\\ satisfying \\k\_{\min} \le k \le
-k\_{\max}\\. Because this range depends on the scale of the squared
-scores, these arguments are intentionally not given defaults.
-
-The argument `m2_frac` determines how the Huber scree privacy parameters
-are split between the private scale-proxy step and the noisy gradient
-descent step. If \\(\epsilon\_{\mathrm{scree}},
-\delta\_{\mathrm{scree}})\\ denotes the privacy parameters available for
-Huber scree estimation, then \\m2_frac \cdot
-(\epsilon\_{\mathrm{scree}}, \delta\_{\mathrm{scree}})\\ is used to
-privately estimate \\m_2\\, while \\(1 - m2_frac) \cdot
-(\epsilon\_{\mathrm{scree}}, \delta\_{\mathrm{scree}})\\ is used for
-Huber noisy gradient descent.
-
-The remaining parameters have default values. The default `mu0 = 0` is
-the initial value for noisy gradient descent, and the default `eta0 = 1`
-is the fixed step size. If `T = NULL`, the number of noisy gradient
-descent iterations is chosen as \\\lceil \log n \rceil\\. If `M = NULL`,
-the number of blocks used in the private estimator of \\m_2\\ is chosen
-as \\\lfloor \sqrt{n} / 2 \rfloor\\.
+The private scale step uses `m2_frac * epsilon / k` for each component
+and no delta. Joint gradient updates use the remaining epsilon and all
+delta, calibrated across components and iterations. Each update is
+projected to nonnegative values; optional monotone adjustment follows
+estimation. Tuning parameters must be public or have separate privacy
+accounting.
 
 ## References
 
@@ -110,7 +78,7 @@ estimation and inference.” *Bernoulli*, **30**(4), 3059–3088.
 [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
 for computing differentially private scree estimates using these control
 options.
-[`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
+[`plot.dp_scree()`](https://yejinjo0220.github.io/dppca/reference/plot.dp_scree.md)
 for plotting scree estimates.
 
 ## Examples

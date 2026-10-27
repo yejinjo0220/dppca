@@ -23,28 +23,42 @@ loading_plot_control(
 )
 }
 \arguments{
-\item{nonprivate_color, private_color}{Colors for vectors and points.}
+\item{nonprivate_color, private_color}{Colors of the non-private and private
+vectors or points, respectively.}
 
-\item{arrow_size, point_size, label_size}{Vector width, point size, label size.}
+\item{arrow_size}{Width of arrows in vector plots.}
 
-\item{heatmap_values}{Print coefficients inside heatmap cells.}
+\item{point_size}{Size of points in point plots.}
 
-\item{heatmap_digits}{Number of decimal places in heatmap cells.}
+\item{label_size}{Size of variable labels in vector and point plots.}
 
-\item{heatmap_text_size}{Heatmap cell text size.}
+\item{heatmap_values}{Whether to display loading coefficients in heatmap
+cells. Default: \code{TRUE}.}
 
-\item{base_size, title_size}{Base font and title sizes.}
+\item{heatmap_digits}{Number of decimal places for heatmap labels.}
 
-\item{nonprivate_title, private_title}{Panel titles; \code{NULL} hides them.}
+\item{heatmap_text_size}{Size of coefficient labels in heatmaps.}
 
-\item{xlab, ylab}{Axis labels; \code{NULL} uses the selected PC names.}
+\item{base_size}{Base font size for all loading plots.}
 
-\item{heatmap_colors}{Named character vector with \code{low} and \code{high} colors.
-Both heatmaps use these colors, with white at zero.}
+\item{title_size}{Font size for panel titles.}
+
+\item{nonprivate_title, private_title}{Text used for the corresponding panel
+titles. The display name is appended in parentheses; \code{NULL} hides a title.}
+
+\item{xlab, ylab}{Axis labels for vector and point plots. \code{NULL} uses the
+selected PC names.}
+
+\item{heatmap_colors}{Named character vector with \code{low} and \code{high} colors
+for negative and positive loading coefficients. White represents zero.
+Private and non-private heatmaps use separate, symmetric color ranges
+based on their own displayed coefficients.}
 }
 \value{
-A named list of plot settings.
+A named list of validated loading plot settings.
 }
 \description{
-Control loading plot appearance
+Specify colors, text sizes, labels, and heatmap settings for loading plots.
+Pass the resulting list through the \code{plot_control} argument of
+\code{\link[=plot.dp_loading]{plot.dp_loading()}}.
 }

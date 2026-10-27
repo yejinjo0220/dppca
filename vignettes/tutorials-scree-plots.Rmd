@@ -1,0 +1,426 @@
+---
+title: "DP Scree Plots"
+description: >
+  Estimate private scree values, inspect PVE, select clipped, PMWM, or Huber
+  controls, and customize scree plots.
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{DP Scree Plots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r scree-setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.align = "center",
+  fig.width = 7,
+  fig.height = 5,
+  message = FALSE,
+  warning = TRUE,
+  error = FALSE,
+  cache = FALSE
+)
+```
+
+This tutorial shows how to use `dp_scree()` to estimate private scree values and proportions of variance explained (PVE), inspect the results, and draw
+scree and PVE plots. Also, it explains how to choose among the **clipped mean**, **private modified winsorized mean (PMWM)**, and **Huber mean** estimators.
+
+The focus here is on **R arguments, control settings, and visualization**.
+For the paired-difference construction, mathematical formulas, and privacy accounting, see [Theory of DP Scree](theory-dp-scree.html). 
+For installation, example datasets, input requirements, and general privacy budget allocation, see [Getting Started](tutorials-getting-started.html).
+
+## 1. Load the example data
+
+We use `gau`, a synthetic dataset with 1,000 observations and 20 numeric variables. 
+For more details, see the documentation for [`gau`](../reference/gau.html).
+
+```{r scree-data}
+library(dppca)
+data("gau", package = "dppca")
+
+X <- gau
+dim(X)
+```
+
+## 2. Set the privacy budget and estimate scree values
+
+Scree estimation needs a `loading` budget for private PC directions and a `scree` budget for the private variance estimator. 
+When `split` is omitted,`dp_scree()` divides the total budget **equally** between these two components.
+
+```{r scree-privacy}
+scree_privacy <- privacy_control(
+  eps = 6,
+  delta = 1e-4
+)
+```
+
+You can also specify a different allocation using `split` as explained in [Getting Started](tutorials-getting-started.html).
+
+First, we use the clipped mean method to estimate scree values for the first five PCs:
+
+```{r scree-fit}
+set.seed(123)
+scree_fit <- dp_scree(
+  X,
+  k = 5,
+  privacy = scree_privacy,
+  method = "clipped",
+  control = clipped_control(C_clip = 20),
+  non_private = TRUE
+)
+
+scree_fit
+```
+
+The `clipped_control()` function requires a public clipping threshold. The value `C_clip = 20` is an illustrative setting, not an automatic or universally recommended choice. 
+
+The main arguments of `dp_scree()` are:
+
+<style>
+.scree-argument-table table {
+  width: 100%;
+  table-layout: fixed;
+}
+.scree-argument-table colgroup col:first-child {
+  width: 18% !important;
+}
+.scree-argument-table colgroup col:nth-child(2) {
+  width: 82% !important;
+}
+</style>
+
+::: {.scree-argument-table}
+
+| Argument | Description |
+|:--|:--|
+| `X` | Input observations, with numeric features in columns. |
+| `k` | Number of leading PCs to estimate, from 1 to the number of numeric variables. |
+| `privacy` | Total budget and loading/scree allocation from `privacy_control()`. |
+| `method` | One or more of `"clipped"`, `"pmwm"`, and `"huber"` (default: `"clipped"`). |
+| `control` | Method-specific tuning parameters, specified using `clipped_control()`, `pmwm_control()`, or `huber_control()`. |
+| `cpp.option` | Use the compiled direction estimator (`TRUE`, the default) or its R implementation (`FALSE`). |
+| `mono` | Enforce a nonincreasing scree sequence via isotonic regression (default: `TRUE`). |
+| `non_private` | Compute an ordinary PCA comparison when `TRUE` (default: `FALSE`). |
+| `V_dp` | Optionally reuse previously estimated private directions; their earlier loading budget must still be recorded. |
+
+:::
+
+## 3. Inspect and plot the result
+
+Printing `scree_fit` shows a short overview of the fitted results. 
+To see scree values, PVE, and cumulative PVE for each stored method, use `summary()`:
+
+```{r scree-summary}
+scree_summary <- summary(scree_fit)
+scree_summary
+```
+
+The numeric estimates remain directly accessible by method. 
+The optional ordinary PCA reference is under `nonprivate`, while data dimensions, selected methods, and privacy allocations are under `metadata`:
+
+```{r scree-values}
+scree_fit$clipped$scree
+scree_fit$clipped$pve
+scree_fit$nonprivate$scree
+scree_fit$metadata$privacy
+```
+
+In a default private-only fit (`non_private = FALSE`), `scree_fit$nonprivate` is `NULL`; `scree_fit$clipped`, `$pmwm`, or `$huber` remain top-level method results. 
+
+By default, `plot()` displays both the PVE and scree plots side by side. Because this example was fitted with `non_private = TRUE`, 
+the ordinary PCA reference is included automatically; a fit with `non_private = FALSE` shows only private estimates:
+
+```{r scree-default-plots, fig.width=12, fig.height=4.5, out.width="100%", results="hide", fig.alt="Private and ordinary PCA PVE and scree plots"}
+plot(scree_fit)
+```
+
+To display only one view, use `type`. 
+
+```{r scree-select-views, eval=FALSE}
+plot(scree_fit, type = "pve")
+plot(scree_fit, type = "scree")
+```
+
+<style>
+.scree-plot-table table {
+  width: 100%;
+  table-layout: fixed;
+}
+.scree-plot-table colgroup col:first-child {
+  width: 15% !important;
+}
+.scree-plot-table colgroup col:nth-child(2) {
+  width: 85% !important;
+}
+</style>
+
+::: {.scree-plot-table}
+
+| Plot type | What it shows |
+|:--|:--|
+| `"pve"` | Each component's share of the estimated variation among the `k` fitted PCs. |
+| `"scree"` | Estimated variation along each private PC direction, on its original scale. |
+:::
+
+## 4. Choose a method and its tuning parameters
+
+The three scree estimators use the same projected paired differences, but differ in how they estimate their means. 
+The tables below map the symbols used in [Theory of DP Scree](theory-dp-scree.html)** to the R arguments of each method-specific control function.
+
+### Clipped mean {#clipped-control}
+
+Clipped estimation limits each squared pair difference before releasing a noisy mean. See [Theory of Clipped mean](theory-dp-scree.html#clipped-mean).
+
+<style>
+.clipped-parameter-table table {width: 100%; table-layout: fixed;}
+.clipped-parameter-table colgroup col:nth-child(1) {width: 20% !important;}
+.clipped-parameter-table colgroup col:nth-child(2) {width: 20% !important;}
+.clipped-parameter-table colgroup col:nth-child(3) {width: 60% !important;}
+</style>
+
+::: {.clipped-parameter-table}
+| Theory notation | R argument | Meaning |
+|:--|:--|:--|
+| $C_{\mathrm{clip}}$ | `C_clip` | Positive upper clipping threshold; controls the bias–noise tradeoff (required, no default). |
+::: 
+
+The setting used in Section 2 is:
+
+```{r scree-clipped-control}
+clipped_set <- clipped_control(C_clip = 20)
+clipped_set
+```
+
+A smaller `C_clip` reduces sensitivity and Gaussian noise, but can truncate more large paired differences. 
+A larger value reduces clipping bias while requiring more privacy noise.
+
+### Private modified winsorized mean (PMWM) {#pmwm-control}
+
+PMWM privately estimates lower and upper cutoffs and then computes a noisy winsorized mean. See [Theory of PMWM](theory-dp-scree.html#pmwm).
+
+<style>
+.pmwm-parameter-table table {width: 100%;table-layout: fixed;}
+.pmwm-parameter-table colgroup col:nth-child(1) {width: 20% !important;}
+.pmwm-parameter-table colgroup col:nth-child(2) {width: 20% !important;}
+.pmwm-parameter-table colgroup col:nth-child(3) {width: 60% !important;}
+</style>
+
+::: {.pmwm-parameter-table}
+
+| Theory notation | R argument | Meaning |
+|:--|:--|:--|
+| $a,b$ | `a`, `b` | Public lower and upper bounds for the **estimated cutoffs**, with $a<b$ (required). |
+| $c_{\mathrm{trim}}$ | `trim_const` | Positive baseline trimming constant in the quantile level (required). |
+| $\eta_{\mathrm{trim}}$ | `eta` | Lower-bound tuning value for the trimming proportion, in $[0,0.5)$ (required). |
+| $\beta$ | `beta` | Geometric quantile-search grid base, greater than 1 (default: `1.001`). |
+| $I_Q,I_M$ | `split_mode` | `FALSE`: reuse all pair rows in both stages (default); `TRUE`: use disjoint quantile and mean subsets. |
+:::
+
+For example, to use PMWM instead of the clipped estimator:
+
+```{r scree-pmwm}
+pmwm_set <- pmwm_control(
+  a = 0,
+  b = 50,
+  trim_const = 10,
+  eta = 0.01
+)
+```
+
+```{r scree-pmwm-fit, eval=FALSE}
+set.seed(123)
+pmwm_fit <- dp_scree(
+  X,
+  k = 5,
+  privacy = scree_privacy,
+  method = "pmwm",
+  control = pmwm_set,
+  non_private = TRUE
+)
+
+summary(pmwm_fit)
+plot(pmwm_fit, type = "pve")
+```
+
+### Huber mean {#huber-control}
+
+The Huber method privately estimates a scale for each PC and uses thatscale to set a Huber threshold for noisy gradient descent. See [Huber mean theory](theory-dp-scree.html#huber-mean).
+
+<style>
+.huber-parameter-table table {width: 100%;table-layout: fixed;}
+.huber-parameter-table colgroup col:nth-child(1) {width: 20% !important;}
+.huber-parameter-table colgroup col:nth-child(2) {width: 20% !important;}
+.huber-parameter-table colgroup col:nth-child(3) {width: 60% !important;}
+</style>
+
+::: {.huber-parameter-table}
+
+| Theory notation | R argument | Meaning |
+|:--|:--|:--|
+| $r_{\min},r_{\max}$ | `k_min_m2`, `k_max_m2` | Integer limits for the dyadic scale candidates $2^r$, with $r_{\min}<r_{\max}$ (required). |
+| $\rho$ | `m2_frac` | Fraction of scree epsilon used for private scale estimation, in $(0,1)$ (required). |
+| $\mu_0$ | `mu0` | Public initial mean iterate (default: `0`). |
+| $\eta_0$ | `eta0` | Positive gradient-descent step size (default: `1`). |
+| $T$ | `T` | Number of noisy gradient steps (default: `ceiling(log(m))`). |
+| $M$ | `M` | Number of blocks for private scale estimation (default: `floor(sqrt(m / 2))`, capped by available pairs). |
+:::
+
+When `T` or `M` is left as `NULL`, the corresponding sample-size-based default is used. 
+
+For example:
+
+```{r scree-huber}
+huber_set <- huber_control(
+  k_min_m2 = -10,
+  k_max_m2 = 10,
+  m2_frac = 0.25
+)
+```
+
+```{r scree-huber-fit, eval=FALSE}
+set.seed(123)
+huber_fit <- dp_scree(
+  X,
+  k = 5,
+  privacy = scree_privacy,
+  method = "huber",
+  control = huber_set,
+  non_private = TRUE
+)
+
+summary(huber_fit)
+plot(huber_fit, type = "pve")
+```
+
+
+
+## 5. Compare multiple methods and account for releases
+
+To fit several methods using one private direction estimate, provide a vector of method names and a named list of their corresponding controls:
+
+```{r scree-method-comparison}
+set.seed(123)
+scree_comparison <- dp_scree(
+  X,
+  k = 5,
+  privacy = scree_privacy,
+  method = c("clipped", "pmwm", "huber"),
+  control = list(
+    clipped = clipped_set,
+    pmwm = pmwm_set,
+    huber = huber_set
+  ),
+  non_private = TRUE
+)
+
+summary(scree_comparison)
+```
+
+```{r scree-method-comparison-plot, results="hide", fig.alt="PVE comparison of clipped, PMWM, Huber, and ordinary PCA"}
+plot(scree_comparison, type = "pve")
+```
+
+Within a call, all methods share a single private direction estimate but independently compute their scree estimates using the full scree privacy budget. 
+
+
+## 6. Reusing Private PC Directions {#reusing-private-pc-directions}
+
+When supplying previously estimated directions through `V_dp`, specify the actual privacy budget used to estimate those directions as the `loading` allocation. 
+This records the previously incurred privacy cost without spending the loading budget again.
+
+There are two ways to specify the privacy allocation.
+
+**Option 1: Specify component budgets directly.**
+
+```{r scree-reuse-direct, eval=FALSE}
+# Estimate private PC directions.
+loading_fit <- dp_loading(
+  X,
+  eps = 3,
+  delta = 5e-5
+)
+
+# Specify the actual loading budget and the scree budget.
+reuse_privacy <- privacy_control(
+  loading = c(eps = 3, delta = 5e-5),
+  scree   = c(eps = 3, delta = 5e-5)
+)
+```
+
+**Option 2: Specify a total budget and allocation proportions.**
+
+```{r scree-reuse-split, eval=FALSE}
+reuse_privacy <- privacy_control(
+  eps = 6,
+  delta = 1e-4,
+  split = c(loading = 0.5, scree = 0.5)
+)
+
+# Estimate private PC directions using the allocated loading budget.
+loading_budget <- reuse_privacy$components$loading
+
+loading_fit <- dp_loading(
+  X,
+  eps = loading_budget[["eps"]],
+  delta = loading_budget[["delta"]]
+)
+```
+
+After either option, the estimated directions can be reused in `dp_scree()`:
+
+```{r scree-reuse-directions, eval=FALSE}
+scree_reused <- dp_scree(
+  X,
+  k = 5,
+  privacy = reuse_privacy,
+  method = "clipped",
+  control = clipped_control(C_clip = 20),
+  V_dp = loading_fit$directions,
+  non_private = FALSE
+)
+
+summary(scree_reused)
+```
+
+## 7. Customize the plot
+
+Use `scree_plot_control()` to change the appearance of the stored plot.
+
+```{r scree-custom-plot, results="hide", fig.alt="Customized PVE plot comparing private and ordinary PCA"}
+plot(
+  scree_fit,
+  type = "pve",
+  plot_control = scree_plot_control(
+    title = "PVE among the first five PCs",
+    col = c(nonprivate = "grey30", clipped = "#1F4E79"),
+    legend_labels = c(nonprivate = "Ordinary PCA", clipped = "Clipped DP"),
+    lwd = 2,
+    point_cex = 1.2,
+    cex_main = 1.2,
+    legend_position = "topright"
+  )
+)
+```
+
+| Setting | What it changes |
+|:--|:--|
+| `title`, `xlab`, `ylab` | Plot title and axis labels. |
+| `col`, `lty`, `pch` | Named series colors, line types, and point symbols. |
+| `lwd`, `point_cex` | Line width and point-size multiplier. |
+| `cex_main`, `cex_lab`, `cex_axis` | Title, axis-label, and tick-label sizes. |
+| `legend_position`, `legend_labels`, `cex_legend`, `legend_bty` | Legend position, labels, size, and border. |
+
+
+For complete argument descriptions, see `?dp_scree`, `?plot.dp_scree`, and `?scree_plot_control`.
+
+---
+**Previous:** [DP Loading Plot](tutorials-loading-plots.html)  
+**Next:** [DP Score Plot](tutorials-score-plots.html)  
+**Tutorial overview:** [Choose a starting point](tutorials-getting-started.html#choose-a-starting-point)
+
+

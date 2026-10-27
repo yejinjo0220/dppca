@@ -1,326 +1,330 @@
 # dppca
 
-`dppca` provides tools for **differentially private principal component
-analysis (PCA) visualization** in R. It supports private PC direction
-estimation, private scree/PVE plots, private score plots, grouped score
-visualizations, and an interactive ‘shiny’ app.
+`dppca` is an R package for **differentially private principal component
+analysis (PCA) visualization**. It estimates private PC directions,
+scree values, and two-dimensional score histograms, and uses these
+quantities to create loading plots, scree plots, score plots, variable
+plots, and biplots.
+
+The package supports **standalone analyses** with
+[`dp_loading()`](https://yejinjo0220.github.io/dppca/reference/dp_loading.md),
+[`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md),
+and
+[`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md),
+as well as a **shared PCA workflow** with
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md).
+The fitting functions return S3 objects that can be inspected with
+[`summary()`](https://rdrr.io/r/base/summary.html) and visualized with
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html).
 
 ## Installation
 
-You can install the development version from GitHub with:
+Install the released package from CRAN:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("yejinjo0220/dppca")
+install.packages("dppca")
 ```
 
-## Basic workflow
+To use the latest development code shown in the tutorials, install from
+GitHub:
 
-The main workflow is:
-
-1.  estimate private PC directions with
-    [`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md).
-2.  estimate and plot private scree/PVE summaries with
-    [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
-    and
-    [`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md).
-3.  compute and plot private PCA score summaries with
-    [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md)
-    and
-    [`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md).
-4.  optionally use grouped score visualizations or the Shiny app.
-
-The examples below use the synthetic Gaussian cluster dataset included
-in the package.
+``` r
+# install.packages("remotes")
+remotes::install_github("yejinjo0220/dppca")
+```
 
 ``` r
 library(dppca)
-
-data(gau, package = "dppca")
-X <- gau
 ```
 
-## 1. Private PC directions
+## Quick start: one fit, five PCA visualizations
 
-[`dp_pc_dir()`](https://yejinjo0220.github.io/dppca/reference/dp_pc_dir.md)
-estimates leading principal component directions under differential
-privacy.
+The integrated
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md)
+function estimates a private PC direction matrix **once** and reuses it
+for private scree and score estimation. It requires **one scree
+estimator** (`"clipped"`, `"pmwm"`, or `"huber"`) and **one score
+histogram estimator** (`"add"` or `"sparse"`).
 
 ``` r
-set.seed(123)
+library(dppca)
+data("gau", package = "dppca")
+X <- gau  # 1,000 observations, 20 numeric variables
 
-V <- dp_pc_dir(
+set.seed(123)
+pca_fit <- dp_pca(
   X,
-  k = 5,
-  g_dppca = TRUE,
-  eps = 3,
-  delta = 1e-4
+  privacy = privacy_control(eps = 6, delta = 1e-4),
+  scree = list(
+    k = 5,
+    method = "clipped",
+    control = clipped_control(C_clip = 3)
+  ),
+  score = list(method = "add", bins = c(10, 10)),
+  axes = c(1, 2)
 )
 
-V 
+pca_fit
+summary(pca_fit)
+
+set.seed(456)
+pca_plots <- plot(pca_fit)  # Five DP panels
 ```
 
-The returned object contains private principal component directions that
-can be used PCA summaries and visualizations.
+By default, `plot(pca_fit)` displays **PVE**, a **score histogram**, a
+**loading vector plot**, a **variable plot**, and a **biplot**.
 
-## 2. Private scree values
+### Inspect the returned results
 
-[`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
-estimates private scree values or proportions of variance explained. The
-method is chosen by the `method` argument.
+| Component | Description |
+|:---|:---|
+| `pca_fit$directions` | Private PC directions (columns of an orthonormal matrix). |
+| `pca_fit$scree` | Estimated variances along the retained private directions. |
+| `pca_fit$pve` | Proportions of estimated variation over the retained components. |
+| `pca_fit$frame` | Privately estimated two-dimensional score frame. |
+| `pca_fit$hist` | Private pooled score histogram. |
+| `pca_fit$score_groups` | Per-group histograms, when a `group` is provided. |
+| `pca_fit$metadata` | Dimensions, selected axes, methods, and privacy allocations. |
+| `pca_fit$nonprivate` | Optional ordinary PCA reference; `NULL` by default. |
+
+You can choose individual panels and their display settings without
+refitting:
 
 ``` r
-set.seed(123)
+set.seed(456)
+selected_plots <- plot(
+  pca_fit,
+  display = c("score", "biplot"),
+  score = list(type = "sample"),
+  biplot = list(alpha = 0, labels = TRUE),
+  sampling = sampling_control(method = "uniform", sample_size = 300),
+  center = TRUE,  # Shared by score and biplot (default)
+  variables = 10,
+  base_size = 12
+)
 
-scree_clipped <- dp_scree(
+# The individual ggplot objects are also stored:
+selected_plots$private$plots$score
+selected_plots$private$plots$biplot
+```
+
+The `variables` argument defaults to the **10 variables with the largest
+Euclidean norms of their private loading coefficients on the displayed
+two PC axes**. T he same selected variables are reused in loading,
+variable, and biplot panels.
+
+### Optional non-private comparison
+
+To compare against ordinary PCA, add `non_private = TRUE` to the initial
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md)
+call and fit again. Then, `plot(pca_fit)` automatically draws the
+**ordinary reference page first**, followed by the DP page.
+
+## Standalone estimators and plots
+
+The standalone workflows offer additional method and display choices.
+
+| Function | What it estimates | Plot interface |
+|:---|:---|:---|
+| [`dp_loading()`](https://yejinjo0220.github.io/dppca/reference/dp_loading.md) | Private PC directions | `plot(fit, type = "vector")`, `"point"`, or `"heatmap"` |
+| [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md) | Private scree and PVE with one or more of clipped, PMWM, and Huber methods | `plot(fit, type = "scree")` or `"pve"` |
+| [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md) | Two-dimensional additive and/or sparse score histograms | `plot(fit, type = "histogram")` or `"sample"` |
+| [`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md) | Shared directions, scree, and histogram for five plots | `plot(fit, display = "all")` or selected panel names |
+
+### Private loading directions
+
+``` r
+loading_fit <- dp_loading(
+  X,
+  privacy = privacy_control(eps = 3, delta = 1e-4)
+)
+
+loading_fit$directions
+loading_plot <- plot(loading_fit, type = "vector", variables = 10)
+```
+
+### Scree / PVE
+
+``` r
+scree_fit <- dp_scree(
   X,
   k = 5,
+  privacy = privacy_control(eps = 3, delta = 1e-4),
   method = "clipped",
-  control = clipped_control(C_clip = 3),
-  eps = 3,
-  delta = 1e-4
+  control = clipped_control(C_clip = 3)
 )
 
-scree_clipped
+summary(scree_fit)
+plot(scree_fit, type = "pve")
 ```
 
-The package currently supports three scree estimation methods:
+For multiple methods,
+[`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md)
+also accepts `method = c("clipped", "pmwm", "huber")` with suitable
+method-specific controls.
 
-- `"clipped"`: clipped mean based estimator;
-- `"pmwm"`: private modified winsorized mean based estimator;
-- `"huber"`: Huber-type robust estimator.
-
-Method-specific tuning parameters are specified using the control helper
-unctions
-[`clipped_control()`](https://yejinjo0220.github.io/dppca/reference/clipped_control.md),
-[`pmwm_control()`](https://yejinjo0220.github.io/dppca/reference/pmwm_control.md),
-and
-[`huber_control()`](https://yejinjo0220.github.io/dppca/reference/huber_control.md).
-
-For example, multiple scree methods can be requested by passing a vector
-to `method` and a named list to `control`.
+### Score histograms and synthetic samples
 
 ``` r
-set.seed(123)
-
-scree_all <- dp_scree(
+score_fit <- dp_score(
   X,
-  k = 5,
-  method = c("clipped", "pmwm", "huber"),
-  control = list(
-    clipped = clipped_control(C_clip = 3),
-    pmwm = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01),
-    huber = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
-  ),
-  eps = 3,
-  delta = 1e-4
+  privacy = privacy_control(eps = 3, delta = 1e-4),
+  bins = c(10, 10),
+  method = c("add", "sparse")
 )
 
-scree_all
-```
-
-## Private scree plots
-
-[`dp_scree_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_scree_plot.md)
-visualizes private scree values or private proportions of variance
-explained.
-
-``` r
-set.seed(123)
-
-scree_plot_all <- dp_scree_plot(
-  X,
-  k = 5,
-  method = c("clipped", "pmwm", "huber"),
-  control = list(
-    clipped = clipped_control(C_clip = 3),
-    pmwm = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01),
-    huber = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
-  ),
-  eps = 3,
-  delta = 1e-4
+summary(score_fit)
+set.seed(456)
+score_plots <- plot(
+  score_fit,
+  type = c("histogram", "sample"),
+  center = FALSE,  # Optional: disable the default display centering
+  sampling_control = sampling_control(method = "uniform", sample_size = 300)
 )
-scree_plot_all
 ```
 
-![Private scree plot produced by
-dppca](reference/figures/scree_plot.png)
+By default, `center = TRUE` translates the **displayed private score
+coordinates** by the midpoint of the private frame. Set `center = FALSE`
+to leave those coordinates unshifted. This affects the plot, not the
+stored frame or histogram probabilities. Grouped score plots use the
+same `center` option.
 
-## 3. Private PCA score
+## Grouped PCA visualizations
 
-[`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md)
-computes differentially private summaries of two-dimensional PCA scores
-using histogram-based methods.
+A grouping column is excluded from PCA features and used to color
+synthetic score points and form group histograms. The `gau_g` dataset
+contains the same 20 numeric features as `gau`, plus a `group` label:
 
 ``` r
-set.seed(123)
+data("gau_g", package = "dppca")
 
-score_result <- dp_score(
-  X,
-  eps = 3,
+set.seed(123)
+group_fit <- dp_pca(
+  gau_g,
+  privacy = privacy_control(eps = 6, delta = 1e-4),
+  scree = list(k = 5, method = "clipped",
+               control = clipped_control(C_clip = 3)),
+  score = list(method = "add", bins = c(10, 10)),
+  group = "group"
+)
+
+set.seed(456)
+plot(group_fit, display = c("score", "biplot"),
+     score = list(type = "sample"), center = FALSE)
+```
+
+Standalone grouped score analysis is available with
+`dp_score(..., group = "group")`.
+
+**Privacy note:** For the grouped histogram privacy argument, group
+labels and the group partition are assumed public and fixed. Private
+sampled points are not original score records.
+
+## Privacy-budget allocation
+
+[`privacy_control()`](https://yejinjo0220.github.io/dppca/reference/privacy_control.md)
+specifies the total `(eps, delta)` and optional named `split`. If no
+split is given, each fitting function uses an **equal allocation among
+its required components**:
+
+| Fitting function | Budget components | Implicit allocation |
+|:---|:---|:---|
+| [`dp_loading()`](https://yejinjo0220.github.io/dppca/reference/dp_loading.md) | `loading` | 100% |
+| [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md) | `loading`, `scree` | 50% / 50% |
+| [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md) | `loading`, `score` | 50% / 50% |
+| [`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md) | `loading`, `scree`, `score` | 1/3 each |
+
+For example, customize the integrated budget as follows:
+
+``` r
+privacy <- privacy_control(
+  eps = 6,
   delta = 1e-4,
-  bins = c(8, 8),
-  method = "add"
+  split = c(loading = 0.2, scree = 0.4, score = 0.4)
 )
 
-score_result 
+privacy$total
+privacy$budgets
 ```
 
-Available score methods include:
+The selected `score` epsilon allocation is further divided **35% for the
+private frame** and **65% for the histogram**; its delta allocation is
+assigned to the histogram.
 
-- `"add"`: additive histogram method;
-- `"sparse"`: sparse histogram method.
+## Example datasets
 
-Use `method = "add"` or `method = "sparse"` to run one histogram method,
-or `method = c("add", "sparse")` to compute both.
+| Dataset | Shape | Description |
+|:---|:---|:---|
+| `gau` | 1,000 × 20 | Five synthetic Gaussian clusters with numeric features `V1`–`V20`. |
+| `gau_g` | 1,000 × 21 | The same observations and features, plus the `group` column. |
+| `vowel` | 990 × 14 | British English vowel data: 10 acoustic measurements and four categorical descriptors. |
 
-## Private score plot
+The `vowel` dataset originates from the UCI Machine Learning Repository
+and is distributed under the terms described in its package
+documentation. See
+[`?vowel`](https://yejinjo0220.github.io/dppca/reference/vowel.md) for
+the data source and license. Dataset details and preprocessing examples
+are provided in the Getting Started tutorial.
 
-[`dp_score_plot()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot.md)
-draws private score plots based on the histogram summaries returned by
-[`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md).
+## Tutorials and theory
 
-If `method` is omitted, both additive and sparse histogram methods are
-used.
+The **practical tutorials** are:
 
-``` r
-set.seed(123)
+- [Getting
+  Started](https://yejinjo0220.github.io/dppca/articles/tutorials-getting-started.html):
+  installation, datasets, preprocessing, and privacy budgets.
+- [DP Loading
+  Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-loading-plots.html):
+  private PC directions and loading displays.
+- [DP Scree
+  Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-scree-plots.html):
+  clipped, PMWM, and Huber estimation; scree and PVE.
+- [DP Score
+  Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-score-plots.html):
+  histogram methods, synthetic points, and grouped scores.
+- [DP PCA
+  Visualization](https://yejinjo0220.github.io/dppca/articles/tutorials-dp-visualization.html):
+  five plots built from a shared fit.
 
-score_plot <- dp_score_plot(
-  X,
-  eps = 3,
-  delta = 1e-4,
-  bins = c(15, 15)
-)
+For the mathematics, see [PCA
+Background](https://yejinjo0220.github.io/dppca/articles/theory-pca-background.html),
+[Theory of DP
+Loading](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.html),
+[Theory of DP
+Scree](https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.html),
+[Theory of DP
+Score](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.html),
+and [Theory of DP PCA
+Visualizations](https://yejinjo0220.github.io/dppca/articles/theory-dp-visualization.html).
 
-score_plot$plot$all
-```
-
-![Private score plot produced by
-dppca](reference/figures/score_plot.png)
-
-## Grouped score plot
-
-For data with group labels,
-[`dp_score_group()`](https://yejinjo0220.github.io/dppca/reference/dp_score_group.md)
-and
-[`dp_score_plot_group()`](https://yejinjo0220.github.io/dppca/reference/dp_score_plot_group.md)
-provide grouped versions of the private score.
-
-``` r
-data(gau_g, package = "dppca")
-X_g <- gau_g
-```
-
-Compute grouped private score.
-
-``` r
-set.seed(123)
-score_group <- dp_score_group(
-  X_g,
-  group = "group",
-  eps = 3,
-  delta = 1e-4,
-  bins = c(8, 8),
-  method = "add"
-)
-
-score_group
-```
-
-Draw a grouped private score plot.
-
-``` r
-set.seed(123)
-
-score_group_plot <- dp_score_plot_group(
-  X_g,
-  group = "group",
-  eps = 3,
-  delta = 1e-4,
-  bins = c(15, 15),
-)
-
-score_group_plot$plot$all
-```
-
-![Private group score plot produced by
-dppca](reference/figures/score_plot_group.png)
-
-------------------------------------------------------------------------
-
-## Shiny app
-
-[`dppca_app()`](https://yejinjo0220.github.io/dppca/reference/dppca_app.md)
-launches a Shiny app for exploring private scree and score plots through
-a graphical interface.
-
-``` r
-dppca_app()
-```
-
-You can also launch the app with a user-supplied dataset.
-
-``` r
-data(gau_g, package = "dppca")
-dppca_app(gau_g, group = "group")
-```
-
-------------------------------------------------------------------------
-
-## Data
-
-`dppca` includes three datasets for examples and demonstrations:
-
-- `gau`: a synthetic 20-dimensional Gaussian cluster dataset;
-- `gau_g`: a grouped version of `gau` with an additional `group` column;
-- `adult`: a numerical subset of the Adult dataset from the UCI Machine
-  Learning Repository.
-
-## Data sources
-
-The package includes a numerical subset of the Adult dataset from the
-UCI Machine Learning Repository. The Adult dataset is licensed under the
-Creative Commons Attribution 4.0 International (CC BY 4.0) license. This
-package retains five numerical variables: `age`, `education_num`,
-`capital_gain`, `capital_loss`, and `hours_per_week`.
-
-The package also includes synthetic Gaussian cluster datasets generated
-by the package authors for reproducible examples.
-
-------------------------------------------------------------------------
+For complete argument descriptions, use the R help pages:
+[`?dp_loading`](https://yejinjo0220.github.io/dppca/reference/dp_loading.md),
+[`?dp_scree`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md),
+[`?dp_score`](https://yejinjo0220.github.io/dppca/reference/dp_score.md),
+[`?dp_pca`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md),
+and the corresponding `plot.*` methods. The development implementation
+is available on [GitHub](https://github.com/yejinjo0220/dppca).
 
 ## References
 
-The methods and examples in `dppca` are related to the following
-references.
-
 - Kim, M. and Jung, S. (2025). Robust and Differentially Private
   Principal Component Analysis. *Statistical Analysis and Data Mining:
-  An ASA Data Science Journal*, 18(6), e70053. <doi:10.1002/sam.70053>.
-
+  An ASA Data Science Journal*, 18(6), e70053.
+  <https://doi.org/10.1002/sam.70053>
 - Dwork, C. and Roth, A. (2014). The Algorithmic Foundations of
   Differential Privacy. *Foundations and Trends in Theoretical Computer
-  Science*, 9(3–4), 211–407. <doi:10.1561/0400000042>.
-
+  Science*, 9(3–4), 211–407. <https://doi.org/10.1561/0400000042>
 - Ramsay, K. and Spicker, D. (2025). Improved subsample-and-aggregate
   via the private modified winsorized mean. arXiv:2501.14095.
-
 - Yu, M., Ren, Z., and Zhou, W.-X. (2024). Gaussian differentially
   private robust mean estimation and inference. *Bernoulli*, 30(4),
   3059–3088.
-
 - Nissim, K., Raskhodnikova, S., and Smith, A. (2007). Smooth
-  Sensitivity and Sampling in Private Data Analysis. In *STOC’07:
-  Proceedings of the 39th Annual ACM Symposium on Theory of Computing*,
-  75–84. <doi:10.1145/1250790.1250803>.
-
+  Sensitivity and Sampling in Private Data Analysis. In *STOC ’07*,
+  75–84. <https://doi.org/10.1145/1250790.1250803>
 - Wasserman, L. and Zhou, S. (2010). A Statistical Framework for
   Differential Privacy. *Journal of the American Statistical
-  Association*, 105(489), 375–389. <doi:10.1198/jasa.2009.tm08651>.
-
+  Association*, 105(489), 375–389.
+  <https://doi.org/10.1198/jasa.2009.tm08651>
 - Karwa, V. and Vadhan, S. P. (2017). Finite Sample Differentially
   Private Confidence Intervals. arXiv:1711.03908.
-
-- Becker, B. and Kohavi, R. (1996). Adult dataset. UCI Machine Learning
-  Repository. <doi:10.24432/C5XW20>.

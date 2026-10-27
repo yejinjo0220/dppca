@@ -1,0 +1,278 @@
+---
+title: "Getting Started with dppca"
+description: "Install dppca, explore the example datasets, prepare input data, allocate privacy budgets, and find tutorials and theory articles."
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Getting Started with dppca}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r gs-setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>", fig.align = "center",
+  fig.width = 7, fig.height = 5,
+  message = FALSE, warning = TRUE, error = FALSE, cache = FALSE
+)
+```
+
+<style>
+.gs-table table {
+  width: 100%;
+  table-layout: fixed;
+}
+.gs-table th, .gs-table td {
+  padding: 8px 10px !important;
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
+.gs-datasets-table colgroup col:nth-child(1) { width: 13% !important; }
+.gs-datasets-table colgroup col:nth-child(2) { width: 11% !important; }
+.gs-datasets-table colgroup col:nth-child(3) { width: 13% !important; }
+.gs-datasets-table colgroup col:nth-child(4) { width: 63% !important; }
+.gs-vowel-table colgroup col:nth-child(1) { width: 22% !important; }
+.gs-vowel-table colgroup col:nth-child(2) { width: 78% !important; }
+.gs-component-table th:first-child { width: 22% !important; }
+.gs-budget-table th:nth-child(1) { width: 24% !important; }
+.gs-budget-table th:nth-child(2) { width: 41% !important; }
+.gs-budget-table th:nth-child(3) { width: 35% !important; }
+.gs-tutorial-table colgroup col:nth-child(1) { width: 48% !important; }
+.gs-tutorial-table colgroup col:nth-child(2) { width: 24% !important; }
+.gs-tutorial-table colgroup col:nth-child(3) { width: 28% !important; }
+</style>
+
+This guide covers the essentials for getting started with `dppca`: installing and loading the package, understanding its example datasets, preparing your own data, and allocating privacy budgets with `privacy_control()`. If you are looking for a particular visualization, use the guide below to choose a tutorial and its corresponding theory article.
+
+## Choose a starting point {#choose-a-starting-point}
+
+The **tutorials** explain how to use `dppca` in R, while the **theory articles** describe the statistical concepts and methods. For an introduction to ordinary PCA, see [PCA Background](theory-pca-background.html).
+
+::: {.gs-table .gs-tutorial-table}
+
+| What you want to do | Tutorial | Theory and Methods |
+|:--|:--|:--|
+| Explore private PC directions and their coefficients | [DP Loading Plot](tutorials-loading-plots.html) | [Theory of DP Loading](theory-dp-loading.html) |
+| Examine scree values and proportions of variance explained (PVE) | [DP Scree Plot](tutorials-scree-plots.html) | [Theory of DP Scree](theory-dp-scree.html) |
+| Visualize private score distributions and compare groups | [DP Score Plot](tutorials-score-plots.html) | [Theory of DP Score](theory-dp-score.html) |
+| Explore loading, scree, score, variable, and biplot views in one workflow | [DP PCA Visualization](tutorials-dp-visualization.html) | [Theory of DP PCA Visualizations](theory-dp-visualization.html) |
+
+:::
+
+For complete argument descriptions and return values, see [Functions](../reference/index.html).
+
+
+
+## 1. Install and load the package
+
+Install the released version of `dppca` from CRAN:
+
+```{r gs-install-cran, eval=FALSE}
+install.packages("dppca")
+```
+
+Alternatively, install the development version from GitHub:
+
+```{r gs-install-github, eval=FALSE}
+install.packages("remotes")  # Only needed once
+remotes::install_github("yejinjo0220/dppca")
+```
+
+Once installed, load the package:
+
+```{r gs-load}
+library(dppca)
+```
+
+
+
+## 2. Prepare your input data
+
+In `dppca`, rows represent observations and columns represent variables. Numeric features are used for PCA. For functions supporting `group` (such as `dp_score()` and `dp_pca()`), a data frame may also contain categorical columns; the selected grouping column is excluded from PCA features. Other non-numeric columns are not included in the PCA calculation.
+
+The private PCA method implemented in `dppca` is based on pairwise differences of observations and therefore does not require explicit centering. Also, if standardization is needed, it should be performed before applying `dppca`. When standardization involves estimating parameters from sensitive data, the preprocessing must satisfy differential privacy, and its privacy budget must be included in the total privacy budget.
+
+
+## 3. Explore the Example Datasets
+
+The `dppca` package provides several example datasets for demonstrating its functions. These include numeric datasets and datasets containing categorical variables for grouped visualizations.
+
+::: {.gs-table .gs-datasets-table}
+
+| Dataset | Rows | Columns | What it contains |
+|:--|--:|--:|:--|
+| `gau` | 1,000 | 20 | Numeric variables `V1`–`V20` from five synthetic Gaussian clusters, with 200 observations per cluster. |
+| `gau_g` | 1,000 | 21 | The same 20 numeric variables plus the character label `group`, with values `group1`–`group5`. |
+| `vowel` | 990 | 14 | Ten acoustic measurements and four categorical columns describing British English vowel observations. |
+
+:::
+
+
+The Gaussian clusters differ in means and covariance scales. `gau_g` adds grouping labels to the observations in `gau`; it is not a separate sample.
+
+### 3.1. Gaussian data
+
+```{r gs-gaussian-data}
+data("gau", package = "dppca")
+data("gau_g", package = "dppca")
+
+dim(gau)
+dim(gau_g)
+head(gau[, 1:4, drop = FALSE])
+table(gau_g$group)
+```
+
+
+The variables `V1`--`V20` are numeric features. The `group` column in `gau_g` identifies five groups and can be used as a categorical label in analyses that support grouping.
+
+For more details about the datasets, see the documentation for [`gau`](../reference/gau.html) and [`gau_g`](../reference/gau_g.html).
+
+### 3.2. Vowel data
+
+The `vowel` dataset contains 990 observations of spoken British English vowels from 15 speakers, covering 11 vowel categories. Each observation consists of ten numeric acoustic measurements (`F0`--`F9`) and four categorical variables (`Split`, `Speaker`, `Sex`, and `Class`).
+
+```{r gs-vowel-data}
+data("vowel", package = "dppca")
+
+numeric_columns <- vapply(vowel, is.numeric, logical(1))
+dim(vowel)
+names(vowel)[numeric_columns]
+names(vowel)[!numeric_columns]
+table(vowel$Class)
+```
+
+The variables in the dataset are summarized below.
+
+::: {.gs-table .gs-vowel-table}
+
+| Columns | Role |
+|:--|:--|
+| `F0`–`F9` | Ten numeric acoustic features used for PCA. |
+| `Split` | Training/test-set label. |
+| `Speaker` | Speaker identifier, with 15 levels. |
+| `Sex` | Speaker descriptor. |
+| `Class` | Vowel category, with 11 levels. This variable can be used for grouped score visualizations. |
+
+:::
+
+For more details about the dataset, see the documentation for [`vowel`](../reference/vowel.html).
+
+
+## 4. Set and Allocate the Privacy Budget
+
+The `privacy_control()` function specifies the privacy budget for PCA estimation in `dppca`. The privacy parameters, `eps` and `delta`, are allocated to three components:
+
+::: {.gs-table .gs-component-table}
+
+| Component | Purpose |
+|:--|:--|
+| `loading` | Estimation of private principal component directions. |
+| `scree` | Estimation of private scree values and PVE. |
+| `score` | Construction of private score visualizations. |
+
+:::
+
+The `dppca` package provides three functions for individual analyses: `dp_loading()`, `dp_scree()`, and `dp_score()`. The `dp_pca()` function combines these analyses into a single workflow. Since these functions involve different estimation steps, the required privacy budget components depend on the function used.
+
+### 4.1. Default privacy budget allocation
+
+The total privacy budget can be specified using `eps` and `delta`:
+
+```{r gs-default-privacy}
+privacy <- privacy_control(
+  eps = 6,
+  delta = 1e-4
+)
+```
+
+When `split` is omitted, the fitting function automatically divides the total budget equally among its required components.
+
+::: {.gs-table .gs-budget-table}
+
+| Fitting function | Required components | Default allocation |
+|:--|:--|:--|
+| `dp_loading()` | `loading` | 100% |
+| `dp_scree()` | `loading`, `scree` | 50% each |
+| `dp_score()` | `loading`, `score` | 50% each |
+| `dp_pca()` | `loading`, `scree`, `score` | 1/3 each |
+
+:::
+
+For example, when the specified total budget is `eps = 6` and `delta = 1e-4`:
+
+- `dp_loading()` allocates the entire budget to direction estimation.
+- `dp_scree()` and `dp_score()` allocate epsilon `3` and delta `5e-5` to each of their two components.
+- `dp_pca()` allocates epsilon `2` and delta `1e-4 / 3` to each of its three components.
+
+The total budget and its allocations can be inspected using:
+
+```{r gs-inspect-budget}
+privacy$total
+privacy$budgets
+```
+
+The `total` field contains the overall budget, and `budgets` contains its component allocations. 
+
+### 4.2. Customize the budget allocation
+
+To change the default allocation, use the `split` argument to specify the proportion of the total budget assigned to each component. The proportions must be positive, named, and sum to one. The same proportions are applied to both epsilon and delta.
+
+For example, to allocate more budget to scree and score estimation in `dp_pca()`:
+
+```{r gs-custom-split}
+pca_privacy_custom <- privacy_control(
+  eps = 6,
+  delta = 1e-4,
+  split = c(loading = 0.2, scree = 0.4, score = 0.4)
+)
+
+pca_privacy_custom$budgets
+```
+
+Similarly, for `dp_score()`, a different allocation can be specified as follows:
+
+```{r gs-custom-score-split}
+score_privacy_custom <- privacy_control(
+  eps = 6,
+  delta = 1e-4,
+  split = c(loading = 0.4, score = 0.6)
+)
+
+score_privacy_custom$budgets
+```
+
+### 4.3. Specify individual component budgets
+
+Alternatively, epsilon and delta can be specified separately for each component, without using a total budget or `split`.
+
+```{r gs-absolute-budgets}
+pca_privacy_absolute <- privacy_control(
+  loading = c(eps = 2, delta = 2e-5),
+  scree   = c(eps = 3, delta = 3e-5),
+  score   = c(eps = 5, delta = 5e-5)
+)
+
+pca_privacy_absolute$total
+```
+
+In this example, the total budget is epsilon `10` and delta `1e-4`. Unlike the proportional allocation approach, this allows epsilon and delta to have different allocation proportions.
+
+The total-budget and individual-component approaches should not be combined in a single call.
+
+
+## 5. Next steps
+
+With the package installed, the input data prepared, and the privacy
+budget specified, you are ready to explore differentially private PCA
+visualizations. Start with the [DP Loading Plot Tutorial](tutorials-loading-plots.html)
+to estimate and visualize private PC directions, or choose another
+tutorial from the overview.
+
+---
+
+**Next:** [DP Loading Plot](tutorials-loading-plots.html)  
+**Tutorial overview:** [Choose a starting point](#choose-a-starting-point)
+
+

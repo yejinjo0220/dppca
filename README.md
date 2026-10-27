@@ -1,300 +1,41 @@
 # dppca
 
-<!-- badges: start -->
-<!-- badges: end -->
+`dppca` is an R package for **differentially private principal component analysis (PCA) visualization**. 
+It estimates private PC directions, scree values, and two-dimensional score histograms, and uses these quantities to create loading plots, scree plots, score plots, variable plots, and biplots.
 
-`dppca` provides tools for **differentially private principal component analysis (PCA) visualization** in R. 
-It supports private loading estimation and loading plots, private scree/PVE plots, private score plots, grouped score visualizations, and an interactive 'shiny' app.
+The package supports **standalone analyses** with `dp_loading()`, `dp_scree()`, and `dp_score()`, as well as a **shared PCA workflow** with `dp_pca()`. 
+The fitting functions return S3 objects that can be inspected with `summary()` and visualized with `plot()`.
 
 ## Installation
 
-You can install the development version from GitHub with:
+Install the released package from CRAN:
 
 ```r
-# install.packages("devtools")
-devtools::install_github("yejinjo0220/dppca")
+install.packages("dppca")
 ```
 
-## Basic workflow
+To use the latest development code shown in the tutorials, install from GitHub:
 
-The main workflow is:
-
-1. estimate private loadings with `dp_loading()` and compare loadings with `dp_loading_plot()`.
-2. estimate and plot private scree/PVE summaries with `dp_scree()` and `dp_scree_plot()`.
-3. compute and plot private PCA score summaries with `dp_score()` and `dp_score_plot()`.
-4. optionally use grouped score visualizations or the Shiny app.
-
-The scree and score functions, including grouped versions, always estimate private loadings internally with `dp_loading()`. Each function accepts `X` directly and estimates its own loadings. Within one scree call, all requested methods share one loading estimate. Within one score call, the methods share both the loading estimate and the frame.
-
-Use `dp_pca()` to estimate loadings, scree values and score summaries together, sharing one loading estimate across them. Its defaults are `center = FALSE`, `standardize = FALSE` and `non_private = FALSE`.
-
-The examples below use the synthetic Gaussian cluster dataset included in the package.
+```r
+# install.packages("remotes")
+remotes::install_github("yejinjo0220/dppca")
+```
 
 ```r
 library(dppca)
-
-data(gau, package = "dppca")
-X <- gau
 ```
 
-## 1. Private loadings
+## Quick start: one fit, five PCA visualizations
 
-`dp_loading()` estimates all principal component loadings and returns a list with `nonprivate` and `private` matrices. Rows correspond to variables and columns to `PC1`, ..., `PCp`.
+The integrated `dp_pca()` function estimates a private PC direction matrix **once** and reuses it for private scree and score estimation. It requires **one scree estimator** (`"clipped"`, `"pmwm"`, or `"huber"`) and **one score histogram estimator** (`"add"` or `"sparse"`).
 
 ```r
+library(dppca)
+data("gau", package = "dppca")
+X <- gau  # 1,000 observations, 20 numeric variables
+
 set.seed(123)
-
-loading_result <- dp_loading(
-  X,
-  eps = 3,
-  delta = 1e-4
-)
-
-loading_result$nonprivate  # Ordinary PCA loadings for comparison
-loading_result$private     # Differentially private loadings
-
-# Select the first five private PCs from the result.
-loading_result$private[, 1:5, drop = FALSE]
-```
-
-`dp_loading()` has no `k` argument; select the desired columns from the returned matrix.
-
-`dp_loading_plot()` also accepts `X` directly. With one display, it places the non-private plot on the left and the private plot on the right.
-
-```r
-loading_plot <- dp_loading_plot(
-  X,
-  eps = 3,
-  delta = 1e-4,
-  display = "vector"
-)
-
-loading_plot$plot$all
-```
-
-## Privacy budgets
-
-The scree and score functions, their plotting functions, and grouped score functions require a `privacy` object created by `privacy_control()`. These functions no longer accept `eps`, `delta` or `loading_budget` directly. `dp_loading()` and `dp_loading_plot()` continue to accept `eps` and `delta`.
-
-Use the following stage names in `split`. The same proportions apply to both epsilon and delta.
-
-| Functions | Stages |
-| --- | --- |
-| `dp_scree()`, `dp_scree_plot()` | `loading`, `scree` |
-| `dp_score()`, `dp_score_plot()` and their grouped versions | `loading`, `score` |
-| `dp_pca()` | `loading`, `scree`, `score` |
-
-For separate scree and score calls, the following examples divide each total budget equally between the two stages:
-
-```r
-scree_privacy <- privacy_control(
-  eps = 3,
-  delta = 1e-4,
-  split = c(loading = 0.5, scree = 0.5)
-)
-
-score_privacy <- privacy_control(
-  eps = 3,
-  delta = 1e-4,
-  split = c(loading = 0.5, score = 0.5)
-)
-```
-
-Alternatively, supply absolute budgets for the required pair or all three stages, without total budgets or `split`. For example, this is equivalent to `scree_privacy` above:
-
-```r
-scree_privacy <- privacy_control(
-  loading = c(eps = 1.5, delta = 5e-5),
-  scree = c(eps = 1.5, delta = 5e-5)
-)
-```
-
-When `split` is omitted, `privacy_control(eps = ..., delta = ...)` allocates one third to each of `loading`, `scree` and `score`, for `dp_pca()`. There is no separate `delta_split` argument.
-
-Each scree method receives the full `scree` allocation. Score functions divide the `score` epsilon allocation between frame and histogram estimation in a 35:65 ratio; all `score` delta is used by the histogram. With the equal two-stage score split above, the total epsilon shares are 50% for loading, 17.5% for the frame and 32.5% for each histogram method.
-
-When several methods are requested, each receives the full method allocation; it is not divided by the number of methods. Releasing their results together requires composing those method costs, while counting the shared loading estimate and score frame only once.
-
-## 2. Private scree values
-
-`dp_scree()` estimates private scree values or proportions of variance explained. The method is chosen by the `method` argument.
-
-```r
-set.seed(123)
-
-scree_clipped <- dp_scree(
-  X,
-  k = 5,
-  method = "clipped",
-  control = clipped_control(C_clip = 3),
-  privacy = scree_privacy
-)
-
-scree_clipped
-```
-
-The package currently supports three scree estimation methods:
-
-- `"clipped"`: clipped mean based estimator;
-- `"pmwm"`: private modified winsorized mean based estimator;
-- `"huber"`: Huber-type robust estimator.
-
-Method-specific tuning parameters are specified using the control helper
- unctions `clipped_control()`, `pmwm_control()`, and `huber_control()`.
-
-For example, multiple scree methods can be requested by passing a vector to `method` and a named list to `control`.
-
-```r
-set.seed(123)
-
-scree_all <- dp_scree(
-  X,
-  k = 5,
-  method = c("clipped", "pmwm", "huber"),
-  control = list(
-    clipped = clipped_control(C_clip = 3),
-    pmwm = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01),
-    huber = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
-  ),
-  privacy = scree_privacy
-)
-
-scree_all
-```
-
-## Private scree plots
-
-`dp_scree_plot()` visualizes private scree values or private proportions of variance explained.
-
-```r
-set.seed(123)
-
-scree_plot_all <- dp_scree_plot(
-  X,
-  k = 5,
-  method = c("clipped", "pmwm", "huber"),
-  control = list(
-    clipped = clipped_control(C_clip = 3),
-    pmwm = pmwm_control(a = 0, b = 50, trim_const = 10, eta = 0.01),
-    huber = huber_control(k_min_m2 = -10, k_max_m2 = 10, m2_frac = 1 / 4)
-  ),
-  privacy = scree_privacy
-)
-scree_plot_all
-```
-
-<p align="center">
-  <img src="man/figures/scree_plot.png" width="75%" alt="Private scree plot produced by dppca">
-</p>
-
-
-## 3. Private PCA score 
-
-`dp_score()` computes differentially private summaries of two-dimensional PCA scores using histogram-based methods.
-
-```r
-set.seed(123)
-
-score_result <- dp_score(
-  X,
-  privacy = score_privacy,
-  bins = c(8, 8),
-  method = "add"
-)
-
-score_result 
-```
-
-Available score methods include:
-
-- `"add"`: additive histogram method;
-- `"sparse"`: sparse histogram method.
-
- Use `method = "add"` or `method = "sparse"` to run one histogram method, or `method = c("add", "sparse")` to compute both.
-
-
-## Private score plot
-
-`dp_score_plot()` draws private score plots based on the histogram summaries returned by `dp_score()`.
-
-If `method` is omitted, both additive and sparse histogram methods are used.
-
-```r
-set.seed(123)
-
-score_plot <- dp_score_plot(
-  X,
-  privacy = score_privacy,
-  bins = c(15, 15)
-)
-
-score_plot$plot$all
-```
-<p align="center">
-  <img src="man/figures/score_plot.png" width="100%" alt="Private score plot produced by dppca">
-</p>
-
-
-## Grouped score plot
-
-For data with group labels, `dp_score_group()` and `dp_score_plot_group()` provide grouped versions of the private score.
-
-```r
-data(gau_g, package = "dppca")
-X_g <- gau_g
-```
-
-Compute grouped private score.
-
-```r
-set.seed(123)
-score_group <- dp_score_group(
-  X_g,
-  group = "group",
-  privacy = score_privacy,
-  bins = c(8, 8),
-  method = "add"
-)
-
-score_group
-```
-
-Draw a grouped private score plot.
-
-```r
-set.seed(123)
-
-score_group_plot <- dp_score_plot_group(
-  X_g,
-  group = "group",
-  privacy = score_privacy,
-  bins = c(15, 15)
-)
-
-score_group_plot$plot$all
-```
-
-<p align="center">
-  <img src="man/figures/score_plot_group.png" width="100%" alt="Private group score plot produced by dppca">
-</p>
-
-## 4. Shared PCA estimation
-
-`dp_pca()` estimates loading, scree and score quantities once for use across its plots. Choose one scree method and one histogram method, and supply the scree method's required control. The clipping threshold below is an example tuning value.
-
-The defaults leave input rows unchanged and omit ordinary PCA comparison results. For the score frame and histogram guarantees, any centering or scaling must use fixed public values, or separately privatized quantities with their privacy cost accounted for. Sample-mean centering and sample-standard-deviation scaling can change every score row when one observation is replaced. Applying those transformations before calling `dp_pca()` does not avoid this requirement. Common centering cancels in the pair differences used for loading and scree estimation.
-
-When updating an existing package checkout, include the new `R/privacy_controls.R` file along with the changed R files. From the package root, refresh the documentation and S3 method registrations before reloading:
-
-```r
-devtools::document()
-devtools::load_all()
-```
-
-```r
-set.seed(123)
-
-fit <- dp_pca(
+pca_fit <- dp_pca(
   X,
   privacy = privacy_control(eps = 6, delta = 1e-4),
   scree = list(
@@ -302,80 +43,208 @@ fit <- dp_pca(
     method = "clipped",
     control = clipped_control(C_clip = 3)
   ),
-  score = list(method = "sparse", bins = c(15, 15)),
-  center = FALSE,
-  standardize = FALSE,
-  non_private = FALSE
+  score = list(method = "add", bins = c(10, 10)),
+  axes = c(1, 2)
 )
 
-fit
-summary(fit)
-fit$nonprivate # NULL by default
+pca_fit
+summary(pca_fit)
+
+set.seed(456)
+pca_plots <- plot(pca_fit)  # Five DP panels
+```
+
+By default, `plot(pca_fit)` displays **PVE**, a **score histogram**, a **loading vector plot**, a **variable plot**, and a **biplot**.
+
+### Inspect the returned results
+
+| Component | Description |
+|:--|:--|
+| `pca_fit$directions` | Private PC directions (columns of an orthonormal matrix). |
+| `pca_fit$scree` | Estimated variances along the retained private directions. |
+| `pca_fit$pve` | Proportions of estimated variation over the retained components. |
+| `pca_fit$frame` | Privately estimated two-dimensional score frame. |
+| `pca_fit$hist` | Private pooled score histogram. |
+| `pca_fit$score_groups` | Per-group histograms, when a `group` is provided. |
+| `pca_fit$metadata` | Dimensions, selected axes, methods, and privacy allocations. |
+| `pca_fit$nonprivate` | Optional ordinary PCA reference; `NULL` by default. |
+
+
+You can choose individual panels and their display settings without refitting:
+
+```r
+set.seed(456)
+selected_plots <- plot(
+  pca_fit,
+  display = c("score", "biplot"),
+  score = list(type = "sample"),
+  biplot = list(alpha = 0, labels = TRUE),
+  sampling = sampling_control(method = "uniform", sample_size = 300),
+  center = TRUE,  # Shared by score and biplot (default)
+  variables = 10,
+  base_size = 12
+)
+
+# The individual ggplot objects are also stored:
+selected_plots$private$plots$score
+selected_plots$private$plots$biplot
+```
+
+The `variables` argument defaults to the **10 variables with the largest Euclidean norms of their private loading coefficients on the displayed two PC axes**. T
+he same selected variables are reused in loading, variable, and biplot panels.
+
+### Optional non-private comparison
+
+To compare against ordinary PCA, add `non_private = TRUE` to the initial `dp_pca()` call and fit again. 
+Then, `plot(pca_fit)` automatically draws the **ordinary reference page first**, followed by the DP page. 
+
+## Standalone estimators and plots
+
+The standalone workflows offer additional method and display choices. 
+
+| Function | What it estimates | Plot interface |
+|:--|:--|:--|
+| `dp_loading()` | Private PC directions | `plot(fit, type = "vector")`, `"point"`, or `"heatmap"` |
+| `dp_scree()` | Private scree and PVE with one or more of clipped, PMWM, and Huber methods | `plot(fit, type = "scree")` or `"pve"` |
+| `dp_score()` | Two-dimensional additive and/or sparse score histograms | `plot(fit, type = "histogram")` or `"sample"` |
+| `dp_pca()` | Shared directions, scree, and histogram for five plots | `plot(fit, display = "all")` or selected panel names |
+
+### Private loading directions
+
+```r
+loading_fit <- dp_loading(
+  X,
+  privacy = privacy_control(eps = 3, delta = 1e-4)
+)
+
+loading_fit$directions
+loading_plot <- plot(loading_fit, type = "vector", variables = 10)
+```
+
+### Scree / PVE
+
+```r
+scree_fit <- dp_scree(
+  X,
+  k = 5,
+  privacy = privacy_control(eps = 3, delta = 1e-4),
+  method = "clipped",
+  control = clipped_control(C_clip = 3)
+)
+
+summary(scree_fit)
+plot(scree_fit, type = "pve")
+```
+
+For multiple methods, `dp_scree()` also accepts `method = c("clipped", "pmwm", "huber")` with suitable method-specific controls.
+
+### Score histograms and synthetic samples
+
+```r
+score_fit <- dp_score(
+  X,
+  privacy = privacy_control(eps = 3, delta = 1e-4),
+  bins = c(10, 10),
+  method = c("add", "sparse")
+)
+
+summary(score_fit)
+set.seed(456)
+score_plots <- plot(
+  score_fit,
+  type = c("histogram", "sample"),
+  center = FALSE,  # Optional: disable the default display centering
+  sampling_control = sampling_control(method = "uniform", sample_size = 300)
+)
+```
+
+By default, `center = TRUE` translates the **displayed private score coordinates** by the midpoint of the private frame. 
+Set `center = FALSE` to leave those coordinates unshifted. This affects the plot, not the stored frame or histogram probabilities. 
+Grouped score plots use the same `center` option.
+
+## Grouped PCA visualizations
+
+A grouping column is excluded from PCA features and used to color synthetic score points and form group histograms. 
+The `gau_g` dataset contains the same 20 numeric features as `gau`, plus a `group` label:
+
+```r
+data("gau_g", package = "dppca")
 
 set.seed(123)
-plots <- plot(fit) # DP panels only
+group_fit <- dp_pca(
+  gau_g,
+  privacy = privacy_control(eps = 6, delta = 1e-4),
+  scree = list(k = 5, method = "clipped",
+               control = clipped_control(C_clip = 3)),
+  score = list(method = "add", bins = c(10, 10)),
+  group = "group"
+)
+
+set.seed(456)
+plot(group_fit, display = c("score", "biplot"),
+     score = list(type = "sample"), center = FALSE)
 ```
 
-Printing `fit` shows the data dimensions, preprocessing settings and a short preview of the DP eigenvalues. `summary(fit)` provides more detailed PCA results and a budget table. The stored estimates remain accessible through fields such as `fit$directions` and `fit$eigenvalues`.
+Standalone grouped score analysis is available with `dp_score(..., group = "group")`.
 
-`plot(fit)` draws the DP scree, score, loading, variable and biplot panels and returns their plot objects invisibly. Plotting reuses the estimates; `set.seed()` controls the synthetic samples. To draw only the biplot, use `plot(fit, type = "biplot")`.
+**Privacy note:** For the grouped histogram privacy argument, group labels and the group partition are assumed public and fixed. Private sampled points are not original score records.
 
-For an ordinary PCA comparison, explicitly set `non_private = TRUE` in the `dp_pca()` call. The fit then stores the reference, including observed scores, and `plot(fit)` includes the comparison by default. These reference results and comparison panels are not private releases.
+## Privacy-budget allocation
 
-Biplots default to `alpha = 0`, adjustable through `biplot = list(alpha = ...)`, and always use a square display. Observation points are grey (`#B0B0B0`); both private and non-private arrows are dark blue (`#174A7E`).
+`privacy_control()` specifies the total `(eps, delta)` and optional named `split`. If no split is given, each fitting function uses an **equal allocation among its required components**:
 
+| Fitting function | Budget components | Implicit allocation |
+|:--|:--|:--|
+| `dp_loading()` | `loading` | 100% |
+| `dp_scree()` | `loading`, `scree` | 50% / 50% |
+| `dp_score()` | `loading`, `score` | 50% / 50% |
+| `dp_pca()` | `loading`, `scree`, `score` | 1/3 each |
 
----
-
-## Shiny app
-
-`dppca_app()` launches a Shiny app for exploring private scree and score plots through a graphical interface.
+For example, customize the integrated budget as follows:
 
 ```r
-dppca_app()
+privacy <- privacy_control(
+  eps = 6,
+  delta = 1e-4,
+  split = c(loading = 0.2, scree = 0.4, score = 0.4)
+)
+
+privacy$total
+privacy$budgets
 ```
 
-You can also launch the app with a user-supplied dataset.
+The selected `score` epsilon allocation is further divided **35% for the private frame** and **65% for the histogram**; its delta allocation is assigned to the histogram. 
 
-```r
-data(gau_g, package = "dppca")
-dppca_app(gau_g, group = "group")
-```
+## Example datasets
 
----
+| Dataset | Shape | Description |
+|:--|:--|:--|
+| `gau` | 1,000 × 20 | Five synthetic Gaussian clusters with numeric features `V1`–`V20`. |
+| `gau_g` | 1,000 × 21 | The same observations and features, plus the `group` column. |
+| `vowel` | 990 × 14 | British English vowel data: 10 acoustic measurements and four categorical descriptors. |
 
-## Data
+The `vowel` dataset originates from the UCI Machine Learning Repository and is distributed under the terms described in its package documentation. See `?vowel` for the data source and license. Dataset details and preprocessing examples are provided in the Getting Started tutorial.
 
-`dppca` includes three datasets for examples and demonstrations:
+## Tutorials and theory
 
-- `gau`: a synthetic 20-dimensional Gaussian cluster dataset;
-- `gau_g`: a grouped version of `gau` with an additional `group` column;
-- `adult`: a numerical subset of the Adult dataset from the UCI Machine Learning Repository.
+The **practical tutorials** are:
 
-## Data sources
+- [Getting Started](https://yejinjo0220.github.io/dppca/articles/tutorials-getting-started.html): installation, datasets, preprocessing, and privacy budgets.
+- [DP Loading Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-loading-plots.html): private PC directions and loading displays.
+- [DP Scree Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-scree-plots.html): clipped, PMWM, and Huber estimation; scree and PVE.
+- [DP Score Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-score-plots.html): histogram methods, synthetic points, and grouped scores.
+- [DP PCA Visualization](https://yejinjo0220.github.io/dppca/articles/tutorials-dp-visualization.html): five plots built from a shared fit.
 
-The package includes a numerical subset of the Adult dataset from the UCI Machine Learning Repository. The Adult dataset is licensed under the Creative Commons Attribution 4.0 International (CC BY 4.0) license. This package retains five numerical variables: `age`, `education_num`, `capital_gain`, `capital_loss`, and `hours_per_week`.
+For the mathematics, see [PCA Background](https://yejinjo0220.github.io/dppca/articles/theory-pca-background.html), [Theory of DP Loading](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.html), [Theory of DP Scree](https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.html), [Theory of DP Score](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.html), and [Theory of DP PCA Visualizations](https://yejinjo0220.github.io/dppca/articles/theory-dp-visualization.html).
 
-The package also includes synthetic Gaussian cluster datasets generated by the package authors for reproducible examples.
-
----
+For complete argument descriptions, use the R help pages: `?dp_loading`, `?dp_scree`, `?dp_score`, `?dp_pca`, and the corresponding `plot.*` methods. The development implementation is available on [GitHub](https://github.com/yejinjo0220/dppca).
 
 ## References
 
-The methods and examples in `dppca` are related to the following references.
-
-- Kim, M. and Jung, S. (2025). Robust and Differentially Private Principal Component Analysis. *Statistical Analysis and Data Mining: An ASA Data Science Journal*, 18(6), e70053. doi:10.1002/sam.70053.
-
-- Dwork, C. and Roth, A. (2014). The Algorithmic Foundations of Differential Privacy. *Foundations and Trends in Theoretical Computer Science*, 9(3--4), 211--407. doi:10.1561/0400000042.
-
+- Kim, M. and Jung, S. (2025). Robust and Differentially Private Principal Component Analysis. *Statistical Analysis and Data Mining: An ASA Data Science Journal*, 18(6), e70053. https://doi.org/10.1002/sam.70053
+- Dwork, C. and Roth, A. (2014). The Algorithmic Foundations of Differential Privacy. *Foundations and Trends in Theoretical Computer Science*, 9(3–4), 211–407. https://doi.org/10.1561/0400000042
 - Ramsay, K. and Spicker, D. (2025). Improved subsample-and-aggregate via the private modified winsorized mean. arXiv:2501.14095.
-
-- Yu, M., Ren, Z., and Zhou, W.-X. (2024). Gaussian differentially private robust mean estimation and inference. *Bernoulli*, 30(4), 3059--3088.
-
-- Nissim, K., Raskhodnikova, S., and Smith, A. (2007). Smooth Sensitivity and Sampling in Private Data Analysis. In *STOC'07: Proceedings of the 39th Annual ACM Symposium on Theory of Computing*, 75--84. doi:10.1145/1250790.1250803.
-
-- Wasserman, L. and Zhou, S. (2010). A Statistical Framework for Differential Privacy. *Journal of the American Statistical Association*, 105(489), 375--389. doi:10.1198/jasa.2009.tm08651.
-
+- Yu, M., Ren, Z., and Zhou, W.-X. (2024). Gaussian differentially private robust mean estimation and inference. *Bernoulli*, 30(4), 3059–3088.
+- Nissim, K., Raskhodnikova, S., and Smith, A. (2007). Smooth Sensitivity and Sampling in Private Data Analysis. In *STOC ’07*, 75–84. https://doi.org/10.1145/1250790.1250803
+- Wasserman, L. and Zhou, S. (2010). A Statistical Framework for Differential Privacy. *Journal of the American Statistical Association*, 105(489), 375–389. https://doi.org/10.1198/jasa.2009.tm08651
 - Karwa, V. and Vadhan, S. P. (2017). Finite Sample Differentially Private Confidence Intervals. arXiv:1711.03908.
-
-- Becker, B. and Kohavi, R. (1996). Adult dataset. UCI Machine Learning Repository. doi:10.24432/C5XW20.

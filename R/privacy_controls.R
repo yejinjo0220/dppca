@@ -6,50 +6,51 @@
 #'   finite, and `delta` must lie in `(0, 1)`. Leave both `NULL` when
 #'   supplying absolute component budgets instead.
 #' @param split Named positive proportions that sum to one. The same
-#'   proportions apply to `eps` and `delta`. Include `loading` and either
-#'   `scree`, `score`, or both. The default allocates one third to each of
-#'   `loading`, `scree` and `score`, as required by [dp_pca()]. For
-#'   [dp_scree()] use, for example, `c(loading = 0.5, scree = 0.5)`; for
-#'   [dp_score()] use `c(loading = 0.5, score = 0.5)`.
+#'   proportions apply to `eps` and `delta`. Include `loading` alone, or
+#'   `loading` with `scree`, `score`, or both. When `split` is omitted,
+#'   the fitting function automatically divides the total budget equally
+#'   among its required components: `loading` for [dp_loading()],
+#'   `loading` and `scree` for [dp_scree()], `loading` and `score` for
+#'   [dp_score()], or all three for [dp_pca()]. An explicitly supplied
+#'   `split` is used exactly as specified, without automatic redistribution.
 #' @param loading,scree,score Optional absolute component budgets, each a
-#'   named `c(eps = ..., delta = ...)` vector. Supply `loading` with either
-#'   `scree`, `score`, or both, without total budgets or a `split` argument.
+#'   named `c(eps = ..., delta = ...)` vector. Supply `loading` alone or
+#'   with `scree`, `score`, or both, without total budgets or a `split` argument.
 #'   Each component must have positive finite `eps` and `delta` in `(0, 1)`;
 #'   the component deltas must sum to less than one. Absolute budgets may
 #'   allocate different proportions of `eps` and `delta`.
 #'
 #' @return A `dppca_privacy_control` list with `total`, a named
-#'   `c(eps, delta)` vector, and `components`, a list of the supplied
+#'   `c(eps, delta)` vector, and `budgets`, a list of the supplied
 #'   component budget vectors in `loading`, `scree`, `score` order.
 #'
 #' @details
-#' Use the component set required by the estimation function: `loading`
-#'   and `scree` for scree functions, `loading` and `score` for score
-#'   functions, or all three for [dp_pca()]. An estimation function rejects
-#'   a different component set rather than discarding or redistributing a
-#'   budget. Loading is estimated once and shared within that function call.
-#'   When external `V_dp` is supplied, loading estimation is skipped but its
-#'   allocation is still required to record the budget already used for
-#'   those directions. It is not redistributed to scree or score estimation.
+#' The estimation function resolves the required component budgets:
+#' `loading` for [dp_loading()], `loading` plus `scree` for [dp_scree()],
+#' `loading` plus `score` for [dp_score()], and all three for [dp_pca()].
+#' With total `eps` and `delta` and no explicit `split`, the constructor
+#' initially shows equal thirds, but the fitting function resolves the actual
+#' equal shares. An explicit split or absolute budget must match the required
+#' components.
 #'
-#' When comparing several scree methods, each method receives the full scree
-#' allocation. Score methods share one frame, which uses 35 percent of the
-#' score `eps`; each histogram method receives the remaining 65 percent of
-#' score `eps` and all score `delta`. These allocations are not divided across
-#' methods. Releasing several methods together requires composition, counting
-#' the shared loading and frame releases once per call.
-#' The returned totals sum each named component once. Reusing a previously
-#' released loading matrix incurs no new loading cost; compose the actual
-#' new releases and count its original release once. This object records
-#' allocations, not cumulative spending across calls, and does not verify
-#' the privacy provenance of `V_dp` or establish a guarantee for preprocessing
-#' or the complete estimation procedure.
+#' With supplied `V_dp`, the loading allocation records the prior direction
+#' release; it is not spent again or redistributed. Score epsilon is divided
+#' 35% to the private frame and 65% to the histogram; all score delta goes to
+#' the histogram. When multiple scree or score estimators are requested, each
+#' receives its respective full allocation. Releasing them together requires
+#' privacy composition; the recorded totals are allocations, not cumulative
+#' privacy expenditure. Preprocessing and supplied directions require their
+#' own privacy justification.
 #'
 #' @examples
-#' # Integrated PCA: equal loading, scree and score allocations.
+#' # With no split, the fitting function resolves equal shares:
+#' # loading only (100%), scree/score (50%-50%), or PCA (one-third each).
 #' privacy_control(eps = 6, delta = 1e-4)
 #'
-#' # Scree estimation: equal loading and scree allocations.
+#' # Alternatively, specify the loading-only absolute budget.
+#' privacy_control(loading = c(eps = 6, delta = 1e-4))
+#'
+#' # Explicit splits customize allocation for scree or score.
 #' privacy_control(
 #'   eps = 6,
 #'   delta = 1e-4,
@@ -86,14 +87,14 @@ privacy_control <- function(
   ) {
     if (
       !is.character(component_names) ||
-      !(length(component_names) %in% c(2L, 3L)) ||
+      !(length(component_names) %in% 1:3) ||
       anyNA(component_names) || anyDuplicated(component_names) ||
       any(!component_names %in% allowed_components) ||
       !"loading" %in% component_names
     ) {
       stop(
-        "`", argument, "` must name loading and scree, loading and score, ",
-        "or all three components exactly once.",
+        "`", argument, "` must name loading alone, loading and scree, ",
+        "loading and score, or all three components exactly once.",
         call. = FALSE
       )
     }
@@ -146,6 +147,7 @@ privacy_control <- function(
 
   direct_budgets <- list(loading = loading, scree = scree, score = score)
   supplied <- !vapply(direct_budgets, is.null, logical(1))
+  implicit_split <- !any(supplied) && missing(split)
 
   if (any(supplied)) {
     if (!is.null(eps) || !is.null(delta) || !missing(split)) {
@@ -190,13 +192,17 @@ privacy_control <- function(
     stop("The sum of component deltas must be less than one.", call. = FALSE)
   }
 
-  structure(
+  result <- structure(
     list(
       total = c(eps = total_eps, delta = total_delta),
-      components = budgets
+      budgets = budgets
     ),
     class = "dppca_privacy_control"
   )
+
+  # Distinguish an implicit three-way default from an explicit allocation.
+  if (implicit_split) attr(result, "implicit_split") <- TRUE
+  result
 }
 
 #' Validate the privacy object required by an estimation function
@@ -204,8 +210,9 @@ privacy_control <- function(
 #' @param privacy Output of [privacy_control()].
 #' @param components Exact component names required by the caller.
 #'
-#' @return A revalidated `dppca_privacy_control` object with totals recomputed
-#'   from all its component budgets. No components are dropped or reallocated.
+#' @return A revalidated `dppca_privacy_control` object. An implicit
+#'   default split is resolved equally across the requested components;
+#'   explicit component allocations are validated without redistribution.
 #' @noRd
 .validate_privacy_control <- function(
     privacy,
@@ -213,13 +220,13 @@ privacy_control <- function(
 ) {
   allowed_components <- c("loading", "scree", "score")
   if (
-    !is.character(components) || !(length(components) %in% c(2L, 3L)) ||
+    !is.character(components) || !(length(components) %in% 1:3) ||
     anyNA(components) || anyDuplicated(components) ||
     any(!components %in% allowed_components) || !"loading" %in% components
   ) {
     stop(
-      "`components` must request loading and scree, loading and score, ",
-      "or all three components exactly once.",
+      "`components` must request loading alone, loading and scree, ",
+      "loading and score, or all three components exactly once.",
       call. = FALSE
     )
   }
@@ -227,19 +234,52 @@ privacy_control <- function(
 
   share <- if (length(components) == 3L) "1 / 3" else "0.5"
   split_example <- paste(paste0(components, " = ", share), collapse = ", ")
-  example <- paste0(
-    "privacy_control(eps = ..., delta = ..., split = c(", split_example, "))"
-  )
+  example <- if (length(components) == 1L) {
+    "privacy_control(loading = c(eps = ..., delta = ...))"
+  } else {
+    paste0(
+      "privacy_control(eps = ..., delta = ..., split = c(", split_example, "))"
+    )
+  }
   guidance <- paste0(
     "This function requires exactly ", paste(components, collapse = ", "),
-    " budgets. Supply ", example, "."
+    " budget component(s). Use privacy_control(eps = ..., delta = ...) ",
+    "for automatic equal allocation, or supply ", example, "."
   )
 
   if (!is.list(privacy) || !inherits(privacy, "dppca_privacy_control")) {
     stop(guidance, call. = FALSE)
   }
 
-  budgets <- privacy[["components"]]
+  budgets <- privacy[["budgets"]]
+
+  # Only an omitted split is context-dependent. The constructor retains
+  # its three-way default plus this marker until a fitting function knows
+  # which components it needs. Validate the original amounts first.
+  if (identical(attr(privacy, "implicit_split"), TRUE)) {
+    if (
+      !is.list(budgets) || is.null(names(budgets)) || anyNA(names(budgets)) ||
+      anyDuplicated(names(budgets)) || !setequal(names(budgets), allowed_components)
+    ) {
+      stop(guidance, call. = FALSE)
+    }
+    checked <- tryCatch(
+      do.call(privacy_control, budgets),
+      error = function(error) {
+        stop(conditionMessage(error), " ", guidance, call. = FALSE)
+      }
+    )
+    equal_split <- stats::setNames(
+      rep(1 / length(components), length(components)), components
+    )
+    return(privacy_control(
+      eps = checked$total[["eps"]],
+      delta = checked$total[["delta"]],
+      split = equal_split
+    ))
+  }
+
+  # Explicit splits and absolute component budgets must match exactly.
   if (
     !is.list(budgets) || is.null(names(budgets)) || anyNA(names(budgets)) ||
     anyDuplicated(names(budgets)) || !setequal(names(budgets), components)

@@ -2,76 +2,119 @@
 % Please edit documentation in R/loading.R
 \name{dp_loading}
 \alias{dp_loading}
-\title{Estimate private loadings with an optional ordinary PCA reference}
+\alias{print.dp_loading}
+\alias{summary.dp_loading}
+\alias{print.summary.dp_loading}
+\title{Estimate differentially private PC directions}
 \usage{
-dp_loading(
-  X,
-  eps,
-  delta,
-  center = TRUE,
-  standardize = FALSE,
-  cpp.option = TRUE,
-  non_private = TRUE
-)
+dp_loading(X, privacy, cpp.option = TRUE, non_private = FALSE)
+
+\method{print}{dp_loading}(x, ...)
+
+\method{summary}{dp_loading}(object, ...)
+
+\method{print}{summary.dp_loading}(x, digits = 3, ...)
 }
 \arguments{
-\item{X}{Finite numeric matrix or data frame with at least two observations
-in rows. Pairwise differences must have Euclidean norm greater than
-\code{sqrt(.Machine$double.eps)} after preprocessing.}
+\item{X}{A numeric matrix or data frame with observations in rows and variables
+in columns. Non-numeric data-frame columns are excluded with a warning;
+numeric values must be finite. At least two observations and one numeric
+feature are required. Observations must be sufficiently separated to compute
+normalized pairwise differences.}
 
-\item{eps}{Positive privacy parameter epsilon.}
+\item{privacy}{A \code{\link[=privacy_control]{privacy_control()}} object allocating privacy budget to
+\code{loading} alone. Either specify total \code{eps} and \code{delta} or an absolute
+\code{loading} budget.}
 
-\item{delta}{Privacy parameter delta in \verb{(0, 1)}.}
+\item{cpp.option}{Whether to use the compiled spherical-Kendall implementation
+(\code{TRUE} by default); \code{FALSE} uses the R implementation.}
 
-\item{center}{Whether to center columns. Default: \code{TRUE}.}
+\item{non_private}{Whether to compute and store ordinary PCA reference results
+(\code{FALSE} by default).}
 
-\item{standardize}{Whether to divide columns by their sample standard
-deviations. Default: \code{FALSE}.}
+\item{x}{A \code{summary.dp_loading} object.}
 
-\item{cpp.option}{Use the compiled spherical Kendall implementation from
-dppca. Default: \code{TRUE}. Use \code{FALSE} for the R implementation in this file.}
+\item{...}{Additional arguments.}
 
-\item{non_private}{Whether to compute the ordinary PCA reference.
-Default: \code{TRUE}; \code{FALSE} returns \code{NULL} in \code{nonprivate}.}
+\item{object}{A \code{dp_loading} object.}
+
+\item{digits}{Number of significant digits used for printing.}
 }
 \value{
-A list with \code{private}, a numeric \code{p} by \code{p} matrix of directions
-from the noisy spherical Kendall matrix, and \code{nonprivate}, the ordinary
-sample-covariance PCA directions when requested (otherwise \code{NULL}).
-Rows are variables; columns are \code{PC1}, ..., \code{PCp}. Both direction
-matrices are orthonormal, without eigenvalue or correlation scaling.
+A \code{dp_loading} object with the following components:
+\describe{
+\item{\code{directions}}{A \code{p} by \code{p} matrix of private PC directions.}
+\item{\code{nonprivate}}{A \code{p} by \code{p} matrix of ordinary PC directions,
+or \code{NULL} when \code{non_private = FALSE}.}
+\item{\code{metadata}}{Sample size, variable count and privacy parameters.}
+}
+Rows represent variables, and columns represent \code{PC1}, ..., \code{PCp}.
+The columns are orthonormal eigenvectors, without eigenvalue or
+correlation scaling.
+
+Invisibly returns \code{x}.
+
+A \code{summary.dp_loading} object containing the stored \code{private} and
+\code{nonprivate} direction matrices, with sample size and privacy budget
+metadata. The print method displays up to six variables and four PCs;
+the full matrices remain stored. The non-private matrix remains \code{NULL}
+if it was not stored.
+
+Invisibly returns \code{x}.
 }
 \description{
-Estimate private loadings with an optional ordinary PCA reference
+Estimate principal component (PC) directions using a noisy spherical Kendall
+matrix, with optional ordinary PCA directions for comparison.
+
+Display a concise overview of a \code{\link[=dp_loading]{dp_loading()}} fit, including its data
+dimensions, privacy parameters, and whether a non-private reference is stored.
+
+Summarize a fitted \code{\link[=dp_loading]{dp_loading()}} object without recomputing its estimates
+or consuming additional privacy budget.
 }
 \details{
-All private directions come from one noisy spherical Kendall
-matrix, ordered by decreasing noisy eigenvalue. They are not the
-eigenvectors of the empirical covariance matrix. Under suitable
-distributional assumptions, the population spherical Kendall and
-covariance matrices share eigendirections.
+The private PC directions are eigenvectors of a spherical Kendall matrix
+perturbed with symmetric Gaussian noise. Directions are ordered by the noisy
+eigenvalues; they need not be eigenvectors of the sample covariance matrix.
+The spherical Kendall construction uses normalized pairwise differences and
+is invariant to common translations.
 
-Under fixed-size replacement adjacency and fixed scaling, the matrix has
-Frobenius sensitivity at most \code{4 / n}. The Gaussian noise has diagonal
-standard deviation \code{4 * sqrt(2 * log(1.25 / delta)) / (n * eps)} and
-off-diagonal standard deviation smaller by a factor of \code{sqrt(2)}.
-This classical Gaussian calibration has a standard sufficient privacy
-argument for \verb{0 < eps < 1}. For larger \code{eps}, its privacy guarantee
-requires a separate Gaussian calibration check; the function does not
-enforce this range or perform that check.
+With \code{non_private = TRUE}, ordinary covariance-based directions are stored
+after sign alignment with the private directions. This comparison is not a
+private release.
 
-Common centering cancels in pairwise differences. Sample standardization
-uses data-dependent scales and requires separate privacy analysis.
-Coincident or numerically indistinguishable observations are rejected;
-these input checks are not a private validation mechanism on unrestricted
-datasets. Sample size and variable names are assumed public.
-The optional ordinary reference uses the same preprocessed data and is
-not a private release.
+Under fixed-size replacement adjacency, the matrix has Frobenius sensitivity
+at most \code{4 / n}. The diagonal Gaussian noise standard deviation is
+\code{4 * sqrt(2 * log(1.25 / delta)) / (n * eps)}; off-diagonal entries use this
+scale divided by \code{sqrt(2)}. This classical calibration has a standard
+sufficient guarantee for \verb{0 < eps < 1}; larger \code{eps} requires an additional
+calibration check, which is not performed by the function.
+
+Duplicate or numerically indistinguishable observations are rejected, but
+these checks do not privatize input validation. Data schema and sample size
+are assumed public. Data-dependent preprocessing requires separate privacy
+analysis and accounting.
 }
 \examples{
 set.seed(123)
-X <- matrix(rnorm(150), 50, 3)
-result <- dp_loading(X, eps = 2, delta = 1e-3, cpp.option = FALSE)
-result$nonprivate
-result$private
+X <- matrix(rnorm(150), nrow = 50, ncol = 3)
+fit <- dp_loading(
+  X, privacy = privacy_control(eps = 0.5, delta = 1e-3),
+  cpp.option = FALSE
+)
+print(fit)
+summary(fit)
+fit$directions
+fit_with_reference <- dp_loading(
+  X, privacy = privacy_control(loading = c(eps = 0.5, delta = 1e-3)),
+  cpp.option = FALSE, non_private = TRUE
+)
+fit_with_reference$nonprivate
+\dontrun{
+loading_plot <- plot(fit, type = c("vector", "point", "heatmap"),
+                     heatmap_components = 1:3, variables = "all")
+loading_plot                 # Display the saved plot
+loading_plot$loading$directions # Access the stored directions
+loading_plot$plot$all       # Access the combined plot
+}
 }

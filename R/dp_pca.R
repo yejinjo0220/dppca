@@ -2,79 +2,64 @@
 
 #' Estimate shared PCA quantities once
 #'
-#' @param X Finite numeric matrix or data frame with at least two observations
-#'   in rows and two variables in columns. When `V_dp = NULL`, observations
-#'   must also satisfy the pairwise-separation requirement of [dp_loading()].
-#' @param privacy Output of [privacy_control()] with loading, scree and score
-#'   budgets. The default split allocates one third of eps and delta to each.
-#' @param scree Required named list containing a method-specific `control`.
-#'   Other fields are `k = NULL` (all variables), `method = "clipped"` and
-#'   `mono = TRUE`. A supplied `k` must be an integer from `2` to `ncol(X)`.
-#'   Use [clipped_control()], [pmwm_control()] or
-#'   [huber_control()] to supply the selected method's tuning parameters.
-#' @param score Named list with `method = "sparse"` and `bins = c(20, 20)`.
-#'   The other supported histogram method is `"add"`.
-#' @param axes Two distinct histogram component indices between `1` and `k`.
-#' @param center,standardize Whether to subtract sample means or divide by
-#'   sample standard deviations. Both default to `FALSE`; see the preprocessing
-#'   conditions below.
-#' @param cpp.option Whether to use the compiled loading implementation when
-#'   `V_dp = NULL`.
-#' @param non_private Whether to compute and store ordinary PCA comparison
-#'   results, including observed scores. Default: `FALSE`. These reference
-#'   results are not private releases.
-#' @param V_dp Optional full `p` by `p` private direction matrix, with
-#'   `p = ncol(X)` and orthonormal columns. Rows must follow the variable
-#'   order in `X`; row names, when present, must match the variable names.
-#'   Use the same variable scales and preprocessing as when obtaining these
-#'   directions. When supplied, loading estimation is skipped; the loading
-#'   allocation records the budget already used to obtain `V_dp`. The caller
-#'   is responsible for its privacy provenance. Default: `NULL`.
+#' @param X A numeric matrix or data frame with observations in rows and variables
+#'   in columns. Non-numeric data-frame columns are excluded with a warning;
+#'   numeric values must be finite. At least two observations and two numeric
+#'   features are required. If directions must be estimated, the
+#'   pairwise-separation condition of [dp_loading()] also applies.
+#' @param privacy A [privacy_control()] object allocating budget to `loading`,
+#'   `scree`, and `score` (equal thirds by default).
+#' @param scree Required named list with `k = NULL` (all components),
+#'   `method = "clipped"`, `control` (required), and `mono = TRUE`.
+#'   `k`, when supplied, must be between `2` and the number of numeric features.
+#'   Use [clipped_control()], [pmwm_control()], or [huber_control()] for tuning.
+#' @param score Named list specifying `method = "sparse"` or `"add"` and
+#'   `bins = c(20, 20)` by default. Exactly one histogram method is used.
+#' @param axes Two distinct PC indices between `1` and the fitted `k`
+#'   (`c(1, 2)` by default).
+#' @param cpp.option Whether to use the compiled spherical-Kendall implementation
+#'   (`TRUE` by default) when estimating private directions; ignored if
+#'   `V_dp` is supplied.
+#' @param non_private Whether to compute and store ordinary PCA reference results
+#'   (`FALSE` by default).
+#' @param V_dp Optional `p` by `p` private PC direction matrix (`NULL` by default),
+#'   where `p` is the number of numeric PCA features. Columns must be
+#'   orthonormal and rows must follow the feature order in `X`; matching
+#'   row names are required when both sets of names exist.
+#' @param group Optional group column name in `X` or vector of group labels
+#'   (`NULL` by default). A selected group column is excluded from PCA
+#'   features, even when numeric; group labels and membership are assumed
+#'   public.
 #'
-#' @return A `dp_pca` object containing all `directions`, the first `k`
-#'   `eigenvalues` and their `pve`, `score_histogram`, `frame`, `privacy`,
-#'   `score_budget`, resolved `methods`, `controls`, `preprocessing`, `n`,
-#'   `k` and `axes`. `nonprivate` contains the optional reference results,
-#'   including observed scores; it is `NULL` when `non_private = FALSE`.
+#' @return A `dp_pca` object containing private `directions`, `scree`,
+#'   `pve`, `hist`, `frame`, and optional `score_groups`.
+#'   `nonprivate` contains the optional ordinary PCA reference, or `NULL`
+#'   when `non_private = FALSE`. `metadata` contains data dimensions,
+#'   privacy allocations, methods, controls, grouping information and axes.
 #'   The print method returns the fitted object invisibly.
 #'
 #' @details
-#' One estimated or supplied private direction matrix is shared by scree and
-#' score estimation. Scree methods use disjoint pairs of projected scores:
-#' the squared difference within each pair, divided by two, estimates
-#' variance along a private direction. An odd final observation is unused
-#' by scree estimation. Score estimation uses all original projected rows;
-#' the returned `n` remains the original sample size.
+#' A single private PC direction matrix is estimated or supplied and reused
+#' for scree and score estimation. Scree values estimate variance along those
+#' directions using disjoint paired differences; an odd final observation is
+#' unused for scree, while the score histogram uses all rows. PVE is normalized
+#' over the retained `k` components, not necessarily all original variables.
 #'
-#' The selected scree method receives the full scree allocation, with
-#' vector noise calibrated jointly over the first `k` components. Within the
-#' score allocation, 35 percent of `eps` is used for the frame and 65 percent
-#' for the histogram; all score `delta` is assigned to the histogram.
-#' Supplying `V_dp` does not redistribute its recorded loading allocation.
-#' The `eigenvalues` estimate variances along the private directions; they are
-#' not necessarily eigenvalues of the empirical covariance matrix. PVE is
-#' normalized over the `k` estimated values, and is zero if their sum is zero.
-#' With `k < ncol(X)`, it describes relative variation within those components.
-#' The sample size and variable names are treated as public. Selected
-#' components, grid sizes and tuning parameters must be public or selected
-#' with separate privacy accounting.
+#' The selected scree method uses the entire scree allocation. Of the score
+#' epsilon budget, 35% goes to the private frame and 65% to the histogram; all
+#' score delta goes to the histogram. With supplied `V_dp`, the loading budget
+#' records its previous release rather than being reassigned.
 #'
-#' By default, `center = FALSE` and `standardize = FALSE` leave input rows
-#' unchanged. For the score frame and histogram guarantees, any centering or
-#' scaling must use fixed public values, or separately privatized quantities
-#' with their privacy cost accounted for. Sample-mean centering can change all
-#' score rows when one observation is replaced; sample standardization has the
-#' same issue. Centering the input by its sample mean before calling this
-#' function does not avoid this requirement. Common centering cancels in the
-#' pair differences used for loading and scree estimation.
+#' Grouped data use one direction estimate and private frame. Their disjoint
+#' histograms use parallel composition when group labels and membership are
+#' public and fixed. The pooled histogram is post-processed from the grouped
+#' histograms.
 #'
-#' With `non_private = TRUE`, the ordinary reference is computed separately
-#' from the sample covariance. Its scores use ordinary PCA directions, whereas the
-#' private histogram uses `V_dp` or the internally estimated private basis.
-#' The default `non_private = FALSE` omits these reference results.
-#' Reference results are not private releases. Budget allocation alone does
-#' not certify the complete procedure; the loading calibration and input
-#' conditions in [dp_loading()] also apply when directions are estimated.
+#' Input is not automatically centered or standardized. Data-dependent
+#' preprocessing needs separate privacy accounting, and sample size, schema,
+#' selected components, and tuning settings are assumed public. The loading
+#' conditions in [dp_loading()] also apply. The optional non-private reference
+#' uses sample-mean-centered ordinary PCA scores and is not private.
 #'
 #' @examples
 #' data(gau, package = "dppca")
@@ -84,14 +69,13 @@
 #'   privacy = privacy_control(eps = 5, delta = 1e-4),
 #'   scree = list(k = 2, control = clipped_control(C_clip = 3)),
 #'   score = list(method = "sparse", bins = c(10, 10)),
-#'   center = FALSE,
-#'   standardize = FALSE,
 #'   non_private = FALSE
 #' )
 #' fit
 #' summary(fit)
 #' fit$directions
 #' fit$nonprivate # NULL by default
+#' fit$metadata$privacy
 #'
 #' set.seed(123)
 #' plots <- plot(fit) # DP panels only
@@ -104,11 +88,10 @@ dp_pca <- function(
     scree,
     score = list(),
     axes = c(1, 2),
-    center = FALSE,
-    standardize = FALSE,
     cpp.option = TRUE,
     non_private = FALSE,
-    V_dp = NULL
+    V_dp = NULL,
+    group = NULL
 ) {
   if (missing(scree)) {
     stop(
@@ -144,26 +127,33 @@ dp_pca <- function(
   score_method <- match.arg(score_options$method, c("sparse", "add"))
   bins <- score_options$bins
 
-  for (argument in c("center", "standardize", "cpp.option", "mono", "non_private")) {
-    .dppca_flag(get(argument), argument)
+  for (argument in c("cpp.option", "mono", "non_private")) {
+    validate_logical_value(get(argument), argument)
   }
 
-  privacy <- .dppca_fun(".validate_privacy_control")(
+  privacy <- .validate_privacy_control(
     privacy, c("loading", "scree", "score")
   )
-  budgets <- privacy$components
+  budgets <- privacy$budgets
 
-  control <- .dppca_fun(".merge_scree_control")(
+  control <- .merge_scree_control(
     scree_method,
     scree_options$control
   )
-  control <- do.call(.dppca_fun(paste0(scree_method, "_control")), control)
+  control_constructor <- switch(
+    scree_method,
+    clipped = clipped_control,
+    pmwm = pmwm_control,
+    huber = huber_control
+  )
+  control <- do.call(control_constructor, control)
 
   if (scree_method == "pmwm" && control$eta >= 0.5) {
     stop("eta must be less than 0.5.")
   }
 
-  X_proc <- .dppca_fun("prep_matrix_for_pca")(X, center, standardize)
+  prepared <- .prepare_pca_input(X, group = group, min_cols = 2L)
+  X_proc <- prepared$X
   n <- nrow(X_proc)
   p <- ncol(X_proc)
 
@@ -185,7 +175,7 @@ dp_pca <- function(
   if (length(bins) == 1L) {
     bins <- rep(bins, 2)
   }
-  .dppca_fun("validate_bins")(bins)
+  validate_bins(bins)
 
   if (is.null(colnames(X_proc))) {
     colnames(X_proc) <- paste0("X", seq_len(p))
@@ -193,7 +183,12 @@ dp_pca <- function(
   if (anyDuplicated(colnames(X_proc))) {
     stop("Variable names must be unique.")
   }
-  estimator <- .dppca_fun(paste0("dp_scree_", scree_method))
+  estimator <- switch(
+    scree_method,
+    clipped = dp_scree_clipped,
+    pmwm = dp_scree_pmwm,
+    huber = dp_scree_huber
+  )
 
   # Estimate or reuse one full loading matrix and share its projected scores.
   V <- .get_dp_directions(
@@ -220,27 +215,37 @@ dp_pca <- function(
     stop("Non-finite eigenvalues from scree estimation.")
   }
   if (mono) {
-    eigenvalues <- .dppca_fun("scree_post_processing")(eigenvalues)
+    eigenvalues <- scree_post_processing(eigenvalues)
   }
   names(eigenvalues) <- colnames(V)[seq_len(k)]
 
   # Loading has its own allocation; the score budget covers frame and histogram.
-  score_budget <- .dppca_fun("split_score_privacy_budget")(privacy)
-  frame <- .dppca_fun("dp_frame")(
+  score_budget <- split_score_privacy_budget(privacy)
+  frame <- dp_frame(
     Y[, axes, drop = FALSE],
     score_budget$eps_frame,
     inflate = 0.2
   )
-  histograms <- .dppca_fun("score_histograms")(
-    Y[, axes, drop = FALSE],
-    frame$xlim,
-    frame$ylim,
-    bins,
-    score_budget$eps_hist,
-    score_budget$delta_hist,
-    score_method,
-    non_private = FALSE
-  )
+  score_groups <- NULL
+  if (is.null(prepared$group)) {
+    histograms <- score_histograms(
+      Y[, axes, drop = FALSE],
+      frame$xlim,
+      frame$ylim,
+      bins,
+      score_budget$eps_hist,
+      score_budget$delta_hist,
+      score_method,
+      non_private = FALSE
+    )
+  } else {
+    score_groups <- .score_group_histograms(
+      Y[, axes, drop = FALSE], prepared$group, frame, bins,
+      score_budget$eps_hist, score_budget$delta_hist, score_method,
+      non_private = FALSE
+    )
+    histograms <- .score_pool_histograms(score_groups, score_method)
+  }
 
   nonprivate <- NULL
   if (non_private) {
@@ -260,52 +265,79 @@ dp_pca <- function(
       ifelse(colSums(ordinary_directions * V) < 0, -1, 1),
       "*"
     )
-    ordinary_scores <- X_proc %*% ordinary_directions[, axes, drop = FALSE]
-    ordinary_histogram <- .dppca_reference_histogram(ordinary_scores, frame, bins)
+    # Ordinary PCA scores are always sample-mean centered.
+    X_centered <- sweep(X_proc, 2L, colMeans(X_proc), "-")
+    ordinary_scores <- X_centered %*% ordinary_directions[, axes, drop = FALSE]
+
+    # Match the private frame's width, but center the reference grid at (0, 0).
+    ordinary_frame <- .dppca_centered_frame(frame)
+    ordinary_histogram <- .dppca_reference_histogram(
+      ordinary_scores, ordinary_frame, bins
+    )
 
     nonprivate <- list(
       directions = ordinary_directions,
-      eigenvalues = ordinary_eigenvalues,
-      pve = .dppca_pve(ordinary_eigenvalues),
+      scree = ordinary_eigenvalues,
+      pve = scree_to_pve(ordinary_eigenvalues),
       scores = ordinary_scores,
-      score_histogram = ordinary_histogram,
-      frame = frame,
+      hist = ordinary_histogram,
+      frame = ordinary_frame,
       variable_sd = apply(X_proc, 2, stats::sd)
     )
+    if (!is.null(prepared$group)) {
+      nonprivate$group <- prepared$group
+      nonprivate$score_groups <- .dppca_reference_groups(
+        ordinary_scores, prepared$group, ordinary_frame, bins
+      )
+    }
   }
 
   structure(
     list(
       directions = V,
-      eigenvalues = eigenvalues,
-      pve = .dppca_pve(eigenvalues),
-      score_histogram = histograms[[score_method]],
+      scree = eigenvalues,
+      pve = scree_to_pve(eigenvalues),
+      hist = histograms[[score_method]],
+      score_groups = score_groups,
       frame = frame,
-      privacy = privacy,
-      score_budget = score_budget,
-      methods = list(scree = scree_method, score = score_method),
-      controls = list(
-        scree = list(k = k, method = scree_method, control = control, mono = mono),
-        score = list(method = score_method, bins = bins)
+      metadata = list(
+        n = n,
+        p = p,
+        k = k,
+        axes = as.integer(axes),
+        group_name = prepared$group_name,
+        group_levels = prepared$group_levels,
+        excluded_columns = prepared$excluded_columns,
+        privacy = privacy,
+        score_budget = score_budget,
+        methods = list(scree = scree_method, score = score_method),
+        controls = list(
+          scree = list(k = k, method = scree_method, control = control, mono = mono),
+          score = list(method = score_method, bins = bins)
+        )
       ),
-      preprocessing = list(center = center, standardize = standardize),
-      n = n,
-      k = k,
-      axes = as.integer(axes),
       nonprivate = nonprivate
     ),
     class = "dp_pca"
   )
 }
 
-# Empirical reference on the private grid: right-closed bins, with scores
+# Empirical reference grid has the same span as the DP frame, centered at zero.
+.dppca_centered_frame <- function(frame) {
+  list(
+    xlim = c(-1, 1) * diff(frame$xlim) / 2,
+    ylim = c(-1, 1) * diff(frame$ylim) / 2
+  )
+}
+
+# Empirical reference on its own centered grid: right-closed bins, with scores
 # outside the frame assigned to the corresponding boundary bins.
 .dppca_reference_histogram <- function(
     scores,
     frame,
     bins
 ) {
-  grid <- .dppca_fun("score_histogram_grid")(
+  grid <- score_histogram_grid(
     frame$xlim,
     frame$ylim,
     bins[1],
@@ -333,111 +365,137 @@ dp_pca <- function(
   histogram
 }
 
+# Rebuild ordinary group histograms after sign alignment or display centering.
+.dppca_reference_groups <- function(scores, group, frame, bins) {
+  group_levels <- unique(as.character(group))
+  groups <- lapply(group_levels, function(label) {
+    rows <- which(group == label)
+    list(
+      n = length(rows),
+      nonprivate = .dppca_reference_histogram(
+        scores[rows, , drop = FALSE], frame, bins
+      )
+    )
+  })
+  stats::setNames(groups, group_levels)
+}
+
+# Stack same-grid histograms for a group-color overlay.
+.dppca_group_histogram <- function(groups, method) {
+  pieces <- lapply(names(groups), function(label) {
+    histogram <- groups[[label]][[method]]
+    histogram$group <- rep(label, nrow(histogram))
+    histogram
+  })
+  combined <- do.call(rbind, pieces)
+  combined$group <- factor(combined$group, levels = names(groups))
+  combined
+}
+
+# Use reference group sizes when supplied, otherwise allocate equally.
+# Zero-mass groups remain empty.
+.dppca_group_sample <- function(groups, method, sampling, group_sizes = NULL) {
+  if (is.null(group_sizes)) {
+    group_sizes <- stats::setNames(rep(1, length(groups)), names(groups))
+  } else {
+    group_sizes <- group_sizes[names(groups)]
+  }
+  sizes <- allocate_group_sample_sizes(group_sizes, sampling$sample_size)
+  pieces <- lapply(names(groups), function(label) {
+    if (sizes[[label]] == 0L) {
+      return(data.frame(x = numeric(), y = numeric(), group = character()))
+    }
+    sampled <- sample_private_score_histogram(
+      groups[[label]][[method]], sizes[[label]],
+      sampling$method, sampling$bandwidth_scale
+    )[[1L]]
+    data.frame(
+      x = sampled$pc_x, y = sampled$pc_y,
+      group = rep(label, nrow(sampled))
+    )
+  })
+  do.call(rbind, pieces)
+}
+
 #' Plot an integrated PCA fit
 #'
 #' Uses the stored estimates without estimating loading, scree or score again.
 #' Use `set.seed()` before plotting to reproduce synthetic samples.
 #'
-#' @param x A [dp_pca()] result.
-#' @param type `"all"` or an ordered vector containing `"scree"`, `"score"`,
-#'   `"loading"`, `"variable"` and/or `"biplot"`.
-#' @param non_private Show the stored non-private comparison before DP plots.
-#'   Defaults to whether `x$nonprivate` is stored, so a default [dp_pca()] fit
-#'   shows DP plots only. Set `non_private = TRUE` when fitting to store the
-#'   comparison.
-#'   Non-private signs are aligned to the DP directions in a plotting copy.
-#'   Histogram grids, probability scales and biplot display frames are shared.
-#' @param scree List with `display = "pve"` (or `"eigenvalue"`),
-#'   `display_k = NULL` and `plot_control = NULL`. Use [scree_plot_control()]
-#'   for line, point, title and axis styles. Each panel contains one curve,
-#'   so its legend options are not used. PVE uses all estimated eigenvalues.
-#' @param score List with `display = "histogram"` (or `"sample"`) and
-#'   `plot_control = NULL`. Appearance uses [score_plot_control()].
-#' @param loading List with `display = "point"`, `heatmap_components = NULL`
-#'   and `plot_control = NULL`. Display also accepts `"vector"` or `"heatmap"`.
-#'   Multiple displays are available with `type = "loading"` only.
-#'   Appearance uses [loading_plot_control()], including `heatmap_colors`.
-#' @param variable List with `display = "vector"` (or `"point"`),
-#'   `circle = TRUE` and `plot_control = NULL`. DP correlation-style coordinates
-#'   use the covariance reconstructed from all `k` estimated components.
-#' @param biplot List with `alpha = 0` and `plot_control = NULL`.
-#'   Alpha is between zero and one. The display is always square: the shorter
-#'   axis range is padded while preserving equal physical units on both axes.
-#'   Tick labels show the actual alpha-transformed score coordinates.
-#' @param sampling A [sampling_control()] result with one method, shared by
-#'   score and biplot. By default DP panels sample `n` synthetic points and
-#'   non-private panels use the original scores. An explicit `sample_size`
-#'   samples both versions from their stored histograms. Histogram panels
-#'   themselves do not change.
-#' @param variables Common variable selection: top count, `"all"`, `NULL`,
-#'   names or multiple indices. Common top-N selection uses raw loading norms
-#'   on the fit axes within each version; loading heatmaps instead use the
-#'   selected `heatmap_components`. The loading, variable and biplot lists can
-#'   override `variables` and `labels`; local top-N selection uses that panel's
-#'   geometry.
-#' @param labels Show variable labels in point and vector panels.
-#' @param base_size Common font size. Local plot controls take precedence.
-#' @param ... Unrecognized arguments are rejected.
+#' @param x A fitted [dp_pca()] object.
+#' @param display `"all"` (default) or a vector selecting `"scree"`,
+#'   `"score"`, `"loading"`, `"variable"`, and `"biplot"`.
+#' @param scree Plot options: `type = "pve"` or `"scree"`, and
+#'   `plot_control = NULL` ([scree_plot_control()]).
+#' @param score Plot options: `type = "histogram"` or `"sample"`, and
+#'   `plot_control = NULL` ([score_plot_control()]). For grouped plots, the
+#'   color map and legend settings also apply to the biplot.
+#' @param loading Plot options: `type = "vector"`, `"point"`, or `"heatmap"`,
+#'   `heatmap_components = NULL`, and `plot_control = NULL`
+#'   ([loading_plot_control()]). Multiple types require
+#'   `display = "loading"`.
+#' @param variable Plot options: `plot_control = NULL`. Shows labeled arrows
+#'   and the correlation-style unit circle.
+#' @param biplot Plot options: `alpha = 0` (between 0 and 1), `labels = TRUE`,
+#'   and `plot_control = NULL`.
+#' @param sampling A [sampling_control()] object with one method, shared by the
+#'   score sample plot and biplot. By default, DP sample size is the input
+#'   sample size, and non-private plots use observed scores. An explicit
+#'   `sample_size` samples both versions from their histograms. For groups,
+#'   sizes are allocated across groups; zero-mass groups yield no points.
+#' @param center Whether to shift displayed private scores by the midpoint of
+#'   the private frame (`TRUE` by default). Shared by score and biplot;
+#'   the biplot arrows start at the origin when `TRUE`. Ordinary reference
+#'   scores remain centered at zero. This is display-only post-processing.
+#' @param variables Variables to display: positive top-N count (`10` by default),
+#'   `"all"`, `NULL`, names, or indices. Top-N selection uses norms of private
+#'   loading coefficients on the two selected axes. Selection is shared by
+#'   loading, variable and biplot panels, including non-private comparisons.
+#' @param base_size Base font size (`12` by default); local plot controls
+#'   override it.
+#' @param ... Unused arguments are rejected.
 #'
 #' @details
-#' Variable coordinates are `sqrt(eigenvalue[l]) * V[j, l] / s[j]`, where the
-#' private denominator is `s[j] = sqrt(sum(eigenvalues * V[j, 1:k]^2))`.
-#' They describe correlations implied by the reconstructed covariance, not
-#' the observed correlations with noisy private directions. Zero-denominator
-#' variables are omitted. For `k < ncol(x$directions)`, the denominator uses
-#' only the retained components. The ordinary comparison instead uses observed
-#' variable standard deviations and is not a private release.
+#' Plotting reuses the stored estimates; non-private panels appear
+#' automatically if the fit contains them. Synthetic sampling is
+#' post-processing, and `set.seed()` can reproduce sampled displays.
 #'
-#' Biplot scores are divided by `d^alpha` and loading columns multiplied by
-#' `d^alpha`, where `d = sqrt((n - 1) * eigenvalue)` on the selected axes.
-#' Here `n` is the original sample size, even when the synthetic sample size
-#' differs. Each version uses its own eigenvalues. A zero eigenvalue with positive
-#' alpha suppresses that axis and is reported in the plot subtitle.
+#' Variable-plot coordinates use the covariance reconstructed from the `k`
+#' private scree estimates and directions; they need not equal observed
+#' variable–score correlations. Variables with zero implied variance are omitted.
 #'
-#' A single arrow multiplier is computed from the DP panel: the 90th percentile
-#' of distances from the transformed synthetic-point mean, divided by the
-#' largest norm of all transformed DP variable vectors. There is no additional
-#' 0.8 factor. Points keep their transformed coordinates and arrows start at
-#' the origin. The same multiplier is used for the non-private comparison.
-#' Empty or zero-radius DP samples give a zero multiplier and omit arrows.
-#' This display scaling is post-processing of the stored DP quantities and
-#' synthetic points; it does not produce an exact factorization of the data.
+#' Biplot coordinates divide sampled scores by `d^alpha` and multiply private
+#' direction coefficients by `d^alpha`, where
+#' `d = sqrt((n - 1) * scree)` on the selected axes. A zero scree value with
+#' positive alpha suppresses that axis. Arrows use one display multiplier
+#' computed from the private sample and shared with the ordinary comparison;
+#' empty or zero-radius samples omit arrows. The comparison uses the same square
+#' biplot frame.
 #'
-#' The biplot display first extends the alpha-transformed DP frame to include
-#' the origin and all DP arrow endpoints, then pads the shorter axis to make
-#' a square. It does not change the estimated frame or histogram.
-#' Non-private plots reuse this display frame;
-#' endpoints outside it are reported in the subtitle. Changing `variables`
-#' alone does not change the DP multiplier or display frame.
-#'
-#' Variable and biplot `plot_control` accept plain lists with
-#' `nonprivate_color`, `private_color`, `arrow_size`, `point_size`,
-#' `point_alpha`, `label_size`, `base_size`, `title_size`, `title`, `xlab`
-#' and `ylab`. `point_color` sets the synthetic/observation-point color in
-#' biplots. Variable points and arrows use the corresponding version color.
-#' A NULL title or axis label keeps the automatic text. Biplot defaults are
-#' `point_color = "#B0B0B0"` and both version colors `"#174A7E"`.
+#' Centering translates only displayed coordinates. Combined grouped pages
+#' show one group legend, while individual ggplot objects retain their own.
+#' The returned object stores both the combined pages and individual plots.
 #'
 #' @return Invisibly returns `private` and, when requested, `nonprivate` lists.
-#'   Each contains `plots`, `page`, `sampled_points`, `biplot`, `frames` and
+#'   Each contains `plots`, `page`, `sampled_points` (unshifted), `biplot`, `frames` and
 #'   `direction_sign`. Biplot metadata includes the alpha-transformed and
 #'   displayed coordinates, `scale`, `arrow_scale`, `score_center`,
-#'   `score_radius`, and display frame. The plots are always drawn;
+#'   `score_radius`, `estimated_center`, `centered`, `arrow_start`,
+#'   `arrow_endpoints` and display frame. The plots are always drawn;
 #'   `out <- plot(fit)` also keeps these results for reuse. Multiple loading
 #'   displays with both versions additionally return a `comparison` patchwork.
 #' @export
 plot.dp_pca <- function(
     x,
-    type = "all",
-    non_private = !is.null(x$nonprivate),
+    display = "all",
     scree = list(),
     score = list(),
     loading = list(),
     variable = list(),
     biplot = list(),
     sampling = NULL,
+    center = TRUE,
     variables = 10,
-    labels = TRUE,
     base_size = 12,
     ...
 ) {
@@ -445,13 +503,13 @@ plot.dp_pca <- function(
   valid_types <- c("scree", "score", "loading", "variable", "biplot")
 
   if (
-    !is.character(type) || !length(type) || anyNA(type) ||
-      any(!type %in% c("all", valid_types))
+    !is.character(display) || !length(display) || anyNA(display) ||
+      any(!display %in% c("all", valid_types))
   ) {
-    stop("Unknown plot type.", call. = FALSE)
+    stop("Unknown plot display.", call. = FALSE)
   }
 
-  if ("all" %in% type && length(type) > 1L) {
+  if ("all" %in% display && length(display) > 1L) {
     stop("Use 'all' alone, or a vector of plot names.", call. = FALSE)
   }
 
@@ -463,94 +521,84 @@ plot.dp_pca <- function(
     )
   }
 
-  types <- if (identical(type, "all")) valid_types else unique(type)
+  non_private <- !is.null(x$nonprivate)
+  types <- if (identical(display, "all")) valid_types else unique(display)
 
   sp <- .dppca_options(
     scree,
-    list(display = "pve", display_k = NULL, plot_control = NULL),
+    list(type = "pve", plot_control = NULL),
     "scree"
   )
   hp <- .dppca_options(
     score,
-    list(display = "histogram", plot_control = NULL),
+    list(type = "histogram", plot_control = NULL),
     "score"
   )
   lp <- .dppca_options(
     loading,
     list(
-      display = "point",
+      type = "vector",
       heatmap_components = NULL,
-      plot_control = NULL,
-      variables = variables,
-      labels = labels
+      plot_control = NULL
     ),
     "loading"
   )
   vp <- .dppca_options(
     variable,
-    list(
-      display = "vector",
-      circle = TRUE,
-      plot_control = NULL,
-      variables = variables,
-      labels = labels
-    ),
+    list(plot_control = NULL),
     "variable"
   )
   bp <- .dppca_options(
     biplot,
     list(
       alpha = 0,
-      plot_control = NULL,
-      variables = variables,
-      labels = labels
+      labels = TRUE,
+      plot_control = NULL
     ),
     "biplot"
   )
 
-  sp$display <- match.arg(sp$display, c("pve", "eigenvalue"))
-  hp$display <- match.arg(hp$display, c("histogram", "sample"))
-  vp$display <- match.arg(vp$display, c("vector", "point"))
-  lp$display <- .dppca_fun(".validate_loading_display")(lp$display)
+  sp$type <- match.arg(sp$type, c("pve", "scree"))
+  hp$type <- match.arg(hp$type, c("histogram", "sample"))
+  lp$type <- .validate_loading_display(lp$type)
 
-  if (length(lp$display) > 1L && !identical(types, "loading")) {
+  if (length(lp$type) > 1L && !identical(types, "loading")) {
     stop(
-      "Multiple loading displays require type = 'loading'.",
+      "Multiple loading types require display = 'loading'.",
       call. = FALSE
     )
   }
 
-  .dppca_flag(non_private, "non_private")
-  .dppca_flag(labels, "labels")
-  .dppca_flag(vp$circle, "variable$circle")
+  validate_logical_value(center, "center")
+  validate_logical_value(bp$labels, "biplot$labels")
   .dppca_number(bp$alpha, "biplot$alpha", 0, 1)
   .dppca_number(base_size, "base_size", 0, Inf, open = TRUE)
-
-  for (options in list(lp, vp, bp)) {
-    .dppca_flag(options$labels, "labels")
-  }
-
-  scree_n <- if (is.null(sp$display_k)) x$k else sp$display_k
-  .dppca_number(scree_n, "scree$display_k", 1, x$k, integer = TRUE)
-
-  if (non_private && is.null(x$nonprivate)) {
-    stop(
-      "No non-private reference was stored. Refit with non_private = TRUE.",
-      call. = FALSE
-    )
-  }
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Install ggplot2 to plot.", call. = FALSE)
   }
 
   # Resolve appearance and one shared sampling specification.
-  pc <- .dppca_fun(".merge_scree_plot_control")(
+  pc <- .merge_scree_plot_control(
     sp$plot_control,
-    if (sp$display == "pve") "pve" else "scree"
+    if (sp$type == "pve") "pve" else "scree"
   )
-  hc <- .dppca_fun(".merge_score_plot_control")(hp$plot_control)
-  lc <- .dppca_fun(".merge_loading_plot_control")(lp$plot_control, x$axes)
+  hc <- .merge_score_plot_control(hp$plot_control)
+  grouped <- !is.null(x$score_groups) && length(x$score_groups) > 0L
+  group_levels <- if (grouped) names(x$score_groups) else character()
+  group_colors <- NULL
+  group_legend <- "none"
+  if (grouped) {
+    group_colors <- if (!is.null(hc$group_colors)) {
+      complete_color_map(hc$group_colors, group_levels)
+    } else if (.is_color_vec(group_levels)) {
+      stats::setNames(group_levels, group_levels)
+    } else {
+      complete_color_map(NULL, group_levels)
+    }
+    group_legend <- if (hc$show_group_legend) "right" else "none"
+  }
+  lc <- .merge_loading_plot_control(lp$plot_control, x$metadata$axes)
   vc <- .dppca_vector_control(vp$plot_control, base_size)
   bc <- .dppca_vector_control(
     bp$plot_control, base_size, biplot = TRUE
@@ -569,27 +617,38 @@ plot.dp_pca <- function(
     lc$title_size <- lc$base_size + 2
   }
 
-  heatpcs <- .dppca_fun(".validate_loading_components")(
+  heatpcs <- .validate_loading_components(
     lp$heatmap_components,
     ncol(x$directions),
-    x$axes,
+    x$metadata$axes,
     "heatmap_components"
   )
 
+  # Select once from the private directions for every panel and version.
+  common_idx <- .select_loading_variables(
+    variables, rownames(x$directions), x$directions, x$metadata$axes
+  )
+  common_names <- rownames(x$directions)[common_idx]
+
   if (is.null(sampling)) {
-    sampling <- .dppca_fun("sampling_control")(sample_size = NULL)
+    sampling <- sampling_control(sample_size = NULL)
   }
 
   # NULL means original non-private points, not a synthetic sample.
   sample_nonprivate <- is.list(sampling) && !is.null(sampling$sample_size)
-  sampling <- .dppca_fun(".resolve_sampling_control")(sampling, x$n)
+  sampling <- .resolve_sampling_control(sampling, x$metadata$n)
 
   if (length(sampling$method) != 1L) {
     stop("Choose one shared sampling method.", call. = FALSE)
   }
 
   need_points <- "biplot" %in% types ||
-    ("score" %in% types && hp$display == "sample")
+    ("score" %in% types && hp$type == "sample")
+  reference_group_sizes <- if (grouped && !is.null(x$nonprivate)) {
+    vapply(x$nonprivate$score_groups, function(g) g$n, numeric(1))
+  } else {
+    NULL
+  }
   versions <- c(if (non_private) "nonprivate", "private")
   result <- list()
 
@@ -606,28 +665,60 @@ plot.dp_pca <- function(
         1
       )
       obj$directions <- sweep(obj$directions, 2, direction_sign, "*")
-      obj$scores <- sweep(obj$scores, 2, direction_sign[x$axes], "*")
-      obj$score_histogram <- .dppca_reference_histogram(
+      obj$scores <- sweep(obj$scores, 2, direction_sign[x$metadata$axes], "*")
+      obj$hist <- .dppca_reference_histogram(
         obj$scores,
-        x$frame,
-        x$controls$score$bins
+        obj$frame,
+        x$metadata$controls$score$bins
       )
-      obj$frame <- x$frame
+      if (grouped) {
+        obj$score_groups <- .dppca_reference_groups(
+          obj$scores, obj$group, obj$frame, x$metadata$controls$score$bins
+        )
+      }
+      # Preserve the centered ordinary frame; never overwrite with the DP frame.
     }
 
-    ax <- x$axes
+    ax <- x$metadata$axes
     V <- obj$directions
-    ev <- obj$eigenvalues
+    ev <- obj$scree
     prefix <- if (private) "DP" else "Non-private"
-    page_title <- if (private) "Private PCA" else "Non-private PCA"
-    score_frame <- x$frame
+    page_title <- if (private) "DP-PCA" else "Non-private PCA"
+
+    # One center per version, shared by all groups.
+    estimated_center <- if (private) {
+      c(mean(x$frame$xlim), mean(x$frame$ylim))
+    } else {
+      c(0, 0)  # Ordinary scores were already centered before histogramming.
+    }
+    score_shift <- if (center) estimated_center else c(0, 0)
+    biplot_shift <- score_shift
+
+    # Move display copies only; sample from the original histogram below.
+    score_frame <- obj$frame
+    score_frame$xlim <- score_frame$xlim - score_shift[1]
+    score_frame$ylim <- score_frame$ylim - score_shift[2]
     plot_frames <- list(score = score_frame)
     points <- data.frame(x = numeric(), y = numeric())
 
     if (need_points) {
-      if (private || sample_nonprivate) {
-        sampled <- .dppca_fun("sample_private_score_histogram")(
-          obj$score_histogram,
+      if (grouped) {
+        if (private || sample_nonprivate) {
+          points <- .dppca_group_sample(
+            obj$score_groups,
+            if (private) x$metadata$methods$score else "nonprivate",
+            sampling,
+            group_sizes = reference_group_sizes
+          )
+        } else {
+          points <- data.frame(
+            x = obj$scores[, 1], y = obj$scores[, 2], group = obj$group
+          )
+        }
+        points$group <- factor(points$group, levels = group_levels)
+      } else if (private || sample_nonprivate) {
+        sampled <- sample_private_score_histogram(
+          obj$hist,
           sampling$sample_size,
           sampling$method,
           sampling$bandwidth_scale
@@ -638,13 +729,6 @@ plot.dp_pca <- function(
       }
     }
 
-    common_idx <- .dppca_fun(".select_loading_variables")(
-      variables,
-      rownames(V),
-      V,
-      ax
-    )
-    common_names <- rownames(V)[common_idx]
     plots <- list()
     coords <- NULL
 
@@ -663,26 +747,11 @@ plot.dp_pca <- function(
         panel_title_size <- hc$title_size
       }
 
-      local_options <- switch(tp, loading = lp, variable = vp, biplot = bp)
-      local_supplied <- switch(
-        tp,
-        loading = loading,
-        variable = variable,
-        biplot = biplot,
-        list()
-      )
-      local_variables <- if ("variables" %in% names(local_supplied)) {
-        local_options$variables
-      } else {
-        common_names
-      }
-      local_labels <- if (is.null(local_options)) labels else local_options$labels
-
       if (tp == "scree") {
-        values <- if (sp$display == "pve") .dppca_pve(ev) else ev
-        idx <- seq_len(scree_n)
+        values <- if (sp$type == "pve") scree_to_pve(ev) else ev
+        idx <- seq_along(ev)
         dat <- data.frame(pc = idx, value = values[idx])
-        series <- if (private) x$methods$scree else "nonprivate"
+        series <- if (private) x$metadata$methods$scree else "nonprivate"
 
         pl <- ggplot2::ggplot(dat, ggplot2::aes(x = .data$pc, y = .data$value)) +
           ggplot2::geom_line(
@@ -698,82 +767,97 @@ plot.dp_pca <- function(
           ggplot2::scale_x_continuous(breaks = idx) +
           ggplot2::labs(
             x = "Component",
-            y = if (sp$display == "pve") {
-              "Proportion of Variance Explained"
+            y = if (sp$type == "pve") {
+              "PVE"
             } else {
               "Eigenvalue"
             }
           )
 
-        if (sp$display == "pve" && scree_n < x$k) {
-          pl <- pl + ggplot2::labs(
-            caption = paste("PVE denominator: all", x$k, "estimated PCs")
-          )
-        }
         if (sum(ev) <= 0) {
           note <- "All estimated eigenvalues are zero"
         }
       } else if (tp == "score") {
-        if (hp$display == "histogram") {
-          pl <- .dppca_fun("make_hist_plot_dp")(
-            obj$score_histogram,
-            score_frame$xlim,
-            score_frame$ylim,
-            hc$color,
-            alpha_range = hc$hist_alpha_range,
-            base_size = hc$base_size,
-            title_size = hc$title_size
-          )
-
-          # Both panels use the DP probability-to-opacity scale.
-          alpha_max <- max(x$score_histogram$prob, na.rm = TRUE)
-          if (!is.finite(alpha_max) || alpha_max <= 0) {
-            alpha_max <- 1
+        if (hp$type == "histogram") {
+          histogram <- if (grouped) {
+            .dppca_group_histogram(
+              obj$score_groups,
+              if (private) x$metadata$methods$score else "nonprivate"
+            )
+          } else {
+            obj$hist
           }
-          alpha_scale <- pl$scales$get_scales("alpha")
-          alpha_scale$limits <- c(0, alpha_max)
-          alpha_scale$oob <- function(z, range, ...) {
-            pmin(pmax(z, range[1]), range[2])
+          histogram$xmin <- histogram$xmin - score_shift[1]
+          histogram$xmax <- histogram$xmax - score_shift[1]
+          histogram$ymin <- histogram$ymin - score_shift[2]
+          histogram$ymax <- histogram$ymax - score_shift[2]
+          if (grouped) {
+            pl <- make_hist_all_dp(
+              histogram, score_frame$xlim, score_frame$ylim, group_colors,
+              alpha_range = hc$hist_alpha_range, base_size = hc$base_size,
+              title_size = hc$title_size, legend_position = group_legend
+            )
+          } else {
+            pl <- make_hist_plot_dp(
+              histogram,
+              score_frame$xlim,
+              score_frame$ylim,
+              hc$color,
+              alpha_range = hc$hist_alpha_range,
+              base_size = hc$base_size,
+              title_size = hc$title_size
+            )
           }
 
-          if (sum(obj$score_histogram$prob) <= 0) {
+          # Each histogram retains its own probability-to-opacity scale.
+          # make_hist_plot_dp()/make_hist_all_dp() train alpha on that panel.
+
+          if (sum(obj$hist$prob) <= 0) {
             note <- "No bins survived private thresholding"
           }
         } else {
-          pl <- .dppca_fun("make_sample_plot_dp")(
-            data.frame(pc_x = points$x, pc_y = points$y),
-            score_frame$xlim,
-            score_frame$ylim,
-            hc$color,
-            point_alpha = hc$scatter_alpha,
-            point_size = hc$scatter_size,
-            base_size = hc$base_size,
-            title_size = hc$title_size
-          )
+          if (grouped) {
+            pl <- make_group_sample_plot_dp(
+              data.frame(
+                pc_x = points$x - score_shift[1],
+                pc_y = points$y - score_shift[2],
+                group = points$group
+              ),
+              score_frame$xlim, score_frame$ylim, group_colors,
+              point_alpha = hc$scatter_alpha, point_size = hc$scatter_size,
+              base_size = hc$base_size, title_size = hc$title_size,
+              legend_position = group_legend
+            )
+          } else {
+            pl <- make_sample_plot_dp(
+              data.frame(pc_x = points$x - score_shift[1],
+                         pc_y = points$y - score_shift[2]),
+              score_frame$xlim,
+              score_frame$ylim,
+              hc$color,
+              point_alpha = hc$scatter_alpha,
+              point_size = hc$scatter_size,
+              base_size = hc$base_size,
+              title_size = hc$title_size
+            )
+          }
 
           if (!nrow(points)) {
             note <- "No synthetic points: histogram has zero mass"
           }
         }
       } else if (tp == "loading") {
-        for (display in lp$display) {
-          components <- if (display == "heatmap") heatpcs else ax
-          selected_variables <- if (
-            display == "heatmap" && !"variables" %in% names(loading)
-          ) {
-            variables
-          } else {
-            local_variables
-          }
-          selected <- .dppca_fun(".select_loading_variables")(
-            selected_variables,
+        for (loading_type in lp$type) {
+          components <- if (loading_type == "heatmap") heatpcs else ax
+          selected <- .select_loading_variables(
+            common_names,
             rownames(V),
             V,
             components
           )
           loading_title <- paste(
             prefix,
-            if (display == "heatmap") "Loading Heatmap" else "Loading Plot"
+            if (loading_type == "heatmap") "Loading Heatmap" else "Loading Plot"
           )
           title_key <- if (private) "private_title" else "nonprivate_title"
 
@@ -785,35 +869,37 @@ plot.dp_pca <- function(
             loading_title <- lc[[title_key]]
           }
 
-          if (display == "heatmap") {
-            dat <- .dppca_fun(".make_loading_heatmap_data")(
+          if (loading_type == "heatmap") {
+            dat <- .make_loading_heatmap_data(
               V, components, selected, rownames(V)
             )
-            pl <- .dppca_fun(".build_loading_heatmap")(
-              dat, loading_title, 1, lc
+            fill_limit <- max(abs(dat$loading))
+            if (!is.finite(fill_limit) ||
+                fill_limit <= sqrt(.Machine$double.eps)) {
+              fill_limit <- 1
+            }
+            pl <- .build_loading_heatmap(
+              dat, loading_title, fill_limit, lc
             )
           } else {
-            dat <- .dppca_fun(".make_loading_data")(
+            dat <- .make_loading_data(
               V, ax, selected, rownames(V)
             )
-            limit <- max(0.1, abs(c(dat$x, dat$y))) * 1.2
-            pl <- .dppca_fun(".build_loading_panel")(
+            pl <- .build_loading_panel(
               dat,
               if (private) lc$private_color else lc$nonprivate_color,
               loading_title,
               lc$xlab,
               lc$ylab,
-              local_labels,
-              limit,
-              display,
+              loading_type,
               lc
             )
           }
 
-          key <- if (length(lp$display) == 1L) {
+          key <- if (length(lp$type) == 1L) {
             "loading"
           } else {
-            paste0("loading_", display)
+            paste0("loading_", loading_type)
           }
           plots[[key]] <- pl
         }
@@ -847,30 +933,65 @@ plot.dp_pca <- function(
           }
           pl <- ggplot2::ggplot()
         } else {
+          # Biplot and score plots use the same display-centering option.
+          biplot_points <- points[, c("x", "y"), drop = FALSE]
+          biplot_points$x <- biplot_points$x - biplot_shift[1]
+          biplot_points$y <- biplot_points$y - biplot_shift[2]
+          biplot_frame <- obj$frame
+          biplot_frame$xlim <- biplot_frame$xlim - biplot_shift[1]
+          biplot_frame$ylim <- biplot_frame$ylim - biplot_shift[2]
           coords <- .dppca_biplot_coordinates(
-            points = points,
+            points = biplot_points,
             V = V,
             eigenvalues = ev,
-            n = x$n,
+            n = x$metadata$n,
             axes = ax,
             alpha = bp$alpha,
-            frame = score_frame,
+            frame = biplot_frame,
             arrow_scale = if (private) NULL else result$private$biplot$arrow_scale
+          )
+
+          # Uncentered scores keep their positions; only the arrows move.
+          arrow_start <- c(0, 0)
+          if (!center) {
+            active <- coords$scale > 0
+            arrow_start[active] <- estimated_center[active] / coords$scale[active]
+          }
+          coords$estimated_center <- stats::setNames(estimated_center, c("x", "y"))
+          coords$centered <- center
+          coords$arrow_start <- stats::setNames(arrow_start, c("x", "y"))
+          coords$arrow_endpoints <- sweep(
+            coords$display_variables, 2, arrow_start, "+"
           )
           A <- coords$display_variables
           note <- coords$note
+          if (grouped) {
+            coords$observations$group <- points$group
+            coords$display_observations$group <- points$group
+          }
           pl <- ggplot2::ggplot(
             coords$display_observations,
             ggplot2::aes(x = .data$x, y = .data$y)
-          ) +
-            ggplot2::geom_point(
+          )
+          if (grouped) {
+            pl <- pl + ggplot2::geom_point(
+              ggplot2::aes(colour = .data$group),
+              alpha = bc$point_alpha, size = bc$point_size
+            ) + ggplot2::scale_colour_manual(
+                values = group_colors,
+                breaks = group_levels[group_levels %in% as.character(points$group)],
+                drop = TRUE
+              )
+          } else {
+            pl <- pl + ggplot2::geom_point(
               color = bc$point_color,
               alpha = bc$point_alpha,
               size = bc$point_size
             )
+          }
         }
 
-        keep <- .dppca_variables(A, rownames(V), local_variables)
+        keep <- .dppca_variables(A, rownames(V), common_names)
         if (tp == "biplot" && coords$arrow_scale == 0) {
           keep <- integer()
         }
@@ -879,6 +1000,19 @@ plot.dp_pca <- function(
           y = A[keep, 2],
           label = rownames(V)[keep]
         )
+
+        # Variable plots keep origin-based arrows; biplots use their center.
+        arrow_mapping <- ggplot2::aes(x = 0, y = 0, xend = .data$x, yend = .data$y)
+        if (tp == "biplot") {
+          dat$start_x <- rep(arrow_start[1], nrow(dat))
+          dat$start_y <- rep(arrow_start[2], nrow(dat))
+          dat$x <- dat$x + arrow_start[1]
+          dat$y <- dat$y + arrow_start[2]
+          arrow_mapping <- ggplot2::aes(
+            x = .data$start_x, y = .data$start_y,
+            xend = .data$x, yend = .data$y
+          )
+        }
 
         pl <- pl +
           ggplot2::geom_hline(
@@ -890,29 +1024,18 @@ plot.dp_pca <- function(
             linetype = "dashed"
           )
 
-        if (tp == "variable" && vp$display == "point") {
-          pl <- pl + ggplot2::geom_point(
-            data = dat,
-            ggplot2::aes(x = .data$x, y = .data$y),
-            inherit.aes = FALSE,
-            color = color,
-            alpha = style$point_alpha,
-            size = style$point_size
+        pl <- pl + ggplot2::geom_segment(
+          data = dat,
+          mapping = arrow_mapping,
+          inherit.aes = FALSE,
+          color = color,
+          linewidth = style$arrow_size,
+          arrow = grid::arrow(
+            length = grid::unit(0.18, "cm"), type = "closed"
           )
-        } else {
-          pl <- pl + ggplot2::geom_segment(
-            data = dat,
-            ggplot2::aes(x = 0, y = 0, xend = .data$x, yend = .data$y),
-            inherit.aes = FALSE,
-            color = color,
-            linewidth = style$arrow_size,
-            arrow = grid::arrow(
-              length = grid::unit(0.18, "cm"), type = "closed"
-            )
-          )
-        }
+        )
 
-        if (local_labels && nrow(dat)) {
+        if ((tp == "variable" || bp$labels) && nrow(dat)) {
           if (requireNamespace("ggrepel", quietly = TRUE)) {
             pl <- pl + ggrepel::geom_text_repel(
               data = dat,
@@ -937,7 +1060,7 @@ plot.dp_pca <- function(
           }
         }
 
-        if (tp == "variable" && vp$circle) {
+        if (tp == "variable") {
           angle <- seq(0, 2 * pi, length.out = 361)
           circle <- data.frame(x = cos(angle), y = sin(angle))
           pl <- pl +
@@ -951,14 +1074,9 @@ plot.dp_pca <- function(
             ggplot2::coord_equal(
               xlim = c(-1.15, 1.15), ylim = c(-1.15, 1.15)
             )
-        } else if (tp == "variable") {
-          limit <- max(0.1, abs(A[is.finite(A)])) * 1.2
-          pl <- pl + ggplot2::coord_equal(
-            xlim = c(-limit, limit), ylim = c(-limit, limit)
-          )
         } else {
           biplot_frame <- if (private) {
-            .dppca_biplot_frame(coords)
+            .dppca_biplot_frame(coords, arrow_start)
           } else {
             result$private$frames$biplot
           }
@@ -1000,7 +1118,7 @@ plot.dp_pca <- function(
           x = paste0("PC", ax[1]), y = paste0("PC", ax[2])
         )
       }
-      score_title <- if (hp$display == "histogram") {
+      score_title <- if (hp$type == "histogram") {
         paste(prefix, "Histogram")
       } else if (private || sample_nonprivate) {
         paste(prefix, "Sample")
@@ -1028,7 +1146,7 @@ plot.dp_pca <- function(
           )
       }
       if (tp == "biplot") {
-        pl <- pl + .dppca_fun("theme_dp_base")(panel_base)
+        pl <- pl + theme_dp_base(panel_base)
       }
 
       result_note <- !is.null(note) &&
@@ -1050,12 +1168,28 @@ plot.dp_pca <- function(
           aspect.ratio = if (tp == "scree") 1 else NULL,
           plot.margin = ggplot2::margin(8, 12, 8, 12)
         )
+      if (grouped && tp %in% c("score", "biplot")) {
+        pl <- pl + ggplot2::theme(
+          legend.position = if (hc$show_group_legend) "right" else "none",
+          legend.text = ggplot2::element_text(size = max(8, 0.8 * panel_base)),
+          legend.key.height = grid::unit(3, "mm"),
+          legend.key.width = grid::unit(3, "mm")
+        ) + ggplot2::guides(
+          colour = ggplot2::guide_legend(ncol = 1L),
+          fill = ggplot2::guide_legend(ncol = 1L)
+        )
+        # Group colours identify the groups; omit the often-unhelpful
+        # '<supplied vector>' title (and the 'Group' title).
+        pl <- pl + ggplot2::labs(fill = NULL, colour = NULL)
+      }
 
       override <- switch(
         tp,
         scree = sp$plot_control,
         score = hp$plot_control,
-        local_options$plot_control
+        loading = lp$plot_control,
+        variable = vp$plot_control,
+        biplot = bp$plot_control
       )
       label_options <- override[
         intersect(names(override), c("title", "xlab", "ylab"))
@@ -1068,12 +1202,12 @@ plot.dp_pca <- function(
         pl <- pl + do.call(ggplot2::labs, label_options)
       }
       if (tp == "score") {
-        title_key <- if (!private && hp$display == "sample") {
+        title_key <- if (!private && hp$type == "sample") {
           "scatter_title"
         } else if (!private) {
           "nonprivate_title"
         } else {
-          paste0(x$methods$score, "_title")
+          paste0(x$metadata$methods$score, "_title")
         }
         custom_title <- override[[title_key]]
         default_titles <- c(
@@ -1086,7 +1220,10 @@ plot.dp_pca <- function(
       }
       if (tp == "scree") {
         pl <- pl + ggplot2::theme(
-          plot.title = ggplot2::element_text(size = base_size * pc$cex_main),
+          # Normalize the default 1.5 multiplier to match other panel titles.
+          plot.title = ggplot2::element_text(
+            size = (base_size + 2) * pc$cex_main / 1.5
+          ),
           axis.title = ggplot2::element_text(size = base_size * pc$cex_lab),
           axis.text = ggplot2::element_text(size = base_size * pc$cex_axis)
         )
@@ -1095,14 +1232,16 @@ plot.dp_pca <- function(
     }
 
     heatmap_name <- if (
-      "loading" %in% types && identical(lp$display, "heatmap")
+      "loading" %in% types && identical(lp$type, "heatmap")
     ) {
       "loading"
     } else {
       NULL
     }
     page <- .dppca_page(
-      plots, page_title, heatmap_name = heatmap_name, base_size = base_size
+      plots, page_title, heatmap_name = heatmap_name, base_size = base_size,
+      shared_group_legend = grouped && hc$show_group_legend,
+      group_count = length(group_levels)
     )
     result[[version]] <- list(
       plots = plots,
@@ -1117,13 +1256,13 @@ plot.dp_pca <- function(
   # Drawing uses the familiar non-private -> private order.
   result <- result[versions]
 
-  if (identical(types, "loading") && length(lp$display) > 1L && non_private) {
+  if (identical(types, "loading") && length(lp$type) > 1L && non_private) {
     if (!requireNamespace("patchwork", quietly = TRUE)) {
       stop("Install patchwork for loading comparison.", call. = FALSE)
     }
     result$comparison <- patchwork::wrap_plots(
       c(unname(result$nonprivate$plots), unname(result$private$plots)),
-      ncol = length(lp$display),
+      ncol = length(lp$type),
       nrow = 2,
       byrow = TRUE,
       guides = "collect"
@@ -1240,23 +1379,24 @@ plot.dp_pca <- function(
   )
 }
 
-# Include the origin and DP arrows, then pad to an equal-unit square display.
+# Include the origin, arrow start and DP endpoints in a square display.
 .dppca_biplot_frame <- function(
-    coordinates
+    coordinates,
+    arrow_start = c(0, 0)
 ) {
   frame <- coordinates$transformed_score_frame
-  arrows <- coordinates$display_variables
-  frame$xlim <- range(frame$xlim, 0, arrows[, 1])
-  frame$ylim <- range(frame$ylim, 0, arrows[, 2])
+  arrows <- sweep(coordinates$display_variables, 2, arrow_start, "+")
+  frame$xlim <- range(frame$xlim, 0, arrow_start[1], arrows[, 1])
+  frame$ylim <- range(frame$ylim, 0, arrow_start[2], arrows[, 2])
 
   .dppca_square_frame(frame)
 }
 
-#' @rdname dp_pca
 #' @param x A `dp_pca` object.
 #' @param digits Significant digits for printing, from `1` to `22`.
 #' @param ... Additional formatting arguments passed to [print()] by the print
 #'   method.
+#' @rdname dp_pca
 #' @export
 print.dp_pca <- function(
     x,
@@ -1266,40 +1406,29 @@ print.dp_pca <- function(
   .dppca_number(digits, "digits", 1, 22, integer = TRUE)
 
   cat("Differentially Private PCA\n")
-  cat("Data:", x$n, "observations x", nrow(x$directions), "variables\n")
+  cat("Data:", x$metadata$n, "observations x", nrow(x$directions), "variables\n")
   cat(
-    "Components:", ncol(x$directions), "loadings;",
-    x$k, "scree estimates\n"
+    "Components:", ncol(x$directions), "PC directions;",
+    x$metadata$k, "scree estimates\n"
   )
-  cat("Score axes:", paste0("PC", x$axes, collapse = ", "), "\n")
+  cat("Score axes:", paste0("PC", x$metadata$axes, collapse = ", "), "\n")
+  if (!is.null(x$metadata$group_name)) {
+    cat("Group variable:", x$metadata$group_name, "\n")
+    cat("Groups:", paste(x$metadata$group_levels, collapse = ", "), "\n")
+  }
   cat(
-    "Methods: scree =", x$methods$scree,
-    "; score =", x$methods$score, "\n"
+    "Methods: scree =", x$metadata$methods$scree,
+    "; score =", x$metadata$methods$score, "\n"
   )
   cat(
-    "Preprocessing: center =", x$preprocessing$center,
-    "; standardize =", x$preprocessing$standardize, "\n"
-  )
-  cat(
-    "Allocated budget: eps =", format(x$privacy$total[["eps"]], digits = digits),
-    "; delta =", format(x$privacy$total[["delta"]], digits = digits), "\n"
+    "Total privacy budget: eps =", format(x$metadata$privacy$total[["eps"]], digits = digits),
+    "; delta =", format(x$metadata$privacy$total[["delta"]], digits = digits), "\n"
   )
   cat(
     "Non-private reference:",
     if (is.null(x$nonprivate)) "not stored" else "included", "\n"
   )
 
-  displayed <- seq_len(min(6L, length(x$eigenvalues)))
-  cat("\nDP eigenvalues")
-  if (length(displayed) < length(x$eigenvalues)) {
-    cat(
-      " (first ", length(displayed), " of ", length(x$eigenvalues), ")",
-      sep = ""
-    )
-  }
-  cat(":\n")
-  print(x$eigenvalues[displayed], digits = digits, ...)
-  cat("\nUse summary(x) for component and budget tables; plot(x) for plots.\n")
 
   invisible(x)
 }
@@ -1316,22 +1445,21 @@ print.dp_pca <- function(
 #'   PVE and cumulative PVE, with a column for each estimated component.
 #'   `budget` contains the allocated eps and delta for loading, scree,
 #'   score frame and score histogram, plus the total. Other fields describe
-#'   data dimensions, selected axes, methods, preprocessing and whether a
-#'   non-private reference is stored. Raw scores and loading matrices are
+#'   data dimensions, selected axes, methods and whether a non-private
+#'   reference is stored. Raw scores and loading matrices are
 #'   not copied into the summary.
 #'   The print method returns its input invisibly.
 #'
 #' @details
-#' PVE is normalized over the `k` estimated eigenvalues. If `k` is smaller
-#' than the number of variables, cumulative PVE of one does not mean that
-#' the first `k` components explain all of the data's variance. If all
-#' estimated eigenvalues are zero, PVE and cumulative PVE are shown as zero.
+#' PVE is normalized over the `k` retained components; a total of zero
+#' produces zero PVE. When `k` is smaller than the number of variables, a
+#' cumulative PVE of one does not describe all original variation.
 #'
-#' The budget table records component allocations, not measured privacy loss
-#' or cumulative spending across calls. With external `V_dp`, the loading
-#' row records its prior cost. The frame uses no delta; all scree delta is
-#' used by the vector mechanism, including the Huber gradient iterations.
-#' Non-private comparison values are not included in the importance table.
+#' The budget table reports allocated budgets, not cumulative privacy spending.
+#' With supplied `V_dp`, the loading allocation records its prior cost. The
+#' optional non-private comparison is excluded from the importance table.
+#'
+#' @rdname dp_pca
 #' @export
 summary.dp_pca <- function(
     object,
@@ -1341,8 +1469,8 @@ summary.dp_pca <- function(
     stop("summary.dp_pca() takes no additional options.", call. = FALSE)
   }
 
-  eigenvalues <- object$eigenvalues
-  pve <- .dppca_pve(eigenvalues)
+  eigenvalues <- object$scree
+  pve <- scree_to_pve(eigenvalues)
   importance <- rbind(
     Eigenvalue = eigenvalues,
     PVE = pve,
@@ -1350,8 +1478,8 @@ summary.dp_pca <- function(
   )
   colnames(importance) <- names(eigenvalues)
 
-  budgets <- object$privacy$components
-  score_budget <- object$score_budget
+  budgets <- object$metadata$privacy$budgets
+  score_budget <- object$metadata$score_budget
   budget <- rbind(
     Loading = budgets$loading,
     Scree = budgets$scree,
@@ -1360,17 +1488,19 @@ summary.dp_pca <- function(
       eps = score_budget$eps_hist,
       delta = score_budget$delta_hist
     ),
-    Total = object$privacy$total
+    Total = object$metadata$privacy$total
   )
 
   structure(
     list(
-      n = object$n,
+      n = object$metadata$n,
       p = nrow(object$directions),
-      k = object$k,
-      axes = object$axes,
-      methods = object$methods,
-      preprocessing = object$preprocessing,
+      k = object$metadata$k,
+      axes = object$metadata$axes,
+      group_name = object$metadata$group_name,
+      group_levels = object$metadata$group_levels,
+      excluded_columns = object$metadata$excluded_columns,
+      methods = object$metadata$methods,
       importance = importance,
       budget = budget,
       nonprivate = !is.null(object$nonprivate)
@@ -1381,7 +1511,7 @@ summary.dp_pca <- function(
 
 #' @param x A `summary.dp_pca` object.
 #' @param digits Significant digits used when printing tables.
-#' @rdname summary.dp_pca
+#' @rdname dp_pca
 #' @export
 print.summary.dp_pca <- function(
     x,
@@ -1390,20 +1520,23 @@ print.summary.dp_pca <- function(
 ) {
   .dppca_number(digits, "digits", 1, 22, integer = TRUE)
 
-  cat("DP PCA summary\n")
+  cat("DP PCA Summary\n")
   cat("Data:", x$n, "observations x", x$p, "variables\n")
+  cat("Components:", x$p, "PC directions;", x$k, "scree estimates\n")
+  cat("Score axes:", paste0("PC", x$axes, collapse = ", "), "\n")
   cat(
     "Methods: scree =", x$methods$scree,
     "; score =", x$methods$score, "\n"
   )
-  cat("Score axes:", paste0("PC", x$axes, collapse = ", "), "\n")
+  if (!is.null(x$group_name)) {
+    cat("Group variable:", x$group_name, "\n")
+    cat("Groups:", paste(x$group_levels, collapse = ", "), "\n")
+  }
 
   cat("\nDP component importance:\n")
   print(x$importance, digits = digits, ...)
   cat("\nProportions are normalized over", x$k, "estimated components.\n")
-  if (x$k < x$p) {
-    cat("Unestimated components are not included in the denominator.\n")
-  }
+
   if (sum(x$importance["Eigenvalue", ]) <= 0) {
     cat("All estimated eigenvalues are zero; proportions are shown as zero.\n")
   }
@@ -1412,7 +1545,7 @@ print.summary.dp_pca <- function(
   print(x$budget, digits = digits, ...)
   cat(
     "\nNon-private reference:",
-    if (x$nonprivate) "included in fit" else "not stored", "\n"
+    if (x$nonprivate) "included" else "not stored", "\n"
   )
 
   invisible(x)
@@ -1420,44 +1553,6 @@ print.summary.dp_pca <- function(
 
 # Helpers -------------------------------------------------------------------
 
-# Lookup supports both devtools::load_all() and source() with installed dppca.
-.dppca_fun <- function(
-    name
-) {
-  fun <- get0(
-    name,
-    envir = environment(.dppca_fun),
-    mode = "function",
-    inherits = TRUE
-  )
-
-  if (is.null(fun) && requireNamespace("dppca", quietly = TRUE)) {
-    fun <- get0(
-      name,
-      envir = asNamespace("dppca"),
-      mode = "function",
-      inherits = FALSE
-    )
-  }
-
-  if (is.null(fun)) {
-    stop(
-      "Missing existing dppca function: ", name,
-      ". Load the supplied package R files with devtools::load_all() first."
-    )
-  }
-
-  fun
-}
-
-.dppca_flag <- function(
-    x,
-    name
-) {
-  if (!is.logical(x) || length(x) != 1L || is.na(x)) {
-    stop(name, " must be TRUE or FALSE.")
-  }
-}
 
 .dppca_number <- function(
     x,
@@ -1482,16 +1577,6 @@ print.summary.dp_pca <- function(
   }
 }
 
-.dppca_pve <- function(
-    x
-) {
-  if (sum(x) > 0) {
-    x / sum(x)
-  } else {
-    stats::setNames(rep(0, length(x)), names(x))
-  }
-}
-
 .dppca_variables <- function(
     A,
     nm,
@@ -1501,7 +1586,7 @@ print.summary.dp_pca <- function(
   B <- A
   B[!is.finite(B)] <- 0
 
-  selected <- .dppca_fun(".select_loading_variables")(
+  selected <- .select_loading_variables(
     variables,
     nm,
     B,
@@ -1517,46 +1602,55 @@ print.summary.dp_pca <- function(
     plots,
     title,
     heatmap_name = NULL,
-    base_size = 12
+    base_size = 12,
+    shared_group_legend = FALSE,
+    group_count = 0L
 ) {
   n <- length(plots)
   tall_heatmap <- n == 5L && !is.null(heatmap_name) &&
     heatmap_name %in% names(plots)
 
+  # Keep the group guide attached to the biplot on its right, in one column.
+  # Suppress the duplicated score guide only in the composed page; the
+  # original individual plots (returned by plot.dp_pca) retain their guides.
+  page_plots <- plots
+  if (shared_group_legend &&
+      all(c("score", "biplot") %in% names(page_plots))) {
+    page_plots$score <- page_plots$score +
+      ggplot2::theme(legend.position = "none")
+  }
+
   if (tall_heatmap) {
-    plots <- c(
-      plots[setdiff(names(plots), heatmap_name)],
-      plots[heatmap_name]
+    if (!requireNamespace("patchwork", quietly = TRUE)) {
+      stop("Install patchwork to draw the five-panel heatmap layout.",
+           call. = FALSE)
+    }
+    page <- patchwork::wrap_plots(
+      A = page_plots$scree,
+      B = page_plots$score,
+      C = page_plots$variable,
+      D = page_plots$biplot,
+      E = page_plots[[heatmap_name]],
+      design = "ABE\nCDE"
+    ) + patchwork::plot_annotation(
+      title = title,
+      theme = ggplot2::theme(
+        plot.title = ggplot2::element_text(
+          size = base_size + 3, face = "bold", hjust = 0.5
+        )
+      )
     )
+    return(grid::grobTree(patchwork::patchworkGrob(page)))
   }
 
-  nr <- if (n <= 3L) {
-    1L
-  } else {
-    2L
-  }
-  nc <- if (tall_heatmap) {
-    3L
-  } else if (n == 4L) {
-    2L
-  } else {
-    min(n, 3L)
-  }
-  layout_cols <- if (n == 5L && !tall_heatmap) {
-    6L
-  } else {
-    nc
-  }
-  column_widths <- if (tall_heatmap) {
-    c(1, 1, 1.15)
-  } else {
-    rep(1, layout_cols)
-  }
-
+  nr <- if (n <= 3L) 1L else 2L
+  nc <- if (n == 4L) 2L else min(n, 3L)
+  # Top row: three equal plots. Bottom row: variable and a wider biplot,
+  # whose one-column legend is immediately to the right of its plot panel.
+  layout_cols <- if (n == 5L) 6L else nc
   layout <- grid::grid.layout(
-    nr + 1L,
-    layout_cols,
-    widths = grid::unit(column_widths, "null"),
+    nr + 1L, layout_cols,
+    widths = grid::unit(rep(1, layout_cols), "null"),
     heights = grid::unit(
       c(0.35, rep(1, nr)),
       c("inches", rep("null", nr))
@@ -1567,75 +1661,45 @@ print.summary.dp_pca <- function(
       title,
       gp = grid::gpar(fontsize = base_size + 3, fontface = "bold"),
       vp = grid::viewport(
-        layout.pos.row = 1,
-        layout.pos.col = seq_len(layout_cols)
+        layout.pos.row = 1L, layout.pos.col = seq_len(layout_cols)
       )
     )
   )
-  grobs <- lapply(plots, ggplot2::ggplotGrob)
-
-  # Align only ordinary panels. A heatmap has its own row labels and legend.
-  align <- if (tall_heatmap) {
-    seq_len(4L)
-  } else if (!is.null(heatmap_name)) {
-    which(names(plots) != heatmap_name)
+  grobs <- lapply(page_plots, ggplot2::ggplotGrob)
+  # Do not align heatmap colourbar widths with ordinary plot panels.
+  align <- if (!is.null(heatmap_name)) {
+    which(names(page_plots) != heatmap_name)
   } else {
     seq_along(grobs)
   }
-
   if (length(align) > 1L) {
-    width_counts <- vapply(
-      grobs[align],
-      function(g) {
-        length(g$widths)
-      },
-      integer(1)
-    )
-
+    width_counts <- vapply(grobs[align], function(g) length(g$widths), integer(1))
     if (length(unique(width_counts)) == 1L) {
-      widths <- do.call(
-        grid::unit.pmax,
-        lapply(grobs[align], function(g) {
-          g$widths
-        })
-      )
-
-      for (i in align) {
-        grobs[[i]]$widths <- widths
+      # A guide belongs only to its own biplot and should not make every
+      # panel reserve the same guide width.
+      unguided <- setdiff(align, which(names(page_plots) == "biplot"))
+      if (length(unguided) > 1L) {
+        aligned_widths <- do.call(
+          grid::unit.pmax,
+          lapply(grobs[unguided], function(g) g$widths)
+        )
+        for (i in unguided) grobs[[i]]$widths <- aligned_widths
       }
     }
   }
-
-  for (i in seq_along(plots)) {
-    if (tall_heatmap) {
-      row <- if (i == 5L) {
-        2:3
-      } else {
-        2L + (i - 1L) %/% 2L
-      }
-      col <- if (i == 5L) {
-        3L
-      } else {
-        1L + (i - 1L) %% 2L
-      }
-    } else if (n == 5L) {
-      row <- if (i <= 3L) {
-        2L
-      } else {
-        3L
-      }
-      col <- switch(i, 1:2, 3:4, 5:6, 2:3, 4:5)
+  for (i in seq_along(page_plots)) {
+    if (n == 5L) {
+      row <- if (i <= 3L) 2L else 3L
+      col <- switch(i, 1:2, 3:4, 5:6, 1:3, 4:6)
     } else {
       row <- 2L + (i - 1L) %/% nc
       col <- 1L + (i - 1L) %% nc
     }
-
-    children[[i + 1L]] <- grid::grobTree(
+    children[[length(children) + 1L]] <- grid::grobTree(
       grobs[[i]],
       vp = grid::viewport(layout.pos.row = row, layout.pos.col = col)
     )
   }
-
   grid::gTree(
     children = do.call(grid::gList, children),
     vp = grid::viewport(layout = layout)
@@ -1731,7 +1795,7 @@ print.summary.dp_pca <- function(
   }
 
   for (nm in c("nonprivate_color", "private_color", "point_color")) {
-    .dppca_fun(".validate_plot_color")(out[[nm]], nm)
+    .validate_plot_color(out[[nm]], nm)
   }
 
   for (nm in c("arrow_size", "point_size", "label_size", "title_size")) {
@@ -1741,7 +1805,7 @@ print.summary.dp_pca <- function(
   .dppca_number(out$point_alpha, "point_alpha", 0, 1)
 
   for (nm in c("title", "xlab", "ylab")) {
-    .dppca_fun(".validate_plot_optional_string")(out[[nm]], nm)
+    .validate_plot_optional_string(out[[nm]], nm)
   }
 
   out

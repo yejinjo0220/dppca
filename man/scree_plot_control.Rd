@@ -23,14 +23,14 @@ scree_plot_control(
 )
 }
 \arguments{
-\item{title}{Optional plot title. If \code{NULL}, \code{\link[=dp_scree_plot]{dp_scree_plot()}} uses
+\item{title}{Optional plot title. If \code{NULL}, \code{\link[=plot.dp_scree]{plot.dp_scree()}} uses
 \code{"DP PVE Plot"} when \code{type = "pve"} and \code{"DP Scree Plot"} when
 \code{type = "scree"}.}
 
 \item{xlab}{Optional x-axis label. If \code{NULL}, \code{"Component"} is used.}
 
-\item{ylab}{Optional y-axis label. If \code{NULL}, the label is chosen according
-to the plotted quantity.}
+\item{ylab}{Optional y-axis label. If \code{NULL}, \code{"PVE"} is used for PVE
+and \code{"Scree Value"} for scree values.}
 
 \item{legend_position}{Legend position passed to \code{\link[graphics:legend]{graphics::legend()}}.
 The default is \code{"topright"}.}
@@ -63,11 +63,11 @@ names as \code{legend_labels}.}
 \code{"n"} suppresses the legend border.}
 }
 \value{
-A list of plotting options for \code{\link[=dp_scree_plot]{dp_scree_plot()}}.
+A list of plotting options for \code{\link[=plot.dp_scree]{plot.dp_scree()}}.
 }
 \description{
 Creates a control list for the appearance of plots produced by
-\code{\link[=dp_scree_plot]{dp_scree_plot()}}. The plotting function uses base R graphics.
+\code{\link[=plot.dp_scree]{plot.dp_scree()}}. The plotting function uses base R graphics.
 }
 \examples{
 scree_plot_control()

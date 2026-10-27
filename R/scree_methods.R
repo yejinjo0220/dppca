@@ -67,13 +67,18 @@ scree_post_processing <- function(x) {
 #'
 #' @param scree Numeric vector of scree estimates.
 #'
-#' @return Numeric vector with the same length as `scree`.
+#' @return Numeric vector with the same length and names as `scree`.
 #' @noRd
 scree_to_pve <- function(scree) {
+  component_names <- names(scree)
   scree <- as.numeric(scree)
-  s <- sum(scree)
-  if (!is.finite(s) || s <= 0) return(rep(0, length(scree)))
-  scree / s
+  total <- sum(scree)
+  pve <- if (is.finite(total) && total > 0) {
+    scree / total
+  } else {
+    rep(0, length(scree))
+  }
+  stats::setNames(pve, component_names)
 }
 
 #' Winsorize numeric values
@@ -395,76 +400,12 @@ mu_from_eps_delta <- function(eps, delta, tol = 1e-12) {
 }
 
 
-#' Estimate a private scalar mean by Huber noisy gradient descent
-#'
-#' Internal implementation of a scalar Huber-type private mean estimator. At
-#' each iteration, residuals are clipped at `tau`, the average clipped residual
-#' is used as a gradient step, and Gaussian noise is added for privacy.
-#' With \eqn{n=\operatorname{length}(w)} and
-#' `gamma = mu_from_eps_delta(eps_gd, delta_gd)`, the noise standard deviation
-#' is `2 * eta0 * tau * sqrt(T) / (n * gamma)` at each iteration. The guarantee
-#' conditions on a public or previously privatized threshold and public tuning
-#' parameters. This scalar helper does not project iterates to nonnegative
-#' values and is not called by the joint scree estimator `dp_scree_huber()`.
-#'
-#' @param w Numeric vector representing a one-dimensional sample of length
-#'   at least two.
-#' @param eps_gd Positive number defining the `epsilon` privacy parameter for
-#'   noisy gradient descent.
-#' @param delta_gd Number in `(0, 1)` defining the `delta` privacy parameter for
-#'   noisy gradient descent.
-#' @param tau Positive public or previously privatized Huber threshold.
-#' @param T Positive integer number of gradient-descent iterations.
-#' @param mu0 Public initial value for the iterative procedure.
-#' @param eta0 Positive public step size.
-#'
-#' @return Numeric scalar giving the final private estimate.
-#' @noRd
-dp_huber_noisy_gd <- function(w, eps_gd, delta_gd, tau, T, mu0 = 0, eta0 = 1) {
-  w <- as.numeric(w)
-  n <- length(w)
-  w <- w[sample.int(n)]  # permute the sample
-
-  if (n < 2) stop("Need length(w) >= 2.")
-  if (!is.finite(eps_gd) || eps_gd <= 0) stop("eps_gd must be > 0.")
-  if (!is.finite(delta_gd) || delta_gd <= 0 || delta_gd >= 1) {
-    stop("delta_gd must be in (0, 1).")
-  }
-  if (!is.finite(tau) || tau <= 0) stop("tau must be > 0.")
-  if (!is.finite(eta0) || eta0 <= 0) stop("eta0 must be > 0.")
-  if (!is.numeric(T) || T < 1) stop("T must be >= 1.")
-
-  T <- as.integer(T)
-  mu <- as.numeric(mu0)
-
-  # privacy budget allocation based on GDP <-> (eps, delta)-DP transformation
-  gdp_mu <- mu_from_eps_delta(eps_gd, delta_gd)
-  # eps_step <- eps_gd / iter_tot
-  # del_step <- delta_gd / iter_tot
-  gdp_mu_step <- gdp_mu / sqrt(T)
-
-  for (t in 0:(T - 1L)) {
-    r <- w - mu
-    psi <- winsorization(r, -tau, tau)
-    g <- mean(psi)
-
-    Delta_step <- (2 * eta0 * tau) / n
-    # sd_noise <- Delta_step * sqrt(2 * log(1.25 / del_step)) / eps_step
-    sd_noise <- Delta_step  / gdp_mu_step
-
-    mu <- mu + eta0 * g + stats::rnorm(1, mean = 0, sd = sd_noise)
-  }
-
-  mu
-}
-
-
 #' Estimate private scree values with Huber-type private means
 #'
 #' Forms `m = floor(nrow(Y) / 2)` squared score-pair differences per component.
 #' A private scale from `dp_m2()` is converted to a threshold by
 #' `tau_from_m2()`. All components are then updated together by the noisy
-#' Huber-gradient loop in this function; `dp_huber_noisy_gd()` is not called.
+#' Huber-gradient loop in this function.
 #' At least four pairs, or eight observations, are required.
 #'
 #' The pure-DP scale step uses `m2_frac * eps / k` per component. The gradient

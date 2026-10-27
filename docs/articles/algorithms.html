@@ -10,7 +10,7 @@
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Algorithms">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="Algorithms">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dppca</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,16 +30,27 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-theory" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Theory</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-theory">
-<li><a class="dropdown-item" href="../articles/pca_background.html">PCA Background</a></li>
-    <li><a class="dropdown-item" href="../articles/pc_direction.html">DP Direction</a></li>
-    <li><a class="dropdown-item" href="../articles/dp_scree.html">DP Scree</a></li>
-    <li><a class="dropdown-item" href="../articles/dp_score.html">DP Score</a></li>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-tutorials" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Tutorials</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-tutorials">
+<li><a class="dropdown-item" href="../articles/tutorials-getting-started.html">Getting Started</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorials-loading-plots.html">DP Loading Plot</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorials-scree-plots.html">DP Scree Plot</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorials-score-plots.html">DP Score Plot</a></li>
+    <li><a class="dropdown-item" href="../articles/tutorials-dp-visualization.html">DP PCA Visualization</a></li>
   </ul>
 </li>
-<li class="nav-item"><a class="nav-link" href="../reference/index.html">Functions</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-theory" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Theory</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-theory">
+<li><a class="dropdown-item" href="../articles/theory-pca-background.html">PCA Background</a></li>
+    <li><a class="dropdown-item" href="../articles/theory-dp-loading.html">DP Directions</a></li>
+    <li><a class="dropdown-item" href="../articles/theory-dp-scree.html">DP Eigenvalues</a></li>
+    <li><a class="dropdown-item" href="../articles/theory-dp-score.html">DP Scores</a></li>
+    <li><a class="dropdown-item" href="../articles/theory-dp-visualization.html">DP PCA Visualization</a></li>
+  </ul>
+</li>
 <li class="active nav-item"><a class="nav-link" href="../articles/algorithms.html">Algorithms</a></li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Function</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -69,61 +80,58 @@
     
     
 <p>This page collects the algorithms used in the <code>dppca</code>
-package. The algorithms are included as images from the
-<code>figures/</code> folder.</p>
+package.</p>
 <div class="section level2">
-<h2 id="alg-private-histogram-learner">Algorithm 1: Private histogram learner<a class="anchor" aria-label="anchor" href="#alg-private-histogram-learner"></a>
-</h2>
-<p>The private histogram learner is used as an auxiliary routine for
-privately identifying the scale of a one-dimensional collection of
-values. In our setting, it is used in the private scale-proxy step for
-the Huber scree estimator, following the construction used by <a href="#ref-Yu2024">Yu, Ren, and Zhou (2024)</a>.</p>
-<div class="float">
-<img src="figures/alg1-HL.png" style="width:95.0%" alt="Algorithm 1: Private histogram learner"><div class="figcaption">Algorithm 1: Private histogram learner</div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="alg-m2">Algorithm 2: Private and robust estimator for
+<h2 id="alg-m2">Algorithm 1: Private and robust estimator for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mn>2</mn></msub><annotation encoding="application/x-tex">m_2</annotation></semantics></math><a class="anchor" aria-label="anchor" href="#alg-m2"></a>
 </h2>
-<p>This algorithm privately estimates the second-moment scale
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mn>2</mn></msub><annotation encoding="application/x-tex">m_2</annotation></semantics></math>,
-which is needed to choose the Huber robustification parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>.
-It uses pairwise squared distances, block medians for robustness, and
-the private histogram learner above to select a dyadic scale level.</p>
+<p>This algorithm constructs a private scale proxy
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>m</mi><mo accent="true">̃</mo></mover><mrow><mn>2</mn><mo>,</mo><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widetilde m_{2,\ell}</annotation></semantics></math>
+for selecting the Huber robustification parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>τ</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\tau_\ell</annotation></semantics></math>.
+Given the paired squared differences
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><msubsup><mo stretchy="false" form="postfix">}</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></msubsup></mrow><annotation encoding="application/x-tex">\{w_{r\ell}\}_{r=1}^{m}</annotation></semantics></math>,
+it forms additional pairwise half squared differences and computes block
+medians to obtain a robust measure of variability. A private histogram
+over dyadic scales is then used to select the final scale proxy.</p>
 <div class="float">
-<img src="figures/alg2-robust_estimator_for_m2.png" style="width:95.0%" alt="Algorithm 2: Private and robust estimator for m_2"><div class="figcaption">Algorithm 2: Private and robust estimator for
+<img src="figures/alg2-robust_estimator_for_m2.png" style="width:95.0%" alt="Algorithm 1: Private and robust estimator for m_2"><div class="figcaption">Algorithm 1: Private and robust estimator for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mn>2</mn></msub><annotation encoding="application/x-tex">m_2</annotation></semantics></math>
 </div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="alg-unbounded-quantile">Algorithm 3: Unbounded DP upper-quantile estimator<a class="anchor" aria-label="anchor" href="#alg-unbounded-quantile"></a>
+<h2 id="alg-unbounded-quantile">Algorithm 2: Unbounded DP upper-quantile estimator<a class="anchor" aria-label="anchor" href="#alg-unbounded-quantile"></a>
 </h2>
-<p>This algorithm is used in the PMWM scree estimator to estimate lower
-and upper tail quantiles privately. It follows the unbounded private
-quantile idea of <a href="#ref-Durfee2023">Durfee (2023)</a>, using a
-geometric search grid and noisy comparisons against the empirical
-CDF.</p>
-<div class="float">
-<img src="figures/alg3-Unbounded_DP_Quantile.png" style="width:95.0%" alt="Algorithm 3: Unbounded DP upper-quantile estimator"><div class="figcaption">Algorithm 3: Unbounded DP upper-quantile
-estimator</div>
-</div>
+<p>This one-sided algorithm is the building block for the score-frame
+and PMWM quantile estimates. Following <a href="#ref-Durfee2023">Durfee
+(2023)</a>, it searches a geometric grid using noisy comparisons against
+the empirical CDF. The fully unbounded mechanism invokes the one-sided
+search in both the positive and sign-flipped directions.</p>
+<p><img src="figures/alg3-Unbounded_DP_Quantile.png" style="width:95.0%" alt="Algorithm 2: Unbounded DP upper-quantile estimator"> Algorithm 2
+estimates a private scale proxy for each component using the paired
+squared differences. The method forms additional disjoint pairs,
+computes block medians, and constructs a histogram over a finite range
+of dyadic bins. Independent Laplace noise is added to the histogram
+counts, and the scale corresponding to the bin with the largest noisy
+count is returned. The resulting estimate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>m</mi><mo accent="true">̃</mo></mover><mrow><mn>2</mn><mo>,</mo><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widetilde m_{2,\ell}</annotation></semantics></math>
+is used to determine the Huber robustification parameter
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>τ</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\tau_\ell</annotation></semantics></math>.</p>
 </div>
 <div class="section level2">
-<h2 id="alg-add-hist">Algorithm 4: Additive DP histogram<a class="anchor" aria-label="anchor" href="#alg-add-hist"></a>
+<h2 id="alg-add-hist">Algorithm 3: Additive DP histogram<a class="anchor" aria-label="anchor" href="#alg-add-hist"></a>
 </h2>
 <p>The additive DP histogram adds independent Gaussian noise to each bin
 count and then post-processes the noisy counts to make them nonnegative
 and normalized. This is the basic DP histogram mechanism used for score
 histogram visualization.</p>
 <div class="float">
-<img src="figures/alg4-add_hist.png" style="width:95.0%" alt="Algorithm 4: Additive DP histogram"><div class="figcaption">Algorithm 4: Additive DP histogram</div>
+<img src="figures/alg4-add_hist.png" style="width:95.0%" alt="Algorithm 3: Additive DP histogram"><div class="figcaption">Algorithm 3: Additive DP histogram</div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="alg-sparse-hist">Algorithm 5: Sparse DP histogram<a class="anchor" aria-label="anchor" href="#alg-sparse-hist"></a>
+<h2 id="alg-sparse-hist">Algorithm 4: Sparse DP histogram<a class="anchor" aria-label="anchor" href="#alg-sparse-hist"></a>
 </h2>
 <p>When the grid is fine, many bins may be empty, and additive noise can
 dominate the visualization. The sparse histogram keeps only stable bins
@@ -131,29 +139,29 @@ whose noisy counts are above a threshold, following the count-based
 sparse histogram idea of <a href="#ref-Karwa2018">Karwa and Vadhan
 (2018)</a>.</p>
 <div class="float">
-<img src="figures/alg5-sparse_hist.png" style="width:95.0%" alt="Algorithm 5: Sparse DP histogram"><div class="figcaption">Algorithm 5: Sparse DP histogram</div>
+<img src="figures/alg5-sparse_hist.png" style="width:95.0%" alt="Algorithm 4: Sparse DP histogram"><div class="figcaption">Algorithm 4: Sparse DP histogram</div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="alg-group-add-hist">Algorithm 6: Group-wise additive DP histogram<a class="anchor" aria-label="anchor" href="#alg-group-add-hist"></a>
+<h2 id="alg-group-add-hist">Algorithm 5: Group-wise additive DP histogram<a class="anchor" aria-label="anchor" href="#alg-group-add-hist"></a>
 </h2>
 <p>The group-wise additive histogram applies the additive DP histogram
 procedure separately to each group, using a common frame and grid. It is
 useful for comparing PCA score distributions across groups.</p>
 <div class="float">
-<img src="figures/alg6-add_hist_group.png" style="width:95.0%" alt="Algorithm 6: Group-wise additive DP histogram"><div class="figcaption">Algorithm 6: Group-wise additive DP
+<img src="figures/alg6-add_hist_group.png" style="width:95.0%" alt="Algorithm 5: Group-wise additive DP histogram"><div class="figcaption">Algorithm 5: Group-wise additive DP
 histogram</div>
 </div>
 </div>
 <div class="section level2">
-<h2 id="alg-group-sparse-hist">Algorithm 7: Group-wise sparse DP histogram<a class="anchor" aria-label="anchor" href="#alg-group-sparse-hist"></a>
+<h2 id="alg-group-sparse-hist">Algorithm 6: Group-wise sparse DP histogram<a class="anchor" aria-label="anchor" href="#alg-group-sparse-hist"></a>
 </h2>
 <p>The group-wise sparse histogram applies sparse thresholding
 separately within each group and bin. It provides a private group-wise
 score histogram while suppressing bins that are not reliably
 distinguishable from zero.</p>
 <div class="float">
-<img src="figures/alg7-sparse_hist_group.png" style="width:95.0%" alt="Algorithm 7: Group-wise sparse DP histogram"><div class="figcaption">Algorithm 7: Group-wise sparse DP
+<img src="figures/alg7-sparse_hist_group.png" style="width:95.0%" alt="Algorithm 6: Group-wise sparse DP histogram"><div class="figcaption">Algorithm 6: Group-wise sparse DP
 histogram</div>
 </div>
 </div>
@@ -180,7 +188,7 @@ inference. <em>Bernoulli</em>, 30(4), 3059–3088. <a href="https://doi.org/10.3
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Yejin Jo, Minwoo Kim.</p>
+  <p>Developed by Yejin Jo, Minwoo Kim, Sungkyu Jung.</p>
 </div>
 
 <div class="pkgdown-footer-right">

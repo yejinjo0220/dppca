@@ -1,3 +1,5 @@
+# Website configuration for dppca (pkgdown)
+# Tutorial filenames must match the .Rmd files in vignettes/.
 url: https://yejinjo0220.github.io/dppca/
 
 template:
@@ -7,94 +9,127 @@ template:
 home:
   title: "dppca"
   description: >
-    Tools for performing principal component analysis and constructing
-    differentially private scree estimates and score-based visualizations,
-    including private PCA directions, DP scree estimators, and 2D score
-    histograms with additive and sparse DP mechanisms.
+    Tools for differentially private principal component analysis (PCA)
+    and visualization, including private PC directions, scree and PVE
+    summaries, score plots, and integrated PCA displays.
 
 navbar:
   title: "dppca"
   structure:
-    left: [theory, reference, articles]
+    left: [tutorials, theory, algorithms, reference]
     right: [search, github]
-
   components:
+    tutorials:
+      text: Tutorials
+      menu:
+        - text: Getting Started
+          href: articles/tutorials-getting-started.html
+        - text: DP Loading Plot
+          href: articles/tutorials-loading-plots.html
+        - text: DP Scree Plot
+          href: articles/tutorials-scree-plots.html
+        - text: DP Score Plot
+          href: articles/tutorials-score-plots.html
+        - text: DP PCA Visualization
+          href: articles/tutorials-dp-visualization.html
+
     theory:
       text: Theory
       menu:
-      - text: PCA Background
-        href: articles/pca_background.html
-      - text: DP Direction
-        href: articles/pc_direction.html
-      - text: DP Scree
-        href: articles/dp_scree.html
-      - text: DP Score
-        href: articles/dp_score.html
+        - text: PCA Background
+          href: articles/theory-pca-background.html
+        - text: DP Directions
+          href: articles/theory-dp-loading.html
+        - text: DP Eigenvalues
+          href: articles/theory-dp-scree.html
+        - text: DP Scores
+          href: articles/theory-dp-score.html
+        - text: DP PCA Visualization
+          href: articles/theory-dp-visualization.html
 
-    reference:
-      text: Functions
-      href: reference/index.html
-
-    articles:
+    algorithms:
       text: Algorithms
       href: articles/algorithms.html
 
-articles:
-- title: Theory
-  navbar: Theory
-  contents:
-  - pca_background
-  - pc_direction
-  - dp_scree
-  - dp_score
+    reference:
+      text: Function
+      href: reference/index.html
 
-- title: Algorithms
-  navbar: Algorithms
-  contents:
-  - algorithms
+# Article index. Keep the same filenames as the .Rmd vignettes.
+articles:
+  - title: Tutorials
+    desc: Practical guides to estimating and visualizing DP PCA quantities.
+    contents:
+      - tutorials-getting-started
+      - tutorials-loading-plots
+      - tutorials-scree-plots
+      - tutorials-score-plots
+      - tutorials-dp-visualization
+
+  - title: Theory
+    desc: Background and mathematical methods for DP PCA visualization.
+    contents:
+      - theory-pca-background
+      - theory-dp-loading
+      - theory-dp-scree
+      - theory-dp-score
+      - theory-dp-visualization
+
+  - title: Algorithms
+    contents:
+      - algorithms
 
 reference:
+  - title: Integrated DP PCA
+    desc: Estimate shared private PCA quantities and display five visualizations.
+    contents:
+      - dp_pca
+      - plot.dp_pca
 
-- title: "Direction"
-  desc: >
-    Functions for estimating private principal component directions.
-  contents:
-  - dp_pc_dir
+  - title: DP Loading
+    desc: Estimate and visualize private principal component directions.
+    contents:
+      - dp_loading
+      - plot.dp_loading
+      - loading_plot_control
 
-- title: "Scree"
-  desc: >
-    Functions for estimating and visualizing differentially private scree
-    values. The control helpers specify method-specific tuning options for
-    the clipped, private modified winsorized mean, and Huber-type scree
-    estimators.
-  contents:
-  - dp_scree
-  - dp_scree_plot
-  - clipped_control
-  - pmwm_control
-  - huber_control
+  - title: DP Scree and PVE
+    desc: Estimate private scree values and proportions of variance explained.
+    contents:
+      - dp_scree
+      - plot.dp_scree
+      - scree_plot_control
+      - clipped_control
+      - pmwm_control
+      - huber_control
 
-- title: "Score"
-  desc: >
-    Functions for constructing differentially private PCA score summaries,
-    score plots, and group-wise score visualizations.
-  contents:
-  - dp_score
-  - dp_score_plot
-  - dp_score_group
-  - dp_score_plot_group
 
-- title: "shiny app"
-  desc: >
-    shiny app for exploring differentially private PCA scree and score plots
-    through a graphical interface.
-  contents:
-  - dppca_app
+  - title: DP Score Plots
+    desc: Private histograms, sampled score plots, and grouped scores.
+    contents:
+      - dp_score
+      - plot.dp_score
+      - score_plot_control
+      - sampling_control
 
-- title: "Data"
-  desc: >
-    Datasets included for examples and demonstrations.
-  contents:
-  - adult
-  - gau
-  - gau_g
+  - title: Privacy Controls
+    desc: Allocate privacy budgets for the estimation steps.
+    contents:
+      - privacy_control
+
+  - title: Shiny Application
+    desc: Launch the optional interactive app (separate from the tutorials).
+    contents:
+      - dppca_app
+
+  - title: Example Datasets
+    contents:
+      - gau
+      - gau_g
+      - vowel
+
+  # Keep documentation for the grouped S3 plot method directly accessible,
+  # but do not list it as a separate public fitting/plotting interface.
+  - title: internal
+    contents:
+      - plot.dp_score_group

@@ -1,0 +1,52 @@
+Third-Party Dataset License Notice
+==================================
+
+Dataset: Vowel Recognition (Deterding Data)
+Distributed object: vowel (data/vowel.rda)
+Source file: vowel-context.data
+
+Source and attribution
+----------------------
+
+Original dataset creators:
+David Deterding, Mahesan Niranjan, and Tony Robinson.
+
+Dataset citation:
+Deterding, D., Niranjan, M., & Robinson, T. (1988).
+Connectionist Bench (Vowel Recognition - Deterding Data) [Dataset].
+UCI Machine Learning Repository.
+https://doi.org/10.24432/C58P4S
+
+The vowel-context.data version adds explicit contextual information
+about speakers and was prepared by Peter Turney. See the accompanying
+vowel-context.names file and Turney (1993), "Robust Classification
+With Context-Sensitive Features."
+
+License
+-------
+
+The UCI Machine Learning Repository identifies this dataset as licensed
+under the Creative Commons Attribution 4.0 International License
+(CC BY 4.0):
+https://creativecommons.org/licenses/by/4.0/
+
+The dataset may be shared and adapted subject to the conditions of that
+license, including appropriate attribution, a link to the license, and
+an indication of changes. This notice does not imply endorsement by
+the dataset creators or by the UCI Machine Learning Repository.
+
+Changes made for the dppca package
+----------------------------------
+
+- Imported vowel-context.data into an R data frame.
+- Assigned descriptive variable names.
+- Converted the categorical codes for training/test split, speaker,
+  sex, and vowel class to factors.
+- Retained the numeric acoustic measurements without alteration.
+
+Package code
+------------
+
+This notice concerns the third-party Vowel dataset only. The dppca
+package code is licensed separately as stated in the package DESCRIPTION
+and its LICENSE file.

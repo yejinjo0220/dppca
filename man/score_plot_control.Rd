@@ -11,15 +11,15 @@ score_plot_control(
   hist_alpha_range = c(0, 1),
   base_size = 12,
   title_size = 14,
-  scatter_title = "Non-private Scatter",
-  nonprivate_title = "Non-private Histogram",
+  scatter_title = "Non-Private Scatter",
+  nonprivate_title = "Non-Private Histogram",
   add_title = "Add DP Histogram",
   sparse_title = "Sparse DP Histogram",
   xlab = NULL,
   ylab = NULL,
   group_colors = NULL,
   group_ncol = 3L,
-  show_group_legend = FALSE
+  show_group_legend = TRUE
 )
 }
 \arguments{
@@ -42,10 +42,10 @@ maximum alpha values used for histogram cells. Values must satisfy
 \item{title_size}{Positive plot-title font size. The default is \code{14}.}
 
 \item{scatter_title}{Optional title for the non-private scatter panel.
-The default is \code{"Non-private Scatter"}.}
+The default is \code{"Non-Private Scatter"}.}
 
 \item{nonprivate_title}{Optional title for the non-private histogram panel.
-The default is \code{"Non-private Histogram"}.}
+The default is \code{"Non-Private Histogram"}.}
 
 \item{add_title}{Optional title for the additive private histogram panel.
 The default is \code{"Add DP Histogram"}.}
@@ -58,26 +58,29 @@ The default is \code{"Sparse DP Histogram"}.}
 \item{ylab}{Optional y-axis label. If \code{NULL}, the selected PC name is used.}
 
 \item{group_colors}{Optional nonempty character vector of colors for grouped
-score plots. The current implementation recycles colors in group order
-and ignores vector names. If \code{NULL}, group labels that are valid R colors
-are used directly; otherwise a palette is generated automatically.}
+score plots. Named colors are matched to group labels; missing groups
+receive generated colors. Unnamed colors are recycled in group order.
+If \code{NULL}, valid color labels are used directly, otherwise a palette is
+generated automatically.}
 
 \item{group_ncol}{Positive integer retained for backward compatibility.
 Grouped score plots are currently overlaid by group color rather than
 arranged as separate group-specific panels, so this option is not used by
-\code{\link[=dp_score_plot_group]{dp_score_plot_group()}}. The default is \code{3}.}
+\code{\link[=plot.dp_score]{plot.dp_score()}}. The default is \code{3}.}
 
 \item{show_group_legend}{Logical value indicating whether to display the
-group legend in grouped score plots. The default is \code{FALSE}.}
+group legend in grouped score plots. The default is \code{TRUE}. In combined
+grouped displays, each histogram method uses one legend; standalone panels
+retain their own legends. Groups with no sampled points are omitted from
+sampled-point legends.}
 }
 \value{
-A list of plotting options for \code{\link[=dp_score_plot]{dp_score_plot()}} and
-\code{\link[=dp_score_plot_group]{dp_score_plot_group()}}.
+A list of plotting options for \code{\link[=plot.dp_score]{plot.dp_score()}}.
 }
 \description{
 Creates a control list for the appearance of plots produced by
-\code{\link[=dp_score_plot]{dp_score_plot()}} and \code{\link[=dp_score_plot_group]{dp_score_plot_group()}}. Score plots are constructed
-with \code{ggplot2} and combined with \code{patchwork}.
+\code{\link[=plot.dp_score]{plot.dp_score()}}, including grouped score plots. Score plots are
+constructed with \code{ggplot2} and combined with \code{patchwork}.
 }
 \examples{
 score_plot_control()
@@ -85,7 +88,7 @@ score_plot_control()
 score_plot_control(
   scatter_size = 2.2,
   title_size = 13,
-  nonprivate_title = "Non-private score histogram"
+  nonprivate_title = "Non-Private score histogram"
 )
 
 }
