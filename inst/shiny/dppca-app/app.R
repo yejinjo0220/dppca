@@ -351,162 +351,340 @@ library(dppca)
   if (length(guides)) guides[[1L]] else NULL
 }
 
-.app_draw_pca <- function(
-    result,
-    view = "all",
-    version = "private",
-    compare = TRUE
-) {
+.app_pca_overview <- function(plots) {
+  types <- c("scree", "score", "loading", "variable", "biplot")
+  plots <- plots[types]
+  if (length(plots) != length(types) || any(vapply(plots, is.null, logical(1)))) {
+    stop("The stored PCA result does not contain all five plots.", call. = FALSE)
+  }
+  if (!is.null(plots$biplot$data$group)) {
+    plots$score <- plots$score + ggplot2::theme(legend.position = "none")
+  }
+  top <- patchwork::wrap_plots(plots[c("scree", "score", "loading")], ncol = 3L)
+  bottom <- patchwork::wrap_plots(plots[c("variable", "biplot")], ncol = 2L,
+                                  widths = c(1, 1.35))
+  patchwork::wrap_plots(top, bottom, ncol = 1L, heights = c(1, 1))
+}
+
+.app_draw_pca <- function(result, view = "all", version = "private") {
   types <- c("scree", "score", "loading", "variable", "biplot")
   view <- match.arg(view, c("all", types))
-  version <- match.arg(version, c("private", "nonprivate"))
-
+  version <- .app_version(version, !is.null(result$nonprivate))
+  versions <- switch(version,
+    private = "private", nonprivate = "nonprivate",
+    compare = c("nonprivate", "private"))
   if (view == "all") {
-    if (is.null(result[[version]])) version <- "private"
-    plots <- result[[version]]$plots[types]
-    if (length(plots) != length(types) || any(vapply(plots, is.null, logical(1)))) {
-      stop("The stored PCA result does not contain all five plots.", call. = FALSE)
-    }
-    # Keep one vertical group legend immediately to the right of the biplot.
-    # Hide only the overview's score legend; extracted plots stay unchanged.
-    if (!is.null(plots$biplot$data$group)) {
-      plots$score <- plots$score + ggplot2::theme(legend.position = "none")
-    }
-    top <- patchwork::wrap_plots(
-      plots[c("scree", "score", "loading")], ncol = 3L
-    )
-    bottom <- patchwork::wrap_plots(
-      plots[c("variable", "biplot")], ncol = 2L,
-      widths = c(1, 1.35)
-    )
-    output <- patchwork::wrap_plots(
-      top, bottom, ncol = 1L, heights = c(1, 1)
-    )
+    panes <- lapply(versions, function(nm) .app_pca_overview(result[[nm]]$plots))
+    output <- patchwork::wrap_plots(panes, ncol = 1L)
   } else {
-    if (is.null(result[[version]])) version <- "private"
-    versions <- if (isTRUE(compare) && !is.null(result$nonprivate)) {
-      c("nonprivate", "private")
-    } else {
-      version
+    panes <- lapply(versions, function(nm) result[[nm]]$plots[[view]])
+    if (any(vapply(panes, is.null, logical(1)))) {
+      stop("The selected PCA plot was not saved.", call. = FALSE)
     }
-    plots <- lapply(versions, function(nm) result[[nm]]$plots[[view]])
-    if (any(vapply(plots, is.null, logical(1)))) {
-      stop("The selected PCA plot is not available in the stored result.", call. = FALSE)
-    }
-    output <- patchwork::wrap_plots(plots, ncol = length(plots))
+    output <- patchwork::wrap_plots(panes, ncol = length(panes))
   }
-
   print(output)
   invisible(output)
 }
 
-# Preserve the app's square panel while using the package S3 scree method.
-.app_draw_scree <- function(
-    result,
-    type = "pve"
-) {
-  previous_par <- graphics::par(pty = "s")
-  on.exit(graphics::par(previous_par), add = TRUE)
-  plot(result, type = type)
+# Display helpers use stored fits. Switching panels never reruns DP mechanisms.
+.app_display_options <- function(view, selected, allowed) {
+  if (is.null(view) || identical(view, "all")) {
+    intersect(allowed, selected)
+  } else {
+    intersect(allowed, view)
+  }
 }
 
-.app_draw_score <- function(
-    result,
-    display = "histogram"
-) {
+.app_version <- function(version, has_reference) {
+  if (!isTRUE(has_reference) || is.null(version) || !nzchar(version)) {
+    return("private")
+  }
+  match.arg(version, c("private", "nonprivate", "compare"))
+}
+
+# Scree uses the saved dp_scree result; Compare overlays the ordinary PCA
+# reference with all selected private methods, matching plot.dp_scree().
+.app_scree_layout <- function(show = "all", version = "private") {
+  kinds <- if (identical(show, "all")) c("pve", "scree") else show
+  # Compare adds a reference curve, not another row of panels.
+  list(columns = length(kinds), rows = 1L)
+}
+
+.app_draw_scree <- function(result, show = "all", version = "private") {
+  show <- match.arg(show, c("all", "pve", "scree"))
+  version <- .app_version(version, !is.null(result$nonprivate))
+  kinds <- if (show == "all") c("pve", "scree") else show
+  private_methods <- intersect(c("clipped", "pmwm", "huber"), names(result))
+  series <- switch(version,
+    private = private_methods,
+    nonprivate = "nonprivate",
+    compare = c("nonprivate", private_methods)
+  )
+  series <- Filter(function(nm) !is.null(result[[nm]]), series)
+  if (!length(series)) {
+    stop("No saved scree estimates for this selection.", call. = FALSE)
+  }
+
+  palette <- c(nonprivate = "black", clipped = "#ED302E",
+               pmwm = "#2F6EB3", huber = "#168579")
+  symbols <- c(nonprivate = 16L, clipped = 17L, pmwm = 15L, huber = 18L)
+  labels <- c(nonprivate = "Non-private", clipped = "Clipped",
+              pmwm = "PMWM", huber = "Huber")
+
+  old_par <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(old_par), add = TRUE)
+  graphics::par(
+    mfrow = c(1L, length(kinds)),
+    mar = c(4.3, 4.5, 3.0, 1.2),
+    oma = c(0, 0, 0, 0), pty = "m"
+  )
+
+  for (kind in kinds) {
+    available <- Filter(function(nm) !is.null(result[[nm]][[kind]]), series)
+    if (!length(available)) {
+      stop("No saved scree estimates for this selection.", call. = FALSE)
+    }
+    values <- lapply(available, function(nm) as.numeric(result[[nm]][[kind]]))
+    names(values) <- available
+    n <- length(values[[1L]])
+    if (!n || any(lengths(values) != n)) {
+      stop("Stored scree values are missing or have inconsistent lengths.",
+           call. = FALSE)
+    }
+    limits <- unlist(values, use.names = FALSE)
+    limits <- limits[is.finite(limits)]
+    if (!length(limits)) stop("No finite scree values.", call. = FALSE)
+    ylim <- range(c(0, limits))
+    spread <- diff(ylim)
+    if (spread <= 0) spread <- max(0.1, abs(ylim[2L]) * 0.1)
+    ylim <- ylim + c(-0.04, 0.12) * spread
+    if (kind == "pve") ylim[1L] <- max(0, ylim[1L])
+
+    title <- paste0(
+      if (version == "private") "DP " else if (version == "nonprivate") "Non-private " else "",
+      if (kind == "pve") "PVE Plot" else "Eigenvalues"
+    )
+    first <- available[1L]
+    graphics::plot(
+      seq_len(n), values[[first]], type = "b",
+      col = palette[[first]], pch = symbols[[first]],
+      lwd = 1.5, cex = 0.9, xaxt = "n", ylim = ylim,
+      xlab = "Component", ylab = if (kind == "pve") "PVE" else "Eigenvalue",
+      main = title, cex.main = 1.05
+    )
+    graphics::axis(1L, at = seq_len(n), labels = seq_len(n))
+    for (nm in available[-1L]) {
+      graphics::lines(seq_len(n), values[[nm]], type = "b",
+                      col = palette[[nm]], pch = symbols[[nm]],
+                      lwd = 1.5, cex = 0.9)
+    }
+    # One legend per chart, with the non-private reference and DP methods.
+    if (length(available) > 1L) {
+      graphics::legend("topright", inset = 0.01,
+                       legend = labels[available], col = palette[available],
+                       pch = symbols[available], lty = 1, bty = "n",
+                       cex = 0.85, lwd = 1.4)
+    }
+  }
+  invisible(NULL)
+}
+
+.app_score_keys <- function(result, version) {
+  stored <- result$plot
+  methods <- intersect(c("add", "sparse"), names(stored))
+  has_reference <- !is.null(stored$nonprivate)
+  version <- .app_version(version, has_reference)
+  switch(version,
+    private = methods,
+    nonprivate = "reference",
+    compare = c("reference", methods)
+  )
+}
+
+.app_score_layout <- function(n_keys, n_displays, version = "private") {
+  total <- max(1L, n_keys * n_displays)
+  if (version == "compare" && n_displays == 1L) {
+    # A single requested display: Non-private / Add / Sparse side by side.
+    # Do not stretch three small square ggplots across three tall rows.
+    columns <- min(3L, total)
+  } else if (version == "compare") {
+    # Overview: one reference row, followed by one row per DP method.
+    columns <- n_displays
+  } else {
+    # Two selected plots appear side-by-side, not stacked at bottom-left.
+    columns <- min(2L, total)
+  }
+  list(columns = columns, rows = as.integer(ceiling(total / columns)))
+}
+
+.app_draw_score <- function(result, display = "histogram", version = "private") {
   choices <- c("histogram", "sample")
-  if (
-    !is.character(display) || !length(display) || anyNA(display) ||
-      any(!display %in% choices)
-  ) {
+  if (!length(display) || anyNA(display) || any(!display %in% choices)) {
     stop("Choose at least one score display: histogram or sample.", call. = FALSE)
   }
   display <- intersect(choices, display)
   stored <- result$plot
-  methods <- intersect(c("add", "sparse"), names(stored))
   has_reference <- !is.null(stored$nonprivate)
-  if (!length(methods)) {
-    stop("The selected score plots are not available in the stored result.",
-         call. = FALSE)
-  }
+  version <- .app_version(version, has_reference)
+  keys <- .app_score_keys(result, version)
+  if (!length(keys)) stop("No stored score plots were found.", call. = FALSE)
+  grouped <- !is.null(result$group_colors)
 
-  # With one method and no reference, display histogram and sample side
-  # by side. Otherwise, stack each method's panels vertically, and place
-  # that method's single group legend beside its sampled-point panel.
-  keys <- c(if (has_reference) "reference", methods)
-  single_pair <- length(keys) == 1L &&
-    identical(display, c("histogram", "sample"))
-  columns <- lapply(keys, function(key) {
-    method_plots <- lapply(display, function(tp) {
+  panels <- unlist(lapply(keys, function(key) {
+    lapply(display, function(tp) {
       if (key == "reference") {
-        if (tp == "histogram") return(stored$nonprivate)
-        sample <- stored$reference_samples$uniform
-        if (is.null(sample)) stored$scatter else sample
+        if (tp == "histogram") p <- stored$nonprivate else {
+          p <- stored$reference_samples$uniform
+          if (is.null(p)) p <- stored$scatter
+        }
       } else if (tp == "histogram") {
-        stored[[key]]
+        p <- stored[[key]]
       } else {
-        stored$sample[[key]]$uniform
+        p <- stored$sample[[key]]$uniform
       }
-    })
-    if (any(vapply(method_plots, is.null, logical(1)))) {
-      stop("The selected score plots are not available in the stored result.",
-           call. = FALSE)
-    }
-    grouped <- !is.null(result$group_colors)
-    displayed <- lapply(seq_along(method_plots), function(i) {
-      panel <- method_plots[[i]]
-      if (grouped && i < length(method_plots)) {
-        panel <- panel + ggplot2::theme(legend.position = "none")
+      if (is.null(p)) stop("The selected score plot was not saved.", call. = FALSE)
+      if (grouped) {
+        # Keep each method's own group legend: the Add, Sparse, and
+        # non-private plots need not have identical group displays.
+        # When both displays are shown, the sample carries that method's
+        # legend; when only histograms are shown, the histogram carries it.
+        # Never suppress a later method's legend just because an earlier
+        # method has already displayed one.
+        show_legend <- if ("sample" %in% display) {
+          tp == "sample"
+        } else {
+          tp == "histogram"
+        }
+        p <- p + ggplot2::theme(
+          legend.position = if (show_legend) "right" else "none"
+        )
       }
-      panel
+      p
     })
-    patchwork::wrap_plots(displayed, ncol = if (single_pair) 2L else 1L)
-  })
-  output <- patchwork::wrap_plots(columns, ncol = length(columns))
+  }), recursive = FALSE)
+  layout <- .app_score_layout(length(keys), length(display), version)
+  output <- patchwork::wrap_plots(panels, ncol = layout$columns,
+                                  byrow = TRUE, guides = "keep")
   print(output)
   invisible(output)
 }
 
-.app_draw_loading <- function(
-    result,
-    display = "vector"
-) {
+.app_loading_layout <- function(n_displays, n_versions) {
+  columns <- max(1L, as.integer(n_displays))
+  list(columns = columns, rows = max(1L, as.integer(n_versions)))
+}
+
+.app_draw_loading <- function(result, display = c("vector", "point", "heatmap"),
+                              version = "private") {
   choices <- c("vector", "point", "heatmap")
-  if (
-    !is.character(display) || !length(display) || anyNA(display) ||
-      any(!display %in% choices)
-  ) {
-    stop("Choose at least one loading display: vector, point, or heatmap.",
-         call. = FALSE)
+  if (!length(display) || anyNA(display) || any(!display %in% choices)) {
+    stop("Choose at least one loading display.", call. = FALSE)
   }
   display <- intersect(choices, display)
   stored <- result$plot
-  has_reference <- !is.null(stored$nonprivate) &&
-    length(stored$nonprivate) > 0L
-  plots <- c(
-    if (has_reference) unname(stored$nonprivate[display]),
-    unname(stored$private[display])
+  has_reference <- !is.null(stored$nonprivate) && length(stored$nonprivate) > 0L
+  version <- .app_version(version, has_reference)
+  versions <- switch(version,
+    compare = c("nonprivate", "private"),
+    nonprivate = "nonprivate", private = "private"
   )
 
-  if (
-    length(plots) != (1L + as.integer(has_reference)) * length(display) ||
-      any(vapply(plots, is.null, logical(1)))
-  ) {
-    stop("The selected loading plots are not available in the stored result.",
-         call. = FALSE)
-  }
+  # IMPORTANT: rows = versions, columns = display types.
+  # For Compare: Non-private (Vector, Point, Heatmap) followed by
+  # DP (Vector, Point, Heatmap). No global heatmap legend collection:
+  # a colorbar belongs to its own heatmap, not to all three figures.
+  plots <- unlist(lapply(versions, function(nm) {
+    lapply(display, function(tp) {
+      selected <- stored[[nm]][[tp]]
+      if (is.null(selected)) {
+        stop("The selected loading plot is missing from the saved result.",
+             call. = FALSE)
+      }
+      selected
+    })
+  }), recursive = FALSE)
+  layout <- .app_loading_layout(length(display), length(versions))
+  combined <- patchwork::wrap_plots(
+    plots, ncol = layout$columns, byrow = TRUE, guides = "keep"
+  )
+  print(combined)
+  invisible(combined)
+}
 
-  single <- length(display) == 1L
-  output <- patchwork::wrap_plots(
-    plots,
-    ncol = if (single) 1L + as.integer(has_reference) else length(display),
-    nrow = if (single) 1L else 1L + as.integer(has_reference),
-    byrow = TRUE,
-    guides = "collect"
-  ) &
-    ggplot2::theme(legend.position = "right")
-  print(output)
-  invisible(output)
+# Summaries use saved results and the package's S3 methods.
+.app_summary_text <- function(fit, version = "private", mode = NULL) {
+  version <- .app_version(version, !is.null(fit$nonprivate))
+  captured <- tryCatch({
+    if (identical(mode, "loading")) {
+      if (version == "nonprivate") {
+        V <- fit$nonprivate
+        rows <- seq_len(min(10L, nrow(V)))
+        cols <- seq_len(min(6L, ncol(V)))
+        c("Non-private PC directions (first 10 variables and 6 PCs):",
+          capture.output(print(V[rows, cols, drop = FALSE], digits = 4)),
+          "", paste("Total variables:", nrow(V), "/ PCs:", ncol(V)))
+      } else {
+        filtered <- fit
+        if (version == "private") filtered$nonprivate <- NULL
+        capture.output(print(summary(filtered)))
+      }
+    } else if (identical(mode, "scree")) {
+      if (version == "nonprivate") {
+        ref <- fit$nonprivate
+        info <- data.frame(
+          Component = names(ref$scree) %||% paste0("PC", seq_along(ref$scree)),
+          Eigenvalue = as.numeric(ref$scree),
+          PVE = as.numeric(ref$pve),
+          Cumulative_PVE = cumsum(ref$pve)
+        )
+        capture.output(print(info, row.names = FALSE, digits = 4))
+      } else {
+        filtered <- fit
+        if (version == "private") filtered$nonprivate <- NULL
+        capture.output(print(summary(filtered)))
+      }
+    } else if (identical(mode, "score")) {
+      if (version == "nonprivate") {
+        full <- summary(fit)
+        tbl <- full$histograms
+        if (!is.null(tbl) && "method" %in% names(tbl)) {
+          tbl <- tbl[tbl$method == "nonprivate", , drop = FALSE]
+          c("Non-private score histogram summary:",
+            capture.output(print(tbl, row.names = FALSE, digits = 4)))
+        } else {
+          capture.output(str(fit$nonprivate, max.level = 2L, vec.len = 6L))
+        }
+      } else {
+        overview <- summary(fit)
+        if (version == "private" &&
+            !is.null(overview$histograms) &&
+            "method" %in% names(overview$histograms)) {
+          overview$histograms <- overview$histograms[
+            overview$histograms$method != "nonprivate", , drop = FALSE]
+        }
+        capture.output(print(overview))
+      }
+    } else {
+      capture.output(print(summary(fit)))
+    }
+  }, error = function(e) paste("Summary could not be formatted:", conditionMessage(e)))
+  if (!length(captured)) return("No summary available for this result.")
+  if (length(captured) > 140L) {
+    captured <- c(captured[seq_len(140L)], "... (additional output omitted)")
+  }
+  paste(captured, collapse = "\n")
+}
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+.app_plot_height <- function(width, columns = 1L, rows = 1L,
+                             min_panel = 265, max_panel = 420, ratio = 0.9) {
+  if (length(width) != 1L || !is.finite(width) || width <= 0) width <- 750
+  columns <- max(1L, as.integer(columns))
+  rows <- max(1L, as.integer(rows))
+  panel_height <- min(max_panel, max(min_panel, round(width / columns * ratio)))
+  as.integer(rows * panel_height + 20L)
 }
 
 # A single budget bar, with one movable divider on each side of Scree.
@@ -911,7 +1089,37 @@ ui <- fluidPage(
         margin: 10px 0 14px; }
       .scree-method-fields .scree-method-name { margin: 12px 0 8px; }
       .scree-method-fields > div { min-width: 0; }
-      .scree-plot-area { width: 100%; max-width: 720px; margin: 0 auto; }
+       .scree-plot-area { width: 100%; max-width: 100%; margin: 0; }
+      .plot-area { min-height: 0; padding-top: 6px; overflow: visible; }
+      .plot-area .shiny-plot-output { display: block; }
+      .compact-plot { width: 100%; margin: 0 auto; }
+      .compact-plot .shiny-plot-output { margin: 0 auto; }
+      .compact-plot.plot-cols-1 { max-width: 470px; }
+      .compact-plot.plot-cols-2 { max-width: 870px; }
+      .compact-plot.plot-cols-3 { max-width: 1180px; }
+      .summary-view, .data-view { padding: 6px 0 0; }
+      .data-view { max-width: 950px; }
+      .data-view .result-status { margin: 0 0 16px; }
+      .data-view .data-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 18px; }
+      .data-view .data-line { color: var(--muted); font-size: 13px; padding: 8px 10px;
+        background: #f5f8fa; border: 1px solid var(--line); border-radius: 6px; overflow-wrap: anywhere; }
+      .data-view .data-line strong { display: block; margin-bottom: 3px; color: var(--navy); font-size: 12px; }
+      .data-view .data-columns { font-size: 12px; line-height: 1.8; color: var(--muted);
+        background: #f8fafb; border: 1px solid var(--line); border-radius: 6px;
+        padding: 11px 14px; overflow-wrap: anywhere; }
+      .data-view h3 { font-size: 14px; font-weight: 650; color: var(--navy); margin: 18px 0 10px; }
+      @media (max-width: 650px) { .data-view .data-grid { grid-template-columns: 1fr; } }
+      .summary-view pre { border: 1px solid var(--line); border-radius: 8px;
+        background: #f7fafb; padding: 15px; font-size: 12px;
+        white-space: pre-wrap; word-break: break-word; max-height: 650px; overflow: auto; }
+      .plot-toolbar { align-items: center; margin-top: 6px; margin-bottom: 6px; }
+      .plot-toolbar > .shiny-input-container { margin-bottom: 7px; }
+      .result-status { margin-bottom: 11px; }
+      .result-note { margin-bottom: 5px; }
+      .solo-toolbar > .shiny-input-container { width: 235px; max-width: 100%; }
+      .reference-choice .shiny-input-container { width: auto; max-width: 100%; }
+      .reference-choice .shiny-input-radiogroup { width: auto; }
+      .reference-choice .shiny-input-radiogroup .radio { margin-right: 12px; }
       .plot-area .shiny-output-error-validation { padding: 50px 20px; font-size: 14px; color: var(--muted); text-align: center; }
       .table-wrap { overflow-x: auto; }
       .table { font-size: 12px; }
@@ -1192,7 +1400,7 @@ ui <- fluidPage(
             checkboxGroupInput(
               "loading_display", "Loading displays",
               choices = c("Vector" = "vector", "Point" = "point", "Heatmap" = "heatmap"),
-              selected = "vector", inline = TRUE
+              selected = c("vector", "point", "heatmap"), inline = TRUE
             ),
             numericInput("variables", "Top variables", value = 10, min = 1, step = 1),
             conditionalPanel(
@@ -1218,13 +1426,18 @@ ui <- fluidPage(
           div(
             class = "result-card",
             h2(class = "card-heading", "A complete PCA analysis"),
-            div(class = "result-status", uiOutput("pca_status")),
             div(
               class = "plot-toolbar",
-              selectInput("pca_view", "View", choices = c("Overview" = "all", "Scree" = "scree", "Score" = "score", "Loading" = "loading", "Variable" = "variable", "Biplot" = "biplot", "Summary" = "summary"), selected = "all"),
+              selectInput("pca_view", "View", choices = c("Plot" = "plot", "Summary" = "summary", "Data" = "data"), selected = "plot"),
+              conditionalPanel(condition = "input.pca_view == 'plot'",
+                selectInput("pca_plot_kind", "Show", choices = c(
+                  "Overview" = "all", "Scree" = "scree", "Score" = "score",
+                  "Loading" = "loading", "Variable" = "variable",
+                  "Biplot" = "biplot"), selected = "all")
+              ),
               uiOutput("pca_reference_controls"),
               conditionalPanel(
-                condition = "input.pca_view != 'summary'",
+                condition = "input.pca_view == 'plot'",
                 tags$details(
                   class = "app-details toolbar-plot-settings",
                   tags$summary("Plot settings"),
@@ -1236,7 +1449,7 @@ ui <- fluidPage(
                     checkboxInput("pca_center", "Center DP score and biplot displays", value = TRUE),
                     div(class = "settings-subheading", "Biplot"),
                     conditionalPanel(
-                      condition = "input.pca_view == 'all' || input.pca_view == 'biplot'",
+                      condition = "input.pca_plot_kind == 'all' || input.pca_plot_kind == 'biplot'",
                       sliderInput("alpha", "Biplot alpha", min = 0, max = 1,
                                   value = 0, step = 0.01, ticks = FALSE, width = "100%")
                     ),
@@ -1253,7 +1466,7 @@ ui <- fluidPage(
               )
             ),
             conditionalPanel(
-              condition = "input.pca_view != 'summary'",
+              condition = "input.pca_view == 'plot'",
               div(class = "plot-area pca-plot-area", plotOutput("pca_plot", height = "auto"))
             ),
             conditionalPanel(
@@ -1262,6 +1475,9 @@ ui <- fluidPage(
               div(class = "table-wrap", tableOutput("importance")),
               h3(class = "summary-heading", "Privacy allocation"),
               div(class = "table-wrap", tableOutput("pca_budget"))
+            ),
+            conditionalPanel(condition = "input.pca_view == 'data'",
+              div(class = "data-view", uiOutput("pca_data"))
             )
           )
         ),
@@ -1270,8 +1486,29 @@ ui <- fluidPage(
           div(
             class = "result-card",
             h2(class = "card-heading", "Loading plot"),
-            div(class = "result-status", uiOutput("loading_status")),
-            div(class = "plot-area", plotOutput("loading_plot", height = "auto"))
+            div(class = "plot-toolbar solo-toolbar",
+              selectInput("loading_view", "View", choices = c(
+                "Plot" = "plot", "Summary" = "summary", "Data" = "data"
+              ), selected = "plot"),
+              conditionalPanel(condition = "input.loading_view == 'plot'",
+                selectInput("loading_show", "Show", choices = c(
+                  "Overview" = "all", "Vector" = "vector",
+                  "Point" = "point", "Heatmap" = "heatmap"
+                ), selected = "all")
+              ),
+              uiOutput("loading_reference_controls")
+            ),
+            conditionalPanel(
+              condition = "input.loading_view == 'plot'",
+              div(class = "plot-area", uiOutput("loading_canvas"))
+            ),
+            conditionalPanel(
+              condition = "input.loading_view == 'summary'",
+              div(class = "summary-view", verbatimTextOutput("loading_summary"))
+            ),
+            conditionalPanel(condition = "input.loading_view == 'data'",
+              div(class = "data-view", uiOutput("loading_data"))
+            )
           )
         ),
         tabPanel(
@@ -1279,18 +1516,28 @@ ui <- fluidPage(
           div(
             class = "result-card",
             h2(class = "card-heading", "Scree plot"),
-            div(class = "result-status", uiOutput("scree_status")),
-            div(
-              class = "plot-toolbar",
-              radioButtons(
-                "scree_type", "Show",
-                choices = c("PVE" = "pve", "Eigenvalues" = "scree"),
-                selected = "pve", inline = TRUE
-              )
+            div(class = "plot-toolbar solo-toolbar",
+              selectInput("scree_view", "View", choices = c(
+                "Plot" = "plot", "Summary" = "summary", "Data" = "data"
+              ), selected = "plot"),
+              conditionalPanel(condition = "input.scree_view == 'plot'",
+                selectInput("scree_show", "Show", choices = c(
+                  "Overview" = "all", "PVE" = "pve",
+                  "Eigenvalues" = "scree"
+                ), selected = "all")
+              ),
+              uiOutput("scree_reference_controls")
             ),
-            div(
-              class = "plot-area scree-plot-area",
-              plotOutput("scree_plot", height = "auto")
+            conditionalPanel(
+              condition = "input.scree_view == 'plot'",
+              div(class = "plot-area scree-plot-area", uiOutput("scree_canvas"))
+            ),
+            conditionalPanel(
+              condition = "input.scree_view == 'summary'",
+              div(class = "summary-view", verbatimTextOutput("scree_summary"))
+            ),
+            conditionalPanel(condition = "input.scree_view == 'data'",
+              div(class = "data-view", uiOutput("scree_data"))
             )
           )
         ),
@@ -1299,8 +1546,29 @@ ui <- fluidPage(
           div(
             class = "result-card",
             h2(class = "card-heading", "Score plot"),
-            div(class = "result-status", uiOutput("score_status")),
-            div(class = "plot-area", plotOutput("score_plot", height = "auto"))
+            div(class = "plot-toolbar solo-toolbar",
+              selectInput("score_view", "View", choices = c(
+                "Plot" = "plot", "Summary" = "summary", "Data" = "data"
+              ), selected = "plot"),
+              conditionalPanel(condition = "input.score_view == 'plot'",
+                selectInput("score_show", "Show", choices = c(
+                  "Overview" = "all", "Histogram" = "histogram",
+                  "Sampled points" = "sample"
+                ), selected = "all")
+              ),
+              uiOutput("score_reference_controls")
+            ),
+            conditionalPanel(
+              condition = "input.score_view == 'plot'",
+              div(class = "plot-area", uiOutput("score_canvas"))
+            ),
+            conditionalPanel(
+              condition = "input.score_view == 'summary'",
+              div(class = "summary-view", verbatimTextOutput("score_summary"))
+            ),
+            conditionalPanel(condition = "input.score_view == 'data'",
+              div(class = "data-view", uiOutput("score_data"))
+            )
           )
         )
       )
@@ -1667,6 +1935,13 @@ server <- function(input, output, session) {
         label = data$label,
         n = nrow(X),
         p = p,
+        columns = colnames(data$numeric_X),
+        group_name = if (mode %in% c("pca", "score") &&
+          is.character(group_arg) && length(group_arg) == 1L) {
+          group_arg
+        } else if (mode %in% c("pca", "score") && !is.null(group_arg)) {
+          "Provided group labels"
+        } else NULL,
         warnings = warning_messages,
         privacy = privacy
       )
@@ -1695,18 +1970,126 @@ server <- function(input, output, session) {
     })
   }
 
-  # Only offer comparison controls when the completed fit contains a reference.
+  # The Data view holds the previously always-visible file/warning banner.
+  # It deliberately does not render raw individual observations by default.
+  for (mode in c("pca", "loading", "scree", "score")) {
+    local({
+      tab <- mode
+      output[[paste0(tab, "_data")]] <- renderUI({
+        result <- results[[tab]]
+        error <- errors[[tab]]
+        if (is.null(result)) {
+          return(tags$p(class = "result-note",
+            if (!is.null(error)) error else paste("Run", tab, "to inspect the data information.")))
+        }
+        group_name <- result$group_name
+        if (is.null(group_name) || !length(group_name) || !nzchar(group_name)) {
+          group_name <- "Not used"
+        }
+        div(
+          div(class = "result-status", .app_result_note(result)),
+          div(class = "data-grid",
+            div(class = "data-line", tags$strong("Dataset"), result$label),
+            div(class = "data-line", tags$strong("Observations"), format(result$n, big.mark = ",")),
+            div(class = "data-line", tags$strong("Numeric PCA variables"), as.character(result$p)),
+            div(class = "data-line", tags$strong("Grouping variable"), group_name)
+          ),
+          h3("Variables used for PCA"),
+          div(class = "data-columns", paste(result$columns, collapse = ", "))
+        )
+      })
+    })
+  }
+
+  # Only show DP / Non-private / Compare on the Plot view.
+  # Hide the entire Results control on Summary and Data views.
   output$pca_reference_controls <- renderUI({
     result <- results$pca
-    if (is.null(result) || is.null(result$value$nonprivate)) return(NULL)
-    if (identical(input$pca_view, "all")) {
-      radioButtons("pca_version", "Overview results",
-        choices = c("DP" = "private", "Non-private" = "nonprivate"),
-        selected = "private", inline = TRUE)
-    } else if (!identical(input$pca_view, "summary")) {
-      checkboxInput("pca_compare", "Compare with non-private results", value = TRUE)
-    }
+    if (is.null(result)) return(NULL)
+    if (!identical(input$pca_view, "plot")) return(NULL)
+    if (is.null(result$value$nonprivate)) return(NULL)
+    div(class = "reference-choice",
+      radioButtons("pca_version", "Results",
+        choices = c("DP" = "private", "Non-private" = "nonprivate",
+                    "Compare" = "compare"),
+        selected = "private", inline = TRUE))
   })
+
+  for (mode in c("loading", "scree", "score")) {
+    local({
+      tab <- mode
+      output[[paste0(tab, "_reference_controls")]] <- renderUI({
+        result <- results[[tab]]
+        if (is.null(result)) return(NULL)
+        view <- input[[paste0(tab, "_view")]]
+        if (!identical(view, "plot")) return(NULL)
+        if (is.null(result$value$nonprivate)) return(NULL)
+        div(class = "reference-choice",
+          radioButtons(paste0(tab, "_version"), "Results",
+            choices = c("DP" = "private", "Non-private" = "nonprivate",
+                        "Compare" = "compare"),
+            selected = "private", inline = TRUE))
+      })
+    })
+  }
+
+
+  loading_displayed <- reactive({
+    .app_display_options(input$loading_show %||% "all",
+      input$loading_display, c("vector", "point", "heatmap"))
+  })
+  score_displayed <- reactive({
+    .app_display_options(input$score_show %||% "all",
+      input$score_display, c("histogram", "sample"))
+  })
+
+  # Canvas width follows the exact number of figures selected on the left.
+  output$loading_canvas <- renderUI({
+    result <- results$loading
+    count <- length(loading_displayed())
+    has_reference <- !is.null(result) && !is.null(result$value$nonprivate)
+    version <- .app_version(input$loading_version, has_reference)
+    n_versions <- if (version == "compare") 2L else 1L
+    layout <- .app_loading_layout(max(1L, count), n_versions)
+    div(class = paste("compact-plot", paste0("plot-cols-", layout$columns)),
+      plotOutput("loading_plot", height = "auto"))
+  })
+  output$score_canvas <- renderUI({
+    result <- results$score
+    count <- length(score_displayed())
+    has_ref <- !is.null(result) && !is.null(result$value$nonprivate)
+    ver <- .app_version(input$score_version, has_ref)
+    n_keys <- if (is.null(result)) 1L else {
+      length(switch(ver,
+        private = intersect(c("add", "sparse"), result$value$metadata$methods),
+        nonprivate = "reference",
+        compare = c("reference", intersect(c("add", "sparse"), result$value$metadata$methods))
+      ))
+    }
+    layout <- .app_score_layout(n_keys, max(1L, count), ver)
+    div(class = paste("compact-plot", paste0("plot-cols-", layout$columns)),
+      plotOutput("score_plot", height = "auto"))
+  })
+
+  output$scree_canvas <- renderUI({
+    fit <- results$scree
+    has_reference <- !is.null(fit) && !is.null(fit$value$nonprivate)
+    ver <- .app_version(input$scree_version, has_reference)
+    layout <- .app_scree_layout(input$scree_show %||% "all", ver)
+    div(class = paste("compact-plot", paste0("plot-cols-", layout$columns)),
+      plotOutput("scree_plot", height = "auto"))
+  })
+
+  for (mode in c("loading", "scree", "score")) {
+    local({
+      tab <- mode
+      output[[paste0(tab, "_summary")]] <- renderText({
+        result <- results[[tab]]
+        validate(need(!is.null(result), paste("Run", tab, "to see its summary.")))
+        .app_summary_text(result$value, version = "private", mode = tab)
+      })
+    })
+  }
 
   # NULL preserves the package default: n private synthetic points and
   # observed (rather than resampled) non-private comparison points.
@@ -1766,35 +2149,36 @@ server <- function(input, output, session) {
 
   output$pca_plot <- renderPlot({
     validate(need(!is.null(results$pca), "Run PCA to see the plots."))
-    req(input$pca_view != "summary")
-    if (input$pca_view == "biplot") {
+    req(identical(input$pca_view, "plot"))
+    kind <- input$pca_plot_kind %||% "all"
+    if (kind == "biplot") {
       plots <- biplot_plots()
     } else {
       plots <- pca_base_plots()
-      if (input$pca_view == "all") {
+      if (kind == "all") {
         biplots <- biplot_plots()
         for (version in intersect(names(plots), names(biplots))) {
           plots[[version]]$plots$biplot <- biplots[[version]]$plots$biplot
         }
       }
     }
-    .app_draw_pca(
-      plots,
-      view = input$pca_view,
-      version = if (input$pca_view == "all" &&
-        !is.null(input$pca_version)) input$pca_version else "private",
-      compare = isTRUE(input$pca_compare)
-    )
+    .app_draw_pca(plots, view = kind,
+      version = .app_version(input$pca_version,
+        !is.null(results$pca$value$nonprivate)))
   }, height = function() {
     width <- session$clientData$output_pca_plot_width
     if (length(width) != 1L || !is.finite(width) || width <= 0) width <- 900
-    if (identical(input$pca_view, "all")) {
-      max(420, min(650, round(width * 0.65)))
+    kind <- input$pca_plot_kind %||% "all"
+    ver <- .app_version(input$pca_version,
+      !is.null(results$pca) && !is.null(results$pca$value$nonprivate))
+    if (kind == "all") {
+      h <- max(440, min(720, round(width * 0.67)))
+      if (ver == "compare") h <- 2L * h
     } else {
-      max(360, min(570, round(width * 0.57)))
+      h <- max(340, min(540, round(width * 0.56)))
     }
+    as.integer(h)
   }, res = 110)
-
 
   pca_summary <- reactive({
     req(results$pca)
@@ -1818,49 +2202,66 @@ server <- function(input, output, session) {
   }, striped = TRUE, spacing = "s", align = "lrr")
 
   output$loading_plot <- renderPlot({
-    validate(need(!is.null(results$loading), "Run Loading to compare the loadings."))
-    validate(need(length(input$loading_display) > 0, "Choose at least one loading display."))
-    .app_draw_loading(loading_plots(), display = input$loading_display)
+    fit <- results$loading
+    validate(need(!is.null(fit), "Run Loading to see the plots."))
+    req(identical(input$loading_view, "plot"))
+    displays <- loading_displayed()
+    validate(need(length(displays) > 0L, "Select a loading display on the left, or choose one in Show."))
+    .app_draw_loading(loading_plots(), display = displays,
+      version = .app_version(input$loading_version, !is.null(fit$value$nonprivate)))
   }, height = function() {
-    displays <- input$loading_display
-    if (length(displays) > 1L) {
-      if (length(displays) == 2L) 1100 else 900
-    } else if ("heatmap" %in% displays) {
-      690
-    } else {
-      590
-    }
+    count <- length(loading_displayed())
+    fit <- results$loading
+    reference <- !is.null(fit) && !is.null(fit$value$nonprivate)
+    version <- .app_version(input$loading_version, reference)
+    layout <- .app_loading_layout(max(1L, count), if (version == "compare") 2L else 1L)
+    .app_plot_height(session$clientData$output_loading_plot_width,
+      columns = layout$columns, rows = layout$rows,
+      ratio = 0.87, min_panel = 290, max_panel = 415)
   }, res = 110)
 
   output$scree_plot <- renderPlot({
-    validate(need(!is.null(results$scree), "Run Scree to compare the methods."))
-    .app_draw_scree(results$scree$value, type = input$scree_type)
+    fit <- results$scree
+    validate(need(!is.null(fit), "Run Scree to see the plots."))
+    req(identical(input$scree_view, "plot"))
+    .app_draw_scree(fit$value, show = input$scree_show %||% "all",
+      version = .app_version(input$scree_version, !is.null(fit$value$nonprivate)))
   }, height = function() {
-    width <- session$clientData$output_scree_plot_width
-    if (length(width) != 1L || !is.finite(width) || width <= 0) return(640)
-    max(360, min(720, round(width)))
+    fit <- results$scree
+    has_reference <- !is.null(fit) && !is.null(fit$value$nonprivate)
+    ver <- .app_version(input$scree_version, has_reference)
+    layout <- .app_scree_layout(input$scree_show %||% "all", ver)
+    .app_plot_height(session$clientData$output_scree_plot_width,
+      columns = layout$columns, rows = layout$rows,
+      min_panel = 280, max_panel = 400, ratio = 0.82)
   }, res = 110)
 
   output$score_plot <- renderPlot({
-    validate(need(!is.null(results$score), "Run Score to see the distributions."))
-    validate(need(length(input$score_display) > 0, "Choose at least one score display."))
-    .app_draw_score(score_plots(), display = input$score_display)
+    fit <- results$score
+    validate(need(!is.null(fit), "Run Score to see the distributions."))
+    req(identical(input$score_view, "plot"))
+    displays <- score_displayed()
+    validate(need(length(displays) > 0L, "Select a score display on the left, or choose one in Show."))
+    .app_draw_score(score_plots(), display = displays,
+      version = .app_version(input$score_version, !is.null(fit$value$nonprivate)))
   }, height = function() {
     fit <- results$score
-    n_methods <- if (!is.null(fit)) length(fit$value$metadata$methods) else
-      length(input$score_methods)
-    has_reference <- !is.null(fit) && !is.null(fit$value$nonprivate)
-    n_displays <- max(1L, length(input$score_display))
-    cols <- max(1L, n_methods + as.integer(has_reference))
-    single_pair <- cols == 1L &&
-      identical(sort(input$score_display), c("histogram", "sample"))
-    width <- session$clientData$output_score_plot_width
-    if (length(width) != 1L || !is.finite(width) || width <= 0) width <- 900
-    plot_cols <- if (single_pair) 2L else cols
-    plot_rows <- if (single_pair) 1L else n_displays
-    per_panel <- max(280, min(600, round(width / plot_cols * 1.15)))
-    as.integer(plot_rows * per_panel)
+    has_ref <- !is.null(fit) && !is.null(fit$value$nonprivate)
+    ver <- .app_version(input$score_version, has_ref)
+    n_keys <- if (is.null(fit)) 1L else {
+      length(switch(ver,
+        private = intersect(c("add", "sparse"), fit$value$metadata$methods),
+        nonprivate = "reference",
+        compare = c("reference", intersect(c("add", "sparse"), fit$value$metadata$methods))
+      ))
+    }
+    displays <- score_displayed()
+    layout <- .app_score_layout(n_keys, max(1L, length(displays)), ver)
+    .app_plot_height(session$clientData$output_score_plot_width,
+      columns = layout$columns, rows = layout$rows,
+      ratio = .95, min_panel = 280, max_panel = 400)
   }, res = 110)
+
 }
 
 shinyApp(ui, server)
