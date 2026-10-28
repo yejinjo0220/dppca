@@ -1,20 +1,20 @@
-pandoc: 3.6.3
+pandoc: 3.8.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   algorithms: algorithms.html
+  method-dp-loading: method-dp-loading.html
+  method-dp-score: method-dp-score.html
+  method-dp-scree: method-dp-scree.html
+  method-dp-visualization: method-dp-visualization.html
+  method-pca-background: method-pca-background.html
   shiny-app: shiny-app.html
-  theory-dp-loading: theory-dp-loading.html
-  theory-dp-score: theory-dp-score.html
-  theory-dp-scree: theory-dp-scree.html
-  theory-dp-visualization: theory-dp-visualization.html
-  theory-pca-background: theory-pca-background.html
   tutorials-dp-visualization: tutorials-dp-visualization.html
   tutorials-getting-started: tutorials-getting-started.html
   tutorials-loading-plots: tutorials-loading-plots.html
   tutorials-score-plots: tutorials-score-plots.html
   tutorials-scree-plots: tutorials-scree-plots.html
-last_built: 2026-10-27T03:06Z
+last_built: 2026-10-28T16:04Z
 urls:
   reference: https://yejinjo0220.github.io/dppca/reference
   article: https://yejinjo0220.github.io/dppca/articles

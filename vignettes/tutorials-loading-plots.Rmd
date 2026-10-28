@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 This tutorial explains how to estimate private principal component (PC) directions with `dp_loading()`, inspect the fitted results, and create vector, point, and heatmap plots with `plot()`. It covers **R arguments, examples, and visualization**, including optional ordinary PCA comparisons.
 
-Here, *loading* means a coefficient of a **unit-length PC direction vector**. Rows of the direction matrix represent variables and columns represent PCs and loading plots visualize variables. For the spherical Kendall construction, Gaussian mechanism, and interpretation of the coefficients, see [Theory of DP Loading](theory-dp-loading.html). For installation, input requirements, example datasets, and general budget allocation, see [Getting Started](tutorials-getting-started.html).
+Here, *loading* means a coefficient of a **unit-length PC direction vector**. Rows of the direction matrix represent variables and columns represent PCs and loading plots visualize variables. For the spherical Kendall construction, Gaussian mechanism, and interpretation of the coefficients, see [DP Directions Methodology](method-dp-loading.html). For installation, input requirements, example datasets, and general budget allocation, see [Getting Started](tutorials-getting-started.html).
 
 ## 1. Load the example data
 

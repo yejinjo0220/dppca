@@ -26,11 +26,11 @@ analyses.
 | **Score** | Private two-dimensional score histograms and synthetic sampled points, using additive and/or sparse histogram methods. Grouped displays are available when group labels are selected. |
 
 For more detail on the methods, see the [DP
-Loading](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.md),
+Loading](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md),
 [DP
-Scree](https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.md),
+Scree](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.md),
 and [DP
-Score](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.md)
+Score](https://yejinjo0220.github.io/dppca/articles/method-dp-score.md)
 articles.
 
 ## 2. Getting started
@@ -80,6 +80,7 @@ If you prefer to run the application on your own computer, install
 `dppca` and `shiny`, then launch the bundled app:
 
 ``` r
+
 install.packages("shiny")
 # Install the current development version of dppca if needed:
 # remotes::install_github("yejinjo0220/dppca")

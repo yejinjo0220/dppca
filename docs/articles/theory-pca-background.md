@@ -8,62 +8,40 @@ as much variation as possible. It constructs mutually orthogonal axes,
 called principal component (PC) directions, and projects observations
 onto these axes.
 
-Suppose we observe $`n`$ vectors $`x_1,\ldots,x_n\in\mathbb{R}^p`$,
-collected as the rows of an $`n\times p`$ data matrix
+Suppose we observe n vectors x_1,\ldots,x_n\in\mathbb{R}^p, collected as
+the rows of an n\times p data matrix
 
-``` math
-
-X=
-\begin{bmatrix}
-x_1^\top\\
-\vdots\\
-x_n^\top
-\end{bmatrix}.
-```
+X= \begin{bmatrix} x_1^\top\\ \vdots\\ x_n^\top \end{bmatrix}.
 
 Each row represents an observation, and each column represents a
 variable.
 
 ## 2. Population PCA
 
-Let $`\xi\in\mathbb{R}^p`$ be a random vector with mean $`\mu=E[\xi]`$
-and covariance matrix $`\Sigma
-=
-\operatorname{Cov}(\xi),`$ assuming finite second moments.
+Let \xi\in\mathbb{R}^p be a random vector with mean \mu=E\[\xi\] and
+covariance matrix \Sigma = \operatorname{Cov}(\xi), assuming finite
+second moments.
 
-For a unit vector $`v\in\mathbb{R}^p`$, the variance of the projection
-$`v^\top\xi`$ is $`\operatorname{Var}(v^\top\xi)=v^\top\Sigma v`$.
+For a unit vector v\in\mathbb{R}^p, the variance of the projection
+v^\top\xi is \operatorname{Var}(v^\top\xi)=v^\top\Sigma v.
 
 The first PC direction maximizes this projected variance:
 
-``` math
+v_1\in\arg\max\_{\\v\\\_2=1}v^\top\Sigma v. Each subsequent direction
+maximizes the same quantity subject to being orthogonal to the preceding
+directions.
 
-v_1\in\arg\max_{\|v\|_2=1}v^\top\Sigma v.
-```
-Each subsequent direction maximizes the same quantity subject to being
-orthogonal to the preceding directions.
-
-Since $`\Sigma`$ is symmetric and positive semidefinite, it has an
+Since \Sigma is symmetric and positive semidefinite, it has an
 eigen-decomposition
 
-``` math
-
-\Sigma=V\Lambda V^\top,
-\quad
-V=[v_1,\ldots,v_p],
-\quad
+\Sigma=V\Lambda V^\top, \quad V=\[v_1,\ldots,v_p\], \quad
 \Lambda=\operatorname{diag}(\lambda_1,\ldots,\lambda_p),
-```
 
-where the $`v_\ell`$ are orthonormal eigenvectors and
-$`\lambda_1\ge\cdots\ge\lambda_p\ge0`$. In particular,
+where the v\_\ell are orthonormal eigenvectors and
+\lambda_1\ge\cdots\ge\lambda_p\ge0. In particular,
 
-``` math
-
-\Sigma v_\ell=\lambda_\ell v_\ell,
-\quad
-\operatorname{Var}(v_\ell^\top\xi)=\lambda_\ell.
-```
+\Sigma v\_\ell=\lambda\_\ell v\_\ell, \quad
+\operatorname{Var}(v\_\ell^\top\xi)=\lambda\_\ell.
 
 Thus, **eigenvectors determine the PC directions**, while **eigenvalues
 quantify the variance along those directions**. The first few principal
@@ -72,101 +50,63 @@ orthogonal directions.
 
 ## 3. Sample PCA
 
-In practice, the population covariance matrix $`\Sigma`$ is generally
+In practice, the population covariance matrix \Sigma is generally
 unknown, so PCA is performed using the sample covariance matrix
 
-``` math
+\widehat \Sigma = \frac{1}{n-1} \sum\_{i=1}^n (x_i-\bar x)(x_i-\bar
+x)^\top, \qquad \bar x=\frac1n\sum\_{i=1}^n x_i.
 
-\widehat \Sigma
-=
-\frac{1}{n-1}
-\sum_{i=1}^n
-(x_i-\bar x)(x_i-\bar x)^\top,
-\qquad
-\bar x=\frac1n\sum_{i=1}^n x_i.
-```
-
-Equivalently, letting $`X_c=X-\mathbf{1}_n\bar x^\top`$ denote the
-centered data matrix, where $`\mathbf{1}_n`$ is the $`n`$-dimensional
-vector of ones, we can write
-
-``` math
+Equivalently, letting X_c=X-\mathbf{1}\_n\bar x^\top denote the centered
+data matrix, where \mathbf{1}\_n is the n-dimensional vector of ones, we
+can write
 
 \widehat \Sigma =\frac{1}{n-1}X_c^\top X_c.
-```
 
 ### 3.1 Directions
 
 The **PC directions** are obtained from the eigen-decomposition of the
-sample covariance matrix:
-``` math
-
-\widehat \Sigma =\widehat V\widehat\Lambda\widehat V^\top,
-\quad
-\widehat V=[\widehat v_1,\ldots,\widehat v_p],
-\quad
-\widehat\Lambda
+sample covariance matrix: \widehat \Sigma =\widehat
+V\widehat\Lambda\widehat V^\top, \quad \widehat V=\[\widehat
+v_1,\ldots,\widehat v_p\], \quad \widehat\Lambda
 =\operatorname{diag}(\widehat\lambda_1,\ldots,\widehat\lambda_p),
-```
 
-where $`\widehat\lambda_1\ge\cdots\ge\widehat\lambda_p\ge0`$.
+where \widehat\lambda_1\ge\cdots\ge\widehat\lambda_p\ge0.
 
-The columns of $`\widehat V`$ are orthonormal eigenvectors satisfying
+The columns of \widehat V are orthonormal eigenvectors satisfying
 
-``` math
+\widehat \Sigma \widehat v\_\ell = \widehat\lambda\_\ell\widehat
+v\_\ell, \qquad \ell=1,\ldots,p.
 
-\widehat \Sigma \widehat v_\ell
-=
-\widehat\lambda_\ell\widehat v_\ell,
-\qquad \ell=1,\ldots,p.
-```
-
-Each direction $`\widehat v_\ell`$ defines a PC axis, with the first
+Each direction \widehat v\_\ell defines a PC axis, with the first
 direction corresponding to the largest sample variance.
 
 ### 3.2 Eigenvalues
 
-The **eigenvalues** of $`\widehat \Sigma`$ represent the sample
-variances along the corresponding PC directions. In particular,
-``` math
+The **eigenvalues** of \widehat \Sigma represent the sample variances
+along the corresponding PC directions. In particular,
+\widehat\lambda\_\ell = \widehat v\_\ell^\top \widehat \Sigma\widehat
+v\_\ell, \qquad \ell=1,\ldots,p.
 
-\widehat\lambda_\ell
-=
-\widehat v_\ell^\top \widehat \Sigma\widehat v_\ell,
-\qquad \ell=1,\ldots,p.
-```
+The **proportion of variance explained (PVE)** by the \ellth principal
+component is defined as
 
-The **proportion of variance explained (PVE)** by the $`\ell`$th
-principal component is defined as
+\operatorname{PVE}\_\ell = \frac{\widehat\lambda\_\ell}
+{\sum\_{j=1}^p\widehat\lambda_j},
 
-``` math
-
-\operatorname{PVE}_\ell
-=
-\frac{\widehat\lambda_\ell}
-{\sum_{j=1}^p\widehat\lambda_j},
-```
-
-where the denominator equals $`\operatorname{tr}(\widehat \Sigma)`$, the
+where the denominator equals \operatorname{tr}(\widehat \Sigma), the
 total sample variance, assumed to be positive.
 
 ### 3.3 Scores
 
 The **PC scores** are obtained by projecting the centered observations
-onto the PC directions. The score matrix is defined as
-``` math
+onto the PC directions. The score matrix is defined as S=X_c\widehat V,
 
-S=X_c\widehat V,
-```
+where the \ellth PC score of observation i is s\_{i\ell} = \widehat
+v\_\ell^\top(x_i-\bar x).
 
-where the $`\ell`$th PC score of observation $`i`$ is $`s_{i\ell}
-=
-\widehat v_\ell^\top(x_i-\bar x)`$.
-
-For dimensionality reduction, we may retain only the first $`k`$
-principal components. Letting
-$`\widehat V_k=[\widehat v_1,\ldots,\widehat v_k]`$, the corresponding
-reduced score matrix is $`S_k=X_c\widehat V_k`$.
+For dimensionality reduction, we may retain only the first k principal
+components. Letting \widehat V_k=\[\widehat v_1,\ldots,\widehat v_k\],
+the corresponding reduced score matrix is S_k=X_c\widehat V_k.
 
 ## 4. PCA visualizations
 
@@ -174,23 +114,19 @@ PCA provides several visualization methods for exploring different
 aspects of multivariate data. The five commonly used displays are
 loading plots, scree plots, score plots, variable plots, and biplots.
 
-For two-dimensional visualizations, let $`a`$ and $`b`$ denote two
-selected principal component indices, with $`1\le a<b\le p`$. Although
-the first two components are commonly used, any two components can be
-selected depending on the purpose of the analysis.
+For two-dimensional visualizations, let a and b denote two selected
+principal component indices, with 1\le a\<b\le p. Although the first two
+components are commonly used, any two components can be selected
+depending on the purpose of the analysis.
 
 ### 4.1 Loading plot
 
 A **loading plot** displays the coefficients of the original variables
-in the PC directions. Specifically, let $`\widehat v_{j\ell}`$ denote
-the coefficient of variable $`j`$ in PC direction $`\ell`$. For two
-selected components $`a`$ and $`b`$, the loading plot represents
-variable $`j`$ by
+in the PC directions. Specifically, let \widehat v\_{j\ell} denote the
+coefficient of variable j in PC direction \ell. For two selected
+components a and b, the loading plot represents variable j by
 
-``` math
-
-L_j=(\widehat v_{ja},\widehat v_{jb}).
-```
+L_j=(\widehat v\_{ja},\widehat v\_{jb}).
 
 The magnitude of each coefficient indicates the contribution of the
 corresponding variable to a PC direction. Larger absolute coefficients
@@ -199,11 +135,11 @@ contributions in opposite directions.
 
 ### 4.2 Scree plot
 
-A **scree plot** displays the eigenvalues $`\widehat\lambda_\ell`$
-against the component indices $`\ell=1,\ldots,p`$. Since each eigenvalue
-represents the sample variance along its corresponding PC direction, the
-plot illustrates how the total variation is distributed across the
-principal components.
+A **scree plot** displays the eigenvalues \widehat\lambda\_\ell against
+the component indices \ell=1,\ldots,p. Since each eigenvalue represents
+the sample variance along its corresponding PC direction, the plot
+illustrates how the total variation is distributed across the principal
+components.
 
 Alternatively, the proportion of variance explained (PVE) can be plotted
 against the component index. These displays help identify the components
@@ -213,16 +149,13 @@ components to retain.
 ### 4.3 Score plot
 
 A **score plot** displays the projections of observations onto selected
-PC directions. For two selected components $`a`$ and $`b`$, the score
-plot represents observation $`i`$ by
+PC directions. For two selected components a and b, the score plot
+represents observation i by
 
-``` math
+(s\_{ia},s\_{ib}),
 
-(s_{ia},s_{ib}),
-```
-
-where $`s_{i\ell}=\widehat v_\ell^\top(x_i-\bar x)`$ is the score of
-observation $`i`$ on the $`\ell`$th principal component.
+where s\_{i\ell}=\widehat v\_\ell^\top(x_i-\bar x) is the score of
+observation i on the \ellth principal component.
 
 Score plots are useful for exploring patterns, group structures, and
 potential outliers in the data.
@@ -230,39 +163,26 @@ potential outliers in the data.
 ### 4.4 Variable plot (correlation circle)
 
 A **variable plot** displays the correlations between the original
-variables and the PC scores. Let
-$`\widehat \sigma_j=\sqrt{\widehat \Sigma_{jj}}`$ denote the sample
-standard deviation of variable $`j`$. For $`\widehat \sigma>0`$ and
-$`\widehat\lambda_\ell>0`$, the sample correlation between variable
-$`j`$ and the $`\ell`$th PC scores is
-``` math
+variables and the PC scores. Let \widehat \sigma_j=\sqrt{\widehat
+\Sigma\_{jj}} denote the sample standard deviation of variable j. For
+\widehat \sigma\>0 and \widehat\lambda\_\ell\>0, the sample correlation
+between variable j and the \ellth PC scores is
+\operatorname{Cor}(X\_{\cdot j},S\_{\cdot\ell}) =
+\frac{\sqrt{\widehat\lambda\_\ell}\\\widehat v\_{j\ell}}{\widehat
+\sigma_j},
 
-\operatorname{Cor}(X_{\cdot j},S_{\cdot\ell})
-=
-\frac{\sqrt{\widehat\lambda_\ell}\,\widehat v_{j\ell}}{\widehat \sigma_j},
-```
+where X\_{\cdot j} and S\_{\cdot\ell} denote the jth and \ellth columns
+of X and S, respectively.
 
-where $`X_{\cdot j}`$ and $`S_{\cdot\ell}`$ denote the $`j`$th and
-$`\ell`$th columns of $`X`$ and $`S`$, respectively.
+For two selected components a and b, the variable plot represents
+variable j by
 
-For two selected components $`a`$ and $`b`$, the variable plot
-represents variable $`j`$ by
+R_j= \left( \operatorname{Cor}(X\_{\cdot j},S\_{\cdot a}),
+\operatorname{Cor}(X\_{\cdot j},S\_{\cdot b}) \right).
 
-``` math
-
-R_j=
-\left(
-\operatorname{Cor}(X_{\cdot j},S_{\cdot a}),
-\operatorname{Cor}(X_{\cdot j},S_{\cdot b})
-\right).
-```
-
-Since $`\|R_j\|_2^2
-=
-\operatorname{Cor}(X_{\cdot j},S_{\cdot a})^2
-+
-\operatorname{Cor}(X_{\cdot j},S_{\cdot b})^2
-\le 1,`$ the variable coordinates lie inside or on the unit circle.
+Since \\R_j\\\_2^2 = \operatorname{Cor}(X\_{\cdot j},S\_{\cdot a})^2 +
+\operatorname{Cor}(X\_{\cdot j},S\_{\cdot b})^2 \le 1, the variable
+coordinates lie inside or on the unit circle.
 
 Variables near the unit circle are well represented by the two selected
 components, whereas variables near the origin have relatively little of
@@ -278,76 +198,55 @@ low-dimensional representation of the data. To describe its
 construction, consider the reduced singular value decomposition (SVD) of
 the centered data matrix:
 
-``` math
-
 X_c=UDV^\top,
-```
 
-where $`r=\operatorname{rank}(X_c)`$, $`U\in\mathbb R^{n\times r}`$ and
-$`V\in\mathbb R^{p\times r}`$ have orthonormal columns, and
+where r=\operatorname{rank}(X_c), U\in\mathbb R^{n\times r} and
+V\in\mathbb R^{p\times r} have orthonormal columns, and
 
-``` math
+D=\operatorname{diag}(d_1,\ldots,d_r), \qquad d_1\ge\cdots\ge d_r\>0.
 
-D=\operatorname{diag}(d_1,\ldots,d_r),
-\qquad d_1\ge\cdots\ge d_r>0.
-```
+For a two-dimensional biplot, let I=\\a,b\\ denote the selected
+component indices, where 1\le a\<b\le r. Define
 
-For a two-dimensional biplot, let $`I=\{a,b\}`$ denote the selected
-component indices, where $`1\le a<b\le r`$. Define
-
-``` math
-
-U_I=[u_a,u_b],
-\qquad
-D_I=\operatorname{diag}(d_a,d_b),
-\qquad
-V_I=[v_a,v_b].
-```
+U_I=\[u_a,u_b\], \qquad D_I=\operatorname{diag}(d_a,d_b), \qquad
+V_I=\[v_a,v_b\].
 
 The corresponding rank-two approximation of the centered data matrix is
 
-``` math
-
 X_c\approx U_ID_IV_I^\top.
-```
 
 A general family of biplot scalings is defined by
 
-``` math
-
-G_\alpha=U_ID_I^{1-\alpha},
-\qquad
-H_\alpha=V_ID_I^\alpha,
-\qquad 0\le\alpha\le1.
-```
+G\_\alpha=U_ID_I^{1-\alpha}, \qquad H\_\alpha=V_ID_I^\alpha, \qquad
+0\le\alpha\le1.
 
 Recall that the PC score matrix for the selected components is
-$`S_I=X_cV_I=U_ID_I`$. Therefore,
-$`G_\alpha=U_ID_I^{1-\alpha}=S_ID_I^{-\alpha}`$ showing that the
+S_I=X_cV_I=U_ID_I. Therefore,
+G\_\alpha=U_ID_I^{1-\alpha}=S_ID_I^{-\alpha} showing that the
 observation coordinates in a biplot are obtained by scaling the ordinary
-PC scores according to $`\alpha`$.
+PC scores according to \alpha.
 
-These matrices satisfy $`G_\alpha H_\alpha^\top\approx X_c`$. The rows
-of $`G_\alpha`$ represent observations, while the rows of $`H_\alpha`$
-represent variables. The parameter $`\alpha`$ determines how the
-singular-value scaling is distributed between them:
+These matrices satisfy G\_\alpha H\_\alpha^\top\approx X_c. The rows of
+G\_\alpha represent observations, while the rows of H\_\alpha represent
+variables. The parameter \alpha determines how the singular-value
+scaling is distributed between them:
 
-- $`\alpha=0`$: Observation coordinates are the ordinary PC scores on
-  the selected components, and variable coordinates are the
-  corresponding PC direction coefficients.
-- $`\alpha=1/2`$: Singular-value scaling is shared symmetrically between
+- \alpha=0: Observation coordinates are the ordinary PC scores on the
+  selected components, and variable coordinates are the corresponding PC
+  direction coefficients.
+- \alpha=1/2: Singular-value scaling is shared symmetrically between
   observations and variables.
-- $`\alpha=1`$: Variable coordinates are scaled by the singular values,
+- \alpha=1: Variable coordinates are scaled by the singular values,
   emphasizing the variance and covariance structure of the original
   variables.
 
-**Note.** Since $`\widehat\Sigma=\frac{1}{n-1}VD^2V^\top`$, the columns
-of $`V`$ are eigenvectors of $`\widehat\Sigma`$, with corresponding
-positive eigenvalues $`\widehat\lambda_\ell=\frac{d_\ell^2}{n-1}`$,
-$`\ell=1,\ldots,r`$. Thus, the right singular vectors of $`X_c`$ provide
-the sample PC directions, while its singular values determine the
+**Note.** Since \widehat\Sigma=\frac{1}{n-1}VD^2V^\top, the columns of V
+are eigenvectors of \widehat\Sigma, with corresponding positive
+eigenvalues \widehat\lambda\_\ell=\frac{d\_\ell^2}{n-1},
+\ell=1,\ldots,r. Thus, the right singular vectors of X_c provide the
+sample PC directions, while its singular values determine the
 corresponding eigenvalues. Hence, PCA can equivalently be performed
-using the SVD of $`X_c`$.
+using the SVD of X_c.
 
 ### Summary of PCA visualizations
 

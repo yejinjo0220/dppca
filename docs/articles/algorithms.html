@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Algorithms • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="Algorithms">
 </head>
@@ -40,13 +41,13 @@
   </ul>
 </li>
 <li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-theory" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Theory</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-theory">
-<li><a class="dropdown-item" href="../articles/theory-pca-background.html">PCA Background</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-loading.html">DP Directions</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-scree.html">DP Eigenvalues</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-score.html">DP Scores</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-visualization.html">DP PCA Visualization</a></li>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-methodology" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Methodology</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-methodology">
+<li><a class="dropdown-item" href="../articles/method-pca-background.html">PCA Background</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-loading.html">DP Directions</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-scree.html">DP Eigenvalues</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-score.html">DP Scores</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-visualization.html">DP PCA Visualization</a></li>
   </ul>
 </li>
 <li class="active nav-item"><a class="nav-link" href="../articles/algorithms.html">Algorithms</a></li>
@@ -83,21 +84,17 @@
 <p>This page collects the algorithms used in the <code>dppca</code>
 package.</p>
 <div class="section level2">
-<h2 id="alg-m2">Algorithm 1: Private and robust estimator for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mn>2</mn></msub><annotation encoding="application/x-tex">m_2</annotation></semantics></math><a class="anchor" aria-label="anchor" href="#alg-m2"></a>
+<h2 id="alg-m2">Algorithm 1: Private and robust estimator for <span class="math inline">m_2</span><a class="anchor" aria-label="anchor" href="#alg-m2"></a>
 </h2>
-<p>This algorithm constructs a private scale proxy
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>m</mi><mo accent="true">̃</mo></mover><mrow><mn>2</mn><mo>,</mo><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widetilde m_{2,\ell}</annotation></semantics></math>
-for selecting the Huber robustification parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>τ</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\tau_\ell</annotation></semantics></math>.
-Given the paired squared differences
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">{</mo><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><msubsup><mo stretchy="false" form="postfix">}</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></msubsup></mrow><annotation encoding="application/x-tex">\{w_{r\ell}\}_{r=1}^{m}</annotation></semantics></math>,
-it forms additional pairwise half squared differences and computes block
-medians to obtain a robust measure of variability. A private histogram
-over dyadic scales is then used to select the final scale proxy.</p>
+<p>This algorithm constructs a private scale proxy <span class="math inline">\widetilde m_{2,\ell}</span> for selecting the Huber
+robustification parameter <span class="math inline">\tau_\ell</span>.
+Given the paired squared differences <span class="math inline">\{w_{r\ell}\}_{r=1}^{m}</span>, it forms additional
+pairwise half squared differences and computes block medians to obtain a
+robust measure of variability. A private histogram over dyadic scales is
+then used to select the final scale proxy.</p>
 <div class="float">
 <img src="figures/alg2-robust_estimator_for_m2.png" style="width:95.0%" alt="Algorithm 1: Private and robust estimator for m_2"><div class="figcaption">Algorithm 1: Private and robust estimator for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mn>2</mn></msub><annotation encoding="application/x-tex">m_2</annotation></semantics></math>
+<span class="math inline">m_2</span>
 </div>
 </div>
 </div>
@@ -109,16 +106,21 @@ and PMWM quantile estimates. Following <a href="#ref-Durfee2023">Durfee
 (2023)</a>, it searches a geometric grid using noisy comparisons against
 the empirical CDF. The fully unbounded mechanism invokes the one-sided
 search in both the positive and sign-flipped directions.</p>
-<p><img src="figures/alg3-Unbounded_DP_Quantile.png" style="width:95.0%" alt="Algorithm 2: Unbounded DP upper-quantile estimator"> Algorithm 2
-estimates a private scale proxy for each component using the paired
-squared differences. The method forms additional disjoint pairs,
-computes block medians, and constructs a histogram over a finite range
-of dyadic bins. Independent Laplace noise is added to the histogram
-counts, and the scale corresponding to the bin with the largest noisy
-count is returned. The resulting estimate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>m</mi><mo accent="true">̃</mo></mover><mrow><mn>2</mn><mo>,</mo><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widetilde m_{2,\ell}</annotation></semantics></math>
-is used to determine the Huber robustification parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>τ</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\tau_\ell</annotation></semantics></math>.</p>
+<p>For a one-sided quantile release with total budget <span class="math inline">\varepsilon_Q</span>, the implementation uses <span class="math inline">\varepsilon_1=\varepsilon_2=\varepsilon_Q/2</span>
+for the noisy target and query counts. It accepts <span class="math inline">0&lt;q&lt;1</span> and requires a public lower bound
+<span class="math inline">\ell\le\min_i x_i</span>. Its empirical CDF
+queries count observations strictly below the candidate: <span class="math inline">F_n^{&lt;}(t)=n^{-1}\sum_i\mathbf1\{x_i&lt;t\}</span>.</p>
+<div class="float">
+<img src="figures/alg3-Unbounded_DP_Quantile.png" style="width:95.0%" alt="Algorithm 2: Unbounded DP upper-quantile estimator"><div class="figcaption">Algorithm 2: Unbounded DP upper-quantile
+estimator</div>
+</div>
+<p>The displayed pseudocode shows an unbounded search. The
+implementation limits the search to 5,000 grid queries by default; if no
+noisy count reaches the noisy target, it issues a warning and returns
+the last grid value. PMWM uses this default limit with <span class="math inline">\beta=1.001</span>, whereas score-frame estimation
+uses <span class="math inline">\beta=1.01</span>. The fully unbounded
+wrapper excludes capped results when selecting a signed quantile. The
+resulting search limits are described in <a href="method-dp-scree.html#pmwm">PMWM Methodology</a> and <a href="method-dp-score.html#private-frame">DP Score Methodology</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="alg-add-hist">Algorithm 3: Additive DP histogram<a class="anchor" aria-label="anchor" href="#alg-add-hist"></a>
@@ -165,6 +167,13 @@ distinguishable from zero.</p>
 <img src="figures/alg7-sparse_hist_group.png" style="width:95.0%" alt="Algorithm 6: Group-wise sparse DP histogram"><div class="figcaption">Algorithm 6: Group-wise sparse DP
 histogram</div>
 </div>
+<p>The histogram pseudocode shows normalization when the retained mass
+is positive. In the implementation, zero total mass causes the additive
+methods (Algorithms 3 and 5) to stop with an error, while the sparse
+methods (Algorithms 4 and 6) return an all-zero histogram. Group-wise
+privacy accounting assumes public, fixed group memberships, as explained
+in <a href="method-dp-score.html#grouped-score">DP Score
+Methodology</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

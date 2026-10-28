@@ -9,17 +9,17 @@ to choose a tutorial and its corresponding theory article.
 
 ## Choose a starting point
 
-The **tutorials** explain how to use `dppca` in R, while the **theory
-articles** describe the statistical concepts and methods. For an
-introduction to ordinary PCA, see [PCA
-Background](https://yejinjo0220.github.io/dppca/articles/theory-pca-background.md).
+The **tutorials** explain how to use `dppca` in R, while the
+**methodology articles** describe the statistical concepts and methods.
+For an introduction to ordinary PCA, see [PCA
+Background](https://yejinjo0220.github.io/dppca/articles/method-pca-background.md).
 
-| What you want to do | Tutorial | Theory and Methods |
+| What you want to do | Tutorial | Methodology |
 |:---|:---|:---|
-| Explore private PC directions and their coefficients | [DP Loading Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-loading-plots.md) | [Theory of DP Loading](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.md) |
-| Examine scree values and proportions of variance explained (PVE) | [DP Scree Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-scree-plots.md) | [Theory of DP Scree](https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.md) |
-| Visualize private score distributions and compare groups | [DP Score Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-score-plots.md) | [Theory of DP Score](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.md) |
-| Explore loading, scree, score, variable, and biplot views in one workflow | [DP PCA Visualization](https://yejinjo0220.github.io/dppca/articles/tutorials-dp-visualization.md) | [Theory of DP PCA Visualizations](https://yejinjo0220.github.io/dppca/articles/theory-dp-visualization.md) |
+| Explore private PC directions and their coefficients | [DP Loading Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-loading-plots.md) | [DP Directions Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md) |
+| Examine scree values and proportions of variance explained (PVE) | [DP Scree Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-scree-plots.md) | [DP Scree Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.md) |
+| Visualize private score distributions and compare groups | [DP Score Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-score-plots.md) | [DP Score Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.md) |
+| Explore loading, scree, score, variable, and biplot views in one workflow | [DP PCA Visualization](https://yejinjo0220.github.io/dppca/articles/tutorials-dp-visualization.md) | [DP PCA Visualization Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-visualization.md) |
 
 For complete argument descriptions and return values, see
 [Functions](https://yejinjo0220.github.io/dppca/reference/index.md).
@@ -29,12 +29,14 @@ For complete argument descriptions and return values, see
 Install the released version of `dppca` from CRAN:
 
 ``` r
+
 install.packages("dppca")
 ```
 
 Alternatively, install the development version from GitHub:
 
 ``` r
+
 install.packages("remotes")  # Only needed once
 remotes::install_github("yejinjo0220/dppca")
 ```
@@ -42,6 +44,7 @@ remotes::install_github("yejinjo0220/dppca")
 Once installed, load the package:
 
 ``` r
+
 library(dppca)
 ```
 
@@ -84,6 +87,7 @@ sample.
 ### 3.1. Gaussian data
 
 ``` r
+
 data("gau", package = "dppca")
 data("gau_g", package = "dppca")
 
@@ -121,6 +125,7 @@ consists of ten numeric acoustic measurements (`F0`–`F9`) and four
 categorical variables (`Split`, `Speaker`, `Sex`, and `Class`).
 
 ``` r
+
 data("vowel", package = "dppca")
 
 numeric_columns <- vapply(vowel, is.numeric, logical(1))
@@ -179,6 +184,7 @@ budget components depend on the function used.
 The total privacy budget can be specified using `eps` and `delta`:
 
 ``` r
+
 privacy <- privacy_control(
   eps = 6,
   delta = 1e-4
@@ -211,6 +217,7 @@ For example, when the specified total budget is `eps = 6` and
 The total budget and its allocations can be inspected using:
 
 ``` r
+
 privacy$total
 #>   eps delta 
 #> 6e+00 1e-04
@@ -242,6 +249,7 @@ For example, to allocate more budget to scree and score estimation in
 [`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md):
 
 ``` r
+
 pca_privacy_custom <- privacy_control(
   eps = 6,
   delta = 1e-4,
@@ -267,6 +275,7 @@ Similarly, for
 a different allocation can be specified as follows:
 
 ``` r
+
 score_privacy_custom <- privacy_control(
   eps = 6,
   delta = 1e-4,
@@ -289,6 +298,7 @@ Alternatively, epsilon and delta can be specified separately for each
 component, without using a total budget or `split`.
 
 ``` r
+
 pca_privacy_absolute <- privacy_control(
   loading = c(eps = 2, delta = 2e-5),
   scree   = c(eps = 3, delta = 3e-5),

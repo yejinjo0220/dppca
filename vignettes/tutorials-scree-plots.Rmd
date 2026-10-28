@@ -31,7 +31,7 @@ This tutorial shows how to use `dp_scree()` to estimate private scree values and
 scree and PVE plots. Also, it explains how to choose among the **clipped mean**, **private modified winsorized mean (PMWM)**, and **Huber mean** estimators.
 
 The focus here is on **R arguments, control settings, and visualization**.
-For the paired-difference construction, mathematical formulas, and privacy accounting, see [Theory of DP Scree](theory-dp-scree.html). 
+For the paired-difference construction, mathematical formulas, and privacy accounting, see [DP Scree Methodology](method-dp-scree.html). 
 For installation, example datasets, input requirements, and general privacy budget allocation, see [Getting Started](tutorials-getting-started.html).
 
 ## 1. Load the example data
@@ -170,11 +170,11 @@ plot(scree_fit, type = "scree")
 ## 4. Choose a method and its tuning parameters
 
 The three scree estimators use the same projected paired differences, but differ in how they estimate their means. 
-The tables below map the symbols used in [Theory of DP Scree](theory-dp-scree.html)** to the R arguments of each method-specific control function.
+The tables below map the symbols used in [DP Scree Methodology](method-dp-scree.html)** to the R arguments of each method-specific control function.
 
 ### Clipped mean {#clipped-control}
 
-Clipped estimation limits each squared pair difference before releasing a noisy mean. See [Theory of Clipped mean](theory-dp-scree.html#clipped-mean).
+Clipped estimation limits each squared pair difference before releasing a noisy mean. See [Clipped Mean Methodology](method-dp-scree.html#clipped-mean).
 
 <style>
 .clipped-parameter-table table {width: 100%; table-layout: fixed;}
@@ -201,7 +201,7 @@ A larger value reduces clipping bias while requiring more privacy noise.
 
 ### Private modified winsorized mean (PMWM) {#pmwm-control}
 
-PMWM privately estimates lower and upper cutoffs and then computes a noisy winsorized mean. See [Theory of PMWM](theory-dp-scree.html#pmwm).
+PMWM privately estimates lower and upper cutoffs and then computes a noisy winsorized mean. See [PMWM Methodology](method-dp-scree.html#pmwm).
 
 <style>
 .pmwm-parameter-table table {width: 100%;table-layout: fixed;}
@@ -249,7 +249,7 @@ plot(pmwm_fit, type = "pve")
 
 ### Huber mean {#huber-control}
 
-The Huber method privately estimates a scale for each PC and uses thatscale to set a Huber threshold for noisy gradient descent. See [Huber mean theory](theory-dp-scree.html#huber-mean).
+The Huber method privately estimates a scale for each PC and uses thatscale to set a Huber threshold for noisy gradient descent. See [Huber Mean Methodology](method-dp-scree.html#huber-mean).
 
 <style>
 .huber-parameter-table table {width: 100%;table-layout: fixed;}

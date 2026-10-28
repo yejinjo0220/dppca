@@ -12,8 +12,8 @@ Here, *loading* means a coefficient of a **unit-length PC direction
 vector**. Rows of the direction matrix represent variables and columns
 represent PCs and loading plots visualize variables. For the spherical
 Kendall construction, Gaussian mechanism, and interpretation of the
-coefficients, see [Theory of DP
-Loading](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.md).
+coefficients, see [DP Directions
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md).
 For installation, input requirements, example datasets, and general
 budget allocation, see [Getting
 Started](https://yejinjo0220.github.io/dppca/articles/tutorials-getting-started.md).
@@ -25,6 +25,7 @@ variables. For more details, see the documentation for
 [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md).
 
 ``` r
+
 library(dppca)
 data("gau", package = "dppca")
 
@@ -41,6 +42,7 @@ the entire privacy budget is allocated to private direction estimation,
 so no `split` argument is needed.
 
 ``` r
+
 loading_privacy <- privacy_control(
   eps = 3,
   delta = 1e-4
@@ -51,6 +53,7 @@ Now, estimate the private directions. We set `non_private = TRUE` to
 include ordinary PCA directions for comparison.
 
 ``` r
+
 set.seed(123)
 loading_fit <- dp_loading(
   X,
@@ -98,16 +101,17 @@ columns (PCs). Each coefficient indicates the weight of a variable in a
 particular PC direction.
 
 ``` r
+
 dim(loading_fit$directions)
 #> [1] 20 20
 round(loading_fit$directions[1:6, 1:3, drop = FALSE], 3)
 #>       PC1    PC2    PC3
-#> V1 -0.420 -0.142  0.055
-#> V2 -0.448  0.075  0.155
-#> V3 -0.476 -0.009 -0.102
-#> V4 -0.432 -0.023 -0.212
-#> V5 -0.450  0.191  0.063
-#> V6  0.027  0.583 -0.371
+#> V1 -0.420 -0.142 -0.055
+#> V2 -0.448  0.075 -0.155
+#> V3 -0.476 -0.009  0.102
+#> V4 -0.432 -0.023  0.212
+#> V5 -0.450  0.191 -0.063
+#> V6  0.027  0.583  0.371
 ```
 
 The [`summary()`](https://rdrr.io/r/base/summary.html) function reports
@@ -116,6 +120,7 @@ estimator. Its returned summary object retains the direction matrices
 under `directions` and `nonprivate`:
 
 ``` r
+
 summary(loading_fit)
 #> DP PC Directions Summary
 #> Data: 1000 observations x 20 variables
@@ -123,21 +128,21 @@ summary(loading_fit)
 #> 
 #> Private PC directions  (first 6 variables x first 4 PCs):
 #>        PC1      PC2     PC3     PC4
-#> V1 -0.4200 -0.14198  0.0549 -0.2245
-#> V2 -0.4475  0.07532  0.1552  0.2335
-#> V3 -0.4757 -0.00875 -0.1022  0.0361
-#> V4 -0.4321 -0.02322 -0.2124 -0.0591
-#> V5 -0.4500  0.19129  0.0628  0.0116
-#> V6  0.0267  0.58292 -0.3706 -0.2886
+#> V1 -0.4200 -0.14198 -0.0549  0.2245
+#> V2 -0.4475  0.07532 -0.1552 -0.2335
+#> V3 -0.4757 -0.00875  0.1022 -0.0361
+#> V4 -0.4321 -0.02322  0.2124  0.0591
+#> V5 -0.4500  0.19129 -0.0628 -0.0116
+#> V6  0.0267  0.58292  0.3706  0.2886
 #> 
 #> Non-private PC directions  (first 6 variables x first 4 PCs):
 #>        PC1      PC2     PC3     PC4
-#> V1 -0.4403 -0.00758  0.0684 -0.2466
-#> V2 -0.4554  0.04056 -0.1534  0.1527
-#> V3 -0.4443  0.02665 -0.0218  0.3505
-#> V4 -0.4367  0.01992  0.1261 -0.0381
-#> V5 -0.4521  0.08331 -0.0298 -0.2080
-#> V6  0.0408  0.49751  0.4353 -0.0211
+#> V1 -0.4403 -0.00758 -0.0684  0.2466
+#> V2 -0.4554  0.04056  0.1534 -0.1527
+#> V3 -0.4443  0.02665  0.0218 -0.3505
+#> V4 -0.4367  0.01992 -0.1261  0.0381
+#> V5 -0.4521  0.08331  0.0298  0.2080
+#> V6  0.0408  0.49751 -0.4353  0.0211
 #> 
 #> Total privacy budget: eps = 3 ; delta = 1e-04 
 #> Non-private reference: included 
@@ -159,12 +164,13 @@ a `dp_loading` object provides three display types: `"vector"`,
 ### 4.1. Vector plot
 
 A vector plot displays each variable using its coefficients on the two
-selected PC axes. For example, a variable with coefficients
-$`(v_{j1}, v_{j2})`$ appears as an arrow from $`(0,0)`$ to
-$`(v_{j1}, v_{j2})`$. The arrows represent variables with their lengths
-reflecting the magnitudes of the selected direction coefficients.
+selected PC axes. For example, a variable with coefficients (v\_{j1},
+v\_{j2}) appears as an arrow from (0,0) to (v\_{j1}, v\_{j2}). The
+arrows represent variables with their lengths reflecting the magnitudes
+of the selected direction coefficients.
 
 ``` r
+
 vector_plot <- plot(
   loading_fit,
   type = "vector"
@@ -189,6 +195,7 @@ PCs.
 To display all three plot types together, simply omit `type`:
 
 ``` r
+
 loading_plots <- plot(loading_fit)
 ```
 
@@ -224,6 +231,7 @@ For example, the following code displays PC1 and PC3 in the vector plot
 and PC1 through PC4 in the heatmap, using the first eight variables:
 
 ``` r
+
 plot(
   loading_fit,
   type = c("vector", "heatmap"),
@@ -259,6 +267,7 @@ PC axes, and variable selection directly in
 [`plot()`](https://rdrr.io/r/graphics/plot.default.html).
 
 ``` r
+
 custom_plot <- plot(
   loading_fit,
   type = "point",

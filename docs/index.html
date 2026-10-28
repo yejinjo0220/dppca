@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>dppca • dppca</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="katex-auto.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><script src="extra.js"></script><meta property="og:title" content="dppca">
 <meta name="description" content="Tools for differentially private principal component analysis (PCA) and visualization, including private PC directions, scree and PVE summaries, score plots, and integrated PCA displays.
@@ -44,13 +45,13 @@
   </ul>
 </li>
 <li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-theory" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Theory</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-theory">
-<li><a class="dropdown-item" href="articles/theory-pca-background.html">PCA Background</a></li>
-    <li><a class="dropdown-item" href="articles/theory-dp-loading.html">DP Directions</a></li>
-    <li><a class="dropdown-item" href="articles/theory-dp-scree.html">DP Eigenvalues</a></li>
-    <li><a class="dropdown-item" href="articles/theory-dp-score.html">DP Scores</a></li>
-    <li><a class="dropdown-item" href="articles/theory-dp-visualization.html">DP PCA Visualization</a></li>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-methodology" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Methodology</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-methodology">
+<li><a class="dropdown-item" href="articles/method-pca-background.html">PCA Background</a></li>
+    <li><a class="dropdown-item" href="articles/method-dp-loading.html">DP Directions</a></li>
+    <li><a class="dropdown-item" href="articles/method-dp-scree.html">DP Eigenvalues</a></li>
+    <li><a class="dropdown-item" href="articles/method-dp-score.html">DP Scores</a></li>
+    <li><a class="dropdown-item" href="articles/method-dp-visualization.html">DP PCA Visualization</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="articles/algorithms.html">Algorithms</a></li>
@@ -179,7 +180,7 @@
 <span><span class="co"># The individual ggplot objects are also stored:</span></span>
 <span><span class="va">selected_plots</span><span class="op">$</span><span class="va">private</span><span class="op">$</span><span class="va">plots</span><span class="op">$</span><span class="va">score</span></span>
 <span><span class="va">selected_plots</span><span class="op">$</span><span class="va">private</span><span class="op">$</span><span class="va">plots</span><span class="op">$</span><span class="va">biplot</span></span></code></pre></div>
-<p>The <code>variables</code> argument defaults to the <strong>10 variables with the largest Euclidean norms of their private loading coefficients on the displayed two PC axes</strong>. T he same selected variables are reused in loading, variable, and biplot panels.</p>
+<p>The <code>variables</code> argument defaults to the <strong>10 variables with the largest Euclidean norms of their private loading coefficients on the displayed two PC axes</strong>. The same selected variables are reused in loading, variable, and biplot panels.</p>
 </div>
 <div class="section level3">
 <h3 id="optional-non-private-comparison">Optional non-private comparison<a class="anchor" aria-label="anchor" href="#optional-non-private-comparison"></a>
@@ -406,7 +407,7 @@
 <li>
 <a href="https://yejinjo0220.github.io/dppca/articles/tutorials-dp-visualization.html">DP PCA Visualization</a>: five plots built from a shared fit.</li>
 </ul>
-<p>For the mathematics, see <a href="https://yejinjo0220.github.io/dppca/articles/theory-pca-background.html">PCA Background</a>, <a href="https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.html">Theory of DP Loading</a>, <a href="https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.html">Theory of DP Scree</a>, <a href="https://yejinjo0220.github.io/dppca/articles/theory-dp-score.html">Theory of DP Score</a>, and <a href="https://yejinjo0220.github.io/dppca/articles/theory-dp-visualization.html">Theory of DP PCA Visualizations</a>.</p>
+<p>For the mathematics, see <a href="https://yejinjo0220.github.io/dppca/articles/method-pca-background.html">PCA Background</a>, <a href="https://yejinjo0220.github.io/dppca/articles/method-dp-loading.html">DP Directions Methodology</a>, <a href="https://yejinjo0220.github.io/dppca/articles/method-dp-scree.html">DP Scree Methodology</a>, <a href="https://yejinjo0220.github.io/dppca/articles/method-dp-score.html">DP Score Methodology</a>, and <a href="https://yejinjo0220.github.io/dppca/articles/method-dp-visualization.html">DP PCA Visualization Methodology</a>.</p>
 <p>For complete argument descriptions, use the R help pages: <code><a href="reference/dp_loading.html">?dp_loading</a></code>, <code><a href="reference/dp_scree.html">?dp_scree</a></code>, <code><a href="reference/dp_score.html">?dp_score</a></code>, <code><a href="reference/dp_pca.html">?dp_pca</a></code>, and the corresponding <code>plot.*</code> methods. The development implementation is available on <a href="https://github.com/yejinjo0220/dppca" class="external-link">GitHub</a>.</p>
 </div>
 <div class="section level2">

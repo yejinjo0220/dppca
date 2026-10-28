@@ -16,20 +16,21 @@ One fitted object supplies five displays:
 | Biplot | Score points and variable arrows together | How do the displayed observations and features relate geometrically? |
 
 This tutorial focuses on **R arguments, stored results, and plots**. For
-the mathematics underlying all five displays, see [Theory of DP PCA
-Visualizations](https://yejinjo0220.github.io/dppca/articles/theory-dp-visualization.md).
-The individual estimation mechanisms are covered by [Theory of DP
-Loading](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.md),
-[Theory of DP
-Scree](https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.md),
-and [Theory of DP
-Score](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.md).
+the mathematics underlying all five displays, see [DP PCA Visualization
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-visualization.md).
+The individual estimation mechanisms are covered by [DP Directions
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md),
+[DP Scree
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.md),
+and [DP Score
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.md).
 For general setup and input requirements, see [Getting
 Started](https://yejinjo0220.github.io/dppca/articles/tutorials-getting-started.md).
 
 ## 1. Load the vowel data
 
 ``` r
+
 library(dppca)
 data("vowel", package = "dppca")
 X <- vowel
@@ -67,6 +68,7 @@ Integrated PCA needs three components: **loading**, **scree**, and
 gives each stage one third of the total epsilon and delta:
 
 ``` r
+
 privacy <- privacy_control(eps = 10, delta = 1e-4)
 privacy$total
 #>   eps delta 
@@ -132,6 +134,7 @@ in the DP Scree Plot tutorial.
 Estimate four scree components and use PC1 and PC2 for the score grid:
 
 ``` r
+
 set.seed(123)
 pca_fit <- dp_pca(
   X,
@@ -173,6 +176,7 @@ The summary reports estimated component importance, the allocated
 privacy budgets, selected axes, and group information.
 
 ``` r
+
 pca_summary <- summary(pca_fit)
 pca_summary
 #> DP PCA Summary
@@ -213,6 +217,7 @@ pca_summary
 | `pca_fit$nonprivate` | The optional ordinary-PCA comparison results |
 
 ``` r
+
 pca_fit$metadata$privacy$total
 #>   eps delta 
 #> 1e+01 1e-04
@@ -235,6 +240,7 @@ pca_fit$metadata$privacy$budgets
 The shortest way to draw the five plots from an existing fit is:
 
 ``` r
+
 plot(pca_fit)
 #> Warning: The private histogram contains no positive probability mass; no
 #> synthetic score points were generated.
@@ -247,6 +253,7 @@ If fitted with `non_private = TRUE`, it automatically shows the ordinary
 reference page first, followed by the DP page.
 
 ``` r
+
 set.seed(456)
 pca_plots <- plot(
   pca_fit,
@@ -308,9 +315,8 @@ for details on variable selection.
 The `center` argument controls whether the DP score and biplot displays
 are shifted using the privately estimated score-frame midpoint. By
 default, `center = TRUE` places the private frame center at the origin
-and allows the biplot variable arrows to start at $`(0,0)`$. See
-[Display
-Centering](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.html#score-display-centering)
+and allows the biplot variable arrows to start at (0,0). See [Display
+Centering](https://yejinjo0220.github.io/dppca/articles/method-dp-score.html#score-display-centering)
 for details.
 
 For plot appearance, replace `plot_control = NULL` with a suitable
@@ -338,6 +344,7 @@ The return value of `plot(pca_fit)` is a list, not a special plot class.
 | `pca_plots$nonprivate` | The corresponding ordinary display components, when shown |
 
 ``` r
+
 # One figure
 ggplot2::ggsave(
   "vowel-private-biplot.png",

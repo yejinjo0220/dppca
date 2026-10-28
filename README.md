@@ -90,8 +90,8 @@ selected_plots$private$plots$score
 selected_plots$private$plots$biplot
 ```
 
-The `variables` argument defaults to the **10 variables with the largest Euclidean norms of their private loading coefficients on the displayed two PC axes**. T
-he same selected variables are reused in loading, variable, and biplot panels.
+The `variables` argument defaults to the **10 variables with the largest Euclidean norms of their private loading coefficients on the displayed two PC axes**. 
+The same selected variables are reused in loading, variable, and biplot panels.
 
 ### Optional non-private comparison
 
@@ -235,7 +235,7 @@ The **practical tutorials** are:
 - [DP Score Plot](https://yejinjo0220.github.io/dppca/articles/tutorials-score-plots.html): histogram methods, synthetic points, and grouped scores.
 - [DP PCA Visualization](https://yejinjo0220.github.io/dppca/articles/tutorials-dp-visualization.html): five plots built from a shared fit.
 
-For the mathematics, see [PCA Background](https://yejinjo0220.github.io/dppca/articles/theory-pca-background.html), [Theory of DP Loading](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.html), [Theory of DP Scree](https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.html), [Theory of DP Score](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.html), and [Theory of DP PCA Visualizations](https://yejinjo0220.github.io/dppca/articles/theory-dp-visualization.html).
+For the mathematics, see [PCA Background](https://yejinjo0220.github.io/dppca/articles/method-pca-background.html), [DP Directions Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.html), [DP Scree Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.html), [DP Score Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.html), and [DP PCA Visualization Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-visualization.html).
 
 For complete argument descriptions, use the R help pages: `?dp_loading`, `?dp_scree`, `?dp_score`, `?dp_pca`, and the corresponding `plot.*` methods. The development implementation is available on [GitHub](https://github.com/yejinjo0220/dppca).
 

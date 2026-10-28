@@ -8,7 +8,7 @@ Practical guides to estimating and visualizing DP PCA quantities.
   dppca](https://yejinjo0220.github.io/dppca/articles/tutorials-getting-started.md):
 
   Install dppca, explore the example datasets, prepare input data,
-  allocate privacy budgets, and find tutorials and theory articles.
+  allocate privacy budgets, and find tutorials and methodology articles.
 
 - [DP Loading
   Plots](https://yejinjo0220.github.io/dppca/articles/tutorials-loading-plots.md):
@@ -35,38 +35,38 @@ Practical guides to estimating and visualizing DP PCA quantities.
   summary, and create scree, score, loading, variable, and biplot
   displays.
 
-### Theory
+### Methodology
 
 Background and mathematical methods for DP PCA visualization.
 
 - [Principal Component
-  Analysis](https://yejinjo0220.github.io/dppca/articles/theory-pca-background.md):
+  Analysis](https://yejinjo0220.github.io/dppca/articles/method-pca-background.md):
 
   An introduction to principal component directions, scores, explained
   variance, and the main graphical representations of PCA.
 
 - [Differentially Private PC
-  Directions](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.md):
+  Directions](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md):
 
   Private principal component directions based on the spherical Kendall
   matrix, Gaussian perturbation, and loading plot visualization in
   dppca.
 
 - [Differentially Private
-  Eigenvalues](https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.md):
+  Eigenvalues](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.md):
 
   Theoretical foundations of private projected-variance estimation using
   clipped means, private modified winsorized means, and Huber means.
 
 - [Differentially Private PC
-  Scores](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.md):
+  Scores](https://yejinjo0220.github.io/dppca/articles/method-dp-score.md):
 
   Mathematical construction and privacy accounting for two-dimensional
   private PCA score histograms, synthetic sampling, and grouped
   releases.
 
 - [Differentially Private PCA
-  Visualizations](https://yejinjo0220.github.io/dppca/articles/theory-dp-visualization.md):
+  Visualizations](https://yejinjo0220.github.io/dppca/articles/method-dp-visualization.md):
 
   How dppca combines private PC directions, projected-variance
   estimates, and score histograms to construct scree, loading, score,

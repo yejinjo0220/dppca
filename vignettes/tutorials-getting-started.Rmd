@@ -1,6 +1,6 @@
 ---
 title: "Getting Started with dppca"
-description: "Install dppca, explore the example datasets, prepare input data, allocate privacy budgets, and find tutorials and theory articles."
+description: "Install dppca, explore the example datasets, prepare input data, allocate privacy budgets, and find tutorials and methodology articles."
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -48,16 +48,16 @@ This guide covers the essentials for getting started with `dppca`: installing an
 
 ## Choose a starting point {#choose-a-starting-point}
 
-The **tutorials** explain how to use `dppca` in R, while the **theory articles** describe the statistical concepts and methods. For an introduction to ordinary PCA, see [PCA Background](theory-pca-background.html).
+The **tutorials** explain how to use `dppca` in R, while the **methodology articles** describe the statistical concepts and methods. For an introduction to ordinary PCA, see [PCA Background](method-pca-background.html).
 
 ::: {.gs-table .gs-tutorial-table}
 
-| What you want to do | Tutorial | Theory and Methods |
+| What you want to do | Tutorial | Methodology |
 |:--|:--|:--|
-| Explore private PC directions and their coefficients | [DP Loading Plot](tutorials-loading-plots.html) | [Theory of DP Loading](theory-dp-loading.html) |
-| Examine scree values and proportions of variance explained (PVE) | [DP Scree Plot](tutorials-scree-plots.html) | [Theory of DP Scree](theory-dp-scree.html) |
-| Visualize private score distributions and compare groups | [DP Score Plot](tutorials-score-plots.html) | [Theory of DP Score](theory-dp-score.html) |
-| Explore loading, scree, score, variable, and biplot views in one workflow | [DP PCA Visualization](tutorials-dp-visualization.html) | [Theory of DP PCA Visualizations](theory-dp-visualization.html) |
+| Explore private PC directions and their coefficients | [DP Loading Plot](tutorials-loading-plots.html) | [DP Directions Methodology](method-dp-loading.html) |
+| Examine scree values and proportions of variance explained (PVE) | [DP Scree Plot](tutorials-scree-plots.html) | [DP Scree Methodology](method-dp-scree.html) |
+| Visualize private score distributions and compare groups | [DP Score Plot](tutorials-score-plots.html) | [DP Score Methodology](method-dp-score.html) |
+| Explore loading, scree, score, variable, and biplot views in one workflow | [DP PCA Visualization](tutorials-dp-visualization.html) | [DP PCA Visualization Methodology](method-dp-visualization.html) |
 
 :::
 

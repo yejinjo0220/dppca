@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>DP Scree Plots • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="DP Scree Plots">
 <meta name="description" content="Estimate private scree values, inspect PVE, select clipped, PMWM, or Huber controls, and customize scree plots.
@@ -44,13 +45,13 @@
   </ul>
 </li>
 <li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-theory" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Theory</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-theory">
-<li><a class="dropdown-item" href="../articles/theory-pca-background.html">PCA Background</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-loading.html">DP Directions</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-scree.html">DP Eigenvalues</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-score.html">DP Scores</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-visualization.html">DP PCA Visualization</a></li>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-methodology" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Methodology</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-methodology">
+<li><a class="dropdown-item" href="../articles/method-pca-background.html">PCA Background</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-loading.html">DP Directions</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-scree.html">DP Eigenvalues</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-score.html">DP Scores</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-visualization.html">DP PCA Visualization</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/algorithms.html">Algorithms</a></li>
@@ -92,7 +93,7 @@ modified winsorized mean (PMWM)</strong>, and <strong>Huber
 mean</strong> estimators.</p>
 <p>The focus here is on <strong>R arguments, control settings, and
 visualization</strong>. For the paired-difference construction,
-mathematical formulas, and privacy accounting, see <a href="theory-dp-scree.html">Theory of DP Scree</a>. For installation,
+mathematical formulas, and privacy accounting, see <a href="method-dp-scree.html">DP Scree Methodology</a>. For installation,
 example datasets, input requirements, and general privacy budget
 allocation, see <a href="tutorials-getting-started.html">Getting
 Started</a>.</p>
@@ -343,13 +344,15 @@ its original scale.</td>
 </h2>
 <p>The three scree estimators use the same projected paired differences,
 but differ in how they estimate their means. The tables below map the
-symbols used in <a href="theory-dp-scree.html">Theory of DP Scree</a>**
-to the R arguments of each method-specific control function.</p>
+symbols used in <a href="method-dp-scree.html">DP Scree
+Methodology</a>** to the R arguments of each method-specific control
+function.</p>
 <div class="section level3">
 <h3 id="clipped-control">Clipped mean<a class="anchor" aria-label="anchor" href="#clipped-control"></a>
 </h3>
 <p>Clipped estimation limits each squared pair difference before
-releasing a noisy mean. See <a href="theory-dp-scree.html#clipped-mean">Theory of Clipped mean</a>.</p>
+releasing a noisy mean. See <a href="method-dp-scree.html#clipped-mean">Clipped Mean
+Methodology</a>.</p>
 <style>
 .clipped-parameter-table table {width: 100%; table-layout: fixed;}
 .clipped-parameter-table colgroup col:nth-child(1) {width: 20% !important;}
@@ -369,7 +372,7 @@ releasing a noisy mean. See <a href="theory-dp-scree.html#clipped-mean">Theory o
 <th align="left">Meaning</th>
 </tr></thead>
 <tbody><tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">p</mi></mrow></msub><annotation encoding="application/x-tex">C_{\mathrm{clip}}</annotation></semantics></math></td>
+<td align="left"><span class="math inline">C_{\mathrm{clip}}</span></td>
 <td align="left"><code>C_clip</code></td>
 <td align="left">Positive upper clipping threshold; controls the
 bias–noise tradeoff (required, no default).</td>
@@ -390,8 +393,8 @@ clipping bias while requiring more privacy noise.</p>
 <h3 id="pmwm-control">Private modified winsorized mean (PMWM)<a class="anchor" aria-label="anchor" href="#pmwm-control"></a>
 </h3>
 <p>PMWM privately estimates lower and upper cutoffs and then computes a
-noisy winsorized mean. See <a href="theory-dp-scree.html#pmwm">Theory of
-PMWM</a>.</p>
+noisy winsorized mean. See <a href="method-dp-scree.html#pmwm">PMWM
+Methodology</a>.</p>
 <style>
 .pmwm-parameter-table table {width: 100%;table-layout: fixed;}
 .pmwm-parameter-table colgroup col:nth-child(1) {width: 20% !important;}
@@ -412,37 +415,34 @@ PMWM</a>.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>,</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">a,b</annotation></semantics></math></td>
+<td align="left"><span class="math inline">a,b</span></td>
 <td align="left">
 <code>a</code>, <code>b</code>
 </td>
 <td align="left">Public lower and upper bounds for the <strong>estimated
-cutoffs</strong>, with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>&lt;</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">a&lt;b</annotation></semantics></math>
+cutoffs</strong>, with <span class="math inline">a&lt;b</span>
 (required).</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>c</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><annotation encoding="application/x-tex">c_{\mathrm{trim}}</annotation></semantics></math></td>
+<td align="left"><span class="math inline">c_{\mathrm{trim}}</span></td>
 <td align="left"><code>trim_const</code></td>
 <td align="left">Positive baseline trimming constant in the quantile
 level (required).</td>
 </tr>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>η</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><annotation encoding="application/x-tex">\eta_{\mathrm{trim}}</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\eta_{\mathrm{trim}}</span></td>
 <td align="left"><code>eta</code></td>
 <td align="left">Lower-bound tuning value for the trimming proportion,
-in
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>0.5</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">[0,0.5)</annotation></semantics></math>
-(required).</td>
+in <span class="math inline">[0,0.5)</span> (required).</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\beta</span></td>
 <td align="left"><code>beta</code></td>
 <td align="left">Geometric quantile-search grid base, greater than 1
 (default: <code>1.001</code>).</td>
 </tr>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>Q</mi></msub><mo>,</mo><msub><mi>I</mi><mi>M</mi></msub></mrow><annotation encoding="application/x-tex">I_Q,I_M</annotation></semantics></math></td>
+<td align="left"><span class="math inline">I_Q,I_M</span></td>
 <td align="left"><code>split_mode</code></td>
 <td align="left">
 <code>FALSE</code>: reuse all pair rows in both stages
@@ -478,7 +478,7 @@ subsets.</td>
 <h3 id="huber-control">Huber mean<a class="anchor" aria-label="anchor" href="#huber-control"></a>
 </h3>
 <p>The Huber method privately estimates a scale for each PC and uses
-thatscale to set a Huber threshold for noisy gradient descent. See <a href="theory-dp-scree.html#huber-mean">Huber mean theory</a>.</p>
+thatscale to set a Huber threshold for noisy gradient descent. See <a href="method-dp-scree.html#huber-mean">Huber Mean Methodology</a>.</p>
 <style>
 .huber-parameter-table table {width: 100%;table-layout: fixed;}
 .huber-parameter-table colgroup col:nth-child(1) {width: 20% !important;}
@@ -499,44 +499,38 @@ thatscale to set a Huber threshold for noisy gradient descent. See <a href="theo
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mo>min</mo></msub><mo>,</mo><msub><mi>r</mi><mo>max</mo></msub></mrow><annotation encoding="application/x-tex">r_{\min},r_{\max}</annotation></semantics></math></td>
+<td align="left"><span class="math inline">r_{\min},r_{\max}</span></td>
 <td align="left">
 <code>k_min_m2</code>, <code>k_max_m2</code>
 </td>
-<td align="left">Integer limits for the dyadic scale candidates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mn>2</mn><mi>r</mi></msup><annotation encoding="application/x-tex">2^r</annotation></semantics></math>,
-with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mo>min</mo></msub><mo>&lt;</mo><msub><mi>r</mi><mo>max</mo></msub></mrow><annotation encoding="application/x-tex">r_{\min}&lt;r_{\max}</annotation></semantics></math>
-(required).</td>
+<td align="left">Integer limits for the dyadic scale candidates <span class="math inline">2^r</span>, with <span class="math inline">r_{\min}&lt;r_{\max}</span> (required).</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\rho</span></td>
 <td align="left"><code>m2_frac</code></td>
 <td align="left">Fraction of scree epsilon used for private scale
-estimation, in
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,1)</annotation></semantics></math>
-(required).</td>
+estimation, in <span class="math inline">(0,1)</span> (required).</td>
 </tr>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\mu_0</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\mu_0</span></td>
 <td align="left"><code>mu0</code></td>
 <td align="left">Public initial mean iterate (default:
 <code>0</code>).</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>η</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\eta_0</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\eta_0</span></td>
 <td align="left"><code>eta0</code></td>
 <td align="left">Positive gradient-descent step size (default:
 <code>1</code>).</td>
 </tr>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math></td>
+<td align="left"><span class="math inline">T</span></td>
 <td align="left"><code>T</code></td>
 <td align="left">Number of noisy gradient steps (default:
 <code>ceiling(log(m))</code>).</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math></td>
+<td align="left"><span class="math inline">M</span></td>
 <td align="left"><code>M</code></td>
 <td align="left">Number of blocks for private scale estimation (default:
 <code>floor(sqrt(m / 2))</code>, capped by available pairs).</td>

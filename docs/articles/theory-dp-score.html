@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Differentially Private PC Scores • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="Differentially Private PC Scores">
 <meta name="description" content="Mathematical construction and privacy accounting for two-dimensional private PCA score histograms, synthetic sampling, and grouped releases.
@@ -105,33 +106,26 @@ Score Plot Tutorial</a>. For background, see <a href="theory-pca-background.html
 <div class="section level2">
 <h2 id="private-scores">1. Two-dimensional PC scores<a class="anchor" aria-label="anchor" href="#private-scores"></a>
 </h2>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>x</mi><mi>n</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>n</mi><mo>×</mo><mi>p</mi></mrow></msup></mrow><annotation encoding="application/x-tex">X=(x_1,\ldots,x_n)^\top\in\mathbb R^{n\times p}</annotation></semantics></math>
-contain
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
-observations and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
-numeric variables. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>V</mi><mo accent="true">̃</mo></mover><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mi>p</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widetilde V=(\widetilde v_1,\ldots,\widetilde v_p)</annotation></semantics></math>
+<p>Let <span class="math inline">X=(x_1,\ldots,x_n)^\top\in\mathbb
+R^{n\times p}</span> contain <span class="math inline">n</span>
+observations and <span class="math inline">p</span> numeric variables.
+Let <span class="math inline">\widetilde{V}=(\widetilde{v}_1,\ldots,\widetilde{v}_p)</span>
 be an orthonormal matrix of privately estimated PC directions. For
-selected, distinct components
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>,</mo><mi>b</mi><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>p</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">a,b\in\{1,\ldots,p\}</annotation></semantics></math>,
-define</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><mi>X</mi><mover><mi>V</mi><mo accent="true">̃</mo></mover><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mi>i</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>x</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mi>a</mi></msub></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>x</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mi>b</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow><mo>∈</mo><msup><mi>ℝ</mi><mn>2</mn></msup><mo>,</mo><mspace width="2.0em"></mspace><mi>i</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>n</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
-Y=X\widetilde V,
+selected, distinct components <span class="math inline">a,b\in\{1,\ldots,p\}</span>, define</p>
+<p><span class="math display">
+Y=X\widetilde{V},
 \qquad
-\widetilde s_i=\begin{pmatrix}
-x_i^\top\widetilde v_a\\
-x_i^\top\widetilde v_b
+\widetilde{s}_i=\begin{pmatrix}
+x_i^\top\widetilde{v}_a\\
+x_i^\top\widetilde{v}_b
 \end{pmatrix}\in\mathbb R^2,
 \qquad i=1,\ldots,n.
-</annotation></semantics></math></p>
-<p>The projected coordinates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mi>i</mi></msub><annotation encoding="application/x-tex">\widetilde s_i</annotation></semantics></math>
-are needed internally to estimate the score distribution, but are not
-returned with a private-only result. Unlike an ordinary PCA score
-scatter plot, the released visualization is a private histogram of these
-two-dimensional points.</p>
+</span></p>
+<p>The projected coordinates <span class="math inline">\widetilde{s}_i</span> are needed internally to
+estimate the score distribution, but are not returned with a
+private-only result. Unlike an ordinary PCA score scatter plot, the
+released visualization is a private histogram of these two-dimensional
+points.</p>
 </div>
 <div class="section level2">
 <h2 id="private-frame">2. Private plotting frame<a class="anchor" aria-label="anchor" href="#private-frame"></a>
@@ -140,108 +134,84 @@ two-dimensional points.</p>
 <strong>frame</strong>. Taking coordinate minima, maxima, or quantiles
 directly from private observations would leak data. Instead, the frame
 is constructed with the private quantile mechanisms of <a href="#ref-durfee-score">Durfee (2023)</a>.</p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mi>F</mi></msub><annotation encoding="application/x-tex">\varepsilon_F</annotation></semantics></math>
-be the epsilon budget allocated to frame estimation. The algorithm uses
-<strong>three pure-DP quantile releases</strong>, each with budget
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mi>F</mi></msub><mi>/</mi><mn>3</mn></mrow><annotation encoding="application/x-tex">\varepsilon_F/3</annotation></semantics></math>:
-two coordinate medians and one radial quantile.</p>
+<p>Let <span class="math inline">\varepsilon_F</span> be the epsilon
+budget allocated to frame estimation. The algorithm uses <strong>three
+pure-DP quantile releases</strong>, each with budget <span class="math inline">\varepsilon_F/3</span>: two coordinate medians and
+one radial quantile.</p>
 <div class="section level3">
 <h3 id="private-frame-center">2.1. Private coordinate medians<a class="anchor" aria-label="anchor" href="#private-frame-center"></a>
 </h3>
 <p>For the selected score coordinates, estimate a private center</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>=</mo><msub><mi>𝒬</mi><mrow><msub><mi>ε</mi><mi>F</mi></msub><mi>/</mi><mn>3</mn></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>s</mi><mrow><mi>i</mi><mn>1</mn></mrow></msub><msubsup><mo stretchy="false" form="postfix">}</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></msubsup><mo>,</mo><mn>0.5</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>2</mn></msub><mo>=</mo><msub><mi>𝒬</mi><mrow><msub><mi>ε</mi><mi>F</mi></msub><mi>/</mi><mn>3</mn></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>s</mi><mrow><mi>i</mi><mn>2</mn></mrow></msub><msubsup><mo stretchy="false" form="postfix">}</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></msubsup><mo>,</mo><mn>0.5</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><mover><mi>c</mi><mo accent="true">̃</mo></mover><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\widetilde c_1
+<p><span class="math display">
+\widetilde{c}_1
 =\mathcal Q_{\varepsilon_F/3}(\{s_{i1}\}_{i=1}^n,0.5),
 \qquad
-\widetilde c_2
+\widetilde{c}_2
 =\mathcal Q_{\varepsilon_F/3}(\{s_{i2}\}_{i=1}^n,0.5),
 \qquad
-\widetilde c=(\widetilde c_1,\widetilde c_2)^\top.
-</annotation></semantics></math></p>
-<p>Here
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝒬</mi><mi>ε</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>⋅</mi><mo>,</mo><mi>q</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathcal Q_{\varepsilon}(\cdot,q)</annotation></semantics></math>
-denotes the fully unbounded private quantile mechanism at level
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>.</p>
+\widetilde{c}=(\widetilde{c}_1,\widetilde{c}_2)^\top.
+</span></p>
+<p>Here <span class="math inline">\mathcal
+Q_{\varepsilon}(\cdot,q)</span> denotes the fully unbounded private
+quantile mechanism at level <span class="math inline">q</span>.</p>
 </div>
 <div class="section level3">
 <h3 id="private-radial-quantile-and-square-frame">2.2. Private radial quantile and square frame<a class="anchor" aria-label="anchor" href="#private-radial-quantile-and-square-frame"></a>
 </h3>
 <p>Next, compute the distance of each score from the private center:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false" form="postfix">∥</mo><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mi>i</mi></msub><mo>−</mo><mover><mi>c</mi><mo accent="true">̃</mo></mover><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><msqrt><mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mrow><mi>i</mi><mn>1</mn></mrow></msub><mo>−</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mrow><mi>i</mi><mn>2</mn></mrow></msub><mo>−</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow></msqrt><mi>.</mi></mrow><annotation encoding="application/x-tex">
-r_i=\|\widetilde s_i-\widetilde c\|_2
-=\sqrt{(\widetilde s_{i1}-\widetilde c_1)^2+(\widetilde s_{i2}-\widetilde c_2)^2}.
-</annotation></semantics></math></p>
-<p>Since
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">r_i\ge0</annotation></semantics></math>,
-the implementation applies the <strong>one-sided unbounded private
-quantile mechanism</strong> with public lower bound zero to estimate the
-0.99 quantile:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>R</mi><mo accent="true">̃</mo></mover><mo>=</mo><msubsup><mi>𝒬</mi><mrow><msub><mi>ε</mi><mi>F</mi></msub><mi>/</mi><mn>3</mn></mrow><mrow><mi mathvariant="normal">u</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>r</mi><mi>i</mi></msub><msubsup><mo stretchy="false" form="postfix">}</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></msubsup><mo>,</mo><mn>0.99</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\widetilde R
+<p><span class="math display">
+r_i=\|\widetilde{s}_i-\widetilde{c}\|_2
+=\sqrt{(\widetilde{s}_{i1}-\widetilde{c}_1)^2+(\widetilde{s}_{i2}-\widetilde{c}_2)^2}.
+</span></p>
+<p>Since <span class="math inline">r_i\ge0</span>, the implementation
+applies the <strong>one-sided unbounded private quantile
+mechanism</strong> with public lower bound zero to estimate the 0.99
+quantile:</p>
+<p><span class="math display">
+\widetilde{R}
 =\mathcal Q^{\mathrm{upper}}_{\varepsilon_F/3}
- (\{r_i\}_{i=1}^n,0.99).
-</annotation></semantics></math></p>
-<p>The radius is enlarged by a fixed factor
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>+</mo><mi>α</mi></mrow><annotation encoding="application/x-tex">1+\alpha</annotation></semantics></math>,
-with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.20</mn></mrow><annotation encoding="application/x-tex">\alpha=0.20</annotation></semantics></math>
-in the package. Writing
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>F</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mover><mi>R</mi><mo accent="true">̃</mo></mover></mrow><annotation encoding="application/x-tex">R_F=(1+\alpha)\widetilde R</annotation></semantics></math>,
-the frame becomes</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>−</mo><msub><mi>R</mi><mi>F</mi></msub><mo>,</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>+</mo><msub><mi>R</mi><mi>F</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>×</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>2</mn></msub><mo>−</mo><msub><mi>R</mi><mi>F</mi></msub><mo>,</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>2</mn></msub><mo>+</mo><msub><mi>R</mi><mi>F</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
-F=[\widetilde c_1-R_F,\widetilde c_1+R_F]
-\times[\widetilde c_2-R_F,\widetilde c_2+R_F].
-</annotation></semantics></math></p>
+(\{r_i\}_{i=1}^n,0.99).
+</span></p>
+<p>The radius is enlarged by a fixed factor <span class="math inline">1+\alpha</span>, with <span class="math inline">\alpha=0.20</span> in the package. Writing <span class="math inline">R_F=(1+\alpha)\widetilde{R}</span>, the frame
+becomes</p>
+<p><span class="math display">
+F=[\widetilde{c}_1-R_F,\widetilde{c}_1+R_F]
+\times[\widetilde{c}_2-R_F,\widetilde{c}_2+R_F].
+</span></p>
 <p>Conditional on the required mechanism assumptions, sequential
 composition of the three pure-DP quantile releases gives the frame
-allocation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>F</mi></msub><mo>,</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon_F,0)</annotation></semantics></math>.</p>
+allocation <span class="math inline">(\varepsilon_F,0)</span>.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="score-grid">3. Histogram grid and sensitivity<a class="anchor" aria-label="anchor" href="#score-grid"></a>
 </h2>
-<p>Divide the private frame into
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mi>x</mi></msub><annotation encoding="application/x-tex">m_x</annotation></semantics></math>
-horizontal-axis bins and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mi>y</mi></msub><annotation encoding="application/x-tex">m_y</annotation></semantics></math>
-vertical-axis bins, giving
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>J</mi><mo>=</mo><msub><mi>m</mi><mi>x</mi></msub><msub><mi>m</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">J=m_xm_y</annotation></semantics></math>
-rectangular cells
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>B</mi><mi>J</mi></msub></mrow><annotation encoding="application/x-tex">B_1,\ldots,B_J</annotation></semantics></math>.
-The numbers of bins are public tuning choices.</p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>h</mi><mi>F</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">h_F(\widetilde s_i)</annotation></semantics></math>
-be the grid cell assigned to score
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mi>i</mi></msub><annotation encoding="application/x-tex">\widetilde s_i</annotation></semantics></math>.
+<p>Divide the private frame into <span class="math inline">m_x</span>
+horizontal-axis bins and <span class="math inline">m_y</span>
+vertical-axis bins, giving <span class="math inline">J=m_xm_y</span>
+rectangular cells <span class="math inline">B_1,\ldots,B_J</span>. The
+numbers of bins are public tuning choices.</p>
+<p>Let <span class="math inline">h_F(\widetilde{s}_i)</span> be the grid
+cell assigned to score <span class="math inline">\widetilde{s}_i</span>.
 If a coordinate falls outside the frame, the implementation assigns it
 to the corresponding boundary bin, rather than dropping that
-observation. For cell
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>,
-define</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mi>j</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mn>𝟏</mn><mo stretchy="false" form="prefix">{</mo><msub><mi>h</mi><mi>F</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>j</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>p</mi><mi>j</mi></msub><mo>=</mo><mfrac><msub><mi>c</mi><mi>j</mi></msub><mi>n</mi></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>J</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
-c_j=\sum_{i=1}^n\mathbf1\{h_F(\widetilde s_i)=j\},
+observation. For cell <span class="math inline">j</span>, define</p>
+<p><span class="math display">
+c_j=\sum_{i=1}^n\mathbf1\{h_F(\widetilde{s}_i)=j\},
 \qquad
 p_j=\frac{c_j}{n},
 \qquad j=1,\ldots,J.
-</annotation></semantics></math></p>
-<p>Since every score is assigned to a cell,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>j</mi></msub><msub><mi>c</mi><mi>j</mi></msub><mo>=</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">\sum_j c_j=n</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>j</mi></msub><msub><mi>p</mi><mi>j</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\sum_jp_j=1</annotation></semantics></math>
-before noise is introduced.</p>
+</span></p>
+<p>Since every score is assigned to a cell, <span class="math inline">\sum_j c_j=n</span> and <span class="math inline">\sum_jp_j=1</span> before noise is introduced.</p>
 <p>Under fixed-size replacement adjacency, replacing one observation can
 remove one count from a cell and add one count to another. Conditional
 on fixed private directions, a fixed frame, and appropriate
-preprocessing, the histogram count vector
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>c</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>c</mi><mi>J</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">c=(c_1,\ldots,c_J)^\top</annotation></semantics></math>
-satisfies</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Δ</mi><mn>1</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>≤</mo><mn>2</mn><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>Δ</mi><mn>2</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>≤</mo><msqrt><mn>2</mn></msqrt><mi>.</mi></mrow><annotation encoding="application/x-tex">
+preprocessing, the histogram count vector <span class="math inline">c=(c_1,\ldots,c_J)^\top</span> satisfies</p>
+<p><span class="math display">
 \Delta_1(c)\le2,
 \qquad
 \Delta_2(c)\le\sqrt{2}.
-</annotation></semantics></math></p>
+</span></p>
 </div>
 <div class="section level2">
 <h2 id="histogram-estimators">4. Private histogram estimators<a class="anchor" aria-label="anchor" href="#histogram-estimators"></a>
@@ -249,33 +219,28 @@ satisfies</p>
 <p>Two histogram methods are available: an <strong>additive Gaussian
 histogram</strong> and a <strong>stability-based sparse
 histogram</strong>. Both operate on the same privately estimated frame,
-but their perturbation and normalization rules differ. Write
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>H</mi></msub><mo>,</mo><msub><mi>δ</mi><mi>H</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon_H,\delta_H)</annotation></semantics></math>
-for the histogram privacy allocation.</p>
+but their perturbation and normalization rules differ. Write <span class="math inline">(\varepsilon_H,\delta_H)</span> for the histogram
+privacy allocation.</p>
 <div class="section level3">
 <h3 id="additive-histogram">4.1. Additive Gaussian histogram<a class="anchor" aria-label="anchor" href="#additive-histogram"></a>
 </h3>
-<p>The additive method perturbs <strong>all
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>J</mi><annotation encoding="application/x-tex">J</annotation></semantics></math>
-bin counts</strong>, including empty bins, using a Gaussian perturbation
-by <a href="#ref-wasserman-score">Wasserman and Zhou, 2010</a>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mi>j</mi></msub><mo>=</mo><msub><mi>c</mi><mi>j</mi></msub><mo>+</mo><msub><mi>Z</mi><mi>j</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>Z</mi><mi>j</mi></msub><mover><mo>∼</mo><mrow><mi mathvariant="normal">i</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">d</mi></mrow></mover><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>H</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>σ</mi><mi>H</mi></msub><mo>=</mo><mfrac><mrow><msqrt><mn>2</mn></msqrt><msqrt><mrow><mn>2</mn><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1.25</mn><mi>/</mi><msub><mi>δ</mi><mi>H</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msqrt></mrow><msub><mi>ε</mi><mi>H</mi></msub></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\widetilde c_j=c_j+Z_j,
+<p>The additive method perturbs <strong>all <span class="math inline">J</span> bin counts</strong>, including empty bins,
+using a Gaussian perturbation by <a href="#ref-wasserman-score">Wasserman and Zhou, 2010</a>:</p>
+<p><span class="math display">
+\widetilde{c}_j=c_j+Z_j,
 \qquad Z_j\overset{\mathrm{iid}}\sim N(0,\sigma_H^2),
 \qquad
 \sigma_H=\frac{\sqrt{2}\sqrt{2\log(1.25/\delta_H)}}{\varepsilon_H}.
-</annotation></semantics></math></p>
-<p>The factor
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><mn>2</mn></msqrt><annotation encoding="application/x-tex">\sqrt{2}</annotation></semantics></math>
-comes from the count vector’s
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mo>ℓ</mo><mn>2</mn></msub><annotation encoding="application/x-tex">\ell_2</annotation></semantics></math>-sensitivity.
+</span></p>
+<p>The factor <span class="math inline">\sqrt{2}</span> comes from the
+count vector’s <span class="math inline">\ell_2</span>-sensitivity.
 Negative noisy counts are replaced by zero and the remaining values are
 normalized:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>p</mi><mo accent="true">̃</mo></mover><mi>j</mi><mrow><mi mathvariant="normal">a</mi><mi mathvariant="normal">d</mi><mi mathvariant="normal">d</mi></mrow></msubsup><mo>=</mo><mfrac><mrow><mo>max</mo><mo stretchy="false" form="prefix">{</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mi>j</mi></msub><mo>,</mo><mn>0</mn><mo stretchy="false" form="postfix">}</mo></mrow><mrow><munderover><mo>∑</mo><mrow><mi>h</mi><mo>=</mo><mn>1</mn></mrow><mi>J</mi></munderover><mo>max</mo><mo stretchy="false" form="prefix">{</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mi>h</mi></msub><mo>,</mo><mn>0</mn><mo stretchy="false" form="postfix">}</mo></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\widetilde p_j^{\mathrm{add}}
-=\frac{\max\{\widetilde c_j,0\}}
-{\sum_{h=1}^J\max\{\widetilde c_h,0\}}.
-</annotation></semantics></math></p>
+<p><span class="math display">
+\widetilde{p}_j^{\mathrm{add}}
+=\frac{\max\{\widetilde{c}_j,0\}}
+{\sum_{h=1}^J\max\{\widetilde{c}_h,0\}}.
+</span></p>
 <p>The truncation and normalization are post-processing and do not
 themselves spend privacy budget. If <strong>all</strong> truncated noisy
 counts are zero, the <code>dppca</code> stops with an error instead of
@@ -288,38 +253,32 @@ returning probabilities. For the related algorithm, see <a href="algorithms.html
 cells. It perturbs only <strong>nonempty</strong> empirical bin
 proportions, following the stability-based histogram idea discussed by
 <a href="#ref-karwa-score">Karwa and Vadhan (2018)</a>.</p>
-<p>For the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
-observations, define the Laplace noise scale and threshold</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>H</mi></msub><mo>=</mo><mfrac><mn>2</mn><mrow><mi>n</mi><msub><mi>ε</mi><mi>H</mi></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>T</mi><mi>H</mi></msub><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>+</mo><mfrac><mrow><mn>2</mn><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mi>/</mi><msub><mi>δ</mi><mi>H</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mi>n</mi><msub><mi>ε</mi><mi>H</mi></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>For the <span class="math inline">n</span> observations, define the
+Laplace noise scale and threshold</p>
+<p><span class="math display">
 b_H=\frac{2}{n\varepsilon_H},
 \qquad
 T_H=\frac1n+\frac{2\log(2/\delta_H)}{n\varepsilon_H}.
-</annotation></semantics></math></p>
-<p>For each cell with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mi>j</mi></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">c_j&gt;0</annotation></semantics></math>,
-draw
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>L</mi><mi>j</mi></msub><mo>∼</mo><mo>Laplace</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msub><mi>b</mi><mi>H</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">L_j\sim\operatorname{Laplace}(0,b_H)</annotation></semantics></math>
+</span></p>
+<p>For each cell with <span class="math inline">c_j&gt;0</span>, draw
+<span class="math inline">L_j\sim\operatorname{Laplace}(0,b_H)</span>
 and set</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mi>j</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mo>max</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>p</mi><mi>j</mi></msub><mo>+</mo><msub><mi>L</mi><mi>j</mi></msub><mo>,</mo><mn>0</mn><mo stretchy="false" form="postfix">}</mo><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mo>max</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>p</mi><mi>j</mi></msub><mo>+</mo><msub><mi>L</mi><mi>j</mi></msub><mo>,</mo><mn>0</mn><mo stretchy="false" form="postfix">}</mo><mo>≥</mo><msub><mi>T</mi><mi>H</mi></msub><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>0</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">otherwise</mtext><mi>.</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 q_j=
 \begin{cases}
 \max\{p_j+L_j,0\},&amp;\max\{p_j+L_j,0\}\ge T_H,\\
 0,&amp;\text{otherwise}.
 \end{cases}
-</annotation></semantics></math></p>
-<p>For a cell with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mi>j</mi></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">c_j=0</annotation></semantics></math>,
-set
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mi>j</mi></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">q_j=0</annotation></semantics></math>
-without drawing noise. The result is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>p</mi><mo accent="true">̃</mo></mover><mi>j</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">e</mi></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mfrac><msub><mi>q</mi><mi>j</mi></msub><mrow><munderover><mo>∑</mo><mrow><mi>h</mi><mo>=</mo><mn>1</mn></mrow><mi>J</mi></munderover><msub><mi>q</mi><mi>h</mi></msub></mrow></mfrac><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><munderover><mo>∑</mo><mrow><mi>h</mi><mo>=</mo><mn>1</mn></mrow><mi>J</mi></munderover><msub><mi>q</mi><mi>h</mi></msub><mo>&gt;</mo><mn>0</mn><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>0</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><munderover><mo>∑</mo><mrow><mi>h</mi><mo>=</mo><mn>1</mn></mrow><mi>J</mi></munderover><msub><mi>q</mi><mi>h</mi></msub><mo>=</mo><mn>0</mn><mi>.</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">
-\widetilde p_j^{\mathrm{sparse}}=
+</span></p>
+<p>For a cell with <span class="math inline">c_j=0</span>, set <span class="math inline">q_j=0</span> without drawing noise. The result
+is</p>
+<p><span class="math display">
+\widetilde{p}_j^{\mathrm{sparse}}=
 \begin{cases}
 \displaystyle\frac{q_j}{\sum_{h=1}^Jq_h},&amp;\sum_{h=1}^Jq_h&gt;0,\\[6pt]
 0,&amp;\sum_{h=1}^Jq_h=0.
 \end{cases}
-</annotation></semantics></math></p>
+</span></p>
 <p>Unlike the additive method, the sparse estimator can return an
 <strong>all-zero histogram</strong> when no cell passes the threshold.
 For the related algorithm, see the <a href="algorithms.html#alg-sparse-hist">Sparse DP histogram</a>.</p>
@@ -331,29 +290,29 @@ For the related algorithm, see the <a href="algorithms.html#alg-sparse-hist">Spa
 <p>A standalone score analysis has a <strong>loading</strong> budget for
 private directions and a <strong>score</strong> budget for the frame and
 histogram. Write</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>L</mi></msub><mo>,</mo><msub><mi>δ</mi><mi>L</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 (\varepsilon_L,\delta_L),\qquad
 (\varepsilon_{\mathrm{score}},\delta_{\mathrm{score}}).
-</annotation></semantics></math></p>
+</span></p>
 <p>The dp_score()` subdivides the score budget as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>ε</mi><mi>F</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0.35</mn><mspace width="0.167em"></mspace><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo></mtd><mtd columnalign="right" style="text-align: right"><msub><mi>δ</mi><mi>F</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0</mn><mo>,</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>ε</mi><mi>H</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0.65</mn><mspace width="0.167em"></mspace><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo></mtd><mtd columnalign="right" style="text-align: right"><msub><mi>δ</mi><mi>H</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">
+<p><span class="math display">
 \begin{aligned}
 \varepsilon_F&amp;=0.35\,\varepsilon_{\mathrm{score}},
 &amp;\delta_F&amp;=0,\\
 \varepsilon_H&amp;=0.65\,\varepsilon_{\mathrm{score}},
 &amp;\delta_H&amp;=\delta_{\mathrm{score}}.
 \end{aligned}
-</annotation></semantics></math></p>
+</span></p>
 <p>The private frame uses its epsilon equally for two coordinate medians
 and one radial quantile. The histogram receives the remaining epsilon
 and all of the score delta. With a single histogram method and private
 directions, the nominal composition budget is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>L</mi></msub><mo>+</mo><msub><mi>ε</mi><mi>F</mi></msub><mo>+</mo><msub><mi>ε</mi><mi>H</mi></msub><mo>,</mo><mspace width="0.278em"></mspace><msub><mi>δ</mi><mi>L</mi></msub><mo>+</mo><msub><mi>δ</mi><mi>H</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>L</mi></msub><mo>+</mo><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo><mspace width="0.278em"></mspace><msub><mi>δ</mi><mi>L</mi></msub><mo>+</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 (\varepsilon_L+\varepsilon_F+\varepsilon_H,
 \;\delta_L+\delta_H)
 =(\varepsilon_L+\varepsilon_{\mathrm{score}},
 \;\delta_L+\delta_{\mathrm{score}}).
-</annotation></semantics></math></p>
+</span></p>
 </div>
 <div class="section level2">
 <h2 id="synthetic-sampling">6. Synthetic score sampling<a class="anchor" aria-label="anchor" href="#synthetic-sampling"></a>
@@ -362,37 +321,30 @@ directions, the nominal composition budget is</p>
 of projected scores, rather than the original observations. Synthetic
 score points can be generated from this distribution using either center
 or uniform sampling.</p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>B</mi><mi>J</mi></msub></mrow><annotation encoding="application/x-tex">B_1,\ldots,B_J</annotation></semantics></math>
-denote the histogram bins, with private probabilities
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>p</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>p</mi><mo accent="true">̃</mo></mover><mi>J</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde p_1,\ldots,\widetilde p_J</annotation></semantics></math>.
-For each synthetic point, a bin index is first sampled according to</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>A</mi><mo>∼</mo><mo>Categorical</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>p</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>p</mi><mo accent="true">̃</mo></mover><mi>J</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>Let <span class="math inline">B_1,\ldots,B_J</span> denote the
+histogram bins, with private probabilities <span class="math inline">\widetilde{p}_1,\ldots,\widetilde{p}_J</span>. For
+each synthetic point, a bin index is first sampled according to</p>
+<p><span class="math display">
 A\sim\operatorname{Categorical}
-(\widetilde p_1,\ldots,\widetilde p_J).
-</annotation></semantics></math></p>
+(\widetilde{p}_1,\ldots,\widetilde{p}_J).
+</span></p>
 <p>The coordinates are then generated using one of two methods.</p>
 <ul>
-<li><p><strong>Center sampling:</strong> Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>c</mi><mi>A</mi></msub><annotation encoding="application/x-tex">c_A</annotation></semantics></math>
-denote the center of the selected bin
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>B</mi><mi>A</mi></msub><annotation encoding="application/x-tex">B_A</annotation></semantics></math>.
-A synthetic point is generated by adding Gaussian noise to this center:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>S</mi><mo>*</mo></msup><mo>=</mo><msub><mi>c</mi><mi>A</mi></msub><mo>+</mo><mi>Z</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<li><p><strong>Center sampling:</strong> Let <span class="math inline">c_A</span> denote the center of the selected bin
+<span class="math inline">B_A</span>. A synthetic point is generated by
+adding Gaussian noise to this center: <span class="math display">
 S^*=c_A+Z.
-</annotation></semantics></math></p></li>
+</span></p></li>
 <li><p><strong>Uniform sampling:</strong> First, a point is drawn
-uniformly within the selected bin
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>B</mi><mi>A</mi></msub><annotation encoding="application/x-tex">B_A</annotation></semantics></math>,
-and Gaussian noise is then added:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>U</mi><mo>∣</mo><mi>A</mi><mo>∼</mo><mo>Uniform</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>B</mi><mi>A</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msup><mi>S</mi><mo>*</mo></msup><mo>=</mo><mi>U</mi><mo>+</mo><mi>Z</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+uniformly within the selected bin <span class="math inline">B_A</span>,
+and Gaussian noise is then added: <span class="math display">
 U\mid A\sim\operatorname{Uniform}(B_A),
 \qquad
 S^*=U+Z.
-</annotation></semantics></math></p></li>
+</span></p></li>
 </ul>
 <p>In both methods, the Gaussian noise is independently generated as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Z</mi><mo>∼</mo><msub><mi>N</mi><mn>2</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mspace width="0.167em"></mspace><msup><mi>γ</mi><mn>2</mn></msup><mrow><mo stretchy="true" form="prefix">(</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>Δ</mi><mi>x</mi><mn>2</mn></msubsup></mtd><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><msubsup><mi>Δ</mi><mi>y</mi><mn>2</mn></msubsup></mtd></mtr></mtable><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 Z\sim N_2\left(
 0,\,
 \gamma^2
@@ -401,36 +353,25 @@ Z\sim N_2\left(
 0 &amp; \Delta_y^2
 \end{pmatrix}
 \right),
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Δ</mi><mi>x</mi></msub><annotation encoding="application/x-tex">\Delta_x</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>Δ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\Delta_y</annotation></semantics></math>
-are the histogram bin widths and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>
-is the smoothing multiplier specified by <code>bandwidth_scale</code>.
-The default values are
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\gamma=0.5</annotation></semantics></math>
-for center sampling and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>0.25</mn></mrow><annotation encoding="application/x-tex">\gamma=0.25</annotation></semantics></math>
-for uniform sampling. Setting
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\gamma=0</annotation></semantics></math>
-removes the Gaussian noise.</p>
+</span></p>
+<p>where <span class="math inline">\Delta_x</span> and <span class="math inline">\Delta_y</span> are the histogram bin widths and
+<span class="math inline">\gamma</span> is the smoothing multiplier
+specified by <code>bandwidth_scale</code>. The default values are <span class="math inline">\gamma=0.5</span> for center sampling and <span class="math inline">\gamma=0.25</span> for uniform sampling. Setting
+<span class="math inline">\gamma=0</span> removes the Gaussian
+noise.</p>
 </div>
 <div class="section level2">
 <h2 id="grouped-score">7. Group-wise private score histograms<a class="anchor" aria-label="anchor" href="#grouped-score"></a>
 </h2>
-<p>Suppose every observation has a group label
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>i</mi></msub><mo>∈</mo><mi>𝒢</mi></mrow><annotation encoding="application/x-tex">g_i\in\mathcal G</annotation></semantics></math>.
-With <strong>public, fixed group memberships</strong>, the procedure
-estimates one set of private directions and one private frame using all
-observations, then releases one histogram for each group on the same
-grid. Write</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>c</mi><mi>j</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>g</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mn>𝟏</mn><mo stretchy="false" form="prefix">{</mo><msub><mi>g</mi><mi>i</mi></msub><mo>=</mo><mi>g</mi><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>h</mi><mi>F</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>s</mi><mo accent="true">̃</mo></mover><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>j</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>g</mi><mo>∈</mo><mi>𝒢</mi><mo>,</mo><mspace width="0.222em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>J</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>Suppose every observation has a group label <span class="math inline">g_i\in\mathcal G</span>. With <strong>public, fixed
+group memberships</strong>, the procedure estimates one set of private
+directions and one private frame using all observations, then releases
+one histogram for each group on the same grid. Write</p>
+<p><span class="math display">
 c_j^{(g)}
-=\sum_{i=1}^n\mathbf1\{g_i=g,\ h_F(\widetilde s_i)=j\},
+=\sum_{i=1}^n\mathbf1\{g_i=g,\ h_F(\widetilde{s}_i)=j\},
 \qquad g\in\mathcal G,\ j=1,\ldots,J.
-</annotation></semantics></math></p>
+</span></p>
 <p>Each group applies the selected private histogram mechanism to its
 own counts and normalizes within that group.<br>
 When the groups form disjoint, publicly fixed subsets, <strong>parallel
@@ -450,39 +391,32 @@ mean-center the input data, and the private projected scores are not
 necessarily centered at the origin.</p>
 <p>To facilitate visual interpretation, the package provides an optional
 <strong>display-centering</strong> adjustment using the privately
-estimated frame center
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>c</mi><mo accent="true">̃</mo></mover><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\widetilde c=(\widetilde c_1,\widetilde c_2)^\top</annotation></semantics></math>
+estimated frame center <span class="math inline">\widetilde{c}=(\widetilde{c}_1,\widetilde{c}_2)^\top</span>
 defined in <a href="#private-frame-center">Section 2.1</a>.</p>
-<p>For each displayed coordinate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>ℓ</mo><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>,</mo><mn>2</mn><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\ell\in\{1,2\}</annotation></semantics></math>,
-define the display-centering adjustment as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>c</mi><mo>ℓ</mo><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><msub><mover><mi>c</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">if center = TRUE</mtext><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>0</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">if center = FALSE</mtext><mi>.</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">
+<p>For each displayed coordinate <span class="math inline">\ell\in\{1,2\}</span>, define the display-centering
+adjustment as</p>
+<p><span class="math display">
 c_\ell^{\mathrm{disp}}
 =
 \begin{cases}
-\widetilde c_\ell, &amp; \text{if center = TRUE},\\
+\widetilde{c}_\ell, &amp; \text{if center = TRUE},\\
 0, &amp; \text{if center = FALSE}.
 \end{cases}
-</annotation></semantics></math></p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>c</mi><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>c</mi><mn>1</mn><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msubsup><mo>,</mo><msubsup><mi>c</mi><mn>2</mn><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">c^{\mathrm{disp}}=(c_1^{\mathrm{disp}},c_2^{\mathrm{disp}})^\top</annotation></semantics></math>.
-Each histogram cell
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>B</mi><mi>j</mi></msub><annotation encoding="application/x-tex">B_j</annotation></semantics></math>
-and synthetic score point
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>S</mi><mo>*</mo></msup><annotation encoding="application/x-tex">S^*</annotation></semantics></math>
-are displayed using the translated coordinates</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>B</mi><mi>j</mi><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msubsup><mo>=</mo><msub><mi>B</mi><mi>j</mi></msub><mo>−</mo><msup><mi>c</mi><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msup><mo>,</mo><mspace width="2.0em"></mspace><msup><mi>S</mi><mrow><mi>*</mi><mo>,</mo><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></mrow></msup><mo>=</mo><msup><mi>S</mi><mo>*</mo></msup><mo>−</mo><msup><mi>c</mi><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+</span></p>
+<p>Let <span class="math inline">c^{\mathrm{disp}}=(c_1^{\mathrm{disp}},c_2^{\mathrm{disp}})^\top</span>.
+Each histogram cell <span class="math inline">B_j</span> and synthetic
+score point <span class="math inline">S^*</span> are displayed using the
+translated coordinates</p>
+<p><span class="math display">
 B_j^{\mathrm{disp}}=B_j-c^{\mathrm{disp}},
 \qquad
 S^{*,\mathrm{disp}}=S^*-c^{\mathrm{disp}}.
-</annotation></semantics></math></p>
+</span></p>
 <p>With <code>center = TRUE</code> (the default), the displayed frame
-becomes
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>F</mi><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msup><mo>=</mo><mi>F</mi><mo>−</mo><mover><mi>c</mi><mo accent="true">̃</mo></mover></mrow><annotation encoding="application/x-tex">F^{\mathrm{disp}}=F-\widetilde c</annotation></semantics></math>,
-whose center is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,0)</annotation></semantics></math>.
-With <code>center = FALSE</code>, the original private frame coordinates
-are displayed without any shift.</p>
+becomes <span class="math inline">F^{\mathrm{disp}}=F-\widetilde{c}</span>, whose
+center is <span class="math inline">(0,0)</span>. With
+<code>center = FALSE</code>, the original private frame coordinates are
+displayed without any shift.</p>
 <p>For group-wise histograms, the same display-centering adjustment is
 applied to all groups. The ordinary PCA reference, when requested,
 already uses sample-mean-centered scores and a zero-centered reference
@@ -491,9 +425,7 @@ frame.</p>
 changes only the plotted coordinates without modifying the stored
 private estimates, histogram probabilities, or sampled points, and
 requires no additional privacy budget. The same adjustment is also used
-in the DP biplot to allow variable arrows to originate at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,0)</annotation></semantics></math>
-in <a href="theory-dp-visulalization.html#dp-biplot-visualization">Section
+in the DP biplot to allow variable arrows to originate at <span class="math inline">(0,0)</span> in <a href="theory-dp-visulalization.html#dp-biplot-visualization">Section
 3.2: DP biplot</a>. In <code><a href="../reference/plot.dp_pca.html">plot.dp_pca()</a></code>, the
 <code>center</code> option is shared by the score and biplot
 displays.</p>

@@ -28,7 +28,7 @@ Use the tabs at the top of the results panel to switch between four analyses.
 | **Scree** | Private scree values and proportions of variance explained (PVE), using the clipped, PMWM, or Huber estimators. |
 | **Score** | Private two-dimensional score histograms and synthetic sampled points, using additive and/or sparse histogram methods. Grouped displays are available when group labels are selected. |
 
-For more detail on the methods, see the [DP Loading](theory-dp-loading.html), [DP Scree](theory-dp-scree.html), and [DP Score](theory-dp-score.html) articles.
+For more detail on the methods, see the [DP Loading](method-dp-loading.html), [DP Scree](method-dp-scree.html), and [DP Score](method-dp-score.html) articles.
 
 ## 2. Getting started
 

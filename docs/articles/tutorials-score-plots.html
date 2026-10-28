@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>DP Score Plots • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="DP Score Plots">
 <meta name="description" content="Estimate and plot private two-dimensional PCA score histograms, configure synthetic sampling, compare groups, and reuse directions.
@@ -44,13 +45,13 @@
   </ul>
 </li>
 <li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-theory" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Theory</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-theory">
-<li><a class="dropdown-item" href="../articles/theory-pca-background.html">PCA Background</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-loading.html">DP Directions</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-scree.html">DP Eigenvalues</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-score.html">DP Scores</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-visualization.html">DP PCA Visualization</a></li>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-methodology" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Methodology</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-methodology">
+<li><a class="dropdown-item" href="../articles/method-pca-background.html">PCA Background</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-loading.html">DP Directions</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-scree.html">DP Eigenvalues</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-score.html">DP Scores</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-visualization.html">DP PCA Visualization</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/algorithms.html">Algorithms</a></li>
@@ -92,7 +93,7 @@ grouped plots, plot controls, and reuse of previously estimated private
 PC directions.</p>
 <p>The focus is on <strong>R arguments, examples, and
 visualization</strong>. For the mathematics of the private frame,
-histogram mechanisms, and privacy accounting, see <a href="theory-dp-score.html">Theory of DP Score</a>. For data
+histogram mechanisms, and privacy accounting, see <a href="method-dp-score.html">DP Score Methodology</a>. For data
 requirements and general budget allocation, see <a href="tutorials-getting-started.html">Getting Started</a>.</p>
 <div class="section level2">
 <h2 id="load-the-example-data">1. Load the example data<a class="anchor" aria-label="anchor" href="#load-the-example-data"></a>
@@ -121,9 +122,8 @@ equally between them.</p>
 <span>  eps <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>  delta <span class="op">=</span> <span class="fl">1e-4</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>In this example, loading and score each receive
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>ε</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>3</mn><mo>,</mo><mn>5</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">(\varepsilon,\delta)=(3,5\times10^{-5})</annotation></semantics></math>
-when used by <code><a href="../reference/dp_score.html">dp_score()</a></code>. Within the score allocation, the
+<p>In this example, loading and score each receive <span class="math inline">(\varepsilon,\delta)=(3,5\times10^{-5})</span> when
+used by <code><a href="../reference/dp_score.html">dp_score()</a></code>. Within the score allocation, the
 package automatically assigns <strong>35% of score epsilon to frame
 estimation</strong>, <strong>65% to the histogram</strong>, and
 <strong>all score delta to the histogram</strong>.</p>
@@ -227,8 +227,8 @@ Private PC Directions</a> in the DP Scree Plot tutorial.</p>
 <h3 id="additive-and-sparse-methods">2.1. Additive and sparse methods<a class="anchor" aria-label="anchor" href="#additive-and-sparse-methods"></a>
 </h3>
 <p>The two estimators differ in how they perturb bin frequencies. The
-full mathematical definitions are in <a href="theory-dp-score.html#additive-histogram">Additive histogram</a>
-and <a href="theory-dp-score.html#sparse-histogram">Sparse
+full mathematical definitions are in <a href="method-dp-score.html#additive-histogram">Additive histogram</a>
+and <a href="method-dp-score.html#sparse-histogram">Sparse
 histogram</a>.</p>
 <style>
 .score-method-table table { width: 100%; table-layout: fixed; }
@@ -409,9 +409,8 @@ allocation, and grouping settings.</td>
 centering</strong>, not the estimation of private directions, the score
 frame, or histogram probabilities. By default,
 <code>center = TRUE</code> shifts the midpoint of the privately
-estimated score frame to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,0)</annotation></semantics></math>
-in both histogram and synthetic-sample plots, See <a href="theory-dp-score.html#score-display-centering">Display
+estimated score frame to <span class="math inline">(0,0)</span> in both
+histogram and synthetic-sample plots, See <a href="method-dp-score.html#score-display-centering">Display
 centering</a>.</p>
 <p>To retain the original private frame coordinates in the plots, set
 <code>center = FALSE</code> explicitly:</p>
@@ -438,7 +437,7 @@ centering</a>.</p>
 <p>These are <strong>500 newly generated coordinates</strong>. A bin is
 first selected using the stored private probabilities; the point is then
 generated within that bin or at its center, optionally with Gaussian
-jitter. See <a href="theory-dp-score.html#synthetic-sampling">Synthetic
+jitter. See <a href="method-dp-score.html#synthetic-sampling">Synthetic
 score sampling</a>.</p>
 <p>The main arguments of <code><a href="../reference/sampling_control.html">sampling_control()</a></code> are:</p>
 <style>
@@ -582,7 +581,7 @@ groups using <strong>one shared private direction estimate, one frame,
 and one grid</strong>. Group labels and their fixed membership must be
 public for the stated group-level privacy accounting. The
 <code>group</code> column is excluded from PCA features. The theory and
-assumptions are detailed in <a href="theory-dp-score.html#grouped-score">Group-wise private score
+assumptions are detailed in <a href="method-dp-score.html#grouped-score">Group-wise private score
 histograms</a>.</p>
 <div class="section level3">
 <h3 id="fit-a-private-histogram-for-each-group">5.1. Fit a private histogram for each group<a class="anchor" aria-label="anchor" href="#fit-a-private-histogram-for-each-group"></a>

@@ -22,6 +22,7 @@ The fitting functions return S3 objects that can be inspected with
 Install the released package from CRAN:
 
 ``` r
+
 install.packages("dppca")
 ```
 
@@ -29,11 +30,13 @@ To use the latest development code shown in the tutorials, install from
 GitHub:
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("yejinjo0220/dppca")
 ```
 
 ``` r
+
 library(dppca)
 ```
 
@@ -47,6 +50,7 @@ estimator** (`"clipped"`, `"pmwm"`, or `"huber"`) and **one score
 histogram estimator** (`"add"` or `"sparse"`).
 
 ``` r
+
 library(dppca)
 data("gau", package = "dppca")
 X <- gau  # 1,000 observations, 20 numeric variables
@@ -91,6 +95,7 @@ You can choose individual panels and their display settings without
 refitting:
 
 ``` r
+
 set.seed(456)
 selected_plots <- plot(
   pca_fit,
@@ -110,7 +115,7 @@ selected_plots$private$plots$biplot
 
 The `variables` argument defaults to the **10 variables with the largest
 Euclidean norms of their private loading coefficients on the displayed
-two PC axes**. T he same selected variables are reused in loading,
+two PC axes**. The same selected variables are reused in loading,
 variable, and biplot panels.
 
 ### Optional non-private comparison
@@ -134,6 +139,7 @@ The standalone workflows offer additional method and display choices.
 ### Private loading directions
 
 ``` r
+
 loading_fit <- dp_loading(
   X,
   privacy = privacy_control(eps = 3, delta = 1e-4)
@@ -146,6 +152,7 @@ loading_plot <- plot(loading_fit, type = "vector", variables = 10)
 ### Scree / PVE
 
 ``` r
+
 scree_fit <- dp_scree(
   X,
   k = 5,
@@ -166,6 +173,7 @@ method-specific controls.
 ### Score histograms and synthetic samples
 
 ``` r
+
 score_fit <- dp_score(
   X,
   privacy = privacy_control(eps = 3, delta = 1e-4),
@@ -196,6 +204,7 @@ synthetic score points and form group histograms. The `gau_g` dataset
 contains the same 20 numeric features as `gau`, plus a `group` label:
 
 ``` r
+
 data("gau_g", package = "dppca")
 
 set.seed(123)
@@ -237,6 +246,7 @@ its required components**:
 For example, customize the integrated budget as follows:
 
 ``` r
+
 privacy <- privacy_control(
   eps = 6,
   delta = 1e-4,
@@ -287,15 +297,15 @@ The **practical tutorials** are:
   five plots built from a shared fit.
 
 For the mathematics, see [PCA
-Background](https://yejinjo0220.github.io/dppca/articles/theory-pca-background.html),
-[Theory of DP
-Loading](https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.html),
-[Theory of DP
-Scree](https://yejinjo0220.github.io/dppca/articles/theory-dp-scree.html),
-[Theory of DP
-Score](https://yejinjo0220.github.io/dppca/articles/theory-dp-score.html),
-and [Theory of DP PCA
-Visualizations](https://yejinjo0220.github.io/dppca/articles/theory-dp-visualization.html).
+Background](https://yejinjo0220.github.io/dppca/articles/method-pca-background.html),
+[DP Directions
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.html),
+[DP Scree
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.html),
+[DP Score
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.html),
+and [DP PCA Visualization
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-visualization.html).
 
 For complete argument descriptions, use the R help pages:
 [`?dp_loading`](https://yejinjo0220.github.io/dppca/reference/dp_loading.md),

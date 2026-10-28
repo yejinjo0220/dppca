@@ -1,0 +1,310 @@
+# Differentially Private PCA Visualizations
+
+The `dppca` package combines **private PC directions, private variance
+estimates along those directions, and private score histograms** to
+construct five PCA visualizations: **scree, loading, score, variable,
+and biplot**. This article describes how these visualizations are
+constructed from DP estimates, what information each plot represents,
+and how their interpretations differ from those of ordinary PCA.
+Particular attention is given to the DP variable plot and biplot, which
+combine multiple private quantities.
+
+For background on ordinary PCA visualizations, see [PCA
+Background](https://yejinjo0220.github.io/dppca/articles/method-pca-background.md).
+The underlying DP estimation methods are described in [DP Directions
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md),
+[DP Scree
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.md),
+and [DP Score
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.md).
+For implementation details, plotting options, and examples, see the [DP
+PCA Visualization
+Tutorial](https://yejinjo0220.github.io/dppca/articles/tutorials-dp-visualization.md).
+
+## 1. What is estimated privately?
+
+Let X\in\mathbb R^{n\times p} contain observations
+x_1,\ldots,x_n\in\mathbb R^p in its rows. For clarity, suppose that
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md)
+retains the first k components and displays two selected axes
+`axes = c(a, b)`, with a\ne b and a,b\in\\1,\ldots,k\\.
+
+The integrated procedure uses the following quantities:
+
+| Quantity | Notation | Role |
+|:---|:---|:---|
+| DP PC directions | \widetilde{V}=(\widetilde{v}\_1,\ldots,\widetilde{v}\_p) | Define the common PC axes and loading coefficients. |
+| DP eigenvalues | \widetilde{\lambda}\_1,\ldots,\widetilde{\lambda}\_k | Determine scree/PVE and scale variable and biplot coordinates. |
+| DP score frame | \widetilde{F} | Defines the two-dimensional plotting region. |
+| DP score histogram | \widetilde{h} | Describes the distribution of projected observations without releasing individual coordinates. |
+| Synthetic score points | s_1^\*,\ldots,s_N^\* | Provide a point-based view sampled from \widetilde{h}. |
+
+The mathematical definitions and estimation procedures for these
+quantities are described in the corresponding articles: [DP Directions
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md)
+for DP PC directions, [DP Scree
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.md)
+for DP eigenvalues, and [DP Score
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.md)
+for the DP score frame, histogram, and synthetic score sampling. These
+five quantities are used to construct five DP PCA visualizations: scree,
+loading, score, variable, and biplot.
+
+## 2. Privacy budget and shared estimation
+
+Write the total privacy budget as (\varepsilon,\delta). The integrated
+procedure requires allocations for `loading`, `scree`, and `score`:
+\begin{aligned}
+\varepsilon_L+\varepsilon_S+\varepsilon\_{\mathrm{score}}&=\varepsilon,\\
+\delta_L+\delta_S+\delta\_{\mathrm{score}}&=\delta. \end{aligned}
+
+Within the score allocation, the package uses
+
+\begin{aligned} \varepsilon_F&=0.35\\\varepsilon\_{\mathrm{score}},
+&\delta_F&=0,\\ \varepsilon_H&=0.65\\\varepsilon\_{\mathrm{score}},
+&\delta_H&=\delta\_{\mathrm{score}}, \end{aligned}
+
+where F denotes the private **frame** and H the private **histogram**.
+The frame budget is shared equally among two private coordinate medians
+and a private radial quantile.
+
+The resulting estimation flow is \begin{gathered} X\\ \longrightarrow\\
+\widetilde{V}\quad\text{(loading budget)},\\ (X,\widetilde{V})\\
+\longrightarrow\\ \widetilde{\lambda}\_{1:k}\quad\text{(scree
+budget)},\\ (X,\widetilde{V})\\ \longrightarrow\\ \widetilde{F}\\
+\longrightarrow\\ \widetilde{h} \quad\text{(score budget)},\\
+(\widetilde{V},\widetilde{\lambda}\_{1:k},\widetilde{F},\widetilde{h})
+\\ \longrightarrow\\ \text{five PCA displays}. \end{gathered}
+
+Only **one** direction matrix, **one** selected scree method, and
+**one** selected histogram method are estimated within an integrated
+fit.
+
+## 3. Five DP PCA Visualization
+
+The five DP PCA visualizations are scree, loading, score, variable, and
+biplot. The construction of the DP scree, loading, and score plots is
+described in [DP Directions
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md),
+[DP Scree
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.md),
+and [DP Score
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.md),
+respectively. Therefore, this section focuses on the construction and
+interpretation of the DP variable plot and DP biplot.
+
+### 3.1. DP variable plot (correlation-style coordinates)
+
+In ordinary PCA, a variable plot represents the correlations between the
+original variables and the PC scores. As described in [Section 4.4 of
+PCA
+Background](https://yejinjo0220.github.io/dppca/articles/method-pca-background.html#variable-plot),
+the correlation between variable j and the \ellth PC score is
+
+\operatorname{Cor}(X\_{\cdot j},S\_{\cdot\ell}) =
+\frac{\sqrt{\widehat\lambda\_\ell}\\\widehat v\_{j\ell}}
+{\widehat\sigma_j},
+
+where \widehat\lambda\_\ell and \widehat v\_{j\ell} are the sample
+eigenvalue and loading coefficient, respectively, and \widehat\sigma_j
+is the sample standard deviation of variable j.
+
+In the DP setting, these empirical quantities cannot be directly
+released without accounting for their privacy costs. Instead,
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md)
+constructs the variable plot using privately estimated PC directions and
+eigenvalues.
+
+Let \widetilde{V}\_k=(\widetilde{v}\_1,\ldots,\widetilde{v}\_k) denote
+the first k private PC directions, and let
+\widetilde{\lambda}\_1,\ldots,\widetilde{\lambda}\_k be the
+corresponding nonnegative private eigenvalues. These quantities define a
+DP-based covariance approximation,
+
+\widetilde{\Sigma}\_k = \widetilde{V}\_k \operatorname{diag}
+(\widetilde{\lambda}\_1,\ldots,\widetilde{\lambda}\_k)
+\widetilde{V}\_k^\top.
+
+Therefore, the implied variance of variable j is
+
+\widetilde{\sigma}\_{j,k}^2 = (\widetilde{\Sigma}\_k)\_{jj} =
+\sum\_{\ell=1}^{k}
+\widetilde{\lambda}\_\ell\widetilde{v}\_{j\ell}^{\\2}.
+
+Using this quantity in place of the sample variance, we define the DP
+correlation coordinate of variable j along PC \ell as
+
+\widetilde{r}\_{j\ell} = \frac{
+\sqrt{\widetilde{\lambda}\_\ell}\\\widetilde{v}\_{j\ell} }{
+\widetilde{\sigma}\_{j,k} }, \qquad \widetilde{\sigma}\_{j,k}\>0.
+
+For two selected components a and b, the DP variable plot represents
+variable j by
+
+R_j^{\mathrm{DP}} = (\widetilde{r}\_{ja},\widetilde{r}\_{jb}).
+
+Variables with zero implied variance are omitted because their
+coordinates are undefined.
+
+As in the ordinary variable plot, the DP coordinates lie inside or on
+the unit circle. Indeed,
+
+\\R_j^{\mathrm{DP}}\\\_2^2 = \widetilde{r}\_{ja}^{\\2} +
+\widetilde{r}\_{jb}^{\\2} = \frac{
+\widetilde{\lambda}\_a\widetilde{v}\_{ja}^{\\2} +
+\widetilde{\lambda}\_b\widetilde{v}\_{jb}^{\\2} }{
+\displaystyle\sum\_{\ell=1}^{k}
+\widetilde{\lambda}\_\ell\widetilde{v}\_{j\ell}^{\\2} } \le 1.
+
+The squared distance from the origin measures how much of the
+reconstructed variance of variable j is attributed to the two displayed
+PCs, relative to all k retained PCs. Variables near the unit circle have
+most of their reconstructed variance associated with the displayed PCs,
+whereas variables near the origin have more of their reconstructed
+variance associated with the other retained PCs.
+
+The angles between variable vectors can provide information about their
+associations in the displayed PC plane. Vectors pointing in similar
+directions suggest positive associations, while vectors pointing in
+opposite directions suggest negative associations. Approximately
+perpendicular vectors indicate weak associations within the displayed
+plane. These interpretations are most informative when the variables are
+well represented by the selected components.
+
+### 3.2. DP biplot
+
+A **biplot** displays observations and variables simultaneously in a
+low-dimensional representation of the data. In ordinary PCA, as
+described in [Section 4.5 of PCA
+Background](https://yejinjo0220.github.io/dppca/articles/method-pca-background.html#biplot),
+the biplot coordinates are constructed from the singular value
+decomposition (SVD) of the centered data matrix. For two selected
+components a and b, the observation and variable coordinates are given
+by
+
+G\_\alpha=U_ID_I^{1-\alpha}, \qquad H\_\alpha=V_ID_I^\alpha, \qquad
+0\le\alpha\le1,
+
+where I=\\a,b\\ and D_I=\operatorname{diag}(d_a,d_b) contains the
+corresponding singular values. The parameter \alpha determines how the
+singular-value scaling is distributed between observations and
+variables.
+
+In the DP setting,
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md)
+constructs a **DP biplot** using synthetic score points generated from
+the private score histogram, together with privately estimated PC
+directions and eigenvalues. Recall that the singular values in ordinary
+PCA satisfy d\_\ell=\sqrt{(n-1)\widehat\lambda\_\ell}. Accordingly, we
+define the corresponding DP-based scaling factors as
+
+\widetilde{d}\_\ell = \sqrt{(n-1)\widetilde{\lambda}\_\ell}, \qquad
+\ell\in\\a,b\\,
+
+where \widetilde{\lambda}\_\ell\ge0 denotes the private eigenvalues and
+n is the original sample size.
+
+Let s_i^\*=(s\_{ia}^\*,s\_{ib}^\*) denote the ith synthetic score point
+generated from the private histogram, and let \widetilde{v}\_{j\ell}
+denote the coefficient of variable j in the \ellth private PC direction.
+For \widetilde{d}\_\ell\>0, the DP biplot coordinates are defined by
+
+G\_{i\ell}^{\mathrm{DP}}(\alpha) =
+\frac{s\_{i\ell}^\*-c\_\ell^{\mathrm{disp}}}
+{\widetilde{d}\_\ell^\alpha}, \qquad H\_{j\ell}^{\mathrm{DP}}(\alpha) =
+\widetilde{v}\_{j\ell}\widetilde{d}\_\ell^\alpha,
+
+where c\_\ell^{\mathrm{disp}} is the display-centering adjustment
+defined in [Section 8.1 of DP Score
+Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.html#score-display-centering),
+with its two coordinates corresponding to the selected PC axes a and b,
+respectively.
+
+With `center = TRUE` (the default), the synthetic scores are translated
+relative to the private frame center, and the variable arrows originate
+at (0,0). With `center = FALSE`, the scores remain unshifted, and the
+variable arrows originate at the private frame center expressed in the
+alpha-transformed coordinates.
+
+For the two selected components, the rows G_i^{\mathrm{DP}}(\alpha) =
+\left( G\_{ia}^{\mathrm{DP}}(\alpha), G\_{ib}^{\mathrm{DP}}(\alpha)
+\right) represent synthetic observations, while
+H_j^{\mathrm{DP}}(\alpha) = \left( H\_{ja}^{\mathrm{DP}}(\alpha),
+H\_{jb}^{\mathrm{DP}}(\alpha) \right) represent the original variables
+through their private direction coefficients.
+
+As in ordinary PCA, the parameter \alpha controls the relative scaling
+of the observation and variable coordinates:
+
+- **\alpha=0:** Observation coordinates retain the synthetic score scale
+  (apart from optional centering), and variable coordinates are the
+  private PC direction coefficients.
+- **\alpha=1/2:** The DP-based singular-value scaling is shared
+  symmetrically between observations and variables.
+- **\alpha=1:** Variable coordinates are multiplied by the full DP-based
+  singular-value factors, while synthetic score coordinates are divided
+  by them.
+
+**Arrow scaling.** To display observations and variable vectors on a
+common plotting region,
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md)
+applies an additional scaling factor to the variable vectors.
+
+Let r_G = Q\_{0.9} \left( \left\\ \left\\ G_i^{\mathrm{DP}}(\alpha) -
+\overline G^{\mathrm{DP}}(\alpha) \right\\\_2 \right\\\_{i=1}^{N}
+\right)
+
+denote the empirical 90th percentile of the distances of the synthetic
+score points from their mean, and let
+
+r_H = \max\_{1\le j\le p} \left\\ H_j^{\mathrm{DP}}(\alpha) \right\\\_2.
+
+The common arrow scaling factor is
+
+\gamma = \begin{cases} \dfrac{r_G}{r_H}, & r_G\>0,\\ r_H\>0,\\ 0, &
+\text{otherwise}. \end{cases}
+
+Therefore, the displayed variable vectors are
+\widetilde{H}\_j^{\mathrm{DP}}(\alpha) = \gamma
+H_j^{\mathrm{DP}}(\alpha).
+
+**Ordinary reference.** For comparison, `non_private = TRUE` asks the
+package to compute ordinary PCA from the sample covariance matrix. Let
+\widehat V and \widehat\lambda\_\ell be its directions and eigenvalues.
+Its scores are sample-mean centered, S=(X-\mathbf1_n\bar x^\top)\widehat
+V.
+
+## 4. Summary
+
+| Plot | DP quantities used | Interpretation |  |
+|:---|:---|:---|:---|
+| **Scree / PVE** | \widetilde{\lambda}\_1,\ldots,\widetilde{\lambda}\_k | Shows the relative importance of the estimated PCs. PVE is normalized over the k retained components. |  |
+| **Loading** | \widetilde{V} | Shows how the original variables contribute to the private PC directions. |  |
+| **Score** | \widetilde{F}, \widetilde{h}, and s_1^\*,\ldots,s_N^\* | Shows the distribution of projected observations without directly releasing their individual scores. |  |
+| **Variable** | \widetilde{V}\_k and \widetilde{\lambda}\_1,\ldots,\widetilde{\lambda}\_k | Shows relationships among variables implied by the private covariance approximation, rather than their exact empirical correlations. |  |
+| **Biplot** | \widetilde{V}, \widetilde{\lambda}\_1,\ldots,\widetilde{\lambda}\_k, and s_1^\*,\ldots,s_N^\* | Provides a joint view of the private score distribution and variable directions, with additional scaling for visualization. |  |
+
+The five DP PCA visualizations can be generated using
+[`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md)
+and [`plot()`](https://rdrr.io/r/graphics/plot.default.html), which
+reuse the estimated private quantities across the plots. For
+implementation details, plotting options, and examples, see the [DP PCA
+Visualization
+Tutorial](https://yejinjo0220.github.io/dppca/articles/tutorials-dp-visualization.md).
+
+## References and further reading
+
+- Gabriel, K. R. (1971). The biplot graphic display of matrices with
+  application to principal component analysis. *Biometrika*, 58(3),
+  453–467. <https://doi.org/10.1093/biomet/58.3.453>
+- Jolliffe, I. T., and Cadima, J. (2016). Principal component analysis:
+  a review and recent developments. *Philosophical Transactions of the
+  Royal Society A*, 374(2065), 20150202.
+  <https://doi.org/10.1098/rsta.2015.0202>
+- For DP mechanisms, notation, assumptions, and primary method
+  references, see [DP Directions
+  Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md),
+  [DP Scree
+  Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.md),
+  and [DP Score
+  Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-score.md).

@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Principal Component Analysis • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="Principal Component Analysis">
 <meta name="description" content="An introduction to principal component directions, scores, explained variance, and the main graphical representations of PCA.
@@ -92,69 +93,53 @@ multivariate observations in a lower-dimensional space while preserving
 as much variation as possible. It constructs mutually orthogonal axes,
 called principal component (PC) directions, and projects observations
 onto these axes.</p>
-<p>Suppose we observe
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
-vectors
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>x</mi><mi>n</mi></msub><mo>∈</mo><msup><mi>ℝ</mi><mi>p</mi></msup></mrow><annotation encoding="application/x-tex">x_1,\ldots,x_n\in\mathbb{R}^p</annotation></semantics></math>,
-collected as the rows of an
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>×</mo><mi>p</mi></mrow><annotation encoding="application/x-tex">n\times p</annotation></semantics></math>
-data matrix</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>x</mi><mn>1</mn><mi>⊤</mi></msubsup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>⋮</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mi>x</mi><mi>n</mi><mi>⊤</mi></msubsup></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>Suppose we observe <span class="math inline">n</span> vectors <span class="math inline">x_1,\ldots,x_n\in\mathbb{R}^p</span>, collected as
+the rows of an <span class="math inline">n\times p</span> data
+matrix</p>
+<p><span class="math display">
 X=
 \begin{bmatrix}
 x_1^\top\\
 \vdots\\
 x_n^\top
 \end{bmatrix}.
-</annotation></semantics></math></p>
+</span></p>
 <p>Each row represents an observation, and each column represents a
 variable.</p>
 </div>
 <div class="section level2">
 <h2 id="population-pca">2. Population PCA<a class="anchor" aria-label="anchor" href="#population-pca"></a>
 </h2>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ξ</mi><mo>∈</mo><msup><mi>ℝ</mi><mi>p</mi></msup></mrow><annotation encoding="application/x-tex">\xi\in\mathbb{R}^p</annotation></semantics></math>
-be a random vector with mean
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>ξ</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\mu=E[\xi]</annotation></semantics></math>
-and covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Σ</mi><mo>=</mo><mo>Cov</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>ξ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">\Sigma
+<p>Let <span class="math inline">\xi\in\mathbb{R}^p</span> be a random
+vector with mean <span class="math inline">\mu=E[\xi]</span> and
+covariance matrix <span class="math inline">\Sigma
 =
-\operatorname{Cov}(\xi),</annotation></semantics></math> assuming finite
-second moments.</p>
-<p>For a unit vector
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>v</mi><mo>∈</mo><msup><mi>ℝ</mi><mi>p</mi></msup></mrow><annotation encoding="application/x-tex">v\in\mathbb{R}^p</annotation></semantics></math>,
-the variance of the projection
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>v</mi><mi>⊤</mi></msup><mi>ξ</mi></mrow><annotation encoding="application/x-tex">v^\top\xi</annotation></semantics></math>
-is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Var</mo><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>ξ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi></mrow><annotation encoding="application/x-tex">\operatorname{Var}(v^\top\xi)=v^\top\Sigma v</annotation></semantics></math>.</p>
+\operatorname{Cov}(\xi),</span> assuming finite second moments.</p>
+<p>For a unit vector <span class="math inline">v\in\mathbb{R}^p</span>,
+the variance of the projection <span class="math inline">v^\top\xi</span> is <span class="math inline">\operatorname{Var}(v^\top\xi)=v^\top\Sigma
+v</span>.</p>
 <p>The first PC direction maximizes this projected variance:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mn>1</mn></msub><mo>∈</mo><mo>arg</mo><munder><mo>max</mo><mrow><mo stretchy="false" form="postfix">∥</mo><mi>v</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo>=</mo><mn>1</mn></mrow></munder><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 v_1\in\arg\max_{\|v\|_2=1}v^\top\Sigma v.
-</annotation></semantics></math> Each subsequent direction maximizes the
-same quantity subject to being orthogonal to the preceding
-directions.</p>
-<p>Since
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>
-is symmetric and positive semidefinite, it has an
-eigen-decomposition</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Σ</mi><mo>=</mo><mi>V</mi><mi>Λ</mi><msup><mi>V</mi><mi>⊤</mi></msup><mo>,</mo><mspace width="1.0em"></mspace><mi>V</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>v</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>v</mi><mi>p</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><mi>Λ</mi><mo>=</mo><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>λ</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>λ</mi><mi>p</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+</span> Each subsequent direction maximizes the same quantity subject to
+being orthogonal to the preceding directions.</p>
+<p>Since <span class="math inline">\Sigma</span> is symmetric and
+positive semidefinite, it has an eigen-decomposition</p>
+<p><span class="math display">
 \Sigma=V\Lambda V^\top,
 \quad
 V=[v_1,\ldots,v_p],
 \quad
 \Lambda=\operatorname{diag}(\lambda_1,\ldots,\lambda_p),
-</annotation></semantics></math></p>
-<p>where the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>v</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">v_\ell</annotation></semantics></math>
-are orthonormal eigenvectors and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>λ</mi><mn>1</mn></msub><mo>≥</mo><mi>⋯</mi><mo>≥</mo><msub><mi>λ</mi><mi>p</mi></msub><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\lambda_1\ge\cdots\ge\lambda_p\ge0</annotation></semantics></math>.
-In particular,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Σ</mi><msub><mi>v</mi><mo>ℓ</mo></msub><mo>=</mo><msub><mi>λ</mi><mo>ℓ</mo></msub><msub><mi>v</mi><mo>ℓ</mo></msub><mo>,</mo><mspace width="1.0em"></mspace><mo>Var</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>v</mi><mo>ℓ</mo><mi>⊤</mi></msubsup><mi>ξ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>λ</mi><mo>ℓ</mo></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+</span></p>
+<p>where the <span class="math inline">v_\ell</span> are orthonormal
+eigenvectors and <span class="math inline">\lambda_1\ge\cdots\ge\lambda_p\ge0</span>. In
+particular,</p>
+<p><span class="math display">
 \Sigma v_\ell=\lambda_\ell v_\ell,
 \quad
 \operatorname{Var}(v_\ell^\top\xi)=\lambda_\ell.
-</annotation></semantics></math></p>
+</span></p>
 <p>Thus, <strong>eigenvectors determine the PC directions</strong>,
 while <strong>eigenvalues quantify the variance along those
 directions</strong>. The first few principal components account for the
@@ -163,11 +148,9 @@ largest amounts of variation along mutually orthogonal directions.</p>
 <div class="section level2">
 <h2 id="sample-pca">3. Sample PCA<a class="anchor" aria-label="anchor" href="#sample-pca"></a>
 </h2>
-<p>In practice, the population covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>
-is generally unknown, so PCA is performed using the sample covariance
-matrix</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mo>,</mo><mspace width="2.0em"></mspace><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msub><mi>x</mi><mi>i</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>In practice, the population covariance matrix <span class="math inline">\Sigma</span> is generally unknown, so PCA is
+performed using the sample covariance matrix</p>
+<p><span class="math display">
 \widehat \Sigma
 =
 \frac{1}{n-1}
@@ -175,95 +158,74 @@ matrix</p>
 (x_i-\bar x)(x_i-\bar x)^\top,
 \qquad
 \bar x=\frac1n\sum_{i=1}^n x_i.
-</annotation></semantics></math></p>
-<p>Equivalently, letting
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>c</mi></msub><mo>=</mo><mi>X</mi><mo>−</mo><msub><mn>𝟏</mn><mi>n</mi></msub><msup><mover><mi>x</mi><mo accent="true">‾</mo></mover><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">X_c=X-\mathbf{1}_n\bar x^\top</annotation></semantics></math>
-denote the centered data matrix, where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mn>𝟏</mn><mi>n</mi></msub><annotation encoding="application/x-tex">\mathbf{1}_n</annotation></semantics></math>
-is the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>-dimensional
-vector of ones, we can write</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><msubsup><mi>X</mi><mi>c</mi><mi>⊤</mi></msubsup><msub><mi>X</mi><mi>c</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+</span></p>
+<p>Equivalently, letting <span class="math inline">X_c=X-\mathbf{1}_n\bar x^\top</span> denote the
+centered data matrix, where <span class="math inline">\mathbf{1}_n</span> is the <span class="math inline">n</span>-dimensional vector of ones, we can
+write</p>
+<p><span class="math display">
 \widehat \Sigma =\frac{1}{n-1}X_c^\top X_c.
-</annotation></semantics></math></p>
+</span></p>
 <div class="section level3">
 <h3 id="directions">3.1 Directions<a class="anchor" aria-label="anchor" href="#directions"></a>
 </h3>
 <p>The <strong>PC directions</strong> are obtained from the
-eigen-decomposition of the sample covariance matrix:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mover><mi>V</mi><mo accent="true">̂</mo></mover><mover><mi>Λ</mi><mo accent="true">̂</mo></mover><msup><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>⊤</mi></msup><mo>,</mo><mspace width="1.0em"></mspace><mover><mi>V</mi><mo accent="true">̂</mo></mover><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo><mspace width="1.0em"></mspace><mover><mi>Λ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+eigen-decomposition of the sample covariance matrix: <span class="math display">
 \widehat \Sigma =\widehat V\widehat\Lambda\widehat V^\top,
 \quad
 \widehat V=[\widehat v_1,\ldots,\widehat v_p],
 \quad
 \widehat\Lambda
 =\operatorname{diag}(\widehat\lambda_1,\ldots,\widehat\lambda_p),
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>≥</mo><mi>⋯</mi><mo>≥</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>p</mi></msub><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\widehat\lambda_1\ge\cdots\ge\widehat\lambda_p\ge0</annotation></semantics></math>.</p>
-<p>The columns of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>V</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\widehat V</annotation></semantics></math>
-are orthonormal eigenvectors satisfying</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>,</mo><mspace width="2.0em"></mspace><mo>ℓ</mo><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>p</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+</span></p>
+<p>where <span class="math inline">\widehat\lambda_1\ge\cdots\ge\widehat\lambda_p\ge0</span>.</p>
+<p>The columns of <span class="math inline">\widehat V</span> are
+orthonormal eigenvectors satisfying</p>
+<p><span class="math display">
 \widehat \Sigma \widehat v_\ell
 =
 \widehat\lambda_\ell\widehat v_\ell,
 \qquad \ell=1,\ldots,p.
-</annotation></semantics></math></p>
-<p>Each direction
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\widehat v_\ell</annotation></semantics></math>
+</span></p>
+<p>Each direction <span class="math inline">\widehat v_\ell</span>
 defines a PC axis, with the first direction corresponding to the largest
 sample variance.</p>
 </div>
 <div class="section level3">
 <h3 id="eigenvalues">3.2 Eigenvalues<a class="anchor" aria-label="anchor" href="#eigenvalues"></a>
 </h3>
-<p>The <strong>eigenvalues</strong> of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\widehat \Sigma</annotation></semantics></math>
-represent the sample variances along the corresponding PC directions. In
-particular,
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>,</mo><mspace width="2.0em"></mspace><mo>ℓ</mo><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>p</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>The <strong>eigenvalues</strong> of <span class="math inline">\widehat \Sigma</span> represent the sample
+variances along the corresponding PC directions. In particular, <span class="math display">
 \widehat\lambda_\ell
 =
 \widehat v_\ell^\top \widehat \Sigma\widehat v_\ell,
 \qquad \ell=1,\ldots,p.
-</annotation></semantics></math></p>
+</span></p>
 <p>The <strong>proportion of variance explained (PVE)</strong> by the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>th
-principal component is defined as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>PVE</mo><mo>ℓ</mo></msub><mo>=</mo><mfrac><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>p</mi></munderover><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<span class="math inline">\ell</span>th principal component is defined
+as</p>
+<p><span class="math display">
 \operatorname{PVE}_\ell
 =
 \frac{\widehat\lambda_\ell}
 {\sum_{j=1}^p\widehat\lambda_j},
-</annotation></semantics></math></p>
-<p>where the denominator equals
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>tr</mo><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\operatorname{tr}(\widehat \Sigma)</annotation></semantics></math>,
-the total sample variance, assumed to be positive.</p>
+</span></p>
+<p>where the denominator equals <span class="math inline">\operatorname{tr}(\widehat \Sigma)</span>, the total
+sample variance, assumed to be positive.</p>
 </div>
 <div class="section level3">
 <h3 id="scores">3.3 Scores<a class="anchor" aria-label="anchor" href="#scores"></a>
 </h3>
 <p>The <strong>PC scores</strong> are obtained by projecting the
 centered observations onto the PC directions. The score matrix is
-defined as
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><msub><mi>X</mi><mi>c</mi></msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mo>,</mo></mrow><annotation encoding="application/x-tex">
+defined as <span class="math display">
 S=X_c\widehat V,
-</annotation></semantics></math></p>
-<p>where the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>th
-PC score of observation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
-is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">s_{i\ell}
+</span></p>
+<p>where the <span class="math inline">\ell</span>th PC score of
+observation <span class="math inline">i</span> is <span class="math inline">s_{i\ell}
 =
-\widehat v_\ell^\top(x_i-\bar x)</annotation></semantics></math>.</p>
-<p>For dimensionality reduction, we may retain only the first
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-principal components. Letting
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\widehat V_k=[\widehat v_1,\ldots,\widehat v_k]</annotation></semantics></math>,
-the corresponding reduced score matrix is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>S</mi><mi>k</mi></msub><mo>=</mo><msub><mi>X</mi><mi>c</mi></msub><msub><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">S_k=X_c\widehat V_k</annotation></semantics></math>.</p>
+\widehat v_\ell^\top(x_i-\bar x)</span>.</p>
+<p>For dimensionality reduction, we may retain only the first <span class="math inline">k</span> principal components. Letting <span class="math inline">\widehat V_k=[\widehat v_1,\ldots,\widehat
+v_k]</span>, the corresponding reduced score matrix is <span class="math inline">S_k=X_c\widehat V_k</span>.</p>
 </div>
 </div>
 <div class="section level2">
@@ -273,34 +235,21 @@ the corresponding reduced score matrix is
 aspects of multivariate data. The five commonly used displays are
 loading plots, scree plots, score plots, variable plots, and
 biplots.</p>
-<p>For two-dimensional visualizations, let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
-denote two selected principal component indices, with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>≤</mo><mi>a</mi><mo>&lt;</mo><mi>b</mi><mo>≤</mo><mi>p</mi></mrow><annotation encoding="application/x-tex">1\le a&lt;b\le p</annotation></semantics></math>.
-Although the first two components are commonly used, any two components
-can be selected depending on the purpose of the analysis.</p>
+<p>For two-dimensional visualizations, let <span class="math inline">a</span> and <span class="math inline">b</span>
+denote two selected principal component indices, with <span class="math inline">1\le a&lt;b\le p</span>. Although the first two
+components are commonly used, any two components can be selected
+depending on the purpose of the analysis.</p>
 <div class="section level3">
 <h3 id="loading-plot">4.1 Loading plot<a class="anchor" aria-label="anchor" href="#loading-plot"></a>
 </h3>
 <p>A <strong>loading plot</strong> displays the coefficients of the
-original variables in the PC directions. Specifically, let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widehat v_{j\ell}</annotation></semantics></math>
-denote the coefficient of variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-in PC direction
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>.
-For two selected components
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
-the loading plot represents variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
+original variables in the PC directions. Specifically, let <span class="math inline">\widehat v_{j\ell}</span> denote the coefficient of
+variable <span class="math inline">j</span> in PC direction <span class="math inline">\ell</span>. For two selected components <span class="math inline">a</span> and <span class="math inline">b</span>, the
+loading plot represents variable <span class="math inline">j</span>
 by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>L</mi><mi>j</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 L_j=(\widehat v_{ja},\widehat v_{jb}).
-</annotation></semantics></math></p>
+</span></p>
 <p>The magnitude of each coefficient indicates the contribution of the
 corresponding variable to a PC direction. Larger absolute coefficients
 indicate greater contributions, while the signs distinguish
@@ -309,13 +258,11 @@ contributions in opposite directions.</p>
 <div class="section level3">
 <h3 id="scree-plot">4.2 Scree plot<a class="anchor" aria-label="anchor" href="#scree-plot"></a>
 </h3>
-<p>A <strong>scree plot</strong> displays the eigenvalues
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\widehat\lambda_\ell</annotation></semantics></math>
-against the component indices
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>ℓ</mo><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>p</mi></mrow><annotation encoding="application/x-tex">\ell=1,\ldots,p</annotation></semantics></math>.
-Since each eigenvalue represents the sample variance along its
-corresponding PC direction, the plot illustrates how the total variation
-is distributed across the principal components.</p>
+<p>A <strong>scree plot</strong> displays the eigenvalues <span class="math inline">\widehat\lambda_\ell</span> against the component
+indices <span class="math inline">\ell=1,\ldots,p</span>. Since each
+eigenvalue represents the sample variance along its corresponding PC
+direction, the plot illustrates how the total variation is distributed
+across the principal components.</p>
 <p>Alternatively, the proportion of variance explained (PVE) can be
 plotted against the component index. These displays help identify the
 components that account for most of the variation and guide the choice
@@ -326,22 +273,13 @@ of how many components to retain.</p>
 </h3>
 <p>A <strong>score plot</strong> displays the projections of
 observations onto selected PC directions. For two selected components
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
-the score plot represents observation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
-by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mrow><mi>i</mi><mi>a</mi></mrow></msub><mo>,</mo><msub><mi>s</mi><mrow><mi>i</mi><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<span class="math inline">a</span> and <span class="math inline">b</span>, the score plot represents observation
+<span class="math inline">i</span> by</p>
+<p><span class="math display">
 (s_{ia},s_{ib}),
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">s_{i\ell}=\widehat v_\ell^\top(x_i-\bar x)</annotation></semantics></math>
-is the score of observation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
-on the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>th
-principal component.</p>
+</span></p>
+<p>where <span class="math inline">s_{i\ell}=\widehat
+v_\ell^\top(x_i-\bar x)</span> is the score of observation <span class="math inline">i</span> on the <span class="math inline">\ell</span>th principal component.</p>
 <p>Score plots are useful for exploring patterns, group structures, and
 potential outliers in the data.</p>
 </div>
@@ -349,59 +287,35 @@ potential outliers in the data.</p>
 <h3 id="variable-plot">4.4 Variable plot (correlation circle)<a class="anchor" aria-label="anchor" href="#variable-plot"></a>
 </h3>
 <p>A <strong>variable plot</strong> displays the correlations between
-the original variables and the PC scores. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><mo>=</mo><msqrt><msub><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>j</mi></mrow></msub></msqrt></mrow><annotation encoding="application/x-tex">\widehat \sigma_j=\sqrt{\widehat \Sigma_{jj}}</annotation></semantics></math>
-denote the sample standard deviation of variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>.
-For
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\widehat \sigma&gt;0</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\widehat\lambda_\ell&gt;0</annotation></semantics></math>,
-the sample correlation between variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-and the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>th
-PC scores is
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Cor</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mrow><mi>⋅</mi><mi>j</mi></mrow></msub><mo>,</mo><msub><mi>S</mi><mrow><mi>⋅</mi><mo>ℓ</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><msqrt><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub></msqrt><mspace width="0.167em"></mspace><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub></mrow><msub><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
+the original variables and the PC scores. Let <span class="math inline">\widehat \sigma_j=\sqrt{\widehat \Sigma_{jj}}</span>
+denote the sample standard deviation of variable <span class="math inline">j</span>. For <span class="math inline">\widehat
+\sigma&gt;0</span> and <span class="math inline">\widehat\lambda_\ell&gt;0</span>, the sample
+correlation between variable <span class="math inline">j</span> and the
+<span class="math inline">\ell</span>th PC scores is <span class="math display">
 \operatorname{Cor}(X_{\cdot j},S_{\cdot\ell})
 =
-\frac{\sqrt{\widehat\lambda_\ell}\,\widehat v_{j\ell}}{\widehat \sigma_j},
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mrow><mi>⋅</mi><mi>j</mi></mrow></msub><annotation encoding="application/x-tex">X_{\cdot j}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mrow><mi>⋅</mi><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">S_{\cdot\ell}</annotation></semantics></math>
-denote the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>th
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>th
-columns of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>X</mi><annotation encoding="application/x-tex">X</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>S</mi><annotation encoding="application/x-tex">S</annotation></semantics></math>,
+\frac{\sqrt{\widehat\lambda_\ell}\,\widehat v_{j\ell}}{\widehat
+\sigma_j},
+</span></p>
+<p>where <span class="math inline">X_{\cdot j}</span> and <span class="math inline">S_{\cdot\ell}</span> denote the <span class="math inline">j</span>th and <span class="math inline">\ell</span>th columns of <span class="math inline">X</span> and <span class="math inline">S</span>,
 respectively.</p>
-<p>For two selected components
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
-the variable plot represents variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>j</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mo>Cor</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mrow><mi>⋅</mi><mi>j</mi></mrow></msub><mo>,</mo><msub><mi>S</mi><mrow><mi>⋅</mi><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mo>Cor</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mrow><mi>⋅</mi><mi>j</mi></mrow></msub><mo>,</mo><msub><mi>S</mi><mrow><mi>⋅</mi><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>For two selected components <span class="math inline">a</span> and
+<span class="math inline">b</span>, the variable plot represents
+variable <span class="math inline">j</span> by</p>
+<p><span class="math display">
 R_j=
 \left(
 \operatorname{Cor}(X_{\cdot j},S_{\cdot a}),
 \operatorname{Cor}(X_{\cdot j},S_{\cdot b})
 \right).
-</annotation></semantics></math></p>
-<p>Since
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="postfix">∥</mo><msub><mi>R</mi><mi>j</mi></msub><msubsup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn><mn>2</mn></msubsup><mo>=</mo><mo>Cor</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mrow><mi>⋅</mi><mi>j</mi></mrow></msub><mo>,</mo><msub><mi>S</mi><mrow><mi>⋅</mi><mi>a</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>+</mo><mo>Cor</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mrow><mi>⋅</mi><mi>j</mi></mrow></msub><mo>,</mo><msub><mi>S</mi><mrow><mi>⋅</mi><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>≤</mo><mn>1</mn><mo>,</mo></mrow><annotation encoding="application/x-tex">\|R_j\|_2^2
+</span></p>
+<p>Since <span class="math inline">\|R_j\|_2^2
 =
 \operatorname{Cor}(X_{\cdot j},S_{\cdot a})^2
 +
 \operatorname{Cor}(X_{\cdot j},S_{\cdot b})^2
-\le 1,</annotation></semantics></math> the variable coordinates lie
-inside or on the unit circle.</p>
+\le 1,</span> the variable coordinates lie inside or on the unit
+circle.</p>
 <p>Variables near the unit circle are well represented by the two
 selected components, whereas variables near the origin have relatively
 little of their variation represented in the displayed plane. Also, the
@@ -416,90 +330,67 @@ well represented by the selected components.</p>
 simultaneously in a low-dimensional representation of the data. To
 describe its construction, consider the reduced singular value
 decomposition (SVD) of the centered data matrix:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>c</mi></msub><mo>=</mo><mi>U</mi><mi>D</mi><msup><mi>V</mi><mi>⊤</mi></msup><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 X_c=UDV^\top,
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mo>rank</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mi>c</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">r=\operatorname{rank}(X_c)</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>U</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>n</mi><mo>×</mo><mi>r</mi></mrow></msup></mrow><annotation encoding="application/x-tex">U\in\mathbb R^{n\times r}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>p</mi><mo>×</mo><mi>r</mi></mrow></msup></mrow><annotation encoding="application/x-tex">V\in\mathbb R^{p\times r}</annotation></semantics></math>
-have orthonormal columns, and</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi><mo>=</mo><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>d</mi><mi>r</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>d</mi><mn>1</mn></msub><mo>≥</mo><mi>⋯</mi><mo>≥</mo><msub><mi>d</mi><mi>r</mi></msub><mo>&gt;</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+</span></p>
+<p>where <span class="math inline">r=\operatorname{rank}(X_c)</span>,
+<span class="math inline">U\in\mathbb R^{n\times r}</span> and <span class="math inline">V\in\mathbb R^{p\times r}</span> have orthonormal
+columns, and</p>
+<p><span class="math display">
 D=\operatorname{diag}(d_1,\ldots,d_r),
 \qquad d_1\ge\cdots\ge d_r&gt;0.
-</annotation></semantics></math></p>
-<p>For a two-dimensional biplot, let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>I</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">I=\{a,b\}</annotation></semantics></math>
-denote the selected component indices, where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>≤</mo><mi>a</mi><mo>&lt;</mo><mi>b</mi><mo>≤</mo><mi>r</mi></mrow><annotation encoding="application/x-tex">1\le a&lt;b\le r</annotation></semantics></math>.
+</span></p>
+<p>For a two-dimensional biplot, let <span class="math inline">I=\{a,b\}</span> denote the selected component
+indices, where <span class="math inline">1\le a&lt;b\le r</span>.
 Define</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>U</mi><mi>I</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>u</mi><mi>a</mi></msub><mo>,</mo><msub><mi>u</mi><mi>b</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>D</mi><mi>I</mi></msub><mo>=</mo><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mi>a</mi></msub><mo>,</mo><msub><mi>d</mi><mi>b</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>V</mi><mi>I</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>v</mi><mi>a</mi></msub><mo>,</mo><msub><mi>v</mi><mi>b</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 U_I=[u_a,u_b],
 \qquad
 D_I=\operatorname{diag}(d_a,d_b),
 \qquad
 V_I=[v_a,v_b].
-</annotation></semantics></math></p>
+</span></p>
 <p>The corresponding rank-two approximation of the centered data matrix
 is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>c</mi></msub><mo>≈</mo><msub><mi>U</mi><mi>I</mi></msub><msub><mi>D</mi><mi>I</mi></msub><msubsup><mi>V</mi><mi>I</mi><mi>⊤</mi></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 X_c\approx U_ID_IV_I^\top.
-</annotation></semantics></math></p>
+</span></p>
 <p>A general family of biplot scalings is defined by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mi>α</mi></msub><mo>=</mo><msub><mi>U</mi><mi>I</mi></msub><msubsup><mi>D</mi><mi>I</mi><mrow><mn>1</mn><mo>−</mo><mi>α</mi></mrow></msubsup><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>H</mi><mi>α</mi></msub><mo>=</mo><msub><mi>V</mi><mi>I</mi></msub><msubsup><mi>D</mi><mi>I</mi><mi>α</mi></msubsup><mo>,</mo><mspace width="2.0em"></mspace><mn>0</mn><mo>≤</mo><mi>α</mi><mo>≤</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 G_\alpha=U_ID_I^{1-\alpha},
 \qquad
 H_\alpha=V_ID_I^\alpha,
 \qquad 0\le\alpha\le1.
-</annotation></semantics></math></p>
-<p>Recall that the PC score matrix for the selected components is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>S</mi><mi>I</mi></msub><mo>=</mo><msub><mi>X</mi><mi>c</mi></msub><msub><mi>V</mi><mi>I</mi></msub><mo>=</mo><msub><mi>U</mi><mi>I</mi></msub><msub><mi>D</mi><mi>I</mi></msub></mrow><annotation encoding="application/x-tex">S_I=X_cV_I=U_ID_I</annotation></semantics></math>.
-Therefore,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mi>α</mi></msub><mo>=</mo><msub><mi>U</mi><mi>I</mi></msub><msubsup><mi>D</mi><mi>I</mi><mrow><mn>1</mn><mo>−</mo><mi>α</mi></mrow></msubsup><mo>=</mo><msub><mi>S</mi><mi>I</mi></msub><msubsup><mi>D</mi><mi>I</mi><mrow><mi>−</mi><mi>α</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">G_\alpha=U_ID_I^{1-\alpha}=S_ID_I^{-\alpha}</annotation></semantics></math>
+</span></p>
+<p>Recall that the PC score matrix for the selected components is <span class="math inline">S_I=X_cV_I=U_ID_I</span>. Therefore, <span class="math inline">G_\alpha=U_ID_I^{1-\alpha}=S_ID_I^{-\alpha}</span>
 showing that the observation coordinates in a biplot are obtained by
-scaling the ordinary PC scores according to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>.</p>
-<p>These matrices satisfy
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mi>α</mi></msub><msubsup><mi>H</mi><mi>α</mi><mi>⊤</mi></msubsup><mo>≈</mo><msub><mi>X</mi><mi>c</mi></msub></mrow><annotation encoding="application/x-tex">G_\alpha H_\alpha^\top\approx X_c</annotation></semantics></math>.
-The rows of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>G</mi><mi>α</mi></msub><annotation encoding="application/x-tex">G_\alpha</annotation></semantics></math>
-represent observations, while the rows of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>H</mi><mi>α</mi></msub><annotation encoding="application/x-tex">H_\alpha</annotation></semantics></math>
-represent variables. The parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-determines how the singular-value scaling is distributed between
-them:</p>
+scaling the ordinary PC scores according to <span class="math inline">\alpha</span>.</p>
+<p>These matrices satisfy <span class="math inline">G_\alpha
+H_\alpha^\top\approx X_c</span>. The rows of <span class="math inline">G_\alpha</span> represent observations, while the
+rows of <span class="math inline">H_\alpha</span> represent variables.
+The parameter <span class="math inline">\alpha</span> determines how the
+singular-value scaling is distributed between them:</p>
 <ul>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha=0</annotation></semantics></math>:
-Observation coordinates are the ordinary PC scores on the selected
-components, and variable coordinates are the corresponding PC direction
-coefficients.</li>
+<span class="math inline">\alpha=0</span>: Observation coordinates
+are the ordinary PC scores on the selected components, and variable
+coordinates are the corresponding PC direction coefficients.</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">\alpha=1/2</annotation></semantics></math>:
-Singular-value scaling is shared symmetrically between observations and
-variables.</li>
+<span class="math inline">\alpha=1/2</span>: Singular-value scaling
+is shared symmetrically between observations and variables.</li>
 <li>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha=1</annotation></semantics></math>:
-Variable coordinates are scaled by the singular values, emphasizing the
-variance and covariance structure of the original variables.</li>
+<span class="math inline">\alpha=1</span>: Variable coordinates are
+scaled by the singular values, emphasizing the variance and covariance
+structure of the original variables.</li>
 </ul>
-<p><strong>Note.</strong> Since
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mi>V</mi><msup><mi>D</mi><mn>2</mn></msup><msup><mi>V</mi><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\widehat\Sigma=\frac{1}{n-1}VD^2V^\top</annotation></semantics></math>,
-the columns of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>V</mi><annotation encoding="application/x-tex">V</annotation></semantics></math>
-are eigenvectors of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\widehat\Sigma</annotation></semantics></math>,
-with corresponding positive eigenvalues
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><mo>=</mo><mfrac><msubsup><mi>d</mi><mo>ℓ</mo><mn>2</mn></msubsup><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac></mrow><annotation encoding="application/x-tex">\widehat\lambda_\ell=\frac{d_\ell^2}{n-1}</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>ℓ</mo><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>r</mi></mrow><annotation encoding="application/x-tex">\ell=1,\ldots,r</annotation></semantics></math>.
-Thus, the right singular vectors of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mi>c</mi></msub><annotation encoding="application/x-tex">X_c</annotation></semantics></math>
-provide the sample PC directions, while its singular values determine
-the corresponding eigenvalues. Hence, PCA can equivalently be performed
-using the SVD of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mi>c</mi></msub><annotation encoding="application/x-tex">X_c</annotation></semantics></math>.</p>
+<p><strong>Note.</strong> Since <span class="math inline">\widehat\Sigma=\frac{1}{n-1}VD^2V^\top</span>, the
+columns of <span class="math inline">V</span> are eigenvectors of <span class="math inline">\widehat\Sigma</span>, with corresponding positive
+eigenvalues <span class="math inline">\widehat\lambda_\ell=\frac{d_\ell^2}{n-1}</span>,
+<span class="math inline">\ell=1,\ldots,r</span>. Thus, the right
+singular vectors of <span class="math inline">X_c</span> provide the
+sample PC directions, while its singular values determine the
+corresponding eigenvalues. Hence, PCA can equivalently be performed
+using the SVD of <span class="math inline">X_c</span>.</p>
 </div>
 <div class="section level3">
 <h3 id="summary-of-pca-visualizations">Summary of PCA visualizations<a class="anchor" aria-label="anchor" href="#summary-of-pca-visualizations"></a>

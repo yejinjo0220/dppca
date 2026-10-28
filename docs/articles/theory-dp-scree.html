@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Differentially Private Eigenvalues • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="Differentially Private Eigenvalues">
 <meta name="description" content="Theoretical foundations of private projected-variance estimation using clipped means, private modified winsorized means, and Huber means.
@@ -102,75 +103,52 @@ and <a href="theory-dp-loading.html">Theory of DP Loading</a>.</p>
 <div class="section level2">
 <h2 id="paired-variance">1. DP eigenvalue estimation<a class="anchor" aria-label="anchor" href="#paired-variance"></a>
 </h2>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mn>1</mn></msub><annotation encoding="application/x-tex">X_1</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mn>2</mn></msub><annotation encoding="application/x-tex">X_2</annotation></semantics></math>
-be independent random vectors in
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ℝ</mi><mi>p</mi></msup><annotation encoding="application/x-tex">\mathbb R^p</annotation></semantics></math>,
-with covariance matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Σ</mi><annotation encoding="application/x-tex">\Sigma</annotation></semantics></math>.
-For any fixed unit vector
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>v</mi><annotation encoding="application/x-tex">v</annotation></semantics></math>,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝔼</mi><mrow><mo stretchy="true" form="prefix">[</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">{</mo><msup><mi>v</mi><mi>⊤</mi></msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mn>1</mn></msub><mo>−</mo><msub><mi>X</mi><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><msup><mo stretchy="false" form="postfix">}</mo><mn>2</mn></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msup><mi>v</mi><mi>⊤</mi></msup><mi>Σ</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>Let <span class="math inline">X_1</span> and <span class="math inline">X_2</span> be independent random vectors in <span class="math inline">\mathbb R^p</span>, with covariance matrix <span class="math inline">\Sigma</span>. For any fixed unit vector <span class="math inline">v</span>,</p>
+<p><span class="math display">
 \mathbb E\left[\frac12\{v^\top(X_1-X_2)\}^2\right]
 = v^\top\Sigma v.
-</annotation></semantics></math></p>
-<p>When
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>v</mi><annotation encoding="application/x-tex">v</annotation></semantics></math>
-is a population covariance eigenvector, this quantity is its
-eigenvalue.</p>
+</span></p>
+<p>When <span class="math inline">v</span> is a population covariance
+eigenvector, this quantity is its eigenvalue.</p>
 <p>Motivated by this identity, the <code>dppca</code> package estimates
 the variances along privately estimated PC directions using squared
 differences of projected observations.</p>
-<p>For observations
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>x</mi><mi>n</mi></msub></mrow><annotation encoding="application/x-tex">x_1,\ldots,x_n</annotation></semantics></math>,
-let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widetilde V_k=(\widetilde v_1,\ldots,\widetilde v_k)</annotation></semantics></math>
-contain
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-privately estimated orthonormal directions. Define the projected
-coordinates</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><mi>X</mi><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>y</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>=</mo><msubsup><mi>x</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
-Y=X\widetilde V_k,\qquad
- y_{i\ell}=x_i^\top\widetilde v_\ell.
-</annotation></semantics></math></p>
-<p>Randomly partition the observations into
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mo>=</mo><mo stretchy="false" form="prefix">⌊</mo><mi>n</mi><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">⌋</mo></mrow><annotation encoding="application/x-tex">m=\lfloor n/2\rfloor</annotation></semantics></math>
-disjoint pairs
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>a</mi><mi>r</mi></msub><mo>,</mo><msub><mi>b</mi><mi>r</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(a_r,b_r)</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>m</mi></mrow><annotation encoding="application/x-tex">r=1,\ldots,m</annotation></semantics></math>.
-One observation is unused when
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
-is odd. For each pair and direction, define</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><msub><mi>a</mi><mi>r</mi></msub><mo>,</mo><mo>ℓ</mo></mrow></msub><mo>−</mo><msub><mi>y</mi><mrow><msub><mi>b</mi><mi>r</mi></msub><mo>,</mo><mo>ℓ</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false" form="prefix">{</mo><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><msub><mi>a</mi><mi>r</mi></msub></msub><mo>−</mo><msub><mi>x</mi><msub><mi>b</mi><mi>r</mi></msub></msub><mo stretchy="true" form="postfix">)</mo></mrow><msup><mo stretchy="false" form="postfix">}</mo><mn>2</mn></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>For observations <span class="math inline">x_1,\ldots,x_n</span>, let
+<span class="math inline">\widetilde{V}_k=(\widetilde{v}_1,\ldots,\widetilde{v}_k)</span>
+contain <span class="math inline">k</span> privately estimated
+orthonormal directions. Define the projected coordinates</p>
+<p><span class="math display">
+Y=X\widetilde{V}_k,\qquad
+y_{i\ell}=x_i^\top\widetilde{v}_\ell.
+</span></p>
+<p>Randomly partition the observations into <span class="math inline">m=\lfloor n/2\rfloor</span> disjoint pairs <span class="math inline">(a_r,b_r)</span>, <span class="math inline">r=1,\ldots,m</span>. One observation is unused when
+<span class="math inline">n</span> is odd. For each pair and direction,
+define</p>
+<p><span class="math display">
 w_{r\ell}=\frac12(y_{a_r,\ell}-y_{b_r,\ell})^2
-=\frac12\{\widetilde v_\ell^\top(x_{a_r}-x_{b_r})\}^2.
-</annotation></semantics></math></p>
-<p>The average
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>w</mi><mo accent="true">‾</mo></mover><mo>ℓ</mo></msub><mo>=</mo><msup><mi>m</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><msubsup><mo>∑</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></msubsup><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub></mrow><annotation encoding="application/x-tex">\bar w_\ell=m^{-1}\sum_{r=1}^m w_{r\ell}</annotation></semantics></math>
-is a natural estimator of projected variation. For fixed observations
-and directions,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>𝔼</mi><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">r</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>w</mi><mo accent="true">‾</mo></mover><mo>ℓ</mo></msub><mo>∣</mo><mi>X</mi><mo>,</mo><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mo>,</mo><mspace width="2.0em"></mspace><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\mathbb E_{\mathrm{pair}}[\bar w_\ell\mid X,\widetilde V_k]
-=\widetilde v_\ell^\top\widehat\Sigma\widetilde v_\ell,
+=\frac12\{\widetilde{v}_\ell^\top(x_{a_r}-x_{b_r})\}^2.
+</span></p>
+<p>The average <span class="math inline">\bar w_\ell=m^{-1}\sum_{r=1}^m
+w_{r\ell}</span> is a natural estimator of projected variation. For
+fixed observations and directions,</p>
+<p><span class="math display">
+\mathbb E_{\mathrm{pair}}[\bar w_\ell\mid X,\widetilde{V}_k]
+=\widetilde{v}_\ell^\top\widehat\Sigma\widetilde{v}_\ell,
 \qquad
 \widehat\Sigma=\frac1{n-1}\sum_{i=1}^n
 (x_i-\bar x)(x_i-\bar x)^\top.
-</annotation></semantics></math></p>
+</span></p>
 <details><summary><strong>Derivation of the pairing identity</strong>
-</summary><p>Conditional on the data and private PC directions, each of the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mfrac linethickness="0"><mi>n</mi><mn>2</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\binom{n}{2}</annotation></semantics></math>
-distinct pairs is equally likely to appear at any given pair
-position.</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>𝔼</mi><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">r</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>w</mi><mo accent="true">‾</mo></mover><mo>ℓ</mo></msub><mo>∣</mo><mi>X</mi><mo>,</mo><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>1</mn><mi>m</mi></mfrac><munderover><mo>∑</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><msub><mi>𝔼</mi><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">r</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><mo>∣</mo><mi>X</mi><mo>,</mo><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>1</mn><mi>m</mi></mfrac><munderover><mo>∑</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><mfrac><mn>1</mn><mrow><mo stretchy="true" form="prefix">(</mo><mfrac linethickness="0"><mi>n</mi><mn>2</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>−</mo><msub><mi>y</mi><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>−</mo><msub><mi>y</mi><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>−</mo><msub><mover><mi>y</mi><mo accent="true">‾</mo></mover><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mspace width="1.0em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>∵</mi><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>−</mo><msub><mi>y</mi><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>=</mo><mi>n</mi><munder><mo>∑</mo><mi>i</mi></munder><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>y</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>−</mo><msub><mover><mi>y</mi><mo accent="true">‾</mo></mover><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msup><mrow><mo stretchy="true" form="prefix">{</mo><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">}</mo></mrow><mn>2</mn></msup><mspace width="1.0em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>∵</mi><msub><mi>y</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow></msub><mo>=</mo><msubsup><mi>x</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mspace width="1.0em"></mspace><mi>&amp;</mi><mspace width="1.0em"></mspace><msub><mover><mi>y</mi><mo accent="true">‾</mo></mover><mo>ℓ</mo></msub><mo>=</mo><msup><mover><mi>x</mi><mo accent="true">‾</mo></mover><mi>⊤</mi></msup><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><munder><munder><mrow><mo stretchy="true" form="prefix">{</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mo stretchy="true" form="postfix">}</mo></mrow><mo accent="true">⏟</mo></munder><mrow><mo>=</mo><mover><mi>Σ</mi><mo accent="true">̂</mo></mover></mrow></munder><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo><mi>⊤</mi></msubsup><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">
+</summary><p>Conditional on the data and private PC directions, each of the <span class="math inline">\binom{n}{2}</span> distinct pairs is equally likely
+to appear at any given pair position.</p>
+<p><span class="math display">
 \begin{aligned}
 \mathbb E_{\mathrm{pair}}
-[\bar w_\ell\mid X,\widetilde V_k]
+[\bar w_\ell\mid X,\widetilde{V}_k]
 &amp;=
 \frac1m\sum_{r=1}^m
 \mathbb E_{\mathrm{pair}}
-[w_{r\ell}\mid X,\widetilde V_k]\\[6pt]
+[w_{r\ell}\mid X,\widetilde{V}_k]\\[6pt]
 &amp;=
 \frac1m\sum_{r=1}^m
 \frac1{\binom n2}
@@ -182,17 +160,18 @@ position.</p>
 &amp;=
 \frac{1}{n-1}
 \sum_{i=1}^n
-(y_{i\ell}-\bar y_\ell)^2 
+(y_{i\ell}-\bar y_\ell)^2
 \quad (\because \sum_{i&lt;j}(y_{i\ell}-y_{j\ell})^2
 =n\sum_i(y_{i\ell}-\bar y_\ell)^2) \\[6pt]
 &amp;=
 \frac{1}{n-1}
 \sum_{i=1}^n
 \left\{
-\widetilde v_\ell^\top(x_i-\bar x)
-\right\}^2 \quad (\because y_{i\ell}=x_i^\top\widetilde v_\ell \quad \&amp; \quad \bar y_\ell=\bar x^\top\widetilde v_\ell)\\[6pt]
+\widetilde{v}_\ell^\top(x_i-\bar x)
+\right\}^2 \quad (\because y_{i\ell}=x_i^\top\widetilde{v}_\ell \quad
+\&amp; \quad \bar y_\ell=\bar x^\top\widetilde{v}_\ell)\\[6pt]
 &amp;=
-\widetilde v_\ell^\top
+\widetilde{v}_\ell^\top
 \underbrace{
 \left\{
 \frac{1}{n-1}
@@ -200,28 +179,26 @@ position.</p>
 (x_i-\bar x)(x_i-\bar x)^\top
 \right\}
 }_{=\widehat\Sigma}
-\widetilde v_\ell\\[6pt]
+\widetilde{v}_\ell\\[6pt]
 &amp;=
-\widetilde v_\ell^\top
+\widetilde{v}_\ell^\top
 \widehat\Sigma
-\widetilde v_\ell.
+\widetilde{v}_\ell.
 \end{aligned}
-</annotation></semantics></math></p>
+</span></p>
 Therefore, the paired-difference mean is unbiased for the sample
 variance along each private PC direction with respect to random pairing.
 This property holds before applying any private mean estimation
 procedure. —
 </details><p>To ensure differential privacy, the <code>dppca</code> package
 applies a private mean estimation procedure to the columns of the
-paired-difference matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>m</mi><mo>×</mo><mi>k</mi></mrow></msup></mrow><annotation encoding="application/x-tex">W=(w_{r\ell})\in\mathbb R^{m\times k}</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>DP-Mean</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>W</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
-(\widetilde\lambda_1,\ldots,\widetilde\lambda_k)
+paired-difference matrix <span class="math inline">W=(w_{r\ell})\in\mathbb R^{m\times k}</span>:</p>
+<p><span class="math display">
+(\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k)
 =
 \operatorname{DP\text{-}Mean}(W).
-</annotation></semantics></math></p>
-<p>Here,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>DP-Mean</mo><annotation encoding="application/x-tex">\operatorname{DP\text{-}Mean}</annotation></semantics></math>
+</span></p>
+<p>Here, <span class="math inline">\operatorname{DP\text{-}Mean}</span>
 denotes one of three private mean estimation methods: <strong>clipped
 mean, private modified winsorized mean (PMWM), or Huber
 mean</strong>.</p>
@@ -230,44 +207,35 @@ mean</strong>.</p>
 <h2 id="clipped-mean">2. Clipped mean<a class="anchor" aria-label="anchor" href="#clipped-mean"></a>
 </h2>
 <p>The clipped mean bounds each nonnegative paired squared difference at
-a publicly chosen threshold
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">p</mi></mrow></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">C_{\mathrm{clip}}&gt;0</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow><mi>C</mi></msubsup><mo>=</mo><mo>min</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><mo>,</mo><msub><mi>C</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mover><mi>w</mi><mo accent="true">‾</mo></mover><mo>ℓ</mo><mi>C</mi></msubsup><mo>=</mo><mfrac><mn>1</mn><mi>m</mi></mfrac><munderover><mo>∑</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><msubsup><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow><mi>C</mi></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+a publicly chosen threshold <span class="math inline">C_{\mathrm{clip}}&gt;0</span>:</p>
+<p><span class="math display">
 w_{r\ell}^{C}=\min\{w_{r\ell},C_{\mathrm{clip}}\},\qquad
 \bar w_\ell^{C}=\frac1m\sum_{r=1}^m w_{r\ell}^{C}.
-</annotation></semantics></math></p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover><mi>w</mi><mo accent="true">‾</mo></mover><mi>C</mi></msup><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mover><mi>w</mi><mo accent="true">‾</mo></mover><mn>1</mn><mi>C</mi></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mover><mi>w</mi><mo accent="true">‾</mo></mover><mi>k</mi><mi>C</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><annotation encoding="application/x-tex">\bar w^{C}=(\bar w_1^{C},\ldots,\bar w_k^{C})^\top</annotation></semantics></math>
-denote the vector of clipped means. Since the observations are divided
-into disjoint pairs, changing one observation affects at most one row of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>,
+</span></p>
+<p>Let <span class="math inline">\bar w^{C}=(\bar w_1^{C},\ldots,\bar
+w_k^{C})^\top</span> denote the vector of clipped means. Since the
+observations are divided into disjoint pairs, changing one observation
+affects at most one row of <span class="math inline">W</span>,
 conditional on the private PC directions and a fixed pairing. As each
-clipped value lies in
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><mn>0</mn><mo>,</mo><msub><mi>C</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">p</mi></mrow></msub><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[0,C_{\mathrm{clip}}]</annotation></semantics></math>,
-the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mo>ℓ</mo><mn>2</mn></msub><annotation encoding="application/x-tex">\ell_2</annotation></semantics></math>-sensitivity
-of the mean vector is bounded by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Δ</mi><mn>2</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><msup><mover><mi>w</mi><mo accent="true">‾</mo></mover><mi>C</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo>≤</mo><mfrac><mrow><msqrt><mi>k</mi></msqrt><mspace width="0.167em"></mspace><msub><mi>C</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">p</mi></mrow></msub></mrow><mi>m</mi></mfrac></mrow><annotation encoding="application/x-tex">\Delta_2(\bar w^{C})\le \frac{\sqrt{k}\,C_{\mathrm{clip}}}{m}</annotation></semantics></math>.</p>
+clipped value lies in <span class="math inline">[0,C_{\mathrm{clip}}]</span>, the <span class="math inline">\ell_2</span>-sensitivity of the mean vector is
+bounded by <span class="math inline">\Delta_2(\bar w^{C})\le
+\frac{\sqrt{k}\,C_{\mathrm{clip}}}{m}</span>.</p>
 <p>To ensure DP, Gaussian noise is added to the vector of clipped
 means:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mrow><mi>C</mi><mo>,</mo><mrow><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">w</mi></mrow></mrow></msup><mo>=</mo><msup><mover><mi>w</mi><mo accent="true">‾</mo></mover><mi>C</mi></msup><mo>+</mo><mi>Z</mi><mo>,</mo><mspace width="2.0em"></mspace><mi>Z</mi><mo>∼</mo><msub><mi>N</mi><mi>k</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>C</mi><mn>2</mn></msubsup><msub><mi>I</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>σ</mi><mi>C</mi></msub><mo>=</mo><mfrac><mrow><msqrt><mi>k</mi></msqrt><mspace width="0.167em"></mspace><msub><mi>C</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">p</mi></mrow></msub></mrow><mrow><mi>m</mi><msub><mi>μ</mi><mi>C</mi></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\widetilde\lambda^{C,\mathrm{raw}}=\bar w^{C}+Z,\qquad
+<p><span class="math display">
+\widetilde{\lambda}^{C,\mathrm{raw}}=\bar w^{C}+Z,\qquad
 Z\sim N_k(0,\sigma_C^2I_k),\qquad
 \sigma_C=\frac{\sqrt{k}\,C_{\mathrm{clip}}}{m\mu_C}.
-</annotation></semantics></math></p>
-<p>Here,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>C</mi></msub><annotation encoding="application/x-tex">\mu_C</annotation></semantics></math>
-is the Gaussian-DP parameter calibrated from the scree privacy
-allocation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon_{\mathrm{scree}},\delta_{\mathrm{scree}})</annotation></semantics></math>.</p>
+</span></p>
+<p>Here, <span class="math inline">\mu_C</span> is the Gaussian-DP
+parameter calibrated from the scree privacy allocation <span class="math inline">(\varepsilon_{\mathrm{scree}},\delta_{\mathrm{scree}})</span>.</p>
 <p><strong>Tuning parameter.</strong> The clipped estimator has one
-required tuning parameter,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>C</mi><mrow><mi mathvariant="normal">c</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">p</mi></mrow></msub><annotation encoding="application/x-tex">C_{\mathrm{clip}}</annotation></semantics></math>.
-A smaller threshold reduces sensitivity and the noise scale, but can
-increase downward clipping bias. A larger threshold retains more paired
-values but requires more noise. The threshold must be chosen using
-public information or a separately accounted private procedure; there is
-no universally suitable value.</p>
+required tuning parameter, <span class="math inline">C_{\mathrm{clip}}</span>. A smaller threshold
+reduces sensitivity and the noise scale, but can increase downward
+clipping bias. A larger threshold retains more paired values but
+requires more noise. The threshold must be chosen using public
+information or a separately accounted private procedure; there is no
+universally suitable value.</p>
 </div>
 <div class="section level2">
 <h2 id="pmwm">3. Private modified winsorized mean (PMWM)<a class="anchor" aria-label="anchor" href="#pmwm"></a>
@@ -281,34 +249,22 @@ unbounded mechanism of <a href="#ref-durfee">Durfee (2023)</a>.</p>
 <h3 id="allocation-of-pair-rows">3.1. Allocation of pair rows<a class="anchor" aria-label="anchor" href="#allocation-of-pair-rows"></a>
 </h3>
 <p>The PMWM procedure consists of two stages: quantile estimation and
-winsorized mean estimation. The
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
-pair rows of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>W</mi><annotation encoding="application/x-tex">W</annotation></semantics></math>
-can either be reused in both stages or divided into disjoint
-subsets.</p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mi>q</mi></msub><annotation encoding="application/x-tex">I_q</annotation></semantics></math>
-denote the indices used for quantile estimation and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>I</mi><mi>M</mi></msub><annotation encoding="application/x-tex">I_M</annotation></semantics></math>
-those used for mean estimation, with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mi>q</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>I</mi><mi>q</mi></msub><mo stretchy="true" form="postfix">|</mo></mrow></mrow><annotation encoding="application/x-tex">m_q=|I_q|</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mi>M</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>I</mi><mi>M</mi></msub><mo stretchy="true" form="postfix">|</mo></mrow></mrow><annotation encoding="application/x-tex">m_M=|I_M|</annotation></semantics></math>.
-The two stages may reuse all
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
-pair rows, in which case
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>q</mi></msub><mo>=</mo><msub><mi>I</mi><mi>M</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>m</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">I_q=I_M=\{1,\ldots,m\}</annotation></semantics></math>,
-or use disjoint subsets, with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mi>q</mi></msub><mo>=</mo><mo stretchy="false" form="prefix">⌊</mo><mi>m</mi><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">⌋</mo></mrow><annotation encoding="application/x-tex">m_q=\lfloor m/2\rfloor</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>m</mi><mi>M</mi></msub><mo>=</mo><mi>m</mi><mo>−</mo><msub><mi>m</mi><mi>q</mi></msub></mrow><annotation encoding="application/x-tex">m_M=m-m_q</annotation></semantics></math>.</p>
+winsorized mean estimation. The <span class="math inline">m</span> pair
+rows of <span class="math inline">W</span> can either be reused in both
+stages or divided into disjoint subsets.</p>
+<p>Let <span class="math inline">I_q</span> denote the indices used for
+quantile estimation and <span class="math inline">I_M</span> those used
+for mean estimation, with <span class="math inline">m_q=|I_q|</span> and
+<span class="math inline">m_M=|I_M|</span>. The two stages may reuse all
+<span class="math inline">m</span> pair rows, in which case <span class="math inline">I_q=I_M=\{1,\ldots,m\}</span>, or use disjoint
+subsets, with <span class="math inline">m_q=\lfloor m/2\rfloor</span>
+and <span class="math inline">m_M=m-m_q</span>.</p>
 </div>
 <div class="section level3">
 <h3 id="private-quantiles-and-cutoff-bounds">3.2. Private quantiles and cutoff bounds<a class="anchor" aria-label="anchor" href="#private-quantiles-and-cutoff-bounds"></a>
 </h3>
 <p>For each component, define the trimming proportion as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ζ</mi><mo>=</mo><mo>min</mo><mrow><mo stretchy="true" form="prefix">{</mo><mo>max</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><msub><mi>c</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><msub><mi>m</mi><mi>Q</mi></msub></mfrac><mo>,</mo><msub><mi>η</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mn>0.49</mn><mo stretchy="true" form="postfix">}</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \zeta
 =
 \min\left\{
@@ -318,19 +274,13 @@ and
 \right),
 0.49
 \right\},
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>c</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">c_{\mathrm{trim}}&gt;0</annotation></semantics></math>
-is a baseline trimming constant and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>≤</mo><msub><mi>η</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><mo>&lt;</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">0\le\eta_{\mathrm{trim}}&lt;0.5</annotation></semantics></math>
-is a lower-bound tuning value.</p>
+</span></p>
+<p>where <span class="math inline">c_{\mathrm{trim}}&gt;0</span> is a
+baseline trimming constant and <span class="math inline">0\le\eta_{\mathrm{trim}}&lt;0.5</span> is a
+lower-bound tuning value.</p>
 <p>The lower and upper cutoffs are estimated using the private quantiles
-at levels
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ζ</mi><annotation encoding="application/x-tex">\zeta</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>ζ</mi></mrow><annotation encoding="application/x-tex">1-\zeta</annotation></semantics></math>,
-respectively:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>L</mi><mo>ℓ</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">v</mi></mrow></msubsup><mo>=</mo><msub><mi>𝒬</mi><mrow><msub><mi>ε</mi><mi>Q</mi></msub><mo>,</mo><mi>β</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>W</mi><mrow><msub><mi>I</mi><mi>Q</mi></msub><mo>,</mo><mo>ℓ</mo></mrow></msub><mo>,</mo><mi>ζ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mi>U</mi><mo>ℓ</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">v</mi></mrow></msubsup><mo>=</mo><msub><mi>𝒬</mi><mrow><msub><mi>ε</mi><mi>Q</mi></msub><mo>,</mo><mi>β</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>W</mi><mrow><msub><mi>I</mi><mi>Q</mi></msub><mo>,</mo><mo>ℓ</mo></mrow></msub><mo>,</mo><mn>1</mn><mo>−</mo><mi>ζ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+at levels <span class="math inline">\zeta</span> and <span class="math inline">1-\zeta</span>, respectively:</p>
+<p><span class="math display">
 L_\ell^{\mathrm{priv}}
 =
 \mathcal Q_{\varepsilon_Q,\beta}
@@ -340,25 +290,20 @@ U_\ell^{\mathrm{priv}}
 =
 \mathcal Q_{\varepsilon_Q,\beta}
 (W_{I_Q,\ell},1-\zeta).
-</annotation></semantics></math></p>
-<p>Here,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝒬</mi><mrow><msub><mi>ε</mi><mi>Q</mi></msub><mo>,</mo><mi>β</mi></mrow></msub><annotation encoding="application/x-tex">\mathcal Q_{\varepsilon_Q,\beta}</annotation></semantics></math>
-denotes the one-sided unbounded private quantile mechanism of <a href="#ref-durfee">Durfee (2023)</a>, with privacy parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mi>Q</mi></msub><annotation encoding="application/x-tex">\varepsilon_Q</annotation></semantics></math>
-and geometric grid parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\beta&gt;1</annotation></semantics></math>.
+</span></p>
+<p>Here, <span class="math inline">\mathcal
+Q_{\varepsilon_Q,\beta}</span> denotes the one-sided unbounded private
+quantile mechanism of <a href="#ref-durfee">Durfee (2023)</a>, with
+privacy parameter <span class="math inline">\varepsilon_Q</span> and
+geometric grid parameter <span class="math inline">\beta&gt;1</span>.
 Since the squared pair differences are nonnegative, the quantile
 mechanism uses zero as a public lower bound for its search. The
-parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>
-controls the grid resolution, with values closer to one producing a
-finer grid.</p>
+parameter <span class="math inline">\beta</span> controls the grid
+resolution, with values closer to one producing a finer grid.</p>
 <p>After quantile estimation, the private cutoffs are restricted to a
-prespecified public interval
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[a,b]</annotation></semantics></math>,
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>&lt;</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">a&lt;b</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>L</mi><mo>ℓ</mo></msub><mo>=</mo><mo>min</mo><mo stretchy="false" form="prefix">{</mo><mi>b</mi><mo>,</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><mi>a</mi><mo>,</mo><msubsup><mi>L</mi><mo>ℓ</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">v</mi></mrow></msubsup><mo stretchy="false" form="postfix">}</mo><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>U</mi><mo>ℓ</mo></msub><mo>=</mo><mo>min</mo><mo stretchy="false" form="prefix">{</mo><mi>b</mi><mo>,</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><mi>a</mi><mo>,</mo><msubsup><mi>U</mi><mo>ℓ</mo><mrow><mi mathvariant="normal">p</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">v</mi></mrow></msubsup><mo stretchy="false" form="postfix">}</mo><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+prespecified public interval <span class="math inline">[a,b]</span>,
+where <span class="math inline">a&lt;b</span>:</p>
+<p><span class="math display">
 L_\ell
 =
 \min\{b,\max\{a,L_\ell^{\mathrm{priv}}\}\},
@@ -366,70 +311,60 @@ L_\ell
 U_\ell
 =
 \min\{b,\max\{a,U_\ell^{\mathrm{priv}}\}\}.
-</annotation></semantics></math></p>
+</span></p>
 <p>If the resulting upper cutoff is below the lower cutoff, the interval
-is reset to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[a,b]</annotation></semantics></math>.
-These are bounds on the estimated cutoffs; the original paired values do
-not have to lie inside
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[a,b]</annotation></semantics></math>.</p>
+is reset to <span class="math inline">[a,b]</span>. These are bounds on
+the estimated cutoffs; the original paired values do not have to lie
+inside <span class="math inline">[a,b]</span>.</p>
 </div>
 <div class="section level3">
 <h3 id="winsorized-mean-and-gaussian-perturbation">3.3. Winsorized mean and Gaussian perturbation<a class="anchor" aria-label="anchor" href="#winsorized-mean-and-gaussian-perturbation"></a>
 </h3>
 <p>Define the winsorization rule and component means by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ϕ</mi><mrow><msub><mi>L</mi><mo>ℓ</mo></msub><mo>,</mo><msub><mi>U</mi><mo>ℓ</mo></msub></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>w</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>min</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>U</mi><mo>ℓ</mo></msub><mo>,</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>L</mi><mo>ℓ</mo></msub><mo>,</mo><mi>w</mi><mo stretchy="false" form="postfix">}</mo><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mover><mi>w</mi><mo accent="true">‾</mo></mover><mo>ℓ</mo><mrow><mi mathvariant="normal">P</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">W</mi><mi mathvariant="normal">M</mi></mrow></msubsup><mo>=</mo><mfrac><mn>1</mn><msub><mi>m</mi><mi>M</mi></msub></mfrac><munder><mo>∑</mo><mrow><mi>r</mi><mo>∈</mo><msub><mi>I</mi><mi>M</mi></msub></mrow></munder><msub><mi>ϕ</mi><mrow><msub><mi>L</mi><mo>ℓ</mo></msub><mo>,</mo><msub><mi>U</mi><mo>ℓ</mo></msub></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \phi_{L_\ell,U_\ell}(w)=\min\{U_\ell,\max\{L_\ell,w\}\},
 \qquad
 \bar w_\ell^{\mathrm{PMWM}}=
 \frac1{m_M}\sum_{r\in I_M}\phi_{L_\ell,U_\ell}(w_{r\ell}).
-</annotation></semantics></math></p>
+</span></p>
 <p>Conditional on the privately selected cutoffs, the joint mean
 sensitivity is bounded by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Δ</mi><mn>2</mn></msub><mo>≤</mo><mfrac><mn>1</mn><msub><mi>m</mi><mi>M</mi></msub></mfrac><msqrt><mrow><munderover><mo>∑</mo><mrow><mo>ℓ</mo><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>U</mi><mo>ℓ</mo></msub><mo>−</mo><msub><mi>L</mi><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow></msqrt><mo>≤</mo><mfrac><mrow><msqrt><mi>k</mi></msqrt><mrow><mo stretchy="true" form="prefix">(</mo><mi>b</mi><mo>−</mo><mi>a</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><msub><mi>m</mi><mi>M</mi></msub></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \Delta_2\le \frac1{m_M}\sqrt{\sum_{\ell=1}^k
 (U_\ell-L_\ell)^2}\le\frac{\sqrt{k}(b-a)}{m_M}.
-</annotation></semantics></math></p>
+</span></p>
 <p>To ensure DP, Gaussian noise is added to the vector of winsorized
 means:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mrow><mi mathvariant="normal">P</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">W</mi><mi mathvariant="normal">M</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">w</mi></mrow></msup><mo>=</mo><msup><mover><mi>w</mi><mo accent="true">‾</mo></mover><mrow><mi mathvariant="normal">P</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">W</mi><mi mathvariant="normal">M</mi></mrow></msup><mo>+</mo><mi>Z</mi><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>Z</mi><mo>ℓ</mo></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mo>ℓ</mo><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>σ</mi><mo>ℓ</mo></msub><mo>=</mo><mfrac><mrow><msqrt><mi>k</mi></msqrt><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>U</mi><mo>ℓ</mo></msub><mo>−</mo><msub><mi>L</mi><mo>ℓ</mo></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><msub><mi>m</mi><mi>M</mi></msub><msub><mi>μ</mi><mi>M</mi></msub></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
-\widetilde\lambda^{\mathrm{PMWM,raw}}=
+<p><span class="math display">
+\widetilde{\lambda}^{\mathrm{PMWM,raw}}=
 \bar w^{\mathrm{PMWM}}+Z,\qquad
 Z_\ell\sim N(0,\sigma_\ell^2),\qquad
 \sigma_\ell=\frac{\sqrt{k}(U_\ell-L_\ell)}{m_M\mu_M},
-</annotation></semantics></math></p>
-<p>Here,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>M</mi></msub><annotation encoding="application/x-tex">\mu_M</annotation></semantics></math>
-is the Gaussian-DP parameter calibrated from the mean-estimation privacy
-allocation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>M</mi></msub><mo>,</mo><msub><mi>δ</mi><mi>M</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon_M,\delta_M)</annotation></semantics></math>.</p>
+</span></p>
+<p>Here, <span class="math inline">\mu_M</span> is the Gaussian-DP
+parameter calibrated from the mean-estimation privacy allocation <span class="math inline">(\varepsilon_M,\delta_M)</span>.</p>
 </div>
 <div class="section level3">
 <h3 id="privacy-allocation-and-tuning-choices">3.4. Privacy allocation and tuning choices<a class="anchor" aria-label="anchor" href="#privacy-allocation-and-tuning-choices"></a>
 </h3>
 <p>The scree epsilon budget is divided equally between private quantile
-estimation and noisy winsorized mean estimation. For each of the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-components, two private quantiles are released to estimate the lower and
-upper cutoffs. Thus, each of the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mi>k</mi></mrow><annotation encoding="application/x-tex">2k</annotation></semantics></math>
-quantile releases uses
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mi>Q</mi></msub><mo>=</mo><mfrac><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mrow><mn>4</mn><mi>k</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\varepsilon_Q =\frac{\varepsilon_{\mathrm{scree}}}{4k}</annotation></semantics></math>,
-with no delta allocation.</p>
-<p>The
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-dimensional
-winsorized mean vector is then released using the Gaussian mechanism
-with privacy budget</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>M</mi></msub><mo>,</mo><msub><mi>δ</mi><mi>M</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mn>2</mn></mfrac><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+estimation and noisy winsorized mean estimation. For each of the <span class="math inline">k</span> components, two private quantiles are
+released to estimate the lower and upper cutoffs. Thus, each of the
+<span class="math inline">2k</span> quantile releases uses <span class="math inline">\varepsilon_Q
+=\frac{\varepsilon_{\mathrm{scree}}}{4k}</span>, with no delta
+allocation.</p>
+<p>The <span class="math inline">k</span>-dimensional winsorized mean
+vector is then released using the Gaussian mechanism with privacy
+budget</p>
+<p><span class="math display">
 (\varepsilon_M,\delta_M)
 =
 \left(
 \frac{\varepsilon_{\mathrm{scree}}}{2},
 \delta_{\mathrm{scree}}
 \right).
-</annotation></semantics></math></p>
-<p>By sequential composition, the two stages together satisfy
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon_{\mathrm{scree}},\delta_{\mathrm{scree}})</annotation></semantics></math>-DP,
+</span></p>
+<p>By sequential composition, the two stages together satisfy <span class="math inline">(\varepsilon_{\mathrm{scree}},\delta_{\mathrm{scree}})</span>-DP,
 provided that the respective mechanism guarantees hold.</p>
 <p>The PMWM tuning parameters are:</p>
 <style>
@@ -449,27 +384,23 @@ provided that the respective mechanism guarantees hold.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>,</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">a,b</annotation></semantics></math></td>
-<td align="left">Public limits for the private cutoff estimates;
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>&lt;</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">a&lt;b</annotation></semantics></math>.</td>
+<td align="left"><span class="math inline">a,b</span></td>
+<td align="left">Public limits for the private cutoff estimates; <span class="math inline">a&lt;b</span>.</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>c</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><annotation encoding="application/x-tex">c_{\mathrm{trim}}</annotation></semantics></math></td>
-<td align="left">Positive baseline trimming constant in
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ζ</mi><annotation encoding="application/x-tex">\zeta</annotation></semantics></math>.</td>
+<td align="left"><span class="math inline">c_{\mathrm{trim}}</span></td>
+<td align="left">Positive baseline trimming constant in <span class="math inline">\zeta</span>.</td>
 </tr>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>η</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><annotation encoding="application/x-tex">\eta_{\mathrm{trim}}</annotation></semantics></math></td>
-<td align="left">Tail-trimming lower bound,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>≤</mo><msub><mi>η</mi><mrow><mi mathvariant="normal">t</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">m</mi></mrow></msub><mo>&lt;</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">0\le\eta_{\mathrm{trim}}&lt;0.5</annotation></semantics></math>.</td>
+<td align="left"><span class="math inline">\eta_{\mathrm{trim}}</span></td>
+<td align="left">Tail-trimming lower bound, <span class="math inline">0\le\eta_{\mathrm{trim}}&lt;0.5</span>.</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math></td>
-<td align="left">Geometric-grid base for private quantiles,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\beta&gt;1</annotation></semantics></math>.</td>
+<td align="left"><span class="math inline">\beta</span></td>
+<td align="left">Geometric-grid base for private quantiles, <span class="math inline">\beta&gt;1</span>.</td>
 </tr>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>Q</mi></msub><mo>,</mo><msub><mi>I</mi><mi>M</mi></msub></mrow><annotation encoding="application/x-tex">I_Q,I_M</annotation></semantics></math></td>
+<td align="left"><span class="math inline">I_Q,I_M</span></td>
 <td align="left">Choice between pair-row reuse and disjoint
 quantile/mean subsets.</td>
 </tr>
@@ -487,10 +418,9 @@ PMWM, the mean is found iteratively using a bounded Huber score.</p>
 <div class="section level3">
 <h3 id="huber-loss-and-score">4.1. Huber loss and score<a class="anchor" aria-label="anchor" href="#huber-loss-and-score"></a>
 </h3>
-<p>For a threshold
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>τ</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\tau&gt;0</annotation></semantics></math>,
-the Huber loss function and its derivative are defined as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mi>τ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>u</mi><mn>2</mn></msup><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mrow><mo stretchy="true" form="prefix">|</mo><mi>u</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>≤</mo><mi>τ</mi><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mi>τ</mi><mrow><mo stretchy="true" form="prefix">|</mo><mi>u</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>−</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>τ</mi><mn>2</mn></msup><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mrow><mo stretchy="true" form="prefix">|</mo><mi>u</mi><mo stretchy="true" form="postfix">|</mo></mrow><mo>&gt;</mo><mi>τ</mi><mo>,</mo></mtd></mtr></mtable></mrow><mspace width="2.0em"></mspace><msub><mi>ψ</mi><mi>τ</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>ρ</mi><mi>τ</mi></msub><mi>′</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mo>min</mo><mo stretchy="false" form="prefix">{</mo><mi>τ</mi><mo>,</mo><mo>max</mo><mo stretchy="false" form="prefix">{</mo><mi>−</mi><mi>τ</mi><mo>,</mo><mi>u</mi><mo stretchy="false" form="postfix">}</mo><mo stretchy="false" form="postfix">}</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>For a threshold <span class="math inline">\tau&gt;0</span>, the Huber
+loss function and its derivative are defined as</p>
+<p><span class="math display">
 \rho_\tau(u)=
 \begin{cases}
 \frac12u^2,&amp; |u|\le\tau,\\
@@ -499,51 +429,38 @@ the Huber loss function and its derivative are defined as</p>
 \qquad
 \psi_\tau(u)=\rho_\tau'(u)
 =\min\{\tau,\max\{-\tau,u\}\}.
-</annotation></semantics></math></p>
-<p>For each component
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>ℓ</mo><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>k</mi></mrow><annotation encoding="application/x-tex">\ell=1,\ldots,k</annotation></semantics></math>,
+</span></p>
+<p>For each component <span class="math inline">\ell=1,\ldots,k</span>,
 the corresponding non-private Huber mean estimator is defined by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>μ</mi><mo accent="true">̂</mo></mover><mrow><msub><mi>τ</mi><mo>ℓ</mo></msub><mo>,</mo><mo>ℓ</mo></mrow></msub><mo>∈</mo><munder><mrow><mo>arg</mo><mo>min</mo></mrow><mrow><mi>θ</mi><mo>∈</mo><mi>ℝ</mi></mrow></munder><mfrac><mn>1</mn><mi>m</mi></mfrac><munderover><mo>∑</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><msub><mi>ρ</mi><msub><mi>τ</mi><mo>ℓ</mo></msub></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><mo>−</mo><mi>θ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \widehat\mu_{\tau_\ell,\ell}
 \in
 \underset{\theta\in\mathbb R}{\arg\min}
 \frac1m
 \sum_{r=1}^m
 \rho_{\tau_\ell}(w_{r\ell}-\theta).
-</annotation></semantics></math></p>
-<p>Since
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>ψ</mi><msub><mi>τ</mi><mo>ℓ</mo></msub></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>u</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">|</mo></mrow><mo>≤</mo><msub><mi>τ</mi><mo>ℓ</mo></msub></mrow><annotation encoding="application/x-tex">|\psi_{\tau_\ell}(u)|\le\tau_\ell</annotation></semantics></math>,
-extreme residuals have bounded influence on the iterative updates.</p>
+</span></p>
+<p>Since <span class="math inline">|\psi_{\tau_\ell}(u)|\le\tau_\ell</span>, extreme
+residuals have bounded influence on the iterative updates.</p>
 </div>
 <div class="section level3">
 <h3 id="private-scale-and-huber-thresholds">4.2. Private scale and Huber thresholds<a class="anchor" aria-label="anchor" href="#private-scale-and-huber-thresholds"></a>
 </h3>
 <p>Before estimating the Huber mean, we privately estimate the
 variability of the paired squared differences for each component. Then,
-the resulting <strong>private scale proxy</strong>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>m</mi><mo accent="true">̃</mo></mover><mrow><mn>2</mn><mo>,</mo><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widetilde m_{2,\ell}</annotation></semantics></math>
-is used to determine the Huber threshold
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>τ</mi><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\tau_\ell</annotation></semantics></math>.</p>
-<p>To obtain this scale proxy, the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
+the resulting <strong>private scale proxy</strong> <span class="math inline">\widetilde{m}_{2,\ell}</span> is used to determine
+the Huber threshold <span class="math inline">\tau_\ell</span>.</p>
+<p>To obtain this scale proxy, the <span class="math inline">m</span>
 paired squared differences are paired again to form additional half
 squared differences. Their block medians are then summarized using a
-private histogram over dyadic scales
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mn>2</mn><mi>r</mi></msup><annotation encoding="application/x-tex">2^r</annotation></semantics></math>.
-The public range
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mo>min</mo></msub><mo>≤</mo><mi>r</mi><mo>≤</mo><msub><mi>r</mi><mo>max</mo></msub></mrow><annotation encoding="application/x-tex">r_{\min}\le r\le r_{\max}</annotation></semantics></math>
-determines the candidate scales, while
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>
-controls the number of blocks. The detailed procedure is provided in the
-<a href="algorithms.html#alg-m2">private robust estimator for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>m</mi><mn>2</mn></msub><annotation encoding="application/x-tex">m_2</annotation></semantics></math></a>.</p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ρ</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\rho\in(0,1)</annotation></semantics></math>
-denote the proportion of the scree epsilon budget allocated to private
-scale estimation. For
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-components, the privacy allocations are</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mrow><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi><mi mathvariant="normal">e</mi></mrow><mo>,</mo><mo>ℓ</mo></mrow></msub><mo>=</mo><mfrac><mrow><mi>ρ</mi><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub></mrow><mi>k</mi></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ε</mi><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">D</mi></mrow></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>ρ</mi><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+private histogram over dyadic scales <span class="math inline">2^r</span>. The public range <span class="math inline">r_{\min}\le r\le r_{\max}</span> determines the
+candidate scales, while <span class="math inline">M</span> controls the
+number of blocks. The detailed procedure is provided in the <a href="algorithms.html#alg-m2">private robust estimator for <span class="math inline">m_2</span></a>.</p>
+<p>Let <span class="math inline">\rho\in(0,1)</span> denote the
+proportion of the scree epsilon budget allocated to private scale
+estimation. For <span class="math inline">k</span> components, the
+privacy allocations are</p>
+<p><span class="math display">
 \varepsilon_{\mathrm{scale},\ell}
 =
 \frac{\rho\varepsilon_{\mathrm{scree}}}{k},
@@ -551,14 +468,14 @@ components, the privacy allocations are</p>
 \varepsilon_{\mathrm{GD}}
 =
 (1-\rho)\varepsilon_{\mathrm{scree}}.
-</annotation></semantics></math></p>
+</span></p>
 <p>Using the private scale proxy and the privacy budget allocated to
 gradient descent, the Huber threshold for each component is defined
 as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>τ</mi><mo>ℓ</mo></msub><mo>=</mo><msqrt><msub><mover><mi>m</mi><mo accent="true">̃</mo></mover><mrow><mn>2</mn><mo>,</mo><mo>ℓ</mo></mrow></msub></msqrt><msqrt><mfrac><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">D</mi></mrow></msub><mi>/</mi><mi>k</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>m</mi></mrow><msqrt><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><mo>log</mo><mi>m</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>log</mo><mi>m</mi></mrow></msqrt></mfrac></msqrt><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \tau_\ell
 =
-\sqrt{\widetilde m_{2,\ell}}
+\sqrt{\widetilde{m}_{2,\ell}}
 \sqrt{
 \frac{
 (\varepsilon_{\mathrm{GD}}/k)m
@@ -566,46 +483,36 @@ as</p>
 \sqrt{(1+\log m)\log m}
 }
 }.
-</annotation></semantics></math></p>
+</span></p>
 </div>
 <div class="section level3">
 <h3 id="noisy-gradient-descent">4.3. Noisy gradient descent<a class="anchor" aria-label="anchor" href="#noisy-gradient-descent"></a>
 </h3>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>θ</mi><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo>=</mo><msub><mi>μ</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">\theta_\ell^{(0)}=\mu_0</annotation></semantics></math>
-be a public initial value,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>η</mi><mn>0</mn></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\eta_0&gt;0</annotation></semantics></math>
-the step size, and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
-the number of iterations. The private iterates are projected to the
-nonnegative half-line:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>θ</mi><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>+</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo>=</mo><mo>max</mo><mrow><mo stretchy="true" form="prefix">{</mo><mn>0</mn><mo>,</mo><mspace width="0.167em"></mspace><msubsup><mi>θ</mi><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo>+</mo><mfrac><msub><mi>η</mi><mn>0</mn></msub><mi>m</mi></mfrac><munderover><mo>∑</mo><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><msub><mi>ψ</mi><msub><mi>τ</mi><mo>ℓ</mo></msub></msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>w</mi><mrow><mi>r</mi><mo>ℓ</mo></mrow></msub><mo>−</mo><msubsup><mi>θ</mi><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msubsup><mi>Z</mi><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo stretchy="true" form="postfix">}</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>Let <span class="math inline">\theta_\ell^{(0)}=\mu_0</span> be a
+public initial value, <span class="math inline">\eta_0&gt;0</span> the
+step size, and <span class="math inline">T</span> the number of
+iterations. The private iterates are projected to the nonnegative
+half-line:</p>
+<p><span class="math display">
 \theta_\ell^{(t+1)}=
 \max\left\{0,\,\theta_\ell^{(t)}+
 \frac{\eta_0}{m}\sum_{r=1}^m
 \psi_{\tau_\ell}(w_{r\ell}-\theta_\ell^{(t)})+
 Z_\ell^{(t)}\right\}.
-</annotation></semantics></math></p>
+</span></p>
 <p>The Gaussian perturbations are drawn independently across coordinates
 and iterations with</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>Z</mi><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mrow><mo>ℓ</mo><mo>,</mo><mi>H</mi></mrow><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>σ</mi><mrow><mo>ℓ</mo><mo>,</mo><mi>H</mi></mrow></msub><mo>=</mo><mfrac><mrow><mn>2</mn><msub><mi>η</mi><mn>0</mn></msub><msub><mi>τ</mi><mo>ℓ</mo></msub><msqrt><mrow><mi>k</mi><mi>T</mi></mrow></msqrt></mrow><mrow><mi>m</mi><msub><mi>μ</mi><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">D</mi></mrow></msub></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 Z_\ell^{(t)}\sim N(0,\sigma_{\ell,H}^2),\qquad
 \sigma_{\ell,H}=
 \frac{2\eta_0\tau_\ell\sqrt{kT}}{m\mu_{\mathrm{GD}}},
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">D</mi></mrow></msub><annotation encoding="application/x-tex">\mu_{\mathrm{GD}}</annotation></semantics></math>
-is the Gaussian-DP parameter calibrated from the gradient-descent
-privacy allocation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mrow><mi mathvariant="normal">G</mi><mi mathvariant="normal">D</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon_{\mathrm{GD}},\delta_{\mathrm{scree}})</annotation></semantics></math>.
-After
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
-steps,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo><mrow><mi mathvariant="normal">H</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">b</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">r</mi><mo mathvariant="normal">,</mo><mi mathvariant="normal">r</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">w</mi></mrow></msubsup><mo>=</mo><msubsup><mi>θ</mi><mo>ℓ</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>T</mi><mo stretchy="true" form="postfix">)</mo></mrow></msubsup></mrow><annotation encoding="application/x-tex">\widetilde\lambda_\ell^{\mathrm{Huber,raw}}=\theta_\ell^{(T)}</annotation></semantics></math>.</p>
-<p>The scale step consumes
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ρ</mi><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\rho\varepsilon_{\mathrm{scree}}</annotation></semantics></math>
-and no delta; the gradient step consumes
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>ρ</mi><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi><mi mathvariant="normal">e</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">((1-\rho)\varepsilon_{\mathrm{scree}},\delta_{\mathrm{scree}})</annotation></semantics></math>.
+</span></p>
+<p>where <span class="math inline">\mu_{\mathrm{GD}}</span> is the
+Gaussian-DP parameter calibrated from the gradient-descent privacy
+allocation <span class="math inline">(\varepsilon_{\mathrm{GD}},\delta_{\mathrm{scree}})</span>.
+After <span class="math inline">T</span> steps, <span class="math inline">\widetilde{\lambda}_\ell^{\mathrm{Huber,raw}}=\theta_\ell^{(T)}</span>.</p>
+<p>The scale step consumes <span class="math inline">\rho\varepsilon_{\mathrm{scree}}</span> and no
+delta; the gradient step consumes <span class="math inline">((1-\rho)\varepsilon_{\mathrm{scree}},\delta_{\mathrm{scree}})</span>.
 Their releases must be accounted for together. The method requires at
 least four initial pair rows, corresponding to at least eight
 observations.</p>
@@ -627,30 +534,29 @@ observations.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mo>min</mo></msub><mo>,</mo><msub><mi>r</mi><mo>max</mo></msub></mrow><annotation encoding="application/x-tex">r_{\min},r_{\max}</annotation></semantics></math></td>
+<td align="left"><span class="math inline">r_{\min},r_{\max}</span></td>
 <td align="left">Public integer bounds on the dyadic scale indices, with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mo>min</mo></msub><mo>&lt;</mo><msub><mi>r</mi><mo>max</mo></msub></mrow><annotation encoding="application/x-tex">r_{\min}&lt;r_{\max}</annotation></semantics></math>.</td>
+<span class="math inline">r_{\min}&lt;r_{\max}</span>.</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\rho</span></td>
 <td align="left">Fraction of scree epsilon assigned to private scale
-estimation,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>&lt;</mo><mi>ρ</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0&lt;\rho&lt;1</annotation></semantics></math>.</td>
+estimation, <span class="math inline">0&lt;\rho&lt;1</span>.</td>
 </tr>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\mu_0</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\mu_0</span></td>
 <td align="left">Public initialization of the mean iterate.</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>η</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\eta_0</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\eta_0</span></td>
 <td align="left">Positive gradient-descent step size.</td>
 </tr>
 <tr class="odd">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math></td>
+<td align="left"><span class="math inline">T</span></td>
 <td align="left">Number of noisy gradient steps.</td>
 </tr>
 <tr class="even">
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math></td>
+<td align="left"><span class="math inline">M</span></td>
 <td align="left">Number of blocks for private scale estimation.</td>
 </tr>
 </tbody>
@@ -667,38 +573,30 @@ described in <code><a href="../reference/huber_control.html">huber_control()</a>
 <p>Random noise can produce negative or nonmonotone raw scree estimates.
 The reported estimates are truncated at zero and may additionally be
 adjusted by nonincreasing isotonic regression. Writing the resulting
-nonnegative sequence as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde\lambda_1,\ldots,\widetilde\lambda_k</annotation></semantics></math>,
+nonnegative sequence as <span class="math inline">\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k</span>,
 the reported PVE is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mrow><mi mathvariant="normal">P</mi><mi mathvariant="normal">V</mi><mi mathvariant="normal">E</mi></mrow><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mfrac><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mrow><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>j</mi></msub></mrow></mfrac><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>j</mi></msub><mo>&gt;</mo><mn>0</mn><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>0</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">otherwise</mtext><mi>.</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \widetilde{\mathrm{PVE}}_\ell=
 \begin{cases}
-\displaystyle\frac{\widetilde\lambda_\ell}
-{\sum_{j=1}^k\widetilde\lambda_j},&amp;
-\sum_{j=1}^k\widetilde\lambda_j&gt;0,\\[6pt]
+\displaystyle\frac{\widetilde{\lambda}_\ell}
+{\sum_{j=1}^k\widetilde{\lambda}_j},&amp;
+\sum_{j=1}^k\widetilde{\lambda}_j&gt;0,\\[6pt]
 0,&amp;\text{otherwise}.
 \end{cases}
-</annotation></semantics></math></p>
+</span></p>
 </div>
 <div class="section level2">
 <h2 id="dp-screepve-plots-in-dppca">6. DP scree/PVE plots in <code>dppca</code><a class="anchor" aria-label="anchor" href="#dp-screepve-plots-in-dppca"></a>
 </h2>
-<p>If the sum is positive, the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-reported PVE values sum to one. When
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>&lt;</mo><mi>p</mi></mrow><annotation encoding="application/x-tex">k&lt;p</annotation></semantics></math>,
-this is the <strong>share of the estimated variation among the retained
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-components</strong>, not necessarily a fraction of the total variance in
-the original
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>-dimensional
-data. If all reported scree values are zero, every PVE is set to zero.
-Truncation, isotonic adjustment, and normalization are post-processing
-of private estimates and do not require additional privacy budget.</p>
-<p>The resulting estimates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde\lambda_1,\ldots,\widetilde\lambda_k</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mrow><mi mathvariant="normal">P</mi><mi mathvariant="normal">V</mi><mi mathvariant="normal">E</mi></mrow><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mrow><mi mathvariant="normal">P</mi><mi mathvariant="normal">V</mi><mi mathvariant="normal">E</mi></mrow><mo accent="true">̃</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde{\mathrm{PVE}}_1,\ldots,\widetilde{\mathrm{PVE}}_k</annotation></semantics></math>
+<p>If the sum is positive, the <span class="math inline">k</span>
+reported PVE values sum to one. When <span class="math inline">k&lt;p</span>, this is the <strong>share of the
+estimated variation among the retained <span class="math inline">k</span> components</strong>, not necessarily a
+fraction of the total variance in the original <span class="math inline">p</span>-dimensional data. If all reported scree
+values are zero, every PVE is set to zero. Truncation, isotonic
+adjustment, and normalization are post-processing of private estimates
+and do not require additional privacy budget.</p>
+<p>The resulting estimates <span class="math inline">\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k</span>
+and <span class="math inline">\widetilde{\mathrm{PVE}}_1,\ldots,\widetilde{\mathrm{PVE}}_k</span>
 are displayed in the <strong>DP scree plot</strong> and <strong>DP PVE
 plot</strong>, respectively. For implementation details, plotting
 options, and examples, see the <a href="tutorials-scree-plots.html">DP

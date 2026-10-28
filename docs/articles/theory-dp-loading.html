@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Differentially Private PC Directions • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="Differentially Private PC Directions">
 <meta name="description" content="Private principal component directions based on the spherical Kendall matrix, Gaussian perturbation, and loading plot visualization in dppca.
@@ -98,82 +99,68 @@ arguments, and plot customization, see the <a href="tutorials-loading-plots.html
 <div class="section level2">
 <h2 id="spherical-kendall-matrix-and-pc-directions">1. Spherical Kendall matrix and PC directions<a class="anchor" aria-label="anchor" href="#spherical-kendall-matrix-and-pc-directions"></a>
 </h2>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>n</mi><mo>×</mo><mi>p</mi></mrow></msup></mrow><annotation encoding="application/x-tex">X\in\mathbb R^{n\times p}</annotation></semantics></math>
-contain observations
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>x</mi><mi>n</mi></msub><mo>∈</mo><msup><mi>ℝ</mi><mi>p</mi></msup></mrow><annotation encoding="application/x-tex">x_1,\ldots,x_n\in\mathbb R^p</annotation></semantics></math>
-in its rows. As described in the <a href="theory-pca-background.html">PCA Background</a>, ordinary sample PC
-directions are the eigenvectors of the sample covariance matrix
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mo>,</mo><mspace width="2.0em"></mspace><mover><mi>x</mi><mo accent="true">‾</mo></mover><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msub><mi>x</mi><mi>i</mi></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>Let <span class="math inline">X\in\mathbb R^{n\times p}</span>
+contain observations <span class="math inline">x_1,\ldots,x_n\in\mathbb
+R^p</span> in its rows. As described in the <a href="theory-pca-background.html">PCA Background</a>, ordinary sample PC
+directions are the eigenvectors of the sample covariance matrix <span class="math display">
 \widehat\Sigma
 =\frac{1}{n-1}\sum_{i=1}^n
 (x_i-\bar x)(x_i-\bar x)^\top,
 \qquad \bar x=\frac1n\sum_{i=1}^n x_i.
-</annotation></semantics></math></p>
+</span></p>
 <p>Equivalently, the sample covariance can be expressed using pairwise
 differences:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><mo>=</mo><mfrac><mn>1</mn><mrow><mi>n</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \widehat\Sigma
 =\frac{1}{n(n-1)}\sum_{i&lt;j}
 (x_i-x_j)(x_i-x_j)^\top.
-</annotation></semantics></math></p>
+</span></p>
 <p>The <strong>sample spherical Kendall matrix</strong> similarly uses
 pairwise differences, but normalizes each difference to unit length:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">h</mi></mrow></msub><mo>=</mo><mfrac><mn>2</mn><mrow><mi>n</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><mfrac><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup></mrow><mrow><mo stretchy="false" form="postfix">∥</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub><msubsup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn><mn>2</mn></msubsup></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<span class="math display">
 \displaystyle
 \widehat K_{\mathrm{sph}}
 =\frac{2}{n(n-1)}\sum_{i&lt;j}
 \frac{(x_i-x_j)(x_i-x_j)^\top}
 {\|x_i-x_j\|_2^2}.
-</annotation></semantics></math></p>
+</span></p>
 <p>This expression is defined when the pairwise differences are
 nonzero.</p>
-<p>The matrices
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">h</mi></mrow></msub><annotation encoding="application/x-tex">\widehat K_{\mathrm{sph}}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\widehat\Sigma</annotation></semantics></math>
-generally have different sample eigenvectors. However, under suitable
-elliptical distributional assumptions, their population counterparts
-share principal eigendirections. Spherical Kendall PCA therefore
-provides an alternative way to estimate PC directions, rather than an
-exact reconstruction of the sample covariance eigenvectors.</p>
+<p>The matrices <span class="math inline">\widehat
+K_{\mathrm{sph}}</span> and <span class="math inline">\widehat\Sigma</span> generally have different
+sample eigenvectors. However, under suitable elliptical distributional
+assumptions, their population counterparts share principal
+eigendirections. Spherical Kendall PCA therefore provides an alternative
+way to estimate PC directions, rather than an exact reconstruction of
+the sample covariance eigenvectors.</p>
 <p>More generally, a generalized spatial sign can be written as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>h</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>z</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mo stretchy="false" form="postfix">∥</mo><mi>z</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mfrac><mi>z</mi><mrow><mo stretchy="false" form="postfix">∥</mo><mi>z</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mi>z</mi><mo>≠</mo><mn>0</mn><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 g_h(z)=h(\|z\|_2)\frac{z}{\|z\|_2},
 \qquad z\ne0,
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
-is a radial weight function. For a bounded transformation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>g</mi><mi>h</mi></msub><annotation encoding="application/x-tex">g_h</annotation></semantics></math>,
-the corresponding <strong>generalized multivariate Kendall’s tau
+</span></p>
+<p>where <span class="math inline">h</span> is a radial weight function.
+For a bounded transformation <span class="math inline">g_h</span>, the
+corresponding <strong>generalized multivariate Kendall’s tau
 matrix</strong> is estimated by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><msub><mi>g</mi><mi>h</mi></msub></msub><mo>=</mo><mfrac><mn>2</mn><mrow><mi>n</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>&lt;</mo><mi>j</mi></mrow></munder><msub><mi>g</mi><mi>h</mi></msub><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>g</mi><mi>h</mi></msub><mspace width="-0.167em"></mspace><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \widehat K_{g_h}
 =\frac{2}{n(n-1)}\sum_{i&lt;j}
 g_h\!\left(\frac{x_i-x_j}{\sqrt2}\right)
 g_h\!\left(\frac{x_i-x_j}{\sqrt2}\right)^\top.
-</annotation></semantics></math></p>
-<p>The spherical case corresponds to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>h</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">h(r)=1</annotation></semantics></math>,
-giving
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>h</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>z</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>z</mi><mi>/</mi><mo stretchy="false" form="postfix">∥</mo><mi>z</mi><msub><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">g_h(z)=z/\|z\|_2</annotation></semantics></math>
-for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>z</mi><mo>≠</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">z\ne0</annotation></semantics></math>.
-The <code><a href="../reference/dp_loading.html">dp_loading()</a></code> function implements this spherical
-case.</p>
+</span></p>
+<p>The spherical case corresponds to <span class="math inline">h(r)=1</span>, giving <span class="math inline">g_h(z)=z/\|z\|_2</span> for <span class="math inline">z\ne0</span>. The <code><a href="../reference/dp_loading.html">dp_loading()</a></code> function
+implements this spherical case.</p>
 <div class="section level3">
 <h3 id="translation-invariance">Translation invariance<a class="anchor" aria-label="anchor" href="#translation-invariance"></a>
 </h3>
 <p>The spherical Kendall matrix is invariant to a common translation of
-the observations. For any
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo>∈</mo><msup><mi>ℝ</mi><mi>p</mi></msup></mrow><annotation encoding="application/x-tex">c\in\mathbb R^p</annotation></semantics></math>,
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>x</mi><mi>j</mi></msub><mo>−</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>x</mi><mi>i</mi></msub><mo>−</mo><msub><mi>x</mi><mi>j</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">h</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>−</mo><msub><mn>𝟏</mn><mi>n</mi></msub><msup><mi>c</mi><mi>⊤</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">h</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+the observations. For any <span class="math inline">c\in\mathbb
+R^p</span>, <span class="math display">
 (x_i-c)-(x_j-c)=x_i-x_j,
 \qquad
 \widehat K_{\mathrm{sph}}(X-\mathbf1_n c^\top)
 =\widehat K_{\mathrm{sph}}(X).
-</annotation></semantics></math></p>
+</span></p>
 <p>Consequently, estimating spherical Kendall directions does not
 require computing or releasing the sample mean.</p>
 </div>
@@ -183,107 +170,75 @@ require computing or releasing the sample mean.</p>
 </h2>
 <p>We consider fixed-size replacement adjacency, in which two
 neighboring datasets have the same number of observations and differ in
-one row. Since changing one observation affects at most
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n-1</annotation></semantics></math>
-terms in the pairwise sum, the Frobenius sensitivity of the spherical
-Kendall matrix satisfies
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Δ</mi><mi>F</mi></msub><mo>=</mo><munder><mo>sup</mo><mrow><mi>X</mi><mo>∼</mo><mi>X</mi><mi>′</mi></mrow></munder><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">∥</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">h</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">h</mi></mrow></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mi>′</mi><mo stretchy="true" form="postfix">)</mo></mrow><msub><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">∥</mo><mi>F</mi></msub><mo>≤</mo><mfrac><mn>4</mn><mi>n</mi></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+one row. Since changing one observation affects at most <span class="math inline">n-1</span> terms in the pairwise sum, the Frobenius
+sensitivity of the spherical Kendall matrix satisfies <span class="math display">
 \Delta_F
 =\sup_{X\sim X'}
 \bigl\|\widehat K_{\mathrm{sph}}(X)
 -\widehat K_{\mathrm{sph}}(X')\bigr\|_F
 \le\frac4n.
-</annotation></semantics></math></p>
+</span></p>
 <p>The mechanism adds symmetric Gaussian noise to the spherical Kendall
-matrix. For privacy parameters
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ε</mi><mi>L</mi></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\varepsilon_L&gt;0</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>&lt;</mo><msub><mi>δ</mi><mi>L</mi></msub><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0&lt;\delta_L&lt;1</annotation></semantics></math>,
-define
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>K</mi></msub><mo>=</mo><mfrac><mrow><mn>4</mn><msqrt><mrow><mn>2</mn><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1.25</mn><mi>/</mi><msub><mi>δ</mi><mi>L</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msqrt></mrow><mrow><mi>n</mi><msub><mi>ε</mi><mi>L</mi></msub></mrow></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
+matrix. For privacy parameters <span class="math inline">\varepsilon_L&gt;0</span> and <span class="math inline">0&lt;\delta_L&lt;1</span>, define <span class="math display">
 \sigma_K
 =\frac{4\sqrt{2\log(1.25/\delta_L)}}{n\varepsilon_L}.
-</annotation></semantics></math></p>
-<p>A symmetric noise matrix
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>p</mi><mo>×</mo><mi>p</mi></mrow></msup></mrow><annotation encoding="application/x-tex">E\in\mathbb R^{p\times p}</annotation></semantics></math>
-is generated with independent entries on and below the diagonal, such
-that</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>E</mi><mrow><mi>j</mi><mi>j</mi></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>K</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>E</mi><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>K</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="1.0em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>j</mi><mo>&lt;</mo><mo>ℓ</mo><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>E</mi><mrow><mo>ℓ</mo><mi>j</mi></mrow></msub><mo>=</mo><msub><mi>E</mi><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+</span></p>
+<p>A symmetric noise matrix <span class="math inline">E\in\mathbb
+R^{p\times p}</span> is generated with independent entries on and below
+the diagonal, such that</p>
+<p><span class="math display">
 E_{jj}\sim N(0,\sigma_K^2),
 \qquad
 E_{j\ell}\sim N(0,\sigma_K^2/2)\quad(j&lt;\ell),
 \qquad E_{\ell j}=E_{j\ell}.
-</annotation></semantics></math></p>
-<p>The perturbed matrix is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>K</mi><mo accent="true">̃</mo></mover><mo>=</mo><msub><mover><mi>K</mi><mo accent="true">̂</mo></mover><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">h</mi></mrow></msub><mo>+</mo><mi>E</mi></mrow><annotation encoding="application/x-tex">\widetilde K=\widehat K_{\mathrm{sph}}+E</annotation></semantics></math>.
+</span></p>
+<p>The perturbed matrix is <span class="math inline">\widetilde{K}=\widehat{K}_{\mathrm{sph}}+E</span>.
 The <strong>private PC directions</strong> are obtained from the
 eigen-decomposition</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>K</mi><mo accent="true">̃</mo></mover><mo>=</mo><mover><mi>V</mi><mo accent="true">̃</mo></mover><mover><mi>Θ</mi><mo accent="true">̃</mo></mover><msup><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>⊤</mi></msup><mo>,</mo><mspace width="2.0em"></mspace><mover><mi>V</mi><mo accent="true">̃</mo></mover><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mi>p</mi></msub><mo stretchy="true" form="postfix">]</mo></mrow><mo>,</mo></mrow><annotation encoding="application/x-tex">
-\widetilde K
-=\widetilde V\widetilde\Theta\widetilde V^\top,
+<p><span class="math display">
+\widetilde{K}
+=\widetilde{V} \widetilde{\Theta}\widetilde{V}^\top,
 \qquad
-\widetilde V=[\widetilde v_1,\ldots,\widetilde v_p],
-</annotation></semantics></math></p>
-<p>where the columns of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>V</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde V</annotation></semantics></math>
-are orthonormal eigenvectors ordered by decreasing eigenvalues of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>K</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde K</annotation></semantics></math>.</p>
-<p>Importantly, the eigenvalues of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>K</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde K</annotation></semantics></math>
-are not estimates of the covariance eigenvalues
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\widehat\lambda_\ell</annotation></semantics></math>
-defined in ordinary PCA. The <a href="theory-dp-scree.html">DP Scree</a>
-procedure estimates variance along private PC directions separately.</p>
+\widetilde{V}=[\widetilde{v}_1,\ldots,\widetilde{v}_p],
+</span></p>
+<p>where the columns of <span class="math inline">\widetilde{V}</span>
+are orthonormal eigenvectors ordered by decreasing eigenvalues of <span class="math inline">\widetilde{K}</span>.</p>
+<p>Importantly, the eigenvalues of <span class="math inline">\widehat{K}</span> are not same as the covariance
+eigenvalues <span class="math inline">\widehat\lambda_\ell</span>
+defined in the non-private ordinary PCA. The <a href="theory-dp-scree.html">DP Scree</a> procedure estimates variance
+along private PC directions separately.</p>
 </div>
 <div class="section level2">
 <h2 id="dp-loading-plots">3. DP loading plots in <code>dppca</code><a class="anchor" aria-label="anchor" href="#dp-loading-plots"></a>
 </h2>
 <p>A <strong>DP loading plot</strong> displays the coefficients of the
-private PC direction vectors. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widetilde v_{j\ell}</annotation></semantics></math>
-denote the coefficient of variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-in private PC direction
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>.
-For two selected components
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
-with distinct
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>,</mo><mi>b</mi><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>p</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">a,b\in\{1,\ldots,p\}</annotation></semantics></math>,
-variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-is represented by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>L</mi><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+private PC direction vectors. Let <span class="math inline">\widetilde{v}_{j\ell}</span> denote the coefficient
+of variable <span class="math inline">j</span> in private PC direction
+<span class="math inline">\ell</span>. For two selected components <span class="math inline">a</span> and <span class="math inline">b</span>,
+with distinct <span class="math inline">a,b\in\{1,\ldots,p\}</span>,
+variable <span class="math inline">j</span> is represented by</p>
+<p><span class="math display">
 L_j^{\mathrm{DP}}
-=(\widetilde v_{ja},\widetilde v_{jb}).
-</annotation></semantics></math></p>
+=(\widetilde{v}_{ja},\widetilde{v}_{jb}).
+</span></p>
 <p>Large absolute coefficients indicate that the corresponding variables
 have larger weights in a selected PC direction. The signs distinguish
 opposing contributions along an axis, but eigenvector signs are
-arbitrary: replacing
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\widetilde v_\ell</annotation></semantics></math>
-with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub></mrow><annotation encoding="application/x-tex">-\widetilde v_\ell</annotation></semantics></math>
-does not change the underlying direction. For comparison, the ordinary
-PCA loading coordinates are
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>L</mi><mi>j</mi><mrow><mi mathvariant="normal">N</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">L_j^{\mathrm{NP}}=(\widehat v_{ja},\widehat v_{jb})</annotation></semantics></math>
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>V</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\widehat V</annotation></semantics></math>
-consists of eigenvectors of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>Σ</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\widehat\Sigma</annotation></semantics></math>.</p>
+arbitrary: replacing <span class="math inline">\widetilde{v}_\ell</span>
+with <span class="math inline">-\widetilde{v}_\ell</span> does not
+change the underlying direction. For comparison, the non-private
+ordinary PCA loading coordinates are <span class="math inline">L_j^{\mathrm{NP}}=(\widehat v_{ja},\widehat
+v_{jb})</span> where <span class="math inline">\widehat V</span>
+consists of eigenvectors of <span class="math inline">\widehat\Sigma</span>.</p>
 <p>The package supports <strong>vector</strong>, <strong>point</strong>,
 and <strong>heatmap</strong> displays of loading coefficients. For a
 selected pair of PCs, vector and point plots encode the same coordinates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>L</mi><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><annotation encoding="application/x-tex">L_j^{\mathrm{DP}}</annotation></semantics></math>.
-A <strong>vector plot</strong> draws an arrow from
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,0)</annotation></semantics></math>
-to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>L</mi><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><annotation encoding="application/x-tex">L_j^{\mathrm{DP}}</annotation></semantics></math>;
-a <strong>point plot</strong> places a point at that coordinate. A
-<strong>heatmap</strong> displays the signed entries
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widetilde v_{j\ell}</annotation></semantics></math>
-for selected variables and PCs.</p>
+<span class="math inline">L_j^{\mathrm{DP}}</span>. A <strong>vector
+plot</strong> draws an arrow from <span class="math inline">(0,0)</span>
+to <span class="math inline">L_j^{\mathrm{DP}}</span>; a <strong>point
+plot</strong> places a point at that coordinate. A
+<strong>heatmap</strong> displays the signed entries <span class="math inline">\widetilde{v}_{j\ell}</span> for selected variables
+and PCs.</p>
 <p>For examples and plotting options, see the <a href="tutorials-loading-plots.html">DP Loading Plot Tutorial</a>.</p>
 </div>
 <div class="section level2">

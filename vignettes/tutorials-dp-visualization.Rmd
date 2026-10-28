@@ -48,9 +48,9 @@ This tutorial uses the `vowel` dataset to create a grouped PCA analysis with `dp
 
 
 This tutorial focuses on **R arguments, stored results, and plots**. 
-For the mathematics underlying all five displays, see [Theory of DP PCA Visualizations](theory-dp-visualization.html). 
-The individual estimation mechanisms are covered by [Theory of DP Loading](theory-dp-loading.html), [Theory of DP Scree](theory-dp-scree.html), and
-[Theory of DP Score](theory-dp-score.html). For general setup and input requirements, see [Getting Started](tutorials-getting-started.html).
+For the mathematics underlying all five displays, see [DP PCA Visualization Methodology](method-dp-visualization.html). 
+The individual estimation mechanisms are covered by [DP Directions Methodology](method-dp-loading.html), [DP Scree Methodology](method-dp-scree.html), and
+[DP Score Methodology](method-dp-score.html). For general setup and input requirements, see [Getting Started](tutorials-getting-started.html).
 
 ## 1. Load the vowel data
 
@@ -245,7 +245,7 @@ By default, `variables = 10` selects the 10 variables with the largest Euclidean
 
 
 The `center` argument controls whether the DP score and biplot displays are shifted using the privately estimated score-frame midpoint. By default,
-`center = TRUE` places the private frame center at the origin and allows the biplot variable arrows to start at $(0,0)$. See [Display Centering](theory-dp-score.html#score-display-centering) for details.
+`center = TRUE` places the private frame center at the origin and allows the biplot variable arrows to start at $(0,0)$. See [Display Centering](method-dp-score.html#score-display-centering) for details.
 
 
 For plot appearance, replace `plot_control = NULL` with a suitable control:

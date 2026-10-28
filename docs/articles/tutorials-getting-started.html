@@ -6,13 +6,14 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Getting Started with dppca • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="Getting Started with dppca">
-<meta name="description" content="Install dppca, explore the example datasets, prepare input data, allocate privacy budgets, and find tutorials and theory articles.">
-<meta property="og:description" content="Install dppca, explore the example datasets, prepare input data, allocate privacy budgets, and find tutorials and theory articles.">
+<meta name="description" content="Install dppca, explore the example datasets, prepare input data, allocate privacy budgets, and find tutorials and methodology articles.">
+<meta property="og:description" content="Install dppca, explore the example datasets, prepare input data, allocate privacy budgets, and find tutorials and methodology articles.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -42,13 +43,13 @@
   </ul>
 </li>
 <li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-theory" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Theory</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-theory">
-<li><a class="dropdown-item" href="../articles/theory-pca-background.html">PCA Background</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-loading.html">DP Directions</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-scree.html">DP Eigenvalues</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-score.html">DP Scores</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-visualization.html">DP PCA Visualization</a></li>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-methodology" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Methodology</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-methodology">
+<li><a class="dropdown-item" href="../articles/method-pca-background.html">PCA Background</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-loading.html">DP Directions</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-scree.html">DP Eigenvalues</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-score.html">DP Scores</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-visualization.html">DP PCA Visualization</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/algorithms.html">Algorithms</a></li>
@@ -116,9 +117,9 @@ its corresponding theory article.</p>
 <h2 id="choose-a-starting-point">Choose a starting point<a class="anchor" aria-label="anchor" href="#choose-a-starting-point"></a>
 </h2>
 <p>The <strong>tutorials</strong> explain how to use <code>dppca</code>
-in R, while the <strong>theory articles</strong> describe the
+in R, while the <strong>methodology articles</strong> describe the
 statistical concepts and methods. For an introduction to ordinary PCA,
-see <a href="theory-pca-background.html">PCA Background</a>.</p>
+see <a href="method-pca-background.html">PCA Background</a>.</p>
 <div class="gs-table gs-tutorial-table">
 <table class="table">
 <colgroup>
@@ -129,7 +130,7 @@ see <a href="theory-pca-background.html">PCA Background</a>.</p>
 <thead><tr class="header">
 <th align="left">What you want to do</th>
 <th align="left">Tutorial</th>
-<th align="left">Theory and Methods</th>
+<th align="left">Methodology</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -137,32 +138,32 @@ see <a href="theory-pca-background.html">PCA Background</a>.</p>
 coefficients</td>
 <td align="left"><a href="tutorials-loading-plots.html">DP Loading
 Plot</a></td>
-<td align="left"><a href="theory-dp-loading.html">Theory of DP
-Loading</a></td>
+<td align="left"><a href="method-dp-loading.html">DP Directions
+Methodology</a></td>
 </tr>
 <tr class="even">
 <td align="left">Examine scree values and proportions of variance
 explained (PVE)</td>
 <td align="left"><a href="tutorials-scree-plots.html">DP Scree
 Plot</a></td>
-<td align="left"><a href="theory-dp-scree.html">Theory of DP
-Scree</a></td>
+<td align="left"><a href="method-dp-scree.html">DP Scree
+Methodology</a></td>
 </tr>
 <tr class="odd">
 <td align="left">Visualize private score distributions and compare
 groups</td>
 <td align="left"><a href="tutorials-score-plots.html">DP Score
 Plot</a></td>
-<td align="left"><a href="theory-dp-score.html">Theory of DP
-Score</a></td>
+<td align="left"><a href="method-dp-score.html">DP Score
+Methodology</a></td>
 </tr>
 <tr class="even">
 <td align="left">Explore loading, scree, score, variable, and biplot
 views in one workflow</td>
 <td align="left"><a href="tutorials-dp-visualization.html">DP PCA
 Visualization</a></td>
-<td align="left"><a href="theory-dp-visualization.html">Theory of DP PCA
-Visualizations</a></td>
+<td align="left"><a href="method-dp-visualization.html">DP PCA
+Visualization Methodology</a></td>
 </tr>
 </tbody>
 </table>

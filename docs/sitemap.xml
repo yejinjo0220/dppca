@@ -1,7 +1,13 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://yejinjo0220.github.io/dppca/404.html</loc></url>
+<url><loc>https://yejinjo0220.github.io/dppca/LICENSE-text.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/articles/algorithms.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/articles/index.html</loc></url>
+<url><loc>https://yejinjo0220.github.io/dppca/articles/method-dp-loading.html</loc></url>
+<url><loc>https://yejinjo0220.github.io/dppca/articles/method-dp-score.html</loc></url>
+<url><loc>https://yejinjo0220.github.io/dppca/articles/method-dp-scree.html</loc></url>
+<url><loc>https://yejinjo0220.github.io/dppca/articles/method-dp-visualization.html</loc></url>
+<url><loc>https://yejinjo0220.github.io/dppca/articles/method-pca-background.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/articles/shiny-app.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/articles/theory-dp-loading.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/articles/theory-dp-score.html</loc></url>
@@ -15,14 +21,13 @@
 <url><loc>https://yejinjo0220.github.io/dppca/articles/tutorials-scree-plots.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/authors.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/index.html</loc></url>
-<url><loc>https://yejinjo0220.github.io/dppca/LICENSE-text.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/reference/clipped_control.html</loc></url>
-<url><loc>https://yejinjo0220.github.io/dppca/reference/dppca-package.html</loc></url>
-<url><loc>https://yejinjo0220.github.io/dppca/reference/dppca_app.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/reference/dp_loading.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/reference/dp_pca.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/reference/dp_score.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/reference/dp_scree.html</loc></url>
+<url><loc>https://yejinjo0220.github.io/dppca/reference/dppca-package.html</loc></url>
+<url><loc>https://yejinjo0220.github.io/dppca/reference/dppca_app.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/reference/gau.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/reference/gau_g.html</loc></url>
 <url><loc>https://yejinjo0220.github.io/dppca/reference/huber_control.html</loc></url>

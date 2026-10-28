@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 This tutorial shows how to use `dp_score()` to estimate **private 2D score histograms**, inspect their stored probabilities, and display them as histograms or **synthetic score points**. It also covers the additive and sparse estimators, grouped plots, plot controls, and reuse of previously estimated private PC directions.
 
 The focus is on **R arguments, examples, and visualization**. 
-For the mathematics of the private frame, histogram mechanisms, and privacy accounting, see [Theory of DP Score](theory-dp-score.html). 
+For the mathematics of the private frame, histogram mechanisms, and privacy accounting, see [DP Score Methodology](method-dp-score.html). 
 For data requirements and general budget allocation, see [Getting Started](tutorials-getting-started.html).
 
 ## 1. Load the example data
@@ -108,7 +108,7 @@ For a detailed example, see [Reusing Private PC Directions](tutorials-scree-plot
 ### 2.1. Additive and sparse methods
 
 The two estimators differ in how they perturb bin frequencies. 
-The full mathematical definitions are in [Additive histogram](theory-dp-score.html#additive-histogram) and [Sparse histogram](theory-dp-score.html#sparse-histogram).
+The full mathematical definitions are in [Additive histogram](method-dp-score.html#additive-histogram) and [Sparse histogram](method-dp-score.html#sparse-histogram).
 
 <style>
 .score-method-table table { width: 100%; table-layout: fixed; }
@@ -175,7 +175,7 @@ The shade of a cell represents its estimated probability mass.
 The `center` argument controls **display centering**, not the estimation of
 private directions, the score frame, or histogram probabilities. By default,
 `center = TRUE` shifts the midpoint of the privately estimated score frame
-to $(0,0)$ in both histogram and synthetic-sample plots,  See [Display centering](theory-dp-score.html#score-display-centering).
+to $(0,0)$ in both histogram and synthetic-sample plots,  See [Display centering](method-dp-score.html#score-display-centering).
 
 To retain the original private frame coordinates in the plots, set
 `center = FALSE` explicitly:
@@ -203,7 +203,7 @@ sample_plot <- plot(
 ```
 
 These are **500 newly generated coordinates**. A bin is first selected using the stored private probabilities;
-the point is then generated within that bin or at its center, optionally with Gaussian jitter. See [Synthetic score sampling](theory-dp-score.html#synthetic-sampling).
+the point is then generated within that bin or at its center, optionally with Gaussian jitter. See [Synthetic score sampling](method-dp-score.html#synthetic-sampling).
 
 The main arguments of `sampling_control()` are:
 
@@ -264,7 +264,7 @@ plot(
 ## 5. Group-wise private score histograms {#group-score-tutorial}
 
 The `group` argument estimates histograms for labelled groups using **one shared private direction estimate, one frame, and one grid**. 
-Group labels and their fixed membership must be public for the stated group-level privacy accounting. The `group` column is excluded from PCA features. The theory and assumptions are detailed in [Group-wise private score histograms](theory-dp-score.html#grouped-score).
+Group labels and their fixed membership must be public for the stated group-level privacy accounting. The `group` column is excluded from PCA features. The theory and assumptions are detailed in [Group-wise private score histograms](method-dp-score.html#grouped-score).
 
 ### 5.1. Fit a private histogram for each group
 

@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>DP Loading Plots • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="DP Loading Plots">
 <meta name="description" content="Estimate private principal component directions, inspect their coefficients, and create vector, point, and heatmap loading plots.">
@@ -42,13 +43,13 @@
   </ul>
 </li>
 <li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-theory" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Theory</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-theory">
-<li><a class="dropdown-item" href="../articles/theory-pca-background.html">PCA Background</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-loading.html">DP Directions</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-scree.html">DP Eigenvalues</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-score.html">DP Scores</a></li>
-    <li><a class="dropdown-item" href="../articles/theory-dp-visualization.html">DP PCA Visualization</a></li>
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-methodology" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Methodology</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-methodology">
+<li><a class="dropdown-item" href="../articles/method-pca-background.html">PCA Background</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-loading.html">DP Directions</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-scree.html">DP Eigenvalues</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-score.html">DP Scores</a></li>
+    <li><a class="dropdown-item" href="../articles/method-dp-visualization.html">DP PCA Visualization</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/algorithms.html">Algorithms</a></li>
@@ -91,7 +92,7 @@ visualization</strong>, including optional ordinary PCA comparisons.</p>
 PC direction vector</strong>. Rows of the direction matrix represent
 variables and columns represent PCs and loading plots visualize
 variables. For the spherical Kendall construction, Gaussian mechanism,
-and interpretation of the coefficients, see <a href="theory-dp-loading.html">Theory of DP Loading</a>. For
+and interpretation of the coefficients, see <a href="method-dp-loading.html">DP Directions Methodology</a>. For
 installation, input requirements, example datasets, and general budget
 allocation, see <a href="tutorials-getting-started.html">Getting
 Started</a>.</p>
@@ -238,12 +239,12 @@ a particular PC direction.</p>
 <span><span class="co">#&gt; [1] 20 20</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">loading_fit</span><span class="op">$</span><span class="va">directions</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">6</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;       PC1    PC2    PC3</span></span>
-<span><span class="co">#&gt; V1 -0.420 -0.142  0.055</span></span>
-<span><span class="co">#&gt; V2 -0.448  0.075  0.155</span></span>
-<span><span class="co">#&gt; V3 -0.476 -0.009 -0.102</span></span>
-<span><span class="co">#&gt; V4 -0.432 -0.023 -0.212</span></span>
-<span><span class="co">#&gt; V5 -0.450  0.191  0.063</span></span>
-<span><span class="co">#&gt; V6  0.027  0.583 -0.371</span></span></code></pre></div>
+<span><span class="co">#&gt; V1 -0.420 -0.142 -0.055</span></span>
+<span><span class="co">#&gt; V2 -0.448  0.075 -0.155</span></span>
+<span><span class="co">#&gt; V3 -0.476 -0.009  0.102</span></span>
+<span><span class="co">#&gt; V4 -0.432 -0.023  0.212</span></span>
+<span><span class="co">#&gt; V5 -0.450  0.191 -0.063</span></span>
+<span><span class="co">#&gt; V6  0.027  0.583  0.371</span></span></code></pre></div>
 <p>The <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> function reports the estimated directions
 and the privacy settings without rerunning the estimator. Its returned
 summary object retains the direction matrices under
@@ -256,21 +257,21 @@ summary object retains the direction matrices under
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Private PC directions  (first 6 variables x first 4 PCs):</span></span>
 <span><span class="co">#&gt;        PC1      PC2     PC3     PC4</span></span>
-<span><span class="co">#&gt; V1 -0.4200 -0.14198  0.0549 -0.2245</span></span>
-<span><span class="co">#&gt; V2 -0.4475  0.07532  0.1552  0.2335</span></span>
-<span><span class="co">#&gt; V3 -0.4757 -0.00875 -0.1022  0.0361</span></span>
-<span><span class="co">#&gt; V4 -0.4321 -0.02322 -0.2124 -0.0591</span></span>
-<span><span class="co">#&gt; V5 -0.4500  0.19129  0.0628  0.0116</span></span>
-<span><span class="co">#&gt; V6  0.0267  0.58292 -0.3706 -0.2886</span></span>
+<span><span class="co">#&gt; V1 -0.4200 -0.14198 -0.0549  0.2245</span></span>
+<span><span class="co">#&gt; V2 -0.4475  0.07532 -0.1552 -0.2335</span></span>
+<span><span class="co">#&gt; V3 -0.4757 -0.00875  0.1022 -0.0361</span></span>
+<span><span class="co">#&gt; V4 -0.4321 -0.02322  0.2124  0.0591</span></span>
+<span><span class="co">#&gt; V5 -0.4500  0.19129 -0.0628 -0.0116</span></span>
+<span><span class="co">#&gt; V6  0.0267  0.58292  0.3706  0.2886</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Non-private PC directions  (first 6 variables x first 4 PCs):</span></span>
 <span><span class="co">#&gt;        PC1      PC2     PC3     PC4</span></span>
-<span><span class="co">#&gt; V1 -0.4403 -0.00758  0.0684 -0.2466</span></span>
-<span><span class="co">#&gt; V2 -0.4554  0.04056 -0.1534  0.1527</span></span>
-<span><span class="co">#&gt; V3 -0.4443  0.02665 -0.0218  0.3505</span></span>
-<span><span class="co">#&gt; V4 -0.4367  0.01992  0.1261 -0.0381</span></span>
-<span><span class="co">#&gt; V5 -0.4521  0.08331 -0.0298 -0.2080</span></span>
-<span><span class="co">#&gt; V6  0.0408  0.49751  0.4353 -0.0211</span></span>
+<span><span class="co">#&gt; V1 -0.4403 -0.00758 -0.0684  0.2466</span></span>
+<span><span class="co">#&gt; V2 -0.4554  0.04056  0.1534 -0.1527</span></span>
+<span><span class="co">#&gt; V3 -0.4443  0.02665  0.0218 -0.3505</span></span>
+<span><span class="co">#&gt; V4 -0.4367  0.01992 -0.1261  0.0381</span></span>
+<span><span class="co">#&gt; V5 -0.4521  0.08331  0.0298  0.2080</span></span>
+<span><span class="co">#&gt; V6  0.0408  0.49751 -0.4353  0.0211</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Total privacy budget: eps = 3 ; delta = 1e-04 </span></span>
 <span><span class="co">#&gt; Non-private reference: included </span></span>
@@ -320,14 +321,10 @@ across one or more PCs.</td>
 <h3 id="vector-plot">4.1. Vector plot<a class="anchor" aria-label="anchor" href="#vector-plot"></a>
 </h3>
 <p>A vector plot displays each variable using its coefficients on the
-two selected PC axes. For example, a variable with coefficients
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>v</mi><mrow><mi>j</mi><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>v</mi><mrow><mi>j</mi><mn>2</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(v_{j1}, v_{j2})</annotation></semantics></math>
-appears as an arrow from
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,0)</annotation></semantics></math>
-to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>v</mi><mrow><mi>j</mi><mn>1</mn></mrow></msub><mo>,</mo><msub><mi>v</mi><mrow><mi>j</mi><mn>2</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(v_{j1}, v_{j2})</annotation></semantics></math>.
-The arrows represent variables with their lengths reflecting the
-magnitudes of the selected direction coefficients.</p>
+two selected PC axes. For example, a variable with coefficients <span class="math inline">(v_{j1}, v_{j2})</span> appears as an arrow from
+<span class="math inline">(0,0)</span> to <span class="math inline">(v_{j1}, v_{j2})</span>. The arrows represent
+variables with their lengths reflecting the magnitudes of the selected
+direction coefficients.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">vector_plot</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
 <span>  <span class="va">loading_fit</span>,</span>

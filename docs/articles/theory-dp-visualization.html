@@ -6,9 +6,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Differentially Private PCA Visualizations • dppca</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><script src="../extra.js"></script><meta property="og:title" content="Differentially Private PCA Visualizations">
 <meta name="description" content="How dppca combines private PC directions, projected-variance estimates, and score histograms to construct scree, loading, score, variable, and biplot visualizations.
@@ -100,18 +101,11 @@ Tutorial</a>.</p>
 <div class="section level2">
 <h2 id="private-quantities">1. What is estimated privately?<a class="anchor" aria-label="anchor" href="#private-quantities"></a>
 </h2>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mo>∈</mo><msup><mi>ℝ</mi><mrow><mi>n</mi><mo>×</mo><mi>p</mi></mrow></msup></mrow><annotation encoding="application/x-tex">X\in\mathbb R^{n\times p}</annotation></semantics></math>
-contain observations
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>x</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>x</mi><mi>n</mi></msub><mo>∈</mo><msup><mi>ℝ</mi><mi>p</mi></msup></mrow><annotation encoding="application/x-tex">x_1,\ldots,x_n\in\mathbb R^p</annotation></semantics></math>
-in its rows. For clarity, suppose that <code><a href="../reference/dp_pca.html">dp_pca()</a></code> retains the
-first
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-components and displays two selected axes <code>axes = c(a, b)</code>,
-with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>≠</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">a\ne b</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>,</mo><mi>b</mi><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>k</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">a,b\in\{1,\ldots,k\}</annotation></semantics></math>.</p>
+<p>Let <span class="math inline">X\in\mathbb R^{n\times p}</span>
+contain observations <span class="math inline">x_1,\ldots,x_n\in\mathbb
+R^p</span> in its rows. For clarity, suppose that <code><a href="../reference/dp_pca.html">dp_pca()</a></code>
+retains the first <span class="math inline">k</span> components and
+displays two selected axes <code>axes = c(a, b)</code>, with <span class="math inline">a\ne b</span> and <span class="math inline">a,b\in\{1,\ldots,k\}</span>.</p>
 <p>The integrated procedure uses the following quantities:</p>
 <style>
 .dp-pca-table table { width: 100%; table-layout: fixed; }
@@ -134,32 +128,31 @@ and
 <tbody>
 <tr class="odd">
 <td align="left">DP PC directions</td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>V</mi><mo accent="true">̃</mo></mover><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mi>p</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widetilde V=(\widetilde v_1,\ldots,\widetilde v_p)</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\widetilde{V}=(\widetilde{v}_1,\ldots,\widetilde{v}_p)</span></td>
 <td align="left">Define the common PC axes and loading
 coefficients.</td>
 </tr>
 <tr class="even">
 <td align="left">DP eigenvalues</td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde\lambda_1,\ldots,\widetilde\lambda_k</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k</span></td>
 <td align="left">Determine scree/PVE and scale variable and biplot
 coordinates.</td>
 </tr>
 <tr class="odd">
 <td align="left">DP score frame</td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>F</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde F</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\widetilde{F}</span></td>
 <td align="left">Defines the two-dimensional plotting region.</td>
 </tr>
 <tr class="even">
 <td align="left">DP score histogram</td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>h</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde h</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\widetilde{h}</span></td>
 <td align="left">Describes the distribution of projected observations
 without releasing individual coordinates.</td>
 </tr>
 <tr class="odd">
 <td align="left">Synthetic score points</td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>s</mi><mn>1</mn><mo>*</mo></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>s</mi><mi>N</mi><mo>*</mo></msubsup></mrow><annotation encoding="application/x-tex">s_1^*,\ldots,s_N^*</annotation></semantics></math></td>
-<td align="left">Provide a point-based view sampled from
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>h</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde h</annotation></semantics></math>.</td>
+<td align="left"><span class="math inline">s_1^*,\ldots,s_N^*</span></td>
+<td align="left">Provide a point-based view sampled from <span class="math inline">\widetilde{h}</span>.</td>
 </tr>
 </tbody>
 </table>
@@ -175,45 +168,39 @@ loading, score, variable, and biplot.</p>
 <div class="section level2">
 <h2 id="privacy-accounting">2. Privacy budget and shared estimation<a class="anchor" aria-label="anchor" href="#privacy-accounting"></a>
 </h2>
-<p>Write the total privacy budget as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mi>ε</mi><mo>,</mo><mi>δ</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\varepsilon,\delta)</annotation></semantics></math>.
-The integrated procedure requires allocations for <code>loading</code>,
-<code>scree</code>, and <code>score</code>:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>ε</mi><mi>L</mi></msub><mo>+</mo><msub><mi>ε</mi><mi>S</mi></msub><mo>+</mo><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mi>ε</mi><mo>,</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>δ</mi><mi>L</mi></msub><mo>+</mo><msub><mi>δ</mi><mi>S</mi></msub><mo>+</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mi>δ</mi><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">
+<p>Write the total privacy budget as <span class="math inline">(\varepsilon,\delta)</span>. The integrated
+procedure requires allocations for <code>loading</code>,
+<code>scree</code>, and <code>score</code>: <span class="math display">
 \begin{aligned}
 \varepsilon_L+\varepsilon_S+\varepsilon_{\mathrm{score}}&amp;=\varepsilon,\\
 \delta_L+\delta_S+\delta_{\mathrm{score}}&amp;=\delta.
 \end{aligned}
-</annotation></semantics></math></p>
+</span></p>
 <p>Within the score allocation, the package uses</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>ε</mi><mi>F</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0.35</mn><mspace width="0.167em"></mspace><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo></mtd><mtd columnalign="right" style="text-align: right"><msub><mi>δ</mi><mi>F</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0</mn><mo>,</mo></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>ε</mi><mi>H</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0.65</mn><mspace width="0.167em"></mspace><msub><mi>ε</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo></mtd><mtd columnalign="right" style="text-align: right"><msub><mi>δ</mi><mi>H</mi></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><msub><mi>δ</mi><mrow><mi mathvariant="normal">s</mi><mi mathvariant="normal">c</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">e</mi></mrow></msub><mo>,</mo></mtd></mtr></mtable><annotation encoding="application/x-tex">
+<p><span class="math display">
 \begin{aligned}
 \varepsilon_F&amp;=0.35\,\varepsilon_{\mathrm{score}},
 &amp;\delta_F&amp;=0,\\
 \varepsilon_H&amp;=0.65\,\varepsilon_{\mathrm{score}},
 &amp;\delta_H&amp;=\delta_{\mathrm{score}},
 \end{aligned}
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
-denotes the private <strong>frame</strong> and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>H</mi><annotation encoding="application/x-tex">H</annotation></semantics></math>
-the private <strong>histogram</strong>. The frame budget is shared
-equally among two private coordinate medians and a private radial
-quantile.</p>
-<p>The resulting estimation flow is
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>X</mi><mspace width="0.222em"></mspace><mo>→</mo><mspace width="0.222em"></mspace><mover><mi>V</mi><mo accent="true">̃</mo></mover><mspace width="1.0em"></mspace><mtext mathvariant="normal">(loading budget)</mtext><mo>,</mo></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>,</mo><mover><mi>V</mi><mo accent="true">̃</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.222em"></mspace><mo>→</mo><mspace width="0.222em"></mspace><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mrow><mn>1</mn><mo>:</mo><mi>k</mi></mrow></msub><mspace width="1.0em"></mspace><mtext mathvariant="normal">(scree budget)</mtext><mo>,</mo></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>,</mo><mover><mi>V</mi><mo accent="true">̃</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.222em"></mspace><mo>→</mo><mspace width="0.222em"></mspace><mover><mi>F</mi><mo accent="true">̃</mo></mover><mspace width="0.222em"></mspace><mo>→</mo><mspace width="0.222em"></mspace><mover><mi>h</mi><mo accent="true">̃</mo></mover><mspace width="1.0em"></mspace><mtext mathvariant="normal">(score budget)</mtext><mo>,</mo></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>V</mi><mo accent="true">̃</mo></mover><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mrow><mn>1</mn><mo>:</mo><mi>k</mi></mrow></msub><mo>,</mo><mover><mi>F</mi><mo accent="true">̃</mo></mover><mo>,</mo><mover><mi>h</mi><mo accent="true">̃</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.222em"></mspace><mo>→</mo><mspace width="0.222em"></mspace><mtext mathvariant="normal">five PCA displays</mtext><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">
+</span></p>
+<p>where <span class="math inline">F</span> denotes the private
+<strong>frame</strong> and <span class="math inline">H</span> the
+private <strong>histogram</strong>. The frame budget is shared equally
+among two private coordinate medians and a private radial quantile.</p>
+<p>The resulting estimation flow is <span class="math display">
 \begin{gathered}
-X\ \longrightarrow\ \widetilde V\quad\text{(loading budget)},\\
-(X,\widetilde V)\ \longrightarrow\ 
-\widetilde\lambda_{1:k}\quad\text{(scree budget)},\\
-(X,\widetilde V)\ \longrightarrow\
-\widetilde F\ \longrightarrow\ \widetilde h
+X\ \longrightarrow\ \widetilde{V}\quad\text{(loading budget)},\\
+(X,\widetilde{V})\ \longrightarrow\
+\widetilde{\lambda}_{1:k}\quad\text{(scree budget)},\\
+(X,\widetilde{V})\ \longrightarrow\
+\widetilde{F}\ \longrightarrow\ \widetilde{h}
 \quad\text{(score budget)},\\
-(\widetilde V,\widetilde\lambda_{1:k},\widetilde F,\widetilde h)
+(\widetilde{V},\widetilde{\lambda}_{1:k},\widetilde{F},\widetilde{h})
 \ \longrightarrow\ \text{five PCA displays}.
 \end{gathered}
-</annotation></semantics></math></p>
+</span></p>
 <p>Only <strong>one</strong> direction matrix, <strong>one</strong>
 selected scree method, and <strong>one</strong> selected histogram
 method are estimated within an integrated fit.</p>
@@ -233,115 +220,91 @@ of the DP variable plot and DP biplot.</p>
 </h3>
 <p>In ordinary PCA, a variable plot represents the correlations between
 the original variables and the PC scores. As described in <a href="theory-pca-background.html/#variable-plot">Section 4.4 of PCA
-Background</a>, the correlation between variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-and the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>th
-PC score is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Cor</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>X</mi><mrow><mi>⋅</mi><mi>j</mi></mrow></msub><mo>,</mo><msub><mi>S</mi><mrow><mi>⋅</mi><mo>ℓ</mo></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><msqrt><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub></msqrt><mspace width="0.167em"></mspace><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub></mrow><msub><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
+Background</a>, the correlation between variable <span class="math inline">j</span> and the <span class="math inline">\ell</span>th PC score is</p>
+<p><span class="math display">
 \operatorname{Cor}(X_{\cdot j},S_{\cdot\ell})
 =
 \frac{\sqrt{\widehat\lambda_\ell}\,\widehat v_{j\ell}}
 {\widehat\sigma_j},
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\widehat\lambda_\ell</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̂</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widehat v_{j\ell}</annotation></semantics></math>
-are the sample eigenvalue and loading coefficient, respectively, and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>σ</mi><mo accent="true">̂</mo></mover><mi>j</mi></msub><annotation encoding="application/x-tex">\widehat\sigma_j</annotation></semantics></math>
-is the sample standard deviation of variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>.</p>
+</span></p>
+<p>where <span class="math inline">\widehat\lambda_\ell</span> and <span class="math inline">\widehat v_{j\ell}</span> are the sample eigenvalue
+and loading coefficient, respectively, and <span class="math inline">\widehat\sigma_j</span> is the sample standard
+deviation of variable <span class="math inline">j</span>.</p>
 <p>In the DP setting, these empirical quantities cannot be directly
 released without accounting for their privacy costs. Instead,
 <code><a href="../reference/dp_pca.html">dp_pca()</a></code> constructs the variable plot using privately
 estimated PC directions and eigenvalues.</p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widetilde V_k=(\widetilde v_1,\ldots,\widetilde v_k)</annotation></semantics></math>
-denote the first
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-private PC directions, and let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde\lambda_1,\ldots,\widetilde\lambda_k</annotation></semantics></math>
+<p>Let <span class="math inline">\widetilde{V}_k=(\widetilde{v}_1,\ldots,\widetilde{v}_k)</span>
+denote the first <span class="math inline">k</span> private PC
+directions, and let <span class="math inline">\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k</span>
 be the corresponding nonnegative private eigenvalues. These quantities
 define a DP-based covariance approximation,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>Σ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo>=</mo><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msubsup><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi><mi>⊤</mi></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\widetilde\Sigma_k
+<p><span class="math display">
+\widetilde{\Sigma}_k
 =
-\widetilde V_k
+\widetilde{V}_k
 \operatorname{diag}
-(\widetilde\lambda_1,\ldots,\widetilde\lambda_k)
-\widetilde V_k^\top.
-</annotation></semantics></math></p>
-<p>Therefore, the implied variance of variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>σ</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>,</mo><mi>k</mi></mrow><mn>2</mn></msubsup><mo>=</mo><msub><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>Σ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi>j</mi><mi>j</mi></mrow></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mo>ℓ</mo><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow><mrow><mspace width="0.167em"></mspace><mn>2</mn></mrow></msubsup><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\widetilde\sigma_{j,k}^2
+(\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k)
+\widetilde{V}_k^\top.
+</span></p>
+<p>Therefore, the implied variance of variable <span class="math inline">j</span> is</p>
+<p><span class="math display">
+\widetilde{\sigma}_{j,k}^2
 =
-(\widetilde\Sigma_k)_{jj}
+(\widetilde{\Sigma}_k)_{jj}
 =
 \sum_{\ell=1}^{k}
-\widetilde\lambda_\ell\widetilde v_{j\ell}^{\,2}.
-</annotation></semantics></math></p>
+\widetilde{\lambda}_\ell\widetilde{v}_{j\ell}^{\,2}.
+</span></p>
 <p>Using this quantity in place of the sample variance, we define the DP
-correlation coordinate of variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-along PC
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>
-as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>r</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><mo>=</mo><mfrac><mrow><msqrt><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub></msqrt><mspace width="0.167em"></mspace><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub></mrow><msub><mover><mi>σ</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>,</mo><mi>k</mi></mrow></msub></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msub><mover><mi>σ</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>,</mo><mi>k</mi></mrow></msub><mo>&gt;</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
-\widetilde r_{j\ell}
+correlation coordinate of variable <span class="math inline">j</span>
+along PC <span class="math inline">\ell</span> as</p>
+<p><span class="math display">
+\widetilde{r}_{j\ell}
 =
 \frac{
-\sqrt{\widetilde\lambda_\ell}\,\widetilde v_{j\ell}
+\sqrt{\widetilde{\lambda}_\ell}\,\widetilde{v}_{j\ell}
 }{
-\widetilde\sigma_{j,k}
+\widetilde{\sigma}_{j,k}
 },
 \qquad
-\widetilde\sigma_{j,k}&gt;0.
-</annotation></semantics></math></p>
-<p>For two selected components
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
-the DP variable plot represents variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>R</mi><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mover><mi>r</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mi>a</mi></mrow></msub><mo>,</mo><msub><mover><mi>r</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mi>b</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
+\widetilde{\sigma}_{j,k}&gt;0.
+</span></p>
+<p>For two selected components <span class="math inline">a</span> and
+<span class="math inline">b</span>, the DP variable plot represents
+variable <span class="math inline">j</span> by</p>
+<p><span class="math display">
 R_j^{\mathrm{DP}}
 =
-(\widetilde r_{ja},\widetilde r_{jb}).
-</annotation></semantics></math></p>
+(\widetilde{r}_{ja},\widetilde{r}_{jb}).
+</span></p>
 <p>Variables with zero implied variance are omitted because their
 coordinates are undefined.</p>
 <p>As in the ordinary variable plot, the DP coordinates lie inside or on
 the unit circle. Indeed,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="postfix">∥</mo><msubsup><mi>R</mi><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><msubsup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn><mn>2</mn></msubsup><mo>=</mo><msubsup><mover><mi>r</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mi>a</mi></mrow><mrow><mspace width="0.167em"></mspace><mn>2</mn></mrow></msubsup><mo>+</mo><msubsup><mover><mi>r</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mi>b</mi></mrow><mrow><mspace width="0.167em"></mspace><mn>2</mn></mrow></msubsup><mo>=</mo><mfrac><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>a</mi></msub><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mi>a</mi></mrow><mrow><mspace width="0.167em"></mspace><mn>2</mn></mrow></msubsup><mo>+</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>b</mi></msub><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mi>b</mi></mrow><mrow><mspace width="0.167em"></mspace><mn>2</mn></mrow></msubsup></mrow><mrow><munderover><mo>∑</mo><mrow><mo>ℓ</mo><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><msubsup><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow><mrow><mspace width="0.167em"></mspace><mn>2</mn></mrow></msubsup></mrow></mfrac><mo>≤</mo><mn>1</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \|R_j^{\mathrm{DP}}\|_2^2
 =
-\widetilde r_{ja}^{\,2}
+\widetilde{r}_{ja}^{\,2}
 +
-\widetilde r_{jb}^{\,2}
+\widetilde{r}_{jb}^{\,2}
 =
 \frac{
-\widetilde\lambda_a\widetilde v_{ja}^{\,2}
+\widetilde{\lambda}_a\widetilde{v}_{ja}^{\,2}
 +
-\widetilde\lambda_b\widetilde v_{jb}^{\,2}
+\widetilde{\lambda}_b\widetilde{v}_{jb}^{\,2}
 }{
 \displaystyle\sum_{\ell=1}^{k}
-\widetilde\lambda_\ell\widetilde v_{j\ell}^{\,2}
+\widetilde{\lambda}_\ell\widetilde{v}_{j\ell}^{\,2}
 }
 \le 1.
-</annotation></semantics></math></p>
+</span></p>
 <p>The squared distance from the origin measures how much of the
-reconstructed variance of variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-is attributed to the two displayed PCs, relative to all
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-retained PCs. Variables near the unit circle have most of their
-reconstructed variance associated with the displayed PCs, whereas
-variables near the origin have more of their reconstructed variance
-associated with the other retained PCs.</p>
+reconstructed variance of variable <span class="math inline">j</span> is
+attributed to the two displayed PCs, relative to all <span class="math inline">k</span> retained PCs. Variables near the unit
+circle have most of their reconstructed variance associated with the
+displayed PCs, whereas variables near the origin have more of their
+reconstructed variance associated with the other retained PCs.</p>
 <p>The angles between variable vectors can provide information about
 their associations in the displayed PC plane. Vectors pointing in
 similar directions suggest positive associations, while vectors pointing
@@ -358,120 +321,90 @@ simultaneously in a low-dimensional representation of the data. In
 ordinary PCA, as described in <a href="theory-pca-background.html/#biplot">Section 4.5 of PCA
 Background</a>, the biplot coordinates are constructed from the singular
 value decomposition (SVD) of the centered data matrix. For two selected
-components
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
-the observation and variable coordinates are given by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mi>α</mi></msub><mo>=</mo><msub><mi>U</mi><mi>I</mi></msub><msubsup><mi>D</mi><mi>I</mi><mrow><mn>1</mn><mo>−</mo><mi>α</mi></mrow></msubsup><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>H</mi><mi>α</mi></msub><mo>=</mo><msub><mi>V</mi><mi>I</mi></msub><msubsup><mi>D</mi><mi>I</mi><mi>α</mi></msubsup><mo>,</mo><mspace width="2.0em"></mspace><mn>0</mn><mo>≤</mo><mi>α</mi><mo>≤</mo><mn>1</mn><mo>,</mo></mrow><annotation encoding="application/x-tex">
+components <span class="math inline">a</span> and <span class="math inline">b</span>, the observation and variable coordinates
+are given by</p>
+<p><span class="math display">
 G_\alpha=U_ID_I^{1-\alpha},
 \qquad
 H_\alpha=V_ID_I^\alpha,
 \qquad 0\le\alpha\le1,
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>I</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">I=\{a,b\}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>D</mi><mi>I</mi></msub><mo>=</mo><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>d</mi><mi>a</mi></msub><mo>,</mo><msub><mi>d</mi><mi>b</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">D_I=\operatorname{diag}(d_a,d_b)</annotation></semantics></math>
-contains the corresponding singular values. The parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-determines how the singular-value scaling is distributed between
-observations and variables.</p>
+</span></p>
+<p>where <span class="math inline">I=\{a,b\}</span> and <span class="math inline">D_I=\operatorname{diag}(d_a,d_b)</span> contains the
+corresponding singular values. The parameter <span class="math inline">\alpha</span> determines how the singular-value
+scaling is distributed between observations and variables.</p>
 <p>In the DP setting, <code><a href="../reference/dp_pca.html">dp_pca()</a></code> constructs a <strong>DP
 biplot</strong> using synthetic score points generated from the private
 score histogram, together with privately estimated PC directions and
 eigenvalues. Recall that the singular values in ordinary PCA satisfy
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mo>ℓ</mo></msub><mo>=</mo><msqrt><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub></mrow></msqrt></mrow><annotation encoding="application/x-tex">d_\ell=\sqrt{(n-1)\widehat\lambda_\ell}</annotation></semantics></math>.
+<span class="math inline">d_\ell=\sqrt{(n-1)\widehat\lambda_\ell}</span>.
 Accordingly, we define the corresponding DP-based scaling factors as</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>d</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mo>=</mo><msqrt><mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub></mrow></msqrt><mo>,</mo><mspace width="2.0em"></mspace><mo>ℓ</mo><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false" form="postfix">}</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">
-\widetilde d_\ell
+<p><span class="math display">
+\widetilde{d}_\ell
 =
-\sqrt{(n-1)\widetilde\lambda_\ell},
+\sqrt{(n-1)\widetilde{\lambda}_\ell},
 \qquad \ell\in\{a,b\},
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\widetilde\lambda_\ell\ge0</annotation></semantics></math>
-denotes the private eigenvalues and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
+</span></p>
+<p>where <span class="math inline">\widetilde{\lambda}_\ell\ge0</span>
+denotes the private eigenvalues and <span class="math inline">n</span>
 is the original sample size.</p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>s</mi><mi>i</mi><mo>*</mo></msubsup><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>s</mi><mrow><mi>i</mi><mi>a</mi></mrow><mo>*</mo></msubsup><mo>,</mo><msubsup><mi>s</mi><mrow><mi>i</mi><mi>b</mi></mrow><mo>*</mo></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">s_i^*=(s_{ia}^*,s_{ib}^*)</annotation></semantics></math>
-denote the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>th
-synthetic score point generated from the private histogram, and let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><annotation encoding="application/x-tex">\widetilde v_{j\ell}</annotation></semantics></math>
-denote the coefficient of variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>
-in the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>ℓ</mo><annotation encoding="application/x-tex">\ell</annotation></semantics></math>th
-private PC direction. For
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>d</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo></msub><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\widetilde d_\ell&gt;0</annotation></semantics></math>,
-the DP biplot coordinates are defined by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>G</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mfrac><mrow><msubsup><mi>s</mi><mrow><mi>i</mi><mo>ℓ</mo></mrow><mo>*</mo></msubsup><mo>−</mo><msubsup><mi>c</mi><mo>ℓ</mo><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msubsup></mrow><msubsup><mover><mi>d</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo><mi>α</mi></msubsup></mfrac><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mi>H</mi><mrow><mi>j</mi><mo>ℓ</mo></mrow><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mover><mi>v</mi><mo accent="true">̃</mo></mover><mrow><mi>j</mi><mo>ℓ</mo></mrow></msub><msubsup><mover><mi>d</mi><mo accent="true">̃</mo></mover><mo>ℓ</mo><mi>α</mi></msubsup><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p>Let <span class="math inline">s_i^*=(s_{ia}^*,s_{ib}^*)</span> denote
+the <span class="math inline">i</span>th synthetic score point generated
+from the private histogram, and let <span class="math inline">\widetilde{v}_{j\ell}</span> denote the coefficient
+of variable <span class="math inline">j</span> in the <span class="math inline">\ell</span>th private PC direction. For <span class="math inline">\widetilde{d}_\ell&gt;0</span>, the DP biplot
+coordinates are defined by</p>
+<p><span class="math display">
 G_{i\ell}^{\mathrm{DP}}(\alpha)
 =
 \frac{s_{i\ell}^*-c_\ell^{\mathrm{disp}}}
-{\widetilde d_\ell^\alpha},
+{\widetilde{d}_\ell^\alpha},
 \qquad
 H_{j\ell}^{\mathrm{DP}}(\alpha)
 =
-\widetilde v_{j\ell}\widetilde d_\ell^\alpha,
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>c</mi><mo>ℓ</mo><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">s</mi><mi mathvariant="normal">p</mi></mrow></msubsup><annotation encoding="application/x-tex">c_\ell^{\mathrm{disp}}</annotation></semantics></math>
-is the display-centering adjustment defined in <a href="theory-dp-score.html#score-display-centering">Section 8.1 of
+\widetilde{v}_{j\ell}\widetilde{d}_\ell^\alpha,
+</span></p>
+<p>where <span class="math inline">c_\ell^{\mathrm{disp}}</span> is the
+display-centering adjustment defined in <a href="theory-dp-score.html#score-display-centering">Section 8.1 of
 Theory of DP Score</a>, with its two coordinates corresponding to the
-selected PC axes
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>,
-respectively.</p>
+selected PC axes <span class="math inline">a</span> and <span class="math inline">b</span>, respectively.</p>
 <p>With <code>center = TRUE</code> (the default), the synthetic scores
 are translated relative to the private frame center, and the variable
-arrows originate at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,0)</annotation></semantics></math>.
-With <code>center = FALSE</code>, the scores remain unshifted, and the
+arrows originate at <span class="math inline">(0,0)</span>. With
+<code>center = FALSE</code>, the scores remain unshifted, and the
 variable arrows originate at the private frame center expressed in the
 alpha-transformed coordinates.</p>
-<p>For the two selected components, the rows
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>G</mi><mi>i</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>G</mi><mrow><mi>i</mi><mi>a</mi></mrow><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><msubsup><mi>G</mi><mrow><mi>i</mi><mi>b</mi></mrow><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">G_i^{\mathrm{DP}}(\alpha)
+<p>For the two selected components, the rows <span class="math inline">G_i^{\mathrm{DP}}(\alpha)
 =
 \left(
 G_{ia}^{\mathrm{DP}}(\alpha),
 G_{ib}^{\mathrm{DP}}(\alpha)
-\right)</annotation></semantics></math> represent synthetic
-observations, while
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>H</mi><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>H</mi><mrow><mi>j</mi><mi>a</mi></mrow><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>,</mo><msubsup><mi>H</mi><mrow><mi>j</mi><mi>b</mi></mrow><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">H_j^{\mathrm{DP}}(\alpha)
+\right)</span> represent synthetic observations, while <span class="math inline">H_j^{\mathrm{DP}}(\alpha)
 =
 \left(
 H_{ja}^{\mathrm{DP}}(\alpha),
 H_{jb}^{\mathrm{DP}}(\alpha)
-\right)</annotation></semantics></math> represent the original variables
-through their private direction coefficients.</p>
-<p>As in ordinary PCA, the parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-controls the relative scaling of the observation and variable
-coordinates:</p>
+\right)</span> represent the original variables through their private
+direction coefficients.</p>
+<p>As in ordinary PCA, the parameter <span class="math inline">\alpha</span> controls the relative scaling of the
+observation and variable coordinates:</p>
 <ul>
 <li>
-<strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha=0</annotation></semantics></math>:</strong>
+<strong><span class="math inline">\alpha=0</span>:</strong>
 Observation coordinates retain the synthetic score scale (apart from
 optional centering), and variable coordinates are the private PC
 direction coefficients.</li>
 <li>
-<strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">\alpha=1/2</annotation></semantics></math>:</strong>
-The DP-based singular-value scaling is shared symmetrically between
+<strong><span class="math inline">\alpha=1/2</span>:</strong> The
+DP-based singular-value scaling is shared symmetrically between
 observations and variables.</li>
 <li>
-<strong><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha=1</annotation></semantics></math>:</strong>
-Variable coordinates are multiplied by the full DP-based singular-value
-factors, while synthetic score coordinates are divided by them.</li>
+<strong><span class="math inline">\alpha=1</span>:</strong> Variable
+coordinates are multiplied by the full DP-based singular-value factors,
+while synthetic score coordinates are divided by them.</li>
 </ul>
 <p><strong>Arrow scaling.</strong> To display observations and variable
 vectors on a common plotting region, <code><a href="../reference/dp_pca.html">dp_pca()</a></code> applies an
 additional scaling factor to the variable vectors.</p>
-<p>Let
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mi>G</mi></msub><mo>=</mo><msub><mi>Q</mi><mn>0.9</mn></msub><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mrow><mo stretchy="true" form="prefix">{</mo><msub><mrow><mo stretchy="true" form="prefix">∥</mo><msubsup><mi>G</mi><mi>i</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><msup><mover><mi>G</mi><mo accent="true">¯</mo></mover><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">∥</mo></mrow><mn>2</mn></msub><mo stretchy="true" form="postfix">}</mo></mrow><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+<p>Let <span class="math display">
 r_G
 =
 Q_{0.9}
@@ -484,36 +417,32 @@ G_i^{\mathrm{DP}}(\alpha)
 \right\|_2
 \right\}_{i=1}^{N}
 \right)
-</annotation></semantics></math></p>
+</span></p>
 <p>denote the empirical 90th percentile of the distances of the
 synthetic score points from their mean, and let</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mi>H</mi></msub><mo>=</mo><munder><mo>max</mo><mrow><mn>1</mn><mo>≤</mo><mi>j</mi><mo>≤</mo><mi>p</mi></mrow></munder><msub><mrow><mo stretchy="true" form="prefix">∥</mo><msubsup><mi>H</mi><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">∥</mo></mrow><mn>2</mn></msub><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 r_H
 =
 \max_{1\le j\le p}
 \left\|
 H_j^{\mathrm{DP}}(\alpha)
 \right\|_2.
-</annotation></semantics></math></p>
+</span></p>
 <p>The common arrow scaling factor is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mfrac displaystyle="true"><msub><mi>r</mi><mi>G</mi></msub><msub><mi>r</mi><mi>H</mi></msub></mfrac><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><msub><mi>r</mi><mi>G</mi></msub><mo>&gt;</mo><mn>0</mn><mo>,</mo><mspace width="0.222em"></mspace><msub><mi>r</mi><mi>H</mi></msub><mo>&gt;</mo><mn>0</mn><mo>,</mo></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>0</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mtext mathvariant="normal">otherwise</mtext><mi>.</mi></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">
 \gamma
 =
 \begin{cases}
 \dfrac{r_G}{r_H}, &amp; r_G&gt;0,\ r_H&gt;0,\\[6pt]
 0, &amp; \text{otherwise}.
 \end{cases}
-</annotation></semantics></math></p>
-<p>Therefore, the displayed variable vectors are
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>H</mi><mo accent="true">̃</mo></mover><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>γ</mi><msubsup><mi>H</mi><mi>j</mi><mrow><mi mathvariant="normal">D</mi><mi mathvariant="normal">P</mi></mrow></msubsup><mrow><mo stretchy="true" form="prefix">(</mo><mi>α</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">\widetilde H_j^{\mathrm{DP}}(\alpha) = \gamma H_j^{\mathrm{DP}}(\alpha).</annotation></semantics></math></p>
+</span></p>
+<p>Therefore, the displayed variable vectors are <span class="math inline">\widetilde{H}_j^{\mathrm{DP}}(\alpha) = \gamma
+H_j^{\mathrm{DP}}(\alpha).</span></p>
 <p><strong>Ordinary reference.</strong> For comparison,
 <code>non_private = TRUE</code> asks the package to compute ordinary PCA
-from the sample covariance matrix. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>V</mi><mo accent="true">̂</mo></mover><annotation encoding="application/x-tex">\widehat V</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mo>ℓ</mo></msub><annotation encoding="application/x-tex">\widehat\lambda_\ell</annotation></semantics></math>
-be its directions and eigenvalues. Its scores are sample-mean centered,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mo>=</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi>X</mi><mo>−</mo><msub><mn>𝟏</mn><mi>n</mi></msub><msup><mover><mi>x</mi><mo accent="true">‾</mo></mover><mi>⊤</mi></msup><mo stretchy="true" form="postfix">)</mo></mrow><mover><mi>V</mi><mo accent="true">̂</mo></mover><mi>.</mi></mrow><annotation encoding="application/x-tex">S=(X-\mathbf1_n\bar x^\top)\widehat V.</annotation></semantics></math></p>
+from the sample covariance matrix. Let <span class="math inline">\widehat V</span> and <span class="math inline">\widehat\lambda_\ell</span> be its directions and
+eigenvalues. Its scores are sample-mean centered, <span class="math inline">S=(X-\mathbf1_n\bar x^\top)\widehat V.</span></p>
 </div>
 </div>
 <div class="section level2">
@@ -542,16 +471,15 @@ be its directions and eigenvalues. Its scores are sample-mean centered,
 <tbody>
 <tr class="odd">
 <td align="left"><strong>Scree / PVE</strong></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde\lambda_1,\ldots,\widetilde\lambda_k</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k</span></td>
 <td align="left">Shows the relative importance of the estimated PCs. PVE
-is normalized over the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-retained components.</td>
+is normalized over the <span class="math inline">k</span> retained
+components.</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left"><strong>Loading</strong></td>
-<td align="left"><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>V</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde V</annotation></semantics></math></td>
+<td align="left"><span class="math inline">\widetilde{V}</span></td>
 <td align="left">Shows how the original variables contribute to the
 private PC directions.</td>
 <td align="left"></td>
@@ -559,10 +487,7 @@ private PC directions.</td>
 <tr class="odd">
 <td align="left"><strong>Score</strong></td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>F</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde F</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>h</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde h</annotation></semantics></math>,
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>s</mi><mn>1</mn><mo>*</mo></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>s</mi><mi>N</mi><mo>*</mo></msubsup></mrow><annotation encoding="application/x-tex">s_1^*,\ldots,s_N^*</annotation></semantics></math>
+<span class="math inline">\widetilde{F}</span>, <span class="math inline">\widetilde{h}</span>, and <span class="math inline">s_1^*,\ldots,s_N^*</span>
 </td>
 <td align="left">Shows the distribution of projected observations
 without directly releasing their individual scores.</td>
@@ -571,9 +496,8 @@ without directly releasing their individual scores.</td>
 <tr class="even">
 <td align="left"><strong>Variable</strong></td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>V</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub><annotation encoding="application/x-tex">\widetilde V_k</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde\lambda_1,\ldots,\widetilde\lambda_k</annotation></semantics></math>
+<span class="math inline">\widetilde{V}_k</span> and
+<span class="math inline">\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k</span>
 </td>
 <td align="left">Shows relationships among variables implied by the
 private covariance approximation, rather than their exact empirical
@@ -583,10 +507,8 @@ correlations.</td>
 <tr class="odd">
 <td align="left"><strong>Biplot</strong></td>
 <td align="left">
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>V</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\widetilde V</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mover><mi>λ</mi><mo accent="true">̃</mo></mover><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">\widetilde\lambda_1,\ldots,\widetilde\lambda_k</annotation></semantics></math>,
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>s</mi><mn>1</mn><mo>*</mo></msubsup><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>s</mi><mi>N</mi><mo>*</mo></msubsup></mrow><annotation encoding="application/x-tex">s_1^*,\ldots,s_N^*</annotation></semantics></math>
+<span class="math inline">\widetilde{V}</span>, <span class="math inline">\widetilde{\lambda}_1,\ldots,\widetilde{\lambda}_k</span>,
+and <span class="math inline">s_1^*,\ldots,s_N^*</span>
 </td>
 <td align="left">Provides a joint view of the private score distribution
 and variable directions, with additional scaling for visualization.</td>
