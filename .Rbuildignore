@@ -21,3 +21,5 @@
 ^src/.*\.dSYM$
 ^src/symbols\.rds$
 ^log$
+^inst/shiny/dppca-app/manifest\.json$
+^cran-comments\.md$

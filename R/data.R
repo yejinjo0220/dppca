@@ -77,7 +77,7 @@
 #' }
 #'
 #' @source UCI Machine Learning Repository.
-#' \url{https://doi.org/10.24432/C58P4S}
+#' \doi{10.24432/C58P4S}
 #'
 #' @references
 #' Deterding, D., Niranjan, M., and Robinson, T. (1988).

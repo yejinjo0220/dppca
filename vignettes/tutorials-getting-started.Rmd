@@ -61,7 +61,7 @@ The **tutorials** explain how to use `dppca` in R, while the **methodology artic
 
 :::
 
-For complete argument descriptions and return values, see [Functions](../reference/index.html).
+For complete argument descriptions and return values, see [Functions](https://yejinjo0220.github.io/dppca/reference/index.html).
 
 
 

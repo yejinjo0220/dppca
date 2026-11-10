@@ -22,7 +22,6 @@ variables. For more details, see the documentation for
 [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md).
 
 ``` r
-
 library(dppca)
 data("gau", package = "dppca")
 
@@ -39,7 +38,6 @@ omitted,[`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md
 divides the total budget **equally** between these two components.
 
 ``` r
-
 scree_privacy <- privacy_control(
   eps = 6,
   delta = 1e-4
@@ -54,7 +52,6 @@ First, we use the clipped mean method to estimate scree values for the
 first five PCs:
 
 ``` r
-
 set.seed(123)
 scree_fit <- dp_scree(
   X,
@@ -103,7 +100,6 @@ see scree values, PVE, and cumulative PVE for each stored method, use
 [`summary()`](https://rdrr.io/r/base/summary.html):
 
 ``` r
-
 scree_summary <- summary(scree_fit)
 scree_summary
 #> DP Scree Estimates Summary
@@ -133,7 +129,6 @@ ordinary PCA reference is under `nonprivate`, while data dimensions,
 selected methods, and privacy allocations are under `metadata`:
 
 ``` r
-
 scree_fit$clipped$scree
 #>       PC1       PC2       PC3       PC4       PC5 
 #> 12.062398  7.437085  3.922463  3.922463  3.922463
@@ -173,7 +168,6 @@ included automatically; a fit with `non_private = FALSE` shows only
 private estimates:
 
 ``` r
-
 plot(scree_fit)
 ```
 
@@ -183,7 +177,6 @@ plots](tutorials-scree-plots_files/figure-html/scree-default-plots-1.png)
 To display only one view, use `type`.
 
 ``` r
-
 plot(scree_fit, type = "pve")
 plot(scree_fit, type = "scree")
 ```
@@ -209,12 +202,11 @@ Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.html#c
 
 | Theory notation | R argument | Meaning |
 |:---|:---|:---|
-| C\_{\mathrm{clip}} | `C_clip` | Positive upper clipping threshold; controls the bias–noise tradeoff (required, no default). |
+| $`C_{\mathrm{clip}}`$ | `C_clip` | Positive upper clipping threshold; controls the bias–noise tradeoff (required, no default). |
 
 The setting used in Section 2 is:
 
 ``` r
-
 clipped_set <- clipped_control(C_clip = 20)
 clipped_set
 #> $C_clip
@@ -233,16 +225,15 @@ Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.html#p
 
 | Theory notation | R argument | Meaning |
 |:---|:---|:---|
-| a,b | `a`, `b` | Public lower and upper bounds for the **estimated cutoffs**, with a\<b (required). |
-| c\_{\mathrm{trim}} | `trim_const` | Positive baseline trimming constant in the quantile level (required). |
-| \eta\_{\mathrm{trim}} | `eta` | Lower-bound tuning value for the trimming proportion, in \[0,0.5) (required). |
-| \beta | `beta` | Geometric quantile-search grid base, greater than 1 (default: `1.001`). |
-| I_Q,I_M | `split_mode` | `FALSE`: reuse all pair rows in both stages (default); `TRUE`: use disjoint quantile and mean subsets. |
+| $`a,b`$ | `a`, `b` | Public lower and upper bounds for the **estimated cutoffs**, with $`a<b`$ (required). |
+| $`c_{\mathrm{trim}}`$ | `trim_const` | Positive baseline trimming constant in the quantile level (required). |
+| $`\eta_{\mathrm{trim}}`$ | `eta` | Lower-bound tuning value for the trimming proportion, in $`[0,0.5)`$ (required). |
+| $`\beta`$ | `beta` | Geometric quantile-search grid base, greater than 1 (default: `1.001`). |
+| $`I_Q,I_M`$ | `split_mode` | `FALSE`: reuse all pair rows in both stages (default); `TRUE`: use disjoint quantile and mean subsets. |
 
 For example, to use PMWM instead of the clipped estimator:
 
 ``` r
-
 pmwm_set <- pmwm_control(
   a = 0,
   b = 50,
@@ -252,7 +243,6 @@ pmwm_set <- pmwm_control(
 ```
 
 ``` r
-
 set.seed(123)
 pmwm_fit <- dp_scree(
   X,
@@ -276,12 +266,12 @@ Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.html#h
 
 | Theory notation | R argument | Meaning |
 |:---|:---|:---|
-| r\_{\min},r\_{\max} | `k_min_m2`, `k_max_m2` | Integer limits for the dyadic scale candidates 2^r, with r\_{\min}\<r\_{\max} (required). |
-| \rho | `m2_frac` | Fraction of scree epsilon used for private scale estimation, in (0,1) (required). |
-| \mu_0 | `mu0` | Public initial mean iterate (default: `0`). |
-| \eta_0 | `eta0` | Positive gradient-descent step size (default: `1`). |
-| T | `T` | Number of noisy gradient steps (default: `ceiling(log(m))`). |
-| M | `M` | Number of blocks for private scale estimation (default: `floor(sqrt(m / 2))`, capped by available pairs). |
+| $`r_{\min},r_{\max}`$ | `k_min_m2`, `k_max_m2` | Integer limits for the dyadic scale candidates $`2^r`$, with $`r_{\min}<r_{\max}`$ (required). |
+| $`\rho`$ | `m2_frac` | Fraction of scree epsilon used for private scale estimation, in $`(0,1)`$ (required). |
+| $`\mu_0`$ | `mu0` | Public initial mean iterate (default: `0`). |
+| $`\eta_0`$ | `eta0` | Positive gradient-descent step size (default: `1`). |
+| $`T`$ | `T` | Number of noisy gradient steps (default: `ceiling(log(m))`). |
+| $`M`$ | `M` | Number of blocks for private scale estimation (default: `floor(sqrt(m / 2))`, capped by available pairs). |
 
 When `T` or `M` is left as `NULL`, the corresponding sample-size-based
 default is used.
@@ -289,7 +279,6 @@ default is used.
 For example:
 
 ``` r
-
 huber_set <- huber_control(
   k_min_m2 = -10,
   k_max_m2 = 10,
@@ -298,7 +287,6 @@ huber_set <- huber_control(
 ```
 
 ``` r
-
 set.seed(123)
 huber_fit <- dp_scree(
   X,
@@ -319,7 +307,6 @@ To fit several methods using one private direction estimate, provide a
 vector of method names and a named list of their corresponding controls:
 
 ``` r
-
 set.seed(123)
 scree_comparison <- dp_scree(
   X,
@@ -372,7 +359,6 @@ summary(scree_comparison)
 ```
 
 ``` r
-
 plot(scree_comparison, type = "pve")
 ```
 
@@ -395,7 +381,6 @@ There are two ways to specify the privacy allocation.
 **Option 1: Specify component budgets directly.**
 
 ``` r
-
 # Estimate private PC directions.
 loading_fit <- dp_loading(
   X,
@@ -413,7 +398,6 @@ reuse_privacy <- privacy_control(
 **Option 2: Specify a total budget and allocation proportions.**
 
 ``` r
-
 reuse_privacy <- privacy_control(
   eps = 6,
   delta = 1e-4,
@@ -434,7 +418,6 @@ After either option, the estimated directions can be reused in
 [`dp_scree()`](https://yejinjo0220.github.io/dppca/reference/dp_scree.md):
 
 ``` r
-
 scree_reused <- dp_scree(
   X,
   k = 5,
@@ -455,7 +438,6 @@ Use
 to change the appearance of the stored plot.
 
 ``` r
-
 plot(
   scree_fit,
   type = "pve",

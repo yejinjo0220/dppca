@@ -35,7 +35,7 @@ Practical guides to estimating and visualizing DP PCA quantities.
   summary, and create scree, score, loading, variable, and biplot
   displays.
 
-### Methodology
+### Theory
 
 Background and mathematical methods for DP PCA visualization.
 

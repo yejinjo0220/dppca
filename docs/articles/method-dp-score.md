@@ -25,17 +25,24 @@ Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.md).
 
 ## 1. Two-dimensional PC scores
 
-Let X=(x_1,\ldots,x_n)^\top\in\mathbb R^{n\times p} contain n
-observations and p numeric variables. Let
-\widetilde{V}=(\widetilde{v}\_1,\ldots,\widetilde{v}\_p) be an
+Let $`X=(x_1,\ldots,x_n)^\top\in\mathbb R^{n\times p}`$ contain $`n`$
+observations and $`p`$ numeric variables. Let
+$`\widetilde{V}=(\widetilde{v}_1,\ldots,\widetilde{v}_p)`$ be an
 orthonormal matrix of privately estimated PC directions. For selected,
-distinct components a,b\in\\1,\ldots,p\\, define
+distinct components $`a,b\in\{1,\ldots,p\}`$, define
 
-Y=X\widetilde{V}, \qquad \widetilde{s}\_i=\begin{pmatrix}
-x_i^\top\widetilde{v}\_a\\ x_i^\top\widetilde{v}\_b
-\end{pmatrix}\in\mathbb R^2, \qquad i=1,\ldots,n.
+``` math
 
-The projected coordinates \widetilde{s}\_i are needed internally to
+Y=X\widetilde{V},
+\qquad
+\widetilde{s}_i=\begin{pmatrix}
+x_i^\top\widetilde{v}_a\\
+x_i^\top\widetilde{v}_b
+\end{pmatrix}\in\mathbb R^2,
+\qquad i=1,\ldots,n.
+```
+
+The projected coordinates $`\widetilde{s}_i`$ are needed internally to
 estimate the score distribution, but are not returned with a
 private-only result. Unlike an ordinary PCA score scatter plot, the
 released visualization is a private histogram of these two-dimensional
@@ -48,24 +55,31 @@ Taking coordinate minima, maxima, or quantiles directly from private
 observations would leak data. Instead, the frame is constructed with the
 private quantile mechanisms of [Durfee (2023)](#ref-durfee-score).
 
-Let \varepsilon_F be the epsilon budget allocated to frame estimation.
-The algorithm uses **three pure-DP quantile releases**, each with budget
-\varepsilon_F/3: two coordinate medians and one radial quantile.
+Let $`\varepsilon_F`$ be the epsilon budget allocated to frame
+estimation. The algorithm uses **three pure-DP quantile releases**, each
+with budget $`\varepsilon_F/3`$: two coordinate medians and one radial
+quantile.
 
 ### 2.1. Private coordinate medians
 
 For the selected score coordinates, estimate a private center
 
-\widetilde{c}\_1 =\mathcal
-Q\_{\varepsilon_F/3}(\\s\_{i1}\\\_{i=1}^n,0.5), \qquad \widetilde{c}\_2
-=\mathcal Q\_{\varepsilon_F/3}(\\s\_{i2}\\\_{i=1}^n,0.5), \qquad
-\widetilde{c}=(\widetilde{c}\_1,\widetilde{c}\_2)^\top.
+``` math
 
-Here \mathcal Q\_{\varepsilon}(\cdot,q) denotes the fully unbounded
-private quantile mechanism at level q.
+\widetilde{c}_1
+=\mathcal Q_{\varepsilon_F/3}(\{s_{i1}\}_{i=1}^n,0.5),
+\qquad
+\widetilde{c}_2
+=\mathcal Q_{\varepsilon_F/3}(\{s_{i2}\}_{i=1}^n,0.5),
+\qquad
+\widetilde{c}=(\widetilde{c}_1,\widetilde{c}_2)^\top.
+```
+
+Here $`\mathcal Q_{\varepsilon}(\cdot,q)`$ denotes the fully unbounded
+private quantile mechanism at level $`q`$.
 
 The implementation limits each one-sided search to 5,000 geometric-grid
-queries, using a grid base of 1.01 for frame estimation. If a search
+queries, using a grid base of $`1.01`$ for frame estimation. If a search
 exhausts this limit without crossing its noisy target, the
 implementation issues a warning. For a coordinate median, capped search
 results are excluded; the estimator selects an uncapped nonzero result,
@@ -76,88 +90,117 @@ if neither is available.
 
 Next, compute the distance of each score from the private center:
 
-r_i=\\\widetilde{s}\_i-\widetilde{c}\\\_2
-=\sqrt{(\widetilde{s}\_{i1}-\widetilde{c}\_1)^2+(\widetilde{s}\_{i2}-\widetilde{c}\_2)^2}.
+``` math
 
-Since r_i\ge0, the implementation applies the **one-sided unbounded
+r_i=\|\widetilde{s}_i-\widetilde{c}\|_2
+=\sqrt{(\widetilde{s}_{i1}-\widetilde{c}_1)^2+(\widetilde{s}_{i2}-\widetilde{c}_2)^2}.
+```
+
+Since $`r_i\ge0`$, the implementation applies the **one-sided unbounded
 private quantile mechanism** with public lower bound zero to estimate
 the 0.99 quantile:
 
-\widetilde{R} =\mathcal Q^{\mathrm{upper}}\_{\varepsilon_F/3}
-(\\r_i\\\_{i=1}^n,0.99).
+``` math
 
-The radial search uses the grid t_i=1.01^i-1, for i=1,\ldots,5000. If no
-noisy count reaches the noisy target within that limit, the estimator
-warns and returns the final grid value. These finite search limits can
-affect frame accuracy at extreme data scales.
+\widetilde{R}
+=\mathcal Q^{\mathrm{upper}}_{\varepsilon_F/3}
+ (\{r_i\}_{i=1}^n,0.99).
+```
 
-The radius is enlarged by a fixed factor 1+\alpha, with \alpha=0.20 in
-the package. Writing R_F=(1+\alpha)\widetilde{R}, the frame becomes
+The radial search uses the grid $`t_i=1.01^i-1`$, for
+$`i=1,\ldots,5000`$. If no noisy count reaches the noisy target within
+that limit, the estimator warns and returns the final grid value. These
+finite search limits can affect frame accuracy at extreme data scales.
 
-F=\[\widetilde{c}\_1-R_F,\widetilde{c}\_1+R_F\]
-\times\[\widetilde{c}\_2-R_F,\widetilde{c}\_2+R_F\].
+The radius is enlarged by a fixed factor $`1+\alpha`$, with
+$`\alpha=0.20`$ in the package. Writing $`R_F=(1+\alpha)\widetilde{R}`$,
+the frame becomes
+
+``` math
+
+F=[\widetilde{c}_1-R_F,\widetilde{c}_1+R_F]
+\times[\widetilde{c}_2-R_F,\widetilde{c}_2+R_F].
+```
 
 Conditional on the required mechanism assumptions, sequential
 composition of the three pure-DP quantile releases gives the frame
-allocation (\varepsilon_F,0).
+allocation $`(\varepsilon_F,0)`$.
 
 ## 3. Histogram grid and sensitivity
 
-Divide the private frame into m_x horizontal-axis bins and m_y
-vertical-axis bins, giving J=m_xm_y rectangular cells B_1,\ldots,B_J.
-The numbers of bins are public tuning choices.
+Divide the private frame into $`m_x`$ horizontal-axis bins and $`m_y`$
+vertical-axis bins, giving $`J=m_xm_y`$ rectangular cells
+$`B_1,\ldots,B_J`$. The numbers of bins are public tuning choices.
 
-Let h_F(\widetilde{s}\_i) be the grid cell assigned to score
-\widetilde{s}\_i. If a coordinate falls outside the frame, the
+Let $`h_F(\widetilde{s}_i)`$ be the grid cell assigned to score
+$`\widetilde{s}_i`$. If a coordinate falls outside the frame, the
 implementation assigns it to the corresponding boundary bin, rather than
-dropping that observation. For cell j, define
+dropping that observation. For cell $`j`$, define
 
-c_j=\sum\_{i=1}^n\mathbf1\\h_F(\widetilde{s}\_i)=j\\, \qquad
-p_j=\frac{c_j}{n}, \qquad j=1,\ldots,J.
+``` math
 
-Since every score is assigned to a cell, \sum_j c_j=n and \sum_jp_j=1
-before noise is introduced.
+c_j=\sum_{i=1}^n\mathbf1\{h_F(\widetilde{s}_i)=j\},
+\qquad
+p_j=\frac{c_j}{n},
+\qquad j=1,\ldots,J.
+```
+
+Since every score is assigned to a cell, $`\sum_j c_j=n`$ and
+$`\sum_jp_j=1`$ before noise is introduced.
 
 Under fixed-size replacement adjacency, replacing one observation can
 remove one count from a cell and add one count to another. Conditional
 on fixed private directions, a fixed frame, and appropriate
-preprocessing, the histogram count vector c=(c_1,\ldots,c_J)^\top
+preprocessing, the histogram count vector $`c=(c_1,\ldots,c_J)^\top`$
 satisfies
 
-\Delta_1(c)\le2, \qquad \Delta_2(c)\le\sqrt{2}.
+``` math
+
+\Delta_1(c)\le2,
+\qquad
+\Delta_2(c)\le\sqrt{2}.
+```
 
 ## 4. Private histogram estimators
 
 Two histogram methods are available: an **additive Gaussian histogram**
 and a **stability-based sparse histogram**. Both operate on the same
 privately estimated frame, but their perturbation and normalization
-rules differ. Write (\varepsilon_H,\delta_H) for the histogram privacy
-allocation.
+rules differ. Write $`(\varepsilon_H,\delta_H)`$ for the histogram
+privacy allocation.
 
 ### 4.1. Additive Gaussian histogram
 
-The additive method perturbs **all J bin counts**, including empty bins,
-using a Gaussian perturbation by [Wasserman and Zhou,
+The additive method perturbs **all $`J`$ bin counts**, including empty
+bins, using a Gaussian perturbation by [Wasserman and Zhou,
 2010](#ref-wasserman-score):
 
-\widetilde{c}\_j=c_j+Z_j, \qquad Z_j\overset{\mathrm{iid}}\sim
-N(0,\sigma_H^2), \qquad
-\sigma_H=\frac{\sqrt{2}\sqrt{2\log(1.25/\delta_H)}}{\varepsilon_H}.
+``` math
 
-The factor \sqrt{2} comes from the count vector’s \ell_2-sensitivity.
-This classical Gaussian calibration has a standard sufficient privacy
-guarantee for 0\<\varepsilon_H\<1. Larger histogram epsilon values
-require a separate calibration check, which the implementation does not
-perform. The direction-estimation calibration conditions in [DP
-Directions
+\widetilde{c}_j=c_j+Z_j,
+\qquad Z_j\overset{\mathrm{iid}}\sim N(0,\sigma_H^2),
+\qquad
+\sigma_H=\frac{\sqrt{2}\sqrt{2\log(1.25/\delta_H)}}{\varepsilon_H}.
+```
+
+The factor $`\sqrt{2}`$ comes from the count vector’s
+$`\ell_2`$-sensitivity. This classical Gaussian calibration has a
+standard sufficient privacy guarantee for $`0<\varepsilon_H<1`$. Larger
+histogram epsilon values require a separate calibration check, which the
+implementation does not perform. The direction-estimation calibration
+conditions in [DP Directions
 Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-loading.html#dp-private-directions)
 also apply when directions are estimated from the data.
 
 Negative noisy counts are replaced by zero and the remaining values are
 normalized:
 
-\widetilde{p}\_j^{\mathrm{add}} =\frac{\max\\\widetilde{c}\_j,0\\}
-{\sum\_{h=1}^J\max\\\widetilde{c}\_h,0\\}.
+``` math
+
+\widetilde{p}_j^{\mathrm{add}}
+=\frac{\max\{\widetilde{c}_j,0\}}
+{\sum_{h=1}^J\max\{\widetilde{c}_h,0\}}.
+```
 
 The truncation and normalization are post-processing and do not
 themselves spend privacy budget. If **all** truncated noisy counts are
@@ -172,22 +215,38 @@ It perturbs only **nonempty** empirical bin proportions, following the
 stability-based histogram idea discussed by [Karwa and Vadhan
 (2018)](#ref-karwa-score).
 
-For the n observations, define the Laplace noise scale and threshold
+For the $`n`$ observations, define the Laplace noise scale and threshold
 
-b_H=\frac{2}{n\varepsilon_H}, \qquad
+``` math
+
+b_H=\frac{2}{n\varepsilon_H},
+\qquad
 T_H=\frac1n+\frac{2\log(2/\delta_H)}{n\varepsilon_H}.
+```
 
-For each cell with c_j\>0, draw L_j\sim\operatorname{Laplace}(0,b_H) and
-set
+For each cell with $`c_j>0`$, draw
+$`L_j\sim\operatorname{Laplace}(0,b_H)`$ and set
 
-q_j= \begin{cases} \max\\p_j+L_j,0\\,&\max\\p_j+L_j,0\\\ge T_H,\\
-0,&\text{otherwise}. \end{cases}
+``` math
 
-For a cell with c_j=0, set q_j=0 without drawing noise. The result is
+q_j=
+\begin{cases}
+\max\{p_j+L_j,0\},&\max\{p_j+L_j,0\}\ge T_H,\\
+0,&\text{otherwise}.
+\end{cases}
+```
 
-\widetilde{p}\_j^{\mathrm{sparse}}= \begin{cases}
-\displaystyle\frac{q_j}{\sum\_{h=1}^Jq_h},&\sum\_{h=1}^Jq_h\>0,\\
-0,&\sum\_{h=1}^Jq_h=0. \end{cases}
+For a cell with $`c_j=0`$, set $`q_j=0`$ without drawing noise. The
+result is
+
+``` math
+
+\widetilde{p}_j^{\mathrm{sparse}}=
+\begin{cases}
+\displaystyle\frac{q_j}{\sum_{h=1}^Jq_h},&\sum_{h=1}^Jq_h>0,\\
+0,&\sum_{h=1}^Jq_h=0.
+\end{cases}
+```
 
 Unlike the additive method, the sparse estimator can return an
 **all-zero histogram** when no cell passes the threshold. For the
@@ -199,25 +258,38 @@ histogram](https://yejinjo0220.github.io/dppca/articles/algorithms.html#alg-spar
 A standalone score analysis has a **loading** budget for private
 directions and a **score** budget for the frame and histogram. Write
 
+``` math
+
 (\varepsilon_L,\delta_L),\qquad
-(\varepsilon\_{\mathrm{score}},\delta\_{\mathrm{score}}).
+(\varepsilon_{\mathrm{score}},\delta_{\mathrm{score}}).
+```
 
 The
 [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md)
 function subdivides the score budget as
 
-\begin{aligned} \varepsilon_F&=0.35\\\varepsilon\_{\mathrm{score}},
-&\delta_F&=0,\\ \varepsilon_H&=0.65\\\varepsilon\_{\mathrm{score}},
-&\delta_H&=\delta\_{\mathrm{score}}. \end{aligned}
+``` math
+
+\begin{aligned}
+\varepsilon_F&=0.35\,\varepsilon_{\mathrm{score}},
+&\delta_F&=0,\\
+\varepsilon_H&=0.65\,\varepsilon_{\mathrm{score}},
+&\delta_H&=\delta_{\mathrm{score}}.
+\end{aligned}
+```
 
 The private frame uses its epsilon equally for two coordinate medians
 and one radial quantile. The histogram receives the remaining epsilon
 and all of the score delta. With a single histogram method and private
 directions, the nominal composition budget is
 
-(\varepsilon_L+\varepsilon_F+\varepsilon_H, \\\delta_L+\delta_H)
-=(\varepsilon_L+\varepsilon\_{\mathrm{score}},
-\\\delta_L+\delta\_{\mathrm{score}}).
+``` math
+
+(\varepsilon_L+\varepsilon_F+\varepsilon_H,
+\;\delta_L+\delta_H)
+=(\varepsilon_L+\varepsilon_{\mathrm{score}},
+\;\delta_L+\delta_{\mathrm{score}}).
+```
 
 By default,
 [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md)
@@ -226,10 +298,15 @@ allocation. Releasing both outputs therefore requires composition across
 methods. With shared private directions and frame, basic sequential
 composition gives the nominal joint bound
 
-\begin{aligned} &(\varepsilon_L+\varepsilon_F+2\varepsilon_H,
-\\\delta_L+2\delta_H)\\
-&\qquad=(\varepsilon_L+1.65\\\varepsilon\_{\mathrm{score}},
-\\\delta_L+2\delta\_{\mathrm{score}}). \end{aligned}
+``` math
+
+\begin{aligned}
+&(\varepsilon_L+\varepsilon_F+2\varepsilon_H,
+\;\delta_L+2\delta_H)\\
+&\qquad=(\varepsilon_L+1.65\,\varepsilon_{\mathrm{score}},
+\;\delta_L+2\delta_{\mathrm{score}}).
+\end{aligned}
+```
 
 The budgets stored in `privacy` describe allocations, rather than this
 cumulative cost. These bounds are conditional on the privacy guarantees
@@ -246,42 +323,68 @@ projected scores, rather than the original observations. Synthetic score
 points can be generated from this distribution using either center or
 uniform sampling.
 
-Let B_1,\ldots,B_J denote the histogram bins, with private probabilities
-\widetilde{p}\_1,\ldots,\widetilde{p}\_J. For each synthetic point, a
-bin index is first sampled according to
+Let $`B_1,\ldots,B_J`$ denote the histogram bins, with private
+probabilities $`\widetilde{p}_1,\ldots,\widetilde{p}_J`$. For each
+synthetic point, a bin index is first sampled according to
+
+``` math
 
 A\sim\operatorname{Categorical}
-(\widetilde{p}\_1,\ldots,\widetilde{p}\_J).
+(\widetilde{p}_1,\ldots,\widetilde{p}_J).
+```
 
 The coordinates are then generated using one of two methods.
 
-- **Center sampling:** Let c_A denote the center of the selected bin
-  B_A. A synthetic point is generated by adding Gaussian noise to this
-  center: S^\*=c_A+Z.
+- **Center sampling:** Let $`c_A`$ denote the center of the selected bin
+  $`B_A`$. A synthetic point is generated by adding Gaussian noise to
+  this center:
+  ``` math
+
+  S^*=c_A+Z.
+  ```
 
 - **Uniform sampling:** First, a point is drawn uniformly within the
-  selected bin B_A, and Gaussian noise is then added: U\mid
-  A\sim\operatorname{Uniform}(B_A), \qquad S^\*=U+Z.
+  selected bin $`B_A`$, and Gaussian noise is then added:
+  ``` math
+
+  U\mid A\sim\operatorname{Uniform}(B_A),
+  \qquad
+  S^*=U+Z.
+  ```
 
 In both methods, the Gaussian noise is independently generated as
 
-Z\sim N_2\left( 0,\\ \gamma^2 \begin{pmatrix} \Delta_x^2 & 0\\ 0 &
-\Delta_y^2 \end{pmatrix} \right),
+``` math
 
-where \Delta_x and \Delta_y are the histogram bin widths and \gamma is
-the smoothing multiplier specified by `bandwidth_scale`. The default
-values are \gamma=0.5 for center sampling and \gamma=0.25 for uniform
-sampling. Setting \gamma=0 removes the Gaussian noise.
+Z\sim N_2\left(
+0,\,
+\gamma^2
+\begin{pmatrix}
+\Delta_x^2 & 0\\
+0 & \Delta_y^2
+\end{pmatrix}
+\right),
+```
+
+where $`\Delta_x`$ and $`\Delta_y`$ are the histogram bin widths and
+$`\gamma`$ is the smoothing multiplier specified by `bandwidth_scale`.
+The default values are $`\gamma=0.5`$ for center sampling and
+$`\gamma=0.25`$ for uniform sampling. Setting $`\gamma=0`$ removes the
+Gaussian noise.
 
 ## 7. Group-wise private score histograms
 
-Suppose every observation has a group label g_i\in\mathcal G. With
+Suppose every observation has a group label $`g_i\in\mathcal G`$. With
 **public, fixed group memberships**, the procedure estimates one set of
 private directions and one private frame using all observations, then
 releases one histogram for each group on the same grid. Write
 
-c_j^{(g)} =\sum\_{i=1}^n\mathbf1\\g_i=g,\\ h_F(\widetilde{s}\_i)=j\\,
-\qquad g\in\mathcal G,\\ j=1,\ldots,J.
+``` math
+
+c_j^{(g)}
+=\sum_{i=1}^n\mathbf1\{g_i=g,\ h_F(\widetilde{s}_i)=j\},
+\qquad g\in\mathcal G,\ j=1,\ldots,J.
+```
 
 Each group applies the selected private histogram mechanism to its own
 counts and normalizes within that group.  
@@ -305,24 +408,36 @@ centered at the origin.
 
 To facilitate visual interpretation, the package provides an optional
 **display-centering** adjustment using the privately estimated frame
-center \widetilde{c}=(\widetilde{c}\_1,\widetilde{c}\_2)^\top defined in
-[Section 2.1](#private-frame-center).
+center $`\widetilde{c}=(\widetilde{c}_1,\widetilde{c}_2)^\top`$ defined
+in [Section 2.1](#private-frame-center).
 
-For each displayed coordinate \ell\in\\1,2\\, define the
+For each displayed coordinate $`\ell\in\{1,2\}`$, define the
 display-centering adjustment as
 
-c\_\ell^{\mathrm{disp}} = \begin{cases} \widetilde{c}\_\ell, & \text{if
-center = TRUE},\\ 0, & \text{if center = FALSE}. \end{cases}
+``` math
 
-Let c^{\mathrm{disp}}=(c_1^{\mathrm{disp}},c_2^{\mathrm{disp}})^\top.
-Each histogram cell B_j and synthetic score point S^\* are displayed
-using the translated coordinates
+c_\ell^{\mathrm{disp}}
+=
+\begin{cases}
+\widetilde{c}_\ell, & \text{if center = TRUE},\\
+0, & \text{if center = FALSE}.
+\end{cases}
+```
 
-B_j^{\mathrm{disp}}=B_j-c^{\mathrm{disp}}, \qquad
-S^{\*,\mathrm{disp}}=S^\*-c^{\mathrm{disp}}.
+Let
+$`c^{\mathrm{disp}}=(c_1^{\mathrm{disp}},c_2^{\mathrm{disp}})^\top`$.
+Each histogram cell $`B_j`$ and synthetic score point $`S^*`$ are
+displayed using the translated coordinates
+
+``` math
+
+B_j^{\mathrm{disp}}=B_j-c^{\mathrm{disp}},
+\qquad
+S^{*,\mathrm{disp}}=S^*-c^{\mathrm{disp}}.
+```
 
 With `center = TRUE` (the default), the displayed frame becomes
-F^{\mathrm{disp}}=F-\widetilde{c}, whose center is (0,0). With
+$`F^{\mathrm{disp}}=F-\widetilde{c}`$, whose center is $`(0,0)`$. With
 `center = FALSE`, the original private frame coordinates are displayed
 without any shift.
 
@@ -335,7 +450,7 @@ Display centering is purely **post-processing**: it changes only the
 plotted coordinates without modifying the stored private estimates,
 histogram probabilities, or sampled points, and requires no additional
 privacy budget. The same adjustment is also used in the DP biplot to
-allow variable arrows to originate at (0,0) in [Section 3.2: DP
+allow variable arrows to originate at $`(0,0)`$ in [Section 3.2: DP
 biplot](https://yejinjo0220.github.io/dppca/articles/method-dp-visualization.html#dp-biplot-visualization).
 In
 [`plot.dp_pca()`](https://yejinjo0220.github.io/dppca/reference/plot.dp_pca.md),

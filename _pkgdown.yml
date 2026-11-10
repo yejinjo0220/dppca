@@ -37,15 +37,15 @@ navbar:
       text: Theory
       menu:
         - text: PCA Background
-          href: articles/theory-pca-background.html
+          href: articles/method-pca-background.html
         - text: DP Directions
-          href: articles/theory-dp-loading.html
+          href: articles/method-dp-loading.html
         - text: DP Eigenvalues
-          href: articles/theory-dp-scree.html
+          href: articles/method-dp-scree.html
         - text: DP Scores
-          href: articles/theory-dp-score.html
+          href: articles/method-dp-score.html
         - text: DP PCA Visualization
-          href: articles/theory-dp-visualization.html
+          href: articles/method-dp-visualization.html
 
     algorithms:
       text: Algorithms
@@ -73,11 +73,11 @@ articles:
   - title: Theory
     desc: Background and mathematical methods for DP PCA visualization.
     contents:
-      - theory-pca-background
-      - theory-dp-loading
-      - theory-dp-scree
-      - theory-dp-score
-      - theory-dp-visualization
+      - method-pca-background
+      - method-dp-loading
+      - method-dp-scree
+      - method-dp-score
+      - method-dp-visualization
 
   - title: Algorithms
     contents:

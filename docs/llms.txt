@@ -22,7 +22,6 @@ The fitting functions return S3 objects that can be inspected with
 Install the released package from CRAN:
 
 ``` r
-
 install.packages("dppca")
 ```
 
@@ -30,13 +29,11 @@ To use the latest development code shown in the tutorials, install from
 GitHub:
 
 ``` r
-
 # install.packages("remotes")
 remotes::install_github("yejinjo0220/dppca")
 ```
 
 ``` r
-
 library(dppca)
 ```
 
@@ -50,7 +47,6 @@ estimator** (`"clipped"`, `"pmwm"`, or `"huber"`) and **one score
 histogram estimator** (`"add"` or `"sparse"`).
 
 ``` r
-
 library(dppca)
 data("gau", package = "dppca")
 X <- gau  # 1,000 observations, 20 numeric variables
@@ -95,7 +91,6 @@ You can choose individual panels and their display settings without
 refitting:
 
 ``` r
-
 set.seed(456)
 selected_plots <- plot(
   pca_fit,
@@ -139,7 +134,6 @@ The standalone workflows offer additional method and display choices.
 ### Private loading directions
 
 ``` r
-
 loading_fit <- dp_loading(
   X,
   privacy = privacy_control(eps = 3, delta = 1e-4)
@@ -152,7 +146,6 @@ loading_plot <- plot(loading_fit, type = "vector", variables = 10)
 ### Scree / PVE
 
 ``` r
-
 scree_fit <- dp_scree(
   X,
   k = 5,
@@ -173,7 +166,6 @@ method-specific controls.
 ### Score histograms and synthetic samples
 
 ``` r
-
 score_fit <- dp_score(
   X,
   privacy = privacy_control(eps = 3, delta = 1e-4),
@@ -204,7 +196,6 @@ synthetic score points and form group histograms. The `gau_g` dataset
 contains the same 20 numeric features as `gau`, plus a `group` label:
 
 ``` r
-
 data("gau_g", package = "dppca")
 
 set.seed(123)
@@ -246,7 +237,6 @@ its required components**:
 For example, customize the integrated budget as follows:
 
 ``` r
-
 privacy <- privacy_control(
   eps = 6,
   delta = 1e-4,
@@ -483,7 +473,7 @@ Practical guides to estimating and visualizing DP PCA quantities.
   summary, and create scree, score, loading, variable, and biplot
   displays.
 
-### Methodology
+### Theory
 
 Background and mathematical methods for DP PCA visualization.
 

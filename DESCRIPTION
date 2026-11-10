@@ -46,8 +46,7 @@ LinkingTo:
 Suggests:
     knitr,
     rmarkdown,
-    shiny,
-    testthat (>= 3.0.0)
+    shiny
 VignetteBuilder: knitr
 RdMacros: Rdpack
 LazyData: true

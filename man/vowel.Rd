@@ -25,7 +25,7 @@ A data frame with 990 observations and 14 variables:
 }
 \source{
 UCI Machine Learning Repository.
-\url{https://doi.org/10.24432/C58P4S}
+\doi{10.24432/C58P4S}
 }
 \usage{
 vowel

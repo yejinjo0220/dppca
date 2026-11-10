@@ -2,19 +2,20 @@
 
 This page collects the algorithms used in the `dppca` package.
 
-## Algorithm 1: Private and robust estimator for m_2
+## Algorithm 1: Private and robust estimator for $`m_2`$
 
-This algorithm constructs a private scale proxy \widetilde m\_{2,\ell}
-for selecting the Huber robustification parameter \tau\_\ell. Given the
-paired squared differences \\w\_{r\ell}\\\_{r=1}^{m}, it forms
-additional pairwise half squared differences and computes block medians
-to obtain a robust measure of variability. A private histogram over
-dyadic scales is then used to select the final scale proxy.
+This algorithm constructs a private scale proxy
+$`\widetilde m_{2,\ell}`$ for selecting the Huber robustification
+parameter $`\tau_\ell`$. Given the paired squared differences
+$`\{w_{r\ell}\}_{r=1}^{m}`$, it forms additional pairwise half squared
+differences and computes block medians to obtain a robust measure of
+variability. A private histogram over dyadic scales is then used to
+select the final scale proxy.
 
 ![Algorithm 1: Private and robust estimator for
 m_2](figures/alg2-robust_estimator_for_m2.png)
 
-Algorithm 1: Private and robust estimator for m_2
+Algorithm 1: Private and robust estimator for $`m_2`$
 
 ## Algorithm 2: Unbounded DP upper-quantile estimator
 
@@ -24,12 +25,12 @@ searches a geometric grid using noisy comparisons against the empirical
 CDF. The fully unbounded mechanism invokes the one-sided search in both
 the positive and sign-flipped directions.
 
-For a one-sided quantile release with total budget \varepsilon_Q, the
-implementation uses \varepsilon_1=\varepsilon_2=\varepsilon_Q/2 for the
-noisy target and query counts. It accepts 0\<q\<1 and requires a public
-lower bound \ell\le\min_i x_i. Its empirical CDF queries count
-observations strictly below the candidate:
-F_n^{\<}(t)=n^{-1}\sum_i\mathbf1\\x_i\<t\\.
+For a one-sided quantile release with total budget $`\varepsilon_Q`$,
+the implementation uses $`\varepsilon_1=\varepsilon_2=\varepsilon_Q/2`$
+for the noisy target and query counts. It accepts $`0<q<1`$ and requires
+a public lower bound $`\ell\le\min_i x_i`$. Its empirical CDF queries
+count observations strictly below the candidate:
+$`F_n^{<}(t)=n^{-1}\sum_i\mathbf1\{x_i<t\}`$.
 
 ![Algorithm 2: Unbounded DP upper-quantile
 estimator](figures/alg3-Unbounded_DP_Quantile.png)
@@ -39,8 +40,8 @@ Algorithm 2: Unbounded DP upper-quantile estimator
 The displayed pseudocode shows an unbounded search. The implementation
 limits the search to 5,000 grid queries by default; if no noisy count
 reaches the noisy target, it issues a warning and returns the last grid
-value. PMWM uses this default limit with \beta=1.001, whereas
-score-frame estimation uses \beta=1.01. The fully unbounded wrapper
+value. PMWM uses this default limit with $`\beta=1.001`$, whereas
+score-frame estimation uses $`\beta=1.01`$. The fully unbounded wrapper
 excludes capped results when selecting a signed quantile. The resulting
 search limits are described in [PMWM
 Methodology](https://yejinjo0220.github.io/dppca/articles/method-dp-scree.html#pmwm)

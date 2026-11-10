@@ -22,7 +22,6 @@ numeric variables. For dataset details, see the
 [`gau`](https://yejinjo0220.github.io/dppca/reference/gau.md).
 
 ``` r
-
 library(dppca)
 data("gau", package = "dppca")
 
@@ -42,7 +41,6 @@ the histogram. If `split` is omitted,
 allocates the total privacy budget equally between them.
 
 ``` r
-
 score_privacy <- privacy_control(
   eps = 6,
   delta = 1e-4
@@ -50,7 +48,7 @@ score_privacy <- privacy_control(
 ```
 
 In this example, loading and score each receive
-(\varepsilon,\delta)=(3,5\times10^{-5}) when used by
+$`(\varepsilon,\delta)=(3,5\times10^{-5})`$ when used by
 [`dp_score()`](https://yejinjo0220.github.io/dppca/reference/dp_score.md).
 Within the score allocation, the package automatically assigns **35% of
 score epsilon to frame estimation**, **65% to the histogram**, and **all
@@ -60,7 +58,6 @@ First, we use both the additive and sparse histogram methods, without
 retaining non-private reference data:
 
 ``` r
-
 set.seed(123)
 score_fit <- dp_score(
   X,
@@ -127,7 +124,6 @@ grid, grouping information when applicable, and positive bin counts and
 probability sums:
 
 ``` r
-
 score_summary <- summary(score_fit)
 score_summary
 #> DP Score Histograms Summary
@@ -161,7 +157,6 @@ score_summary
 You can inspect the same results directly:
 
 ``` r
-
 score_fit$frame
 #> $xlim
 #> [1] -15.67937  15.78139
@@ -212,7 +207,6 @@ score_fit$metadata$privacy
 ### 3.2. Show a private histogram
 
 ``` r
-
 histogram_plot <- plot(
   score_fit,
   type = "histogram"
@@ -227,15 +221,14 @@ The shade of a cell represents its estimated probability mass.
 The `center` argument controls **display centering**, not the estimation
 of private directions, the score frame, or histogram probabilities. By
 default, `center = TRUE` shifts the midpoint of the privately estimated
-score frame to (0,0) in both histogram and synthetic-sample plots, See
-[Display
+score frame to $`(0,0)`$ in both histogram and synthetic-sample plots,
+See [Display
 centering](https://yejinjo0220.github.io/dppca/articles/method-dp-score.html#score-display-centering).
 
 To retain the original private frame coordinates in the plots, set
 `center = FALSE` explicitly:
 
 ``` r
-
 set.seed(321)
 plot(score_fit, type = c("histogram", "sample"), center = FALSE)
 ```
@@ -245,7 +238,6 @@ plot(score_fit, type = c("histogram", "sample"), center = FALSE)
 The same fitted histogram can be displayed as synthetic points.
 
 ``` r
-
 set.seed(321)
 sample_plot <- plot(
   score_fit,
@@ -299,7 +291,6 @@ Use
 to adjust colors, labels, point sizes, and the group legend.
 
 ``` r
-
 plot(
   score_fit,
   type = "histogram",
@@ -342,7 +333,6 @@ histograms](https://yejinjo0220.github.io/dppca/articles/method-dp-score.html#gr
 The `gau_g` dataset adds a `group` column to the 20 numeric variables.
 
 ``` r
-
 data("gau_g", package = "dppca")
 X_group <- gau_g
 
@@ -357,7 +347,6 @@ table(X_group$group)
 We first fit private-only group histograms:
 
 ``` r
-
 set.seed(456)
 group_fit <- dp_score(
   X_group,
@@ -425,7 +414,6 @@ The group-wise histograms can be visualized using `plot(group_fit)`
 without specifying any additional options.
 
 ``` r
-
 plot(group_fit)
 ```
 
@@ -448,7 +436,6 @@ For example, we can assign custom colors to the five groups and adjust
 the histogram transparency:
 
 ``` r
-
 group_colors <- c(
   group1 = "#0072B2", group2 = "#D55E00", group3 = "#009E73",
   group4 = "#CC79A7", group5 = "#E69F00"

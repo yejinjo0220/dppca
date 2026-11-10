@@ -29,14 +29,12 @@ For complete argument descriptions and return values, see
 Install the released version of `dppca` from CRAN:
 
 ``` r
-
 install.packages("dppca")
 ```
 
 Alternatively, install the development version from GitHub:
 
 ``` r
-
 install.packages("remotes")  # Only needed once
 remotes::install_github("yejinjo0220/dppca")
 ```
@@ -44,7 +42,6 @@ remotes::install_github("yejinjo0220/dppca")
 Once installed, load the package:
 
 ``` r
-
 library(dppca)
 ```
 
@@ -87,7 +84,6 @@ sample.
 ### 3.1. Gaussian data
 
 ``` r
-
 data("gau", package = "dppca")
 data("gau_g", package = "dppca")
 
@@ -125,7 +121,6 @@ consists of ten numeric acoustic measurements (`F0`–`F9`) and four
 categorical variables (`Split`, `Speaker`, `Sex`, and `Class`).
 
 ``` r
-
 data("vowel", package = "dppca")
 
 numeric_columns <- vapply(vowel, is.numeric, logical(1))
@@ -184,7 +179,6 @@ budget components depend on the function used.
 The total privacy budget can be specified using `eps` and `delta`:
 
 ``` r
-
 privacy <- privacy_control(
   eps = 6,
   delta = 1e-4
@@ -217,7 +211,6 @@ For example, when the specified total budget is `eps = 6` and
 The total budget and its allocations can be inspected using:
 
 ``` r
-
 privacy$total
 #>   eps delta 
 #> 6e+00 1e-04
@@ -249,7 +242,6 @@ For example, to allocate more budget to scree and score estimation in
 [`dp_pca()`](https://yejinjo0220.github.io/dppca/reference/dp_pca.md):
 
 ``` r
-
 pca_privacy_custom <- privacy_control(
   eps = 6,
   delta = 1e-4,
@@ -275,7 +267,6 @@ Similarly, for
 a different allocation can be specified as follows:
 
 ``` r
-
 score_privacy_custom <- privacy_control(
   eps = 6,
   delta = 1e-4,
@@ -298,7 +289,6 @@ Alternatively, epsilon and delta can be specified separately for each
 component, without using a total budget or `split`.
 
 ``` r
-
 pca_privacy_absolute <- privacy_control(
   loading = c(eps = 2, delta = 2e-5),
   scree   = c(eps = 3, delta = 3e-5),

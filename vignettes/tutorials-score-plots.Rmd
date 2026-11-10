@@ -339,7 +339,7 @@ per group.
 For complete argument descriptions, see `?dp_score`, `?plot.dp_score`,
 `?score_plot_control`, and `?sampling_control`. For a combined scree,
 score, and loading analysis, continue to
-[DP PCA Visualization](tutorials-pca-visualization.html).
+[DP PCA Visualization](tutorials-dp-visualization.html).
 
 ---
 
