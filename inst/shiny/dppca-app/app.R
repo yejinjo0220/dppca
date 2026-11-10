@@ -233,6 +233,33 @@ library(dppca)
   )
 }
 
+# Synthetic sampling is plot-only post-processing, never a DP estimation input.
+# In particular, sample_size = NULL is NOT the same as sample_size = n:
+# only NULL keeps original non-private PCA scores in the comparison panel.
+.app_sampling_settings <- function(method, custom_size, size,
+                                   custom_bandwidth, bandwidth) {
+  method <- match.arg(method %||% "uniform", c("uniform", "center"))
+  sample_size <- if (isTRUE(custom_size)) {
+    .app_integer(size, "Sample points", upper = .Machine$integer.max)
+  } else {
+    NULL
+  }
+  bandwidth_scale <- if (isTRUE(custom_bandwidth)) {
+    if (!is.numeric(bandwidth) || length(bandwidth) != 1L ||
+        !is.finite(bandwidth) || bandwidth < 0) {
+      stop("Bandwidth scale must be a finite nonnegative number.", call. = FALSE)
+    }
+    as.numeric(bandwidth)
+  } else {
+    NULL
+  }
+  sampling_control(
+    method = method,
+    sample_size = sample_size,
+    bandwidth_scale = bandwidth_scale
+  )
+}
+
 # Plot controls only redraw stored estimates. A run keeps one sampling seed.
 .app_with_seed <- function(
     seed,
@@ -264,9 +291,10 @@ library(dppca)
 
 # Capture the S3 method's return value without drawing on another device.
 # Reusing a run's seed keeps synthetic points stable when switching views.
-.app_stored_plots <- function(result, center = NULL) {
+.app_stored_plots <- function(result, center = NULL, sampling = NULL) {
   plot_args <- result$plot_args
   if (!is.null(center)) plot_args$center <- center
+  if (!is.null(sampling)) plot_args$sampling_control <- sampling
   .app_with_seed(result$seed, .app_capture_plot(
     do.call(plot, c(list(x = result$value), plot_args))
   ))
@@ -518,7 +546,9 @@ library(dppca)
   list(columns = columns, rows = as.integer(ceiling(total / columns)))
 }
 
-.app_draw_score <- function(result, display = "histogram", version = "private") {
+.app_draw_score <- function(result, display = "histogram", version = "private",
+                            sample_method = "uniform") {
+  sample_method <- match.arg(sample_method, c("uniform", "center"))
   choices <- c("histogram", "sample")
   if (!length(display) || anyNA(display) || any(!display %in% choices)) {
     stop("Choose at least one score display: histogram or sample.", call. = FALSE)
@@ -535,13 +565,13 @@ library(dppca)
     lapply(display, function(tp) {
       if (key == "reference") {
         if (tp == "histogram") p <- stored$nonprivate else {
-          p <- stored$reference_samples$uniform
+          p <- stored$reference_samples[[sample_method]]
           if (is.null(p)) p <- stored$scatter
         }
       } else if (tp == "histogram") {
         p <- stored[[key]]
       } else {
-        p <- stored$sample[[key]]$uniform
+        p <- stored$sample[[key]][[sample_method]]
       }
       if (is.null(p)) stop("The selected score plot was not saved.", call. = FALSE)
       if (grouped) {
@@ -1080,6 +1110,44 @@ ui <- fluidPage(
       .toolbar-plot-settings .plot-settings-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .toolbar-plot-settings .shiny-input-container { width: 100%; min-width: 0; }
       .toolbar-plot-settings .irs { margin-top: 3px; }
+      /* Sampling settings use the full popover width on both PCA and Score. */
+      .toolbar-plot-settings .sampling-controls {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        row-gap: 13px;
+        min-width: 0;
+        padding: 0 0 3px;
+      }
+      .toolbar-plot-settings .sampling-method > .shiny-input-container {
+        width: 100%; margin-bottom: 0;
+      }
+      .toolbar-plot-settings .sampling-method .control-label { margin-bottom: 7px; }
+      .toolbar-plot-settings .sampling-method .radio-inline {
+        margin-right: 20px; margin-bottom: 2px; white-space: nowrap;
+      }
+      .toolbar-plot-settings .sampling-option-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 16px;
+        align-items: center;
+        min-height: 35px;
+        min-width: 0;
+      }
+      .toolbar-plot-settings .sampling-option-row > .shiny-input-container {
+        width: 100%; margin-bottom: 0;
+      }
+      .toolbar-plot-settings .sampling-option-row .checkbox { margin: 0; }
+      .toolbar-plot-settings .sampling-option-row > .shiny-panel-conditional {
+        width: 100%; min-width: 0;
+      }
+      .toolbar-plot-settings .sampling-option-row > .shiny-panel-conditional .shiny-input-container {
+        margin-bottom: 0;
+      }
+      .toolbar-plot-settings .sampling-option-row .control-label { margin-bottom: 5px; }
+      @media (max-width: 520px) {
+        .toolbar-plot-settings .sampling-option-row { grid-template-columns: 1fr; row-gap: 5px; }
+      }
       .pca-plot-area .shiny-plot-output { display: block; }
       .cpp-setting { border-top: 1px solid var(--line); padding-top: 11px;
         margin-top: 8px; }
@@ -1385,14 +1453,8 @@ ui <- fluidPage(
               checkboxGroupInput(
                 "score_display", "Score displays",
                 choices = c("Histogram" = "histogram", "Sampled points" = "sample"),
-                selected = "histogram"
-              ),
-              checkboxInput("score_center", "Center DP score display", value = TRUE),
-              numericInput(
-                "sampling_size", "Sampled points",
-                value = 500, min = 1, step = 100
-              ),
-              helpText("Centering only changes the display. Sample size takes effect on the next run; histogram and sample views reuse the same estimate.")
+                selected = c("histogram", "sample")
+              )
             )
           ),
           conditionalPanel(
@@ -1455,11 +1517,28 @@ ui <- fluidPage(
                     ),
                     checkboxInput("pca_labels", "Show variable labels", value = TRUE),
                     div(class = "settings-subheading", "Synthetic sampling"),
-                    checkboxInput("pca_custom_sample", "Custom sample size", value = FALSE),
-                    conditionalPanel(
-                      condition = "input.pca_custom_sample",
-                      numericInput("pca_sampling_size", "Sample points (total)",
-                        value = 1000, min = 1, step = 100)
+                    div(class = "sampling-controls",
+                      div(class = "sampling-method",
+                        radioButtons("pca_sampling_method", "Sampling method",
+                          choices = c("Uniform" = "uniform", "Center" = "center"),
+                          selected = "uniform", inline = TRUE)
+                      ),
+                      div(class = "sampling-option-row",
+                        checkboxInput("pca_custom_sample", "Custom sample size", value = FALSE),
+                        conditionalPanel(
+                          condition = "input.pca_custom_sample",
+                          numericInput("pca_sampling_size", "Sample points (total)",
+                            value = 1000, min = 1, step = 100)
+                        )
+                      ),
+                      div(class = "sampling-option-row",
+                        checkboxInput("pca_custom_bandwidth", "Custom bandwidth scale", value = FALSE),
+                        conditionalPanel(
+                          condition = "input.pca_custom_bandwidth",
+                          numericInput("pca_bandwidth_scale", "Gaussian jitter scale",
+                            value = 0.25, min = 0, step = 0.05)
+                        )
+                      )
                     )
                   )
                 )
@@ -1556,7 +1635,42 @@ ui <- fluidPage(
                   "Sampled points" = "sample"
                 ), selected = "all")
               ),
-              uiOutput("score_reference_controls")
+              uiOutput("score_reference_controls"),
+              conditionalPanel(
+                condition = "input.score_view == 'plot'",
+                tags$details(
+                  class = "app-details toolbar-plot-settings",
+                  tags$summary("Plot settings"),
+                  div(class = "details-body plot-settings-grid",
+                    checkboxInput("score_center", "Center DP score display", value = TRUE),
+                    div(class = "settings-subheading", "Synthetic sampling"),
+                    div(class = "sampling-controls",
+                      div(class = "sampling-method",
+                        radioButtons("score_sampling_method", "Sampling method",
+                          choices = c("Uniform" = "uniform", "Center" = "center"),
+                          selected = "uniform", inline = TRUE)
+                      ),
+                      div(class = "sampling-option-row",
+                        checkboxInput("score_custom_sample", "Custom sample size", value = FALSE),
+                        conditionalPanel(
+                          condition = "input.score_custom_sample",
+                          numericInput("score_sampling_size", "Sample points (total)",
+                            value = 1000, min = 1, step = 100)
+                        )
+                      ),
+                      div(class = "sampling-option-row",
+                        checkboxInput("score_custom_bandwidth", "Custom bandwidth scale",
+                          value = FALSE),
+                        conditionalPanel(
+                          condition = "input.score_custom_bandwidth",
+                          numericInput("score_bandwidth_scale", "Gaussian jitter scale",
+                            value = 0.25, min = 0, step = 0.05)
+                        )
+                      )
+                    )
+                  )
+                )
+              )
             ),
             conditionalPanel(
               condition = "input.score_view == 'plot'",
@@ -1687,7 +1801,7 @@ server <- function(input, output, session) {
     }
     if (!identical(n, delta_sample_size())) {
       updateNumericInput(session, "pca_sampling_size", value = as.integer(n))
-      updateNumericInput(session, "sampling_size", value = as.integer(n))
+      updateNumericInput(session, "score_sampling_size", value = as.integer(n))
       updateNumericInput(
         session, "delta",
         value = 10^(-ceiling(log10(as.numeric(n)^2)))
@@ -1906,11 +2020,7 @@ server <- function(input, output, session) {
           if (!length(methods)) stop("Choose at least one score method.", call. = FALSE)
           plot_args <- list(
             type = c("histogram", "sample"),
-            plot_control = score_plot_control(show_group_legend = TRUE),
-            sampling_control = sampling_control(
-              method = "uniform",
-              sample_size = .app_integer(input$sampling_size, "Sample points")
-            )
+            plot_control = score_plot_control(show_group_legend = TRUE)
           )
           args <- list(
             X = X,
@@ -2091,15 +2201,27 @@ server <- function(input, output, session) {
     })
   }
 
-  # NULL preserves the package default: n private synthetic points and
-  # observed (rather than resampled) non-private comparison points.
-  pca_sampling <- reactive({
-    if (!isTRUE(input$pca_custom_sample)) return(NULL)
-    sampling_control(
-      method = "uniform",
-      sample_size = .app_integer(input$pca_sampling_size, "Sample points")
+  # Both plot methods use the same sampling_control() semantics. In default
+  # mode, sample_size stays NULL (rather than explicitly passing n), retaining
+  # the observed non-private PCA score scatter. Sampling is post-processing.
+  pca_sampling <- reactive(.app_checked_data({
+    .app_sampling_settings(
+      method = input$pca_sampling_method,
+      custom_size = isTRUE(input$pca_custom_sample),
+      size = input$pca_sampling_size,
+      custom_bandwidth = isTRUE(input$pca_custom_bandwidth),
+      bandwidth = input$pca_bandwidth_scale
     )
-  })
+  }))
+  score_sampling <- reactive(.app_checked_data({
+    .app_sampling_settings(
+      method = input$score_sampling_method,
+      custom_size = isTRUE(input$score_custom_sample),
+      size = input$score_sampling_size,
+      custom_bandwidth = isTRUE(input$score_custom_bandwidth),
+      bandwidth = input$score_bandwidth_scale
+    )
+  }))
 
   # These reactives depend only on saved runs, not the current form inputs.
   # View changes select panels from the same S3 plots and synthetic samples.
@@ -2112,7 +2234,11 @@ server <- function(input, output, session) {
   score_plots <- reactive({
     result <- results$score
     req(result)
-    .app_stored_plots(result, center = isTRUE(input$score_center))
+    .app_stored_plots(
+      result,
+      center = isTRUE(input$score_center),
+      sampling = score_sampling()
+    )
   })
 
   # Same stored seed = same synthetic points; appearance changes spend no
@@ -2242,8 +2368,11 @@ server <- function(input, output, session) {
     req(identical(input$score_view, "plot"))
     displays <- score_displayed()
     validate(need(length(displays) > 0L, "Select a score display on the left, or choose one in Show."))
-    .app_draw_score(score_plots(), display = displays,
-      version = .app_version(input$score_version, !is.null(fit$value$nonprivate)))
+    .app_draw_score(
+      score_plots(), display = displays,
+      version = .app_version(input$score_version, !is.null(fit$value$nonprivate)),
+      sample_method = input$score_sampling_method %||% "uniform"
+    )
   }, height = function() {
     fit <- results$score
     has_ref <- !is.null(fit) && !is.null(fit$value$nonprivate)

@@ -5,7 +5,6 @@ url: https://yejinjo0220.github.io/dppca/
 template:
   bootstrap: 5
   bootswatch: minty
-  math-rendering: katex
 
 home:
   title: "dppca"
@@ -17,7 +16,7 @@ home:
 navbar:
   title: "dppca"
   structure:
-    left: [tutorials, methodology, algorithms, shiny, reference]
+    left: [tutorials, theory, algorithms, shiny, reference]
     right: [search, github]
   components:
     tutorials:
@@ -34,19 +33,19 @@ navbar:
         - text: DP PCA Visualization
           href: articles/tutorials-dp-visualization.html
 
-    methodology:
-      text: Methodology
+    theory:
+      text: Theory
       menu:
         - text: PCA Background
-          href: articles/method-pca-background.html
+          href: articles/theory-pca-background.html
         - text: DP Directions
-          href: articles/method-dp-loading.html
+          href: articles/theory-dp-loading.html
         - text: DP Eigenvalues
-          href: articles/method-dp-scree.html
+          href: articles/theory-dp-scree.html
         - text: DP Scores
-          href: articles/method-dp-score.html
+          href: articles/theory-dp-score.html
         - text: DP PCA Visualization
-          href: articles/method-dp-visualization.html
+          href: articles/theory-dp-visualization.html
 
     algorithms:
       text: Algorithms
@@ -71,14 +70,14 @@ articles:
       - tutorials-score-plots
       - tutorials-dp-visualization
 
-  - title: Methodology
+  - title: Theory
     desc: Background and mathematical methods for DP PCA visualization.
     contents:
-      - method-pca-background
-      - method-dp-loading
-      - method-dp-scree
-      - method-dp-score
-      - method-dp-visualization
+      - theory-pca-background
+      - theory-dp-loading
+      - theory-dp-scree
+      - theory-dp-score
+      - theory-dp-visualization
 
   - title: Algorithms
     contents:

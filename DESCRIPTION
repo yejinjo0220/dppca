@@ -1,6 +1,6 @@
 Package: dppca
 Title: Differentially Private Principal Component Analysis and Visualization
-Version: 0.2.0
+Version: 1.0.0
 Authors@R: c(
     person("Yejin", "Jo", email = "yejinjo0220@gmail.com", role = c("aut", "cre")),
     person("Minwoo", "Kim", email = "mwkim.stat@gmail.com", role = c("aut")),
