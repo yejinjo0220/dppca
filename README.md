@@ -1,5 +1,10 @@
 # dppca
 
+<!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/dppca)](https://CRAN.R-project.org/package=dppca)
+<!-- badges: end -->
+
+
 `dppca` is an R package for **differentially private principal component analysis (PCA) visualization**. 
 It estimates private PC directions, scree values, and two-dimensional score histograms, and uses these quantities to create loading plots, scree plots, score plots, variable plots, and biplots.
 
