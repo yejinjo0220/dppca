@@ -3,7 +3,6 @@
 <!-- badges: start -->
 
 [![CRAN status](https://www.r-pkg.org/badges/version/dppca)](https://CRAN.R-project.org/package=dppca)
-
 [![CRAN checks](https://badges.cranchecks.info/summary/dppca.svg)](https://cran.r-project.org/web/checks/check_results_dppca.html)
 
 <!-- badges: end -->
